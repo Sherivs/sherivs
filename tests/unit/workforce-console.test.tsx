@@ -38,16 +38,16 @@ const asList = (v: ReturnType<typeof viewerFor>) => ({
 });
 
 describe("ENGINE-12 workforce view-model", () => {
-  it("lists all fifteen agents in three tiers with one executive and one auditor", () => {
+  it("lists all twenty-five agents in three tiers with one executive and two independent auditors", () => {
     const roster = buildRoster();
-    expect(roster.total).toBe(15);
+    expect(roster.total).toBe(25);
     expect(roster.groups.map((g) => [g.tier, g.rows.length])).toEqual([
       ["executive", 1],
-      ["department", 13],
-      ["assurance", 1],
+      ["department", 22],
+      ["assurance", 2],
     ]);
     expect(roster.boundCount).toBe(7);
-    expect(roster.definitionOnlyCount).toBe(8);
+    expect(roster.definitionOnlyCount).toBe(18);
     expect(roster.rosterProblems).toEqual([]);
     expect(roster.groups.flatMap((g) => g.rows).every((r) => r.state === "shadow")).toBe(true);
   });
@@ -78,19 +78,31 @@ describe("ENGINE-12 workforce view-model", () => {
     expect(html).not.toContain("Roster check passed");
   });
 
-  it("marks the eight additional agents as defined but not wired", () => {
+  it("marks the eighteen additional agents as defined but not wired", () => {
     const rows = buildRoster().groups.flatMap((g) => g.rows);
     const unwired = rows.filter((r) => r.binding === "definition_only").map((r) => r.code);
-    expect(unwired).toEqual([
-      "compliance-agent",
-      "reliability-agent",
-      "customer-success-agent",
-      "revenue-assurance-agent",
-      "archivist-agent",
-      "product-intelligence-agent",
-      "market-intelligence-agent",
-      "sentinel-agent",
-    ]);
+    expect([...unwired].sort()).toEqual(
+      [
+        "compliance-agent",
+        "reliability-agent",
+        "customer-success-agent",
+        "revenue-assurance-agent",
+        "archivist-agent",
+        "product-intelligence-agent",
+        "market-intelligence-agent",
+        "sentinel-agent",
+        "onboarding-agent",
+        "safeguarding-agent",
+        "qa-agent",
+        "evaluation-agent",
+        "marketing-agent",
+        "localisation-agent",
+        "data-agent",
+        "legal-agent",
+        "people-agent",
+        "investor-agent",
+      ].sort(),
+    );
   });
 
   it("builds a dashboard with every mandatory panel for each agent", () => {
@@ -213,7 +225,7 @@ describe("ENGINE-12 rendered markup", () => {
   it("renders the roster with every agent linking to its dashboard", () => {
     const html = renderToStaticMarkup(<WorkforceRosterView />);
     expect(html).toContain('data-testid="console-workforce"');
-    expect(html).toContain("15 agents: 7 wired to the engine and 8 defined but not yet wired");
+    expect(html).toContain("25 agents: 7 wired to the engine and 18 defined but not yet wired");
     expect(html).toContain("Roster check passed");
     for (const e of workforceEntries()) {
       expect(html).toContain(`href="/console/workforce/${e.pack.code}"`);
@@ -271,5 +283,50 @@ describe("ENGINE-12 rendered markup", () => {
     );
     expect(html).not.toContain("<script>alert");
     expect(html).toContain("&lt;script&gt;");
+  });
+});
+
+describe("ENGINE-13 workspace panels in the console", () => {
+  it("every agent dashboard shows what it can reach, its boundaries and its workbench", () => {
+    for (const e of workforceEntries()) {
+      const d = buildAgentDashboard(e.pack.code)!;
+      expect(d.workspace, e.pack.code).not.toBeNull();
+      const html = renderToStaticMarkup(<AgentDashboardView dashboard={d} />);
+      expect(html, e.pack.code).toContain('data-testid="panel-workspace"');
+      expect(html, e.pack.code).toContain('data-testid="panel-boundaries"');
+      expect(html, e.pack.code).toContain('data-testid="panel-workbench"');
+      expect(html, e.pack.code).toContain('data-testid="workspace-scope-agent_proposals"');
+      for (const b of d.workspace!.boundaries) {
+        expect(html, e.pack.code).toContain(b.replace(/'/g, "&#x27;"));
+      }
+    }
+  });
+
+  it("says plainly whether an agent can read organization rows", () => {
+    const sg = renderToStaticMarkup(
+      <AgentDashboardView dashboard={buildAgentDashboard("safeguarding-agent")!} />,
+    );
+    expect(sg).toContain("can read some organization rows, only under the rule shown");
+    expect(sg).toContain("Only rows the organization itself flagged to the platform");
+    const fin = renderToStaticMarkup(
+      <AgentDashboardView dashboard={buildAgentDashboard("finance-agent")!} />,
+    );
+    expect(fin).toContain("never reads an organization&#x27;s content");
+    expect(fin).not.toContain("can read some organization rows");
+  });
+
+  it("shows the grant limit on a grant-scoped resource and nothing invented", () => {
+    const d = buildAgentDashboard("support-agent")!;
+    const tickets = d.workspace!.scopes.find((s) => s.resource === "support_tickets")!;
+    expect(tickets.grantMaxMinutes).toBe(60);
+    expect(tickets.rowScope).toBe("tenant_with_grant");
+    const html = renderToStaticMarkup(<AgentDashboardView dashboard={d} />);
+    expect(html).toContain("grant up to 60 minutes");
+    expect(d.workspace!.reachesOrganizationRows).toBe(true);
+    expect(buildAgentDashboard("finance-agent")!.workspace!.reachesOrganizationRows).toBe(false);
+  });
+
+  it("an unknown agent has no dashboard and so no workspace", () => {
+    expect(buildAgentDashboard("ghost-agent")).toBeNull();
   });
 });

@@ -7,17 +7,26 @@ import {
 } from "../../frontend/src/lib/jarvis-bridge/approval-bridge.server";
 import { validateCharter, validateRoster } from "../../frontend/src/lib/workforce-charter/charter";
 import { EXISTING_CHARTERS } from "../../frontend/src/lib/workforce-charter/charters/existing-charters";
+import { COMPLETION_CHARTERS } from "../../frontend/src/lib/workforce-charter/charters/completion-charters";
 import { EXPANSION_CHARTERS } from "../../frontend/src/lib/workforce-charter/charters/expansion-charters";
+import { COMPLETION_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/completion-workforce-packs";
 import { EXPANSION_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/expansion-workforce-packs";
 import { PLATFORM_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/platform-workforce-packs";
 import { validateRolePack, tierRank } from "../../frontend/src/lib/twin-engine/role-pack";
 
-const allPacks = [...PLATFORM_WORKFORCE_PACKS, JARVIS_EXECUTIVE_PACK, ...EXPANSION_WORKFORCE_PACKS];
+const allPacks = [
+  ...PLATFORM_WORKFORCE_PACKS,
+  JARVIS_EXECUTIVE_PACK,
+  ...EXPANSION_WORKFORCE_PACKS,
+  ...COMPLETION_WORKFORCE_PACKS,
+];
 const packOf = (code: string) => allPacks.find((p) => p.code === code)!;
-const roster = [...EXISTING_CHARTERS, ...EXPANSION_CHARTERS].map((charter) => ({
-  charter,
-  pack: packOf(charter.packCode),
-}));
+const roster = [...EXISTING_CHARTERS, ...EXPANSION_CHARTERS, ...COMPLETION_CHARTERS].map(
+  (charter) => ({
+    charter,
+    pack: packOf(charter.packCode),
+  }),
+);
 const sql = readFileSync("database/proposals/ENGINE-11_workforce_roles.sql", "utf8");
 
 describe("ENGINE-11 additional agent packs", () => {
@@ -52,7 +61,12 @@ describe("ENGINE-11 additional agent packs", () => {
 
   it("capability ids are unique across the whole workforce", () => {
     const ids = allPacks.flatMap((p) => p.capabilities.map((c) => c.id));
-    const sharedByDesign = ["request.deploy", "request.refund", "publish.social.post"];
+    const sharedByDesign = [
+      "request.deploy",
+      "request.refund",
+      "publish.social.post",
+      "request.access.grant",
+    ];
     const dupes = ids.filter((id, i) => ids.indexOf(id) !== i && !sharedByDesign.includes(id));
     expect(dupes).toEqual([]);
   });
@@ -83,9 +97,9 @@ describe("ENGINE-11 additional agent charters", () => {
     expect(EXPANSION_CHARTERS).toHaveLength(EXPANSION_WORKFORCE_PACKS.length);
   });
 
-  it("the fifteen-agent roster has no problems and every handoff target now exists", () => {
+  it("the twenty-five-agent roster has no problems and every handoff target exists", () => {
     expect(validateRoster(roster)).toEqual([]);
-    expect(roster).toHaveLength(15);
+    expect(roster).toHaveLength(25);
   });
 
   it("the audit agent is the only assurance agent, reports to the sheriff, and is read-only", () => {

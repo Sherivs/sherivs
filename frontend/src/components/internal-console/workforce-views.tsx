@@ -90,6 +90,74 @@ function Panel({ id, title, children }: { id: string; title: string; children: R
   );
 }
 
+const WORKBENCH_TITLES = {
+  console: "Command console",
+  queue: "Work queue",
+  feed: "Activity feed",
+  board: "Board",
+  ledger: "Ledger",
+} as const;
+
+function WorkspacePanels({ workspace }: { workspace: NonNullable<AgentDashboard["workspace"]> }) {
+  const w = workspace;
+  return (
+    <>
+      <Panel id="workspace" title="Workspace: what it can reach">
+        <p>
+          {w.reachesOrganizationRows
+            ? "This agent can read some organization rows, only under the rule shown on each line."
+            : "This agent never reads an organization's content. It works on platform records, aggregated figures and its own records."}
+        </p>
+        <div className="sherivs-console-list">
+          {w.scopes.map((sc) => (
+            <div
+              key={sc.resource}
+              className="sherivs-console-row"
+              data-testid={`workspace-scope-${sc.resource}`}
+            >
+              <strong>{sc.resource}</strong>
+              <small>
+                {sc.access} · {sc.rowRule}
+                {sc.grantMaxMinutes !== null
+                  ? ` (grant up to ${sc.grantMaxMinutes} minutes)`
+                  : ""}{" "}
+                · Up to {sc.sensitivity} · {sc.purpose}
+              </small>
+            </div>
+          ))}
+        </div>
+      </Panel>
+      <Panel id="boundaries" title="Hard boundaries">
+        <ul>
+          {w.boundaries.map((b) => (
+            <li key={b}>{b}</li>
+          ))}
+        </ul>
+      </Panel>
+      <Panel id="workbench" title="Workbench layout">
+        <div className="sherivs-console-list">
+          <div className="sherivs-console-row">
+            <strong>
+              {WORKBENCH_TITLES[w.workbench.workbench]}: {w.workbench.headline}
+            </strong>
+            <small>When there is nothing to do: {w.workbench.emptyState}</small>
+          </div>
+          {w.workbench.queues.map((q) => (
+            <div key={q.id} className="sherivs-console-row">
+              <strong>{q.title}</strong>
+              <small>Reads {q.source}</small>
+            </div>
+          ))}
+          <div className="sherivs-console-row">
+            <strong>Quick actions</strong>
+            <small>{w.workbench.quickActions.map((a) => a.label).join(" · ")}</small>
+          </div>
+        </div>
+      </Panel>
+    </>
+  );
+}
+
 export function AgentDashboardView({ dashboard }: { dashboard: AgentDashboard }) {
   const d = dashboard;
   const shown = new Set(d.panels);
@@ -310,6 +378,8 @@ export function AgentDashboardView({ dashboard }: { dashboard: AgentDashboard })
           </div>
         </Panel>
       ) : null}
+
+      {d.workspace ? <WorkspacePanels workspace={d.workspace} /> : null}
     </section>
   );
 }

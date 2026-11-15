@@ -9,6 +9,7 @@
 import { ACTION_MAP } from "../jarvis-bridge/action-map";
 import { JARVIS_EXECUTIVE_PACK } from "../jarvis-executive/executive-pack";
 import { JARVIS_RISK_TIER_POLICY } from "../jarvis/risk-policy";
+import { COMPLETION_WORKFORCE_PACKS } from "../twin-engine/packs/completion-workforce-packs";
 import { EXPANSION_WORKFORCE_PACKS } from "../twin-engine/packs/expansion-workforce-packs";
 import { PLATFORM_WORKFORCE_PACKS } from "../twin-engine/packs/platform-workforce-packs";
 import {
@@ -24,7 +25,10 @@ import {
   type DashboardPanel,
 } from "../workforce-charter/charter";
 import { EXISTING_CHARTERS } from "../workforce-charter/charters/existing-charters";
+import { COMPLETION_CHARTERS } from "../workforce-charter/charters/completion-charters";
 import { EXPANSION_CHARTERS } from "../workforce-charter/charters/expansion-charters";
+import { WORKFORCE_WORKSPACES } from "../workforce-charter/workspaces/workforce-workspaces";
+import type { AccessMode, AgentWorkspace, RowScope } from "../workforce-charter/workspace";
 
 export const ENGINE_TABLES_NOTE =
   "Not available: the workforce engine tables have not been applied, so nothing is recorded yet.";
@@ -72,8 +76,29 @@ const ALL_PACKS: readonly RolePack[] = [
   JARVIS_EXECUTIVE_PACK,
   ...PLATFORM_WORKFORCE_PACKS,
   ...EXPANSION_WORKFORCE_PACKS,
+  ...COMPLETION_WORKFORCE_PACKS,
 ];
-const ALL_CHARTERS: readonly AgentCharter[] = [...EXISTING_CHARTERS, ...EXPANSION_CHARTERS];
+const ALL_CHARTERS: readonly AgentCharter[] = [
+  ...EXISTING_CHARTERS,
+  ...EXPANSION_CHARTERS,
+  ...COMPLETION_CHARTERS,
+];
+
+export const ACCESS_LABELS: Readonly<Record<AccessMode, string>> = {
+  read: "Reads",
+  write_own: "Writes its own records",
+  propose: "Proposes for approval",
+};
+
+/** What each row rule means, in words an operator can check against the database policy. */
+export const ROW_SCOPE_LABELS: Readonly<Record<RowScope, string>> = {
+  platform: "Platform records that belong to no organization",
+  tenant_metadata: "One identity and plan row per organization, never its content",
+  aggregate: "Aggregated figures only, never an individual record",
+  tenant_with_grant: "An organization's rows only under an active, time-boxed support grant",
+  tenant_flagged: "Only rows the organization itself flagged to the platform",
+  own_agent: "Only rows this agent created",
+};
 
 export interface Entry {
   readonly pack: RolePack;
@@ -169,6 +194,21 @@ export interface CapabilityRow {
   readonly evalBar: number | null;
 }
 
+export interface WorkspaceView {
+  readonly scopes: readonly {
+    readonly resource: string;
+    readonly access: string;
+    readonly rowRule: string;
+    readonly rowScope: RowScope;
+    readonly sensitivity: string;
+    readonly purpose: string;
+    readonly grantMaxMinutes: number | null;
+  }[];
+  readonly reachesOrganizationRows: boolean;
+  readonly boundaries: readonly string[];
+  readonly workbench: AgentWorkspace["ui"];
+}
+
 export interface AgentDashboard {
   readonly code: string;
   readonly codename: string;
@@ -231,6 +271,8 @@ export interface AgentDashboard {
     readonly kind: string;
     readonly when: string;
   }[];
+  /** Null only if an agent has no workspace, which the workspace validator reports. */
+  readonly workspace: WorkspaceView | null;
   readonly slos: {
     readonly targets: readonly {
       readonly id: string;
@@ -257,6 +299,27 @@ const OVERSIGHT: Readonly<Record<AgentCharter["agentTier"], string>> = {
   department: "Supervised by the executive agent; reviewed by the independent audit agent.",
   assurance: "Reports only to the sheriff. Read-only: it verifies and cannot act.",
 };
+
+export function buildWorkspaceView(code: string): WorkspaceView | null {
+  const ws = WORKFORCE_WORKSPACES.find((w) => w.packCode === code);
+  if (!ws) return null;
+  return {
+    scopes: ws.scopes.map((sc) => ({
+      resource: sc.resource,
+      access: ACCESS_LABELS[sc.access],
+      rowRule: ROW_SCOPE_LABELS[sc.rowScope],
+      rowScope: sc.rowScope,
+      sensitivity: sc.sensitivity,
+      purpose: sc.purpose,
+      grantMaxMinutes: sc.grantMaxMinutes ?? null,
+    })),
+    reachesOrganizationRows: ws.scopes.some(
+      (sc) => sc.rowScope === "tenant_with_grant" || sc.rowScope === "tenant_flagged",
+    ),
+    boundaries: ws.boundaries,
+    workbench: ws.ui,
+  };
+}
 
 export function buildAgentDashboard(code: string): AgentDashboard | null {
   const entry = workforceEntries().find((e) => e.pack.code === code);
@@ -328,6 +391,7 @@ export function buildAgentDashboard(code: string): AgentDashboard | null {
     },
     runs: { playbooks: pack.playbooks, recorded: unavailable },
     handoffs: charter.handoffs.map((h) => ({ to: h.to, kind: h.workOrderKind, when: h.when })),
+    workspace: buildWorkspaceView(pack.code),
     slos: { targets: charter.slos, measured: unavailable },
     safety: {
       killScope: charter.killScope,

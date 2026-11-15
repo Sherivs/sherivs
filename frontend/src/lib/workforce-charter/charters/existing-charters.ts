@@ -235,7 +235,7 @@ export const SALES_CHARTER: AgentCharter = {
     "send.outreach": "originate",
     "publish.social.post": "originate",
   },
-  t3Rules: { "publish.social.post": "owner" },
+  t3Rules: { "publish.social.post": "delegate_requires_owner_proposal" },
   slos: [
     {
       id: "lead-response",

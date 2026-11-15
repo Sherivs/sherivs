@@ -7,10 +7,16 @@ import {
   validateActionCoverage,
 } from "../../frontend/src/lib/jarvis-bridge/approval-bridge.server";
 import { JARVIS_RISK_TIER_POLICY } from "../../frontend/src/lib/jarvis/risk-policy";
+import { COMPLETION_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/completion-workforce-packs";
 import { EXPANSION_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/expansion-workforce-packs";
 import { PLATFORM_WORKFORCE_PACKS } from "../../frontend/src/lib/twin-engine/packs/platform-workforce-packs";
 
-const packs = [...PLATFORM_WORKFORCE_PACKS, JARVIS_EXECUTIVE_PACK, ...EXPANSION_WORKFORCE_PACKS];
+const packs = [
+  ...PLATFORM_WORKFORCE_PACKS,
+  JARVIS_EXECUTIVE_PACK,
+  ...EXPANSION_WORKFORCE_PACKS,
+  ...COMPLETION_WORKFORCE_PACKS,
+];
 
 describe("ENGINE-11 approval action coverage", () => {
   it("every gated capability in every pack is mapped or an explicit exception", () => {

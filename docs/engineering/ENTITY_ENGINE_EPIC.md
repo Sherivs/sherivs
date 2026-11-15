@@ -28,20 +28,21 @@ Sherivs adapters with an exit plan.
 
 ## Stack
 
-| Mission   | Deliverable                                                                                  | ADR           |
-| --------- | -------------------------------------------------------------------------------------------- | ------------- |
-| ENGINE-01 | Person Passport, membership contexts, Role Packs, autonomy ladder, tenant and internal packs | 077, 078, 079 |
-| ENGINE-02 | Sherivs Conductor (Hermes rename, compatibility-first)                                       | 080           |
-| ENGINE-03 | Tool Broker and connector vault contracts                                                    | 081           |
-| ENGINE-04 | JARVIS executive authority, severity routing, owner alerts and workforce oversight           | 082           |
-| ENGINE-05 | Playbook runner: wake events to governed steps through the broker                            | 083           |
-| ENGINE-06 | Connector adapter framework, execution gate, read-only GitHub adapter                        | 084           |
-| ENGINE-07 | Per-context agent model loop (draft-only, proposals only)                                    | 085           |
-| ENGINE-08 | Restack: runner approval gates through the JARVIS durable approval inbox                     | 086           |
-| ENGINE-09 | Owner alert delivery through the JARVIS channel gates (SMS never planned)                    | 087           |
-| ENGINE-10 | Agent Charter v1, roster validator and charters of the seven existing agents                 | 088           |
-| ENGINE-11 | Eight additional agent packs and charters; complete approval action coverage                 | 089           |
-| ENGINE-12 | Console workforce roster and per-agent dashboards (read-only)                                | 090           |
+| Mission   | Deliverable                                                                                      | ADR           |
+| --------- | ------------------------------------------------------------------------------------------------ | ------------- |
+| ENGINE-01 | Person Passport, membership contexts, Role Packs, autonomy ladder, tenant and internal packs     | 077, 078, 079 |
+| ENGINE-02 | Sherivs Conductor (Hermes rename, compatibility-first)                                           | 080           |
+| ENGINE-03 | Tool Broker and connector vault contracts                                                        | 081           |
+| ENGINE-04 | JARVIS executive authority, severity routing, owner alerts and workforce oversight               | 082           |
+| ENGINE-05 | Playbook runner: wake events to governed steps through the broker                                | 083           |
+| ENGINE-06 | Connector adapter framework, execution gate, read-only GitHub adapter                            | 084           |
+| ENGINE-07 | Per-context agent model loop (draft-only, proposals only)                                        | 085           |
+| ENGINE-08 | Restack: runner approval gates through the JARVIS durable approval inbox                         | 086           |
+| ENGINE-09 | Owner alert delivery through the JARVIS channel gates (SMS never planned)                        | 087           |
+| ENGINE-10 | Agent Charter v1, roster validator and charters of the seven existing agents                     | 088           |
+| ENGINE-11 | Eight additional agent packs and charters; complete approval action coverage                     | 089           |
+| ENGINE-12 | Console workforce roster and per-agent dashboards (read-only)                                    | 090           |
+| ENGINE-13 | Ten remaining agents (25 total), per-agent workspaces, deny-by-default scope check, RLS proposal | 091           |
 
 ## Operator actions (not done by the agent)
 
@@ -52,7 +53,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-12 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-13 above.
 
 Not built, and not claimed:
 

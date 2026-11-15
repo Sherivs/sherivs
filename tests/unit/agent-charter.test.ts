@@ -39,8 +39,11 @@ describe("ENGINE-10 charters of the existing agents", () => {
     expect(EXISTING_CHARTERS).toHaveLength(packs.length);
   });
 
-  it("the roster is sound except for handoffs to agents that ENGINE-11 adds", () => {
-    expect(validateRoster(entries())).toEqual(PENDING_HANDOFFS);
+  it("the roster is sound except for handoffs to agents that ENGINE-11 adds and the public-posting owner ENGINE-13 adds", () => {
+    expect(validateRoster(entries())).toEqual([
+      ...PENDING_HANDOFFS,
+      "T3 publish.social.post: needs exactly one owner, found 0",
+    ]);
   });
 
   it("T3 capabilities have exactly one owner and JARVIS only delegates the ones a department owns", () => {
