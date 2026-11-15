@@ -32,9 +32,10 @@ const inList = (re: RegExp): string[] =>
   [...re.exec(live)![1]!.matchAll(/'([^']+)'/g)].map((m) => m[1]!);
 
 describe("ENGINE-20 SQL proposal stays in step with the code", () => {
-  it("is a proposal, not a migration, and says so", () => {
+  it("is kept as the reviewed source outside the migrations folder, and says what its status is", () => {
     expect(FILE.startsWith("database/proposals/")).toBe(true);
-    expect(sql.split("\n")[0]).toMatch(/^-- PROPOSAL ONLY\. NOT APPLIED\./);
+    expect(sql.split("\n")[0]).toMatch(/^-- APPLIED TO PRODUCTION 2026-11-15\./);
+    expect(sql).toContain("ops/2026-11-15-apply-engine20-engine22/");
     expect(check.split("\n")[0]).toMatch(
       /^-- SCRATCH-DATABASE CHECK\. NEVER RUN ON A REAL PROJECT\./,
     );
