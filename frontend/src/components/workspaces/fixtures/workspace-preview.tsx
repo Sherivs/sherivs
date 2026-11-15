@@ -15,6 +15,7 @@ import { CategoryWorkspaceSections } from "@/components/app-shell/category-works
 import { ConnectionStatus } from "@/components/app-shell/connection-status";
 import { categoryWorkspaces } from "@/lib/workspaces/category-workspaces";
 import { ShellGlassIcon } from "@/components/app-shell/glass-icon";
+import { TwinBriefFixture } from "./twin-brief-fixture";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import "@/components/app-shell/app-shell.css";
 
@@ -223,6 +224,8 @@ export function WorkspaceFixturePreview() {
               ))}
             </div>
           </section>
+
+          <TwinBriefFixture />
         </div>
       </main>
     </div>

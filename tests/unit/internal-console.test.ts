@@ -128,6 +128,7 @@ describe("internal console V1 contract", () => {
       "organizations",
       "workspaces",
       "runtimes",
+      "workforce",
       "activity",
     ]);
     expect(

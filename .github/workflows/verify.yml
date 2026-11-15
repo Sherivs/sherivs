@@ -174,6 +174,38 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/m11-data-subject-requests.local.sql 2>&1 | tee /tmp/m11-dsr.out
           grep -q 'M11 ALL PASS' /tmp/m11-dsr.out
+      - name: SV1-TWIN-01 provisioning and isolation (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/sv1-twin-personal.local.sql 2>&1 | tee /tmp/sv1-twin.out
+          ! grep -Fq 'SV1-TWIN-01 FAIL' /tmp/sv1-twin.out
+          grep -Fq 'SV1-TWIN-01 provisioning and isolation checks: ALL PASS' /tmp/sv1-twin.out
+      - name: ENGINE-01 person twin, role packs and isolation (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine01-person-twin.local.sql 2>&1 | tee /tmp/engine01.out
+          ! grep -Fq 'ENGINE-01 FAIL' /tmp/engine01.out
+          grep -Fq 'ENGINE-01 HARNESS PASSED' /tmp/engine01.out
+      - name: ENGINE-02 conductor compatibility view posture (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine02-conductor-compat.local.sql 2>&1 | tee /tmp/engine02.out
+          ! grep -Fq 'ENGINE-02 FAIL' /tmp/engine02.out
+          grep -Fq 'ENGINE-02 HARNESS PASSED' /tmp/engine02.out
+      - name: ENGINE-03 tool broker registry, vault references and append-only ledger (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine03-tool-broker.local.sql 2>&1 | tee /tmp/engine03.out
+          ! grep -Fq 'ENGINE-03 FAIL' /tmp/engine03.out
+          grep -Fq 'ENGINE-03 HARNESS PASSED' /tmp/engine03.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs

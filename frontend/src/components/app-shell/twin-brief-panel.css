@@ -1,0 +1,220 @@
+.twin-brief {
+  display: grid;
+  gap: 0.7rem;
+  border: 1px solid var(--shell-line);
+  border-radius: 1rem;
+  padding: 0.9rem;
+  background: var(--shell-glass);
+  color: var(--shell-ink);
+  min-width: 0;
+}
+
+.twin-brief-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.twin-brief-header > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.twin-brief h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.twin-brief h2:focus-visible {
+  outline: 2px solid var(--shell-blue);
+  outline-offset: 2px;
+  border-radius: 0.25rem;
+}
+
+.twin-brief-freshness {
+  margin: 0.15rem 0 0;
+  color: var(--shell-muted);
+  font-size: 0.75rem;
+}
+
+.twin-brief-refresh,
+.twin-brief-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  border: 1px solid var(--shell-line);
+  border-radius: 0.7rem;
+  padding: 0.4rem 0.8rem;
+  background: #fff;
+  color: var(--shell-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    background-color 160ms var(--shell-ease),
+    border-color 160ms var(--shell-ease);
+}
+
+.twin-brief-refresh:hover:not(:disabled),
+.twin-brief-actions button:hover:not(:disabled) {
+  border-color: var(--shell-blue);
+}
+
+.twin-brief-actions button.is-primary {
+  background: var(--shell-navy);
+  border-color: var(--shell-navy);
+  color: #fff;
+}
+
+.twin-brief button:focus-visible {
+  outline: 2px solid var(--shell-blue);
+  outline-offset: 2px;
+}
+
+.twin-brief button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.twin-brief-live {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.twin-brief-live:empty {
+  display: none;
+}
+
+.twin-brief-banner,
+.twin-brief-message,
+.twin-brief-muted,
+.twin-brief-empty {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.twin-brief-banner {
+  border: 1px solid var(--shell-line);
+  border-radius: 0.7rem;
+  padding: 0.5rem 0.65rem;
+}
+
+.twin-brief-banner.is-warning {
+  border-color: #e6c07a;
+  background: #fff7e6;
+  color: #7a3b00;
+}
+
+.twin-brief-banner.is-info {
+  background: rgba(24, 72, 253, 0.06);
+}
+
+.twin-brief-muted,
+.twin-brief-empty {
+  color: var(--shell-muted);
+}
+
+.twin-brief-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.twin-brief-card {
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--shell-line);
+  border-radius: 0.8rem;
+  padding: 0.7rem;
+  background: #fff;
+  min-width: 0;
+}
+
+.twin-brief-tag {
+  justify-self: start;
+  margin: 0;
+  border: 1px solid var(--shell-line);
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  background: rgba(130, 84, 246, 0.08);
+  color: #4b2bb0;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.twin-brief-summary {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.twin-brief-source,
+.twin-brief-confidence,
+.twin-brief-reason {
+  margin: 0;
+  color: var(--shell-muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.twin-brief-source.is-stale {
+  color: var(--shell-amber);
+}
+
+.twin-brief-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.twin-brief-confirm {
+  display: grid;
+  gap: 0.4rem;
+  border: 1px solid var(--shell-line);
+  border-radius: 0.7rem;
+  padding: 0.55rem;
+  background: rgba(18, 128, 92, 0.06);
+}
+
+.twin-brief-confirm p {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+  .twin-brief {
+    padding: 0.75rem;
+  }
+
+  .twin-brief-header {
+    flex-wrap: wrap;
+  }
+
+  .twin-brief-actions button {
+    flex: 1 1 8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .twin-brief *,
+  .twin-brief *::before,
+  .twin-brief *::after {
+    transition: none !important;
+    animation: none !important;
+    scroll-behavior: auto !important;
+  }
+}
