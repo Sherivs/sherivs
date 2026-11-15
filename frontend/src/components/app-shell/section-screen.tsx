@@ -13,6 +13,7 @@ import { CommunicationInboxScreen } from "./communication-inbox";
 import { StudentMobilityScreen } from "./student-mobility-screen";
 import { AscExportScreen } from "./asc-export-screen";
 import { OrgAgentsScreen, RolePacketScreen, WorkspacePolicyScreen } from "./org-workforce-screens";
+import { InstitutionInterviewScreen } from "./institution-interview-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
@@ -21,6 +22,7 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   if (sectionKey === "agents") return <OrgAgentsScreen />;
   if (sectionKey === "role-packets") return <RolePacketScreen />;
   if (sectionKey === "workspace-policies") return <WorkspacePolicyScreen />;
+  if (sectionKey === "school_setup") return <InstitutionInterviewScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
   if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
   if (sectionKey === "nav.reports") return <AscExportScreen />;
