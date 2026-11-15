@@ -44,6 +44,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-12 | Console workforce roster and per-agent dashboards (read-only)                                    | 090           |
 | ENGINE-13 | Ten remaining agents (25 total), per-agent workspaces, deny-by-default scope check, RLS proposal | 091           |
 | ENGINE-14 | Evaluation harness for all 25 agents, scored evidence for the ladder, console evaluation view    | 092           |
+| ENGINE-15 | Agent scope guard: one fail-closed, audited door for agent data access                           | 093           |
 
 ## Operator actions (not done by the agent)
 
@@ -54,7 +55,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-14 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-15 above.
 
 Not built, and not claimed:
 
