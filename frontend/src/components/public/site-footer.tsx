@@ -7,6 +7,10 @@ import { SherivsLogo } from "@/components/brand/sherivs-logo";
 import { CompanySocialLinks } from "@/components/public/company-social-links";
 import { PublicLink } from "@/components/public/public-link";
 
+/** Standalone links keep a 24px minimum target (WCAG 2.2, 2.5.8). */
+export const FOOTER_UTILITY_LINK =
+  "inline-flex min-h-6 items-center hover:text-[var(--sherivs-ink)]";
+
 export function SiteFooter() {
   const [openGroup, setOpenGroup] = useState<string | null>(null);
 
@@ -93,13 +97,13 @@ export function SiteFooter() {
           © {new Date().getFullYear()} {LEGAL_ENTITY_NAME}. All rights reserved.
         </p>
         <p className="flex flex-wrap gap-x-4 gap-y-2">
-          <PublicLink href="/privacy" className="hover:text-[var(--sherivs-ink)]">
+          <PublicLink href="/privacy" className={FOOTER_UTILITY_LINK}>
             Privacy
           </PublicLink>
-          <PublicLink href="/terms" className="hover:text-[var(--sherivs-ink)]">
+          <PublicLink href="/terms" className={FOOTER_UTILITY_LINK}>
             Terms
           </PublicLink>
-          <a href="#main-content" className="hover:text-[var(--sherivs-ink)]">
+          <a href="#main-content" className={FOOTER_UTILITY_LINK}>
             Back to top
           </a>
         </p>

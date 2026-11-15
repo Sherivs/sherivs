@@ -286,7 +286,10 @@ export function Breadcrumbs({ items }: { items: readonly { href: string; label: 
                 {item.label}
               </span>
             ) : (
-              <Link to={item.href as never} className="hover:text-[var(--sherivs-ink)]">
+              <Link
+                to={item.href as never}
+                className="inline-flex min-h-6 items-center hover:text-[var(--sherivs-ink)]"
+              >
                 {item.label}
               </Link>
             )}

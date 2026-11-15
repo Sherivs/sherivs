@@ -269,6 +269,7 @@
 }
 
 .sherivs-console-icon-btn {
+  flex: none;
   appearance: none;
   border: 0;
   background: transparent;
