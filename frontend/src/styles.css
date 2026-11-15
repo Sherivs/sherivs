@@ -26,6 +26,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -139,6 +140,11 @@
   --primary-rgb: 24, 78, 253;
   --primary: var(--tenant-primary);
   --primary-foreground: #ffffff;
+  /* Brand blue as text. The raw colour is 3.2:1 on the dark surfaces, so text gets a fitted tone
+     (lib/brand/tenant-contrast.ts fitTextOn); a school's own colour is fitted at runtime. */
+  --tenant-primary-text-dark: #4f78fd;
+  --tenant-primary-text-light: #184efd;
+  --primary-text: var(--tenant-primary-text-dark);
   --secondary: var(--tenant-secondary);
   --secondary-foreground: #0a0f1e;
 }
@@ -697,6 +703,7 @@ a:focus-visible,
 /* Light mode variant overrides */
 .light,
 .light ::backdrop {
+  --primary-text: var(--tenant-primary-text-light);
   --color-success: #047857;
   --color-success-bg: rgba(16, 185, 129, 0.12);
   --color-warning: #92400e;

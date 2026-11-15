@@ -171,7 +171,7 @@
 
 .app-entry-card-primary {
   color: #ffffff;
-  background: linear-gradient(180deg, #4b86ff 0%, #2f6dff 52%, #2463f5 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #2f6dff 52%, #2463f5 100%);
   border: 0;
   box-shadow:
     0 10px 28px rgba(36, 107, 253, 0.38),
@@ -471,7 +471,7 @@
 /* Light sign-in (screenshot layout + Sherivs mark colours + glass) */
 .app-entry-login {
   --app-entry-login-ink: #10182b;
-  --app-entry-login-muted: #6b7690;
+  --app-entry-login-muted: #566179;
   --app-entry-login-field: #eef2f8;
   color: var(--app-entry-login-ink);
   background:
@@ -601,7 +601,7 @@
   margin: 0;
   font-size: 0.92rem;
   font-weight: 500;
-  color: #8b93a7;
+  color: #566179;
 }
 
 .app-entry-login-title {
@@ -664,7 +664,7 @@
 }
 
 .app-entry-login-input::placeholder {
-  color: #9aa3b8;
+  color: #566179;
 }
 
 .app-entry-login-input:focus {
@@ -677,7 +677,7 @@
 }
 
 .app-entry-login .text-muted-foreground {
-  color: #6b7690;
+  color: #566179;
 }
 
 .app-entry-login-row {
@@ -793,7 +793,7 @@ a.app-entry-login-submit {
   font-size: 0.98rem;
   font-weight: 650;
   cursor: pointer;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 58%, #143cdc 100%);
   box-shadow:
     0 12px 24px rgba(24, 72, 253, 0.28),
     inset 0 1px 0 rgba(255, 255, 255, 0.32);
@@ -862,7 +862,7 @@ a.app-entry-login-submit {
   margin: 0.15rem 0 0;
   text-align: center;
   font-size: 0.84rem;
-  color: #8b93a7;
+  color: #566179;
   text-wrap: balance;
 }
 

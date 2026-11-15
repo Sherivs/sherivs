@@ -73,3 +73,43 @@ export function tenantForegrounds(
 ): TenantForegrounds {
   return { primaryForeground: readableOn(primary), secondaryForeground: readableOn(secondary) };
 }
+
+/** Darkest raised surface in the dark theme (--surface-3) and the palest in the light theme. */
+export const DARK_THEME_SURFACE = "#111827";
+export const LIGHT_THEME_SURFACE = "#eef2f8";
+
+const toHex = (c: Rgb) =>
+  `#${c
+    .map((x) =>
+      Math.round(Math.min(255, Math.max(0, x)))
+        .toString(16)
+        .padStart(2, "0"),
+    )
+    .join("")}`;
+
+/**
+ * A school's brand colour as *text* on a surface. The colour itself is often too dark for the dark
+ * theme (the Sherivs blue is 3.2:1 on navy) or too pale for the light one. This moves it towards
+ * white or black in small steps, keeping its hue, until it reaches `minimum`. A colour that already
+ * reads is returned unchanged. Returns null when either colour is not usable, so the caller keeps
+ * its default.
+ */
+export function fitTextOn(
+  color: string | null | undefined,
+  surface: string,
+  minimum = 4.5,
+): string | null {
+  const rgb = parseHexColor(color);
+  const surfaceRgb = parseHexColor(surface);
+  if (!rgb || !surfaceRgb) return null;
+  const same = toHex(rgb);
+  if ((contrastBetween(same, surface) ?? 0) >= minimum) return same;
+  const target: Rgb = luminance(surfaceRgb) < 0.4 ? [255, 255, 255] : [0, 0, 0];
+  for (let step = 1; step <= 50; step += 1) {
+    const t = step / 50;
+    const mix = (k: 0 | 1 | 2): number => rgb[k] + (target[k] - rgb[k]) * t;
+    const candidate = toHex([mix(0), mix(1), mix(2)]);
+    if ((contrastBetween(candidate, surface) ?? 0) >= minimum) return candidate;
+  }
+  return toHex(target);
+}

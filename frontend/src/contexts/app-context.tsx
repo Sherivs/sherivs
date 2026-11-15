@@ -8,7 +8,12 @@ import { resolveSchoolByHost, schoolDomainLoginAllowed } from "@/lib/domains/sch
 import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
-import { tenantForegrounds } from "@/lib/brand/tenant-contrast";
+import {
+  DARK_THEME_SURFACE,
+  LIGHT_THEME_SURFACE,
+  fitTextOn,
+  tenantForegrounds,
+} from "@/lib/brand/tenant-contrast";
 import {
   GOOGLE_UNINVITED_ERROR,
   persistOAuthError,
@@ -107,6 +112,13 @@ function applyBrandColors(school: SchoolRow | null) {
   if (text.secondaryForeground)
     root.style.setProperty("--secondary-foreground", text.secondaryForeground);
   else root.style.removeProperty("--secondary-foreground");
+  // The school's colour as text: fitted per theme so it reads on navy and on paper alike.
+  const onDark = fitTextOn(colors.primary, DARK_THEME_SURFACE);
+  const onLight = fitTextOn(colors.primary, LIGHT_THEME_SURFACE);
+  if (onDark) root.style.setProperty("--tenant-primary-text-dark", onDark);
+  else root.style.removeProperty("--tenant-primary-text-dark");
+  if (onLight) root.style.setProperty("--tenant-primary-text-light", onLight);
+  else root.style.removeProperty("--tenant-primary-text-light");
 }
 
 async function clearClientOfflineData(scope?: { tenantId: string; userId: string; role: string }) {

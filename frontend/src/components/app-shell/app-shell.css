@@ -1168,7 +1168,7 @@ body:has(.workspace-preview) {
 
 .app-shell-form button,
 .app-shell-primary {
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 100%);
   color: #fff;
 }
 

@@ -14,13 +14,14 @@
   --sherivs-blue: #1848fd;
   --sherivs-blue-bright: #3d6dff;
   --sherivs-cyan: #14a8fc;
+  --sherivs-link: #0b5ec0;
   --sherivs-violet: #8254f6;
   --sherivs-white: #f7f9ff;
   --sherivs-muted: #aab4c8;
   --sherivs-paper: #eef2f8;
   --sherivs-paper-2: #e8ecf6;
   --sherivs-ink: #10182b;
-  --sherivs-ink-muted: #6b7690;
+  --sherivs-ink-muted: #566179;
   --sherivs-success: #39d98a;
   --sherivs-warning: #ffc857;
   --sherivs-danger: #ff6b7a;
@@ -246,7 +247,7 @@ body:has(.sherivs-public) {
 
 .sherivs-btn-primary {
   color: #ffffff;
-  background: linear-gradient(180deg, #4b86ff 0%, #1848fd 58%, #143cdc 100%);
+  background: linear-gradient(180deg, #3366ff 0%, #1848fd 58%, #143cdc 100%);
   border: 0;
   box-shadow:
     0 12px 24px rgba(24, 72, 253, 0.28),
@@ -425,6 +426,37 @@ body:has(.sherivs-public) {
 .sherivs-public .sherivs-band-ink .sherivs-glass-card,
 .sherivs-public .sherivs-band-dusk .sherivs-glass-card {
   color: var(--sherivs-ink);
+  /* Solid, not translucent: 78% white over navy renders a murky grey where
+     muted text measured 3:1 and the amber badge 1.3:1. */
+  background: #f4f7fb;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card::before,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card::before {
+  background: transparent;
+}
+
+/* Amber is tuned for dark surfaces (1.4:1 on the light page). Light surfaces
+   get a dark amber; dark bands keep the bright one, except inside their cards. */
+.sherivs-public .text-sherivs-warning,
+.sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-warning,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card .text-sherivs-warning {
+  color: #8a5300;
+}
+
+.sherivs-public .sherivs-band-ink .text-sherivs-warning,
+.sherivs-public .sherivs-band-dusk .text-sherivs-warning {
+  color: var(--sherivs-warning);
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-btn-secondary,
+.sherivs-public .sherivs-band-dusk .sherivs-btn-secondary {
+  background: #f4f7fb;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-cyan,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card .text-sherivs-cyan {
+  color: var(--sherivs-link);
 }
 
 .sherivs-public .sherivs-band-ink .sherivs-glass-card .text-sherivs-muted,
@@ -435,6 +467,18 @@ body:has(.sherivs-public) {
 .sherivs-public .sherivs-band-ink .sherivs-band-link,
 .sherivs-public .sherivs-band-dusk .sherivs-band-link {
   color: #d6e4ff;
+}
+
+/* Cyan is for dark surfaces. On the light page it is 2.4:1, so text links use
+   the darker link token there and keep the bright cyan inside dark bands. */
+.sherivs-public .text-sherivs-cyan,
+.sherivs-public .hover\:text-sherivs-cyan:hover {
+  color: var(--sherivs-link);
+}
+
+.sherivs-public .sherivs-band-ink .text-sherivs-cyan,
+.sherivs-public .sherivs-band-dusk .text-sherivs-cyan {
+  color: var(--sherivs-cyan);
 }
 
 .sherivs-public .sherivs-nav-drawer.sherivs-glass-card {
