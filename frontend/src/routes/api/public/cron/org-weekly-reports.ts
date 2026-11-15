@@ -3,7 +3,8 @@
  * agent switched on. Call it Monday 06:30 UTC (07:30 in Lagos) with
  * `Authorization: Bearer $CRON_SECRET` from Vercel Cron, the n8n server, or any scheduler.
  * Returns 503 until CRON_SECRET is set and the ENGINE-20 database proposal is applied.
- * It builds and stores reports; it sends nothing.
+ * It builds and stores reports and queues one email to the administrator; the notification worker
+ * (`/api/public/cron/org-notifications`) sends it.
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "node:crypto";
