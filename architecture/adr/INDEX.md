@@ -70,6 +70,7 @@ The H3-wave ADR directory. M09 was assigned **ADR-017** and M13 **ADR-018** by o
 | 097 | [ADR-097_ENGINE_ORG_AGENT_ROSTER_ROLE_PACKETS_AND_POLICIES.md](./ADR-097_ENGINE_ORG_AGENT_ROSTER_ROLE_PACKETS_AND_POLICIES.md) | Organization Agent Roster, Role Packet Selector and Workspace Policy Editor | PROPOSED | 2026-11-15 | Screens over the existing role-packet and policy functions; sensitive permissions confirmed; agent switch-on disabled until add-on table exists |
 | 098 | [ADR-098_ENGINE_ORG_AGENT_ADDONS_EVENTS_AND_WEEKLY_REPORTS.md](./ADR-098_ENGINE_ORG_AGENT_ADDONS_EVENTS_AND_WEEKLY_REPORTS.md) | Organization Agent Add-ons, Event Log, Notification Outbox and Weekly Reports | PROPOSED | 2026-11-15 | Database proposal only: plan-checked switch on/off, platform pause only the sheriff lifts, safeguarding rows carry no text, append-only logs, forced RLS |
 | 099 | [ADR-099_ENGINE_ORG_AGENT_WIRING_AND_WEEKLY_JOB.md](./ADR-099_ENGINE_ORG_AGENT_WIRING_AND_WEEKLY_JOB.md) | Organization Agent Screen Wiring and Weekly Job | PROPOSED | 2026-11-15 | Roster actions call the ENGINE-20 functions, inert until applied; the weekly job builds and stores reports and sends nothing |
+| 100 | [ADR-100_ENGINE_ORG_AGENT_ROLE_HOLDERS.md](./ADR-100_ENGINE_ORG_AGENT_ROLE_HOLDERS.md) | Organization Agent Role Holders | PROPOSED | 2026-11-15 | Settings-manager-gated function returning who holds the roles agents answer to; unknown stays unknown |
 
 ## ADR register — `architecture/coregrid-mvp-architecture/adr/`
 

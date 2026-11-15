@@ -31,7 +31,7 @@ ADR-098 proposes the tables and functions behind switching agents on, the event 
 - Nothing changes for a school until the ENGINE-20 proposal is applied. After that the roster works, and the job works once a scheduler calls it.
 - The job is not scheduled. No scheduler configuration is added. The owner picks the runner (see `docs/runbooks/org-weekly-reports.md`).
 - The screens were not driven in a browser and the SQL functions have not run against a real Supabase project. The unit tests exercise the planner, the state fold (which must match `org_agent_state`), the loader with a stub database, the job with a stub service client, and the route's secret check.
-- The role-holder gap (point 5) means a switched-on agent is not yet reported as "Running". Closing it needs a source that maps an organization's role holders to the membership roles the agents are accountable to.
+- The role-holder gap (point 5) is closed by ENGINE-22 ([ADR-100](./ADR-100_ENGINE_ORG_AGENT_ROLE_HOLDERS.md)) once that proposal is applied; until then the roster keeps the "not checked" wording.
 
 ## Verification
 

@@ -6,6 +6,9 @@
  * a person who cannot would otherwise get an empty log and a roster that wrongly says that
  * nothing is switched on.
  */
+import { buildOrgRoster, type RosterView } from "./roster-view";
+import { MEMBERSHIP_ROLES, type MembershipRole } from "./org-agents";
+import type { MemberFact } from "./activation";
 import {
   foldAddOnEvents,
   isNotApplied,
@@ -44,6 +47,10 @@ export interface AgentScreenState {
   readonly applied: boolean;
   readonly switches: AgentSwitchState;
   readonly events: readonly AgentEventRow[];
+  /** People who hold a role some agent answers to. Meaningful only when `holdersKnown`. */
+  readonly members: readonly MemberFact[];
+  /** False when the holders could not be read; the roster then claims nothing about them. */
+  readonly holdersKnown: boolean;
   /** A sentence for the viewer, or an empty string. A missing proposal is not an error. */
   readonly error: string;
 }
@@ -53,8 +60,37 @@ const none = (canManage: boolean, error = ""): AgentScreenState => ({
   applied: false,
   switches: EMPTY_SWITCHES,
   events: [],
+  members: [],
+  holdersKnown: false,
   error,
 });
+
+/**
+ * Rows from `org_agent_holders`. The database offers no pending-invitation state: an active
+ * membership is one whose invite was applied, so it counts as accepted (ENGINE-22, ADR-100).
+ */
+export function parseHolders(data: unknown): readonly MemberFact[] {
+  if (!Array.isArray(data)) return [];
+  const out: MemberFact[] = [];
+  for (const r of data) {
+    if (typeof r !== "object" || r === null) continue;
+    const o = r as Record<string, unknown>;
+    if (
+      typeof o.holder_id !== "string" ||
+      typeof o.holder_role !== "string" ||
+      !(MEMBERSHIP_ROLES as readonly string[]).includes(o.holder_role)
+    ) {
+      continue;
+    }
+    out.push({
+      identityId: o.holder_id,
+      role: o.holder_role as MembershipRole,
+      active: true,
+      invitation: "accepted",
+    });
+  }
+  return out;
+}
 
 export async function loadAgentState(db: AgentDb, orgId: string): Promise<AgentScreenState> {
   if (orgId.trim() === "") return none(false);
@@ -69,6 +105,14 @@ export async function loadAgentState(db: AgentDb, orgId: string): Promise<AgentS
   if (log.error) return none(true, isNotApplied(log.error) ? "" : messageForError(log.error));
   const switches = foldAddOnEvents(parseAddOnEvents(log.data));
 
+  // Who holds each agent's approving role. A failure here must not hide the switches: the
+  // roster then says it has not checked, which is true.
+  const holders = await db.rpc("org_agent_holders", { p_org: orgId });
+  const holdersKnown = !holders.error && Array.isArray(holders.data);
+  const members = holdersKnown ? parseHolders(holders.data) : [];
+  const holderError =
+    holders.error && !isNotApplied(holders.error) ? messageForError(holders.error) : "";
+
   const raised = await db
     .from("org_agent_events")
     .select("id,agent_code,kind,severity,summary,amount_minor,created_at,acked_at")
@@ -81,6 +125,8 @@ export async function loadAgentState(db: AgentDb, orgId: string): Promise<AgentS
       applied: true,
       switches,
       events: [],
+      members,
+      holdersKnown,
       error: messageForError(raised.error),
     };
   }
@@ -89,7 +135,9 @@ export async function loadAgentState(db: AgentDb, orgId: string): Promise<AgentS
     applied: true,
     switches,
     events: sortEvents(parseAgentEvents(raised.data)),
-    error: "",
+    members,
+    holdersKnown,
+    error: holderError,
   };
 }
 
@@ -101,4 +149,31 @@ export async function runAgentCall(
 ): Promise<string> {
   const { error } = await db.rpc(rpc, args);
   return error ? messageForError(error) : "";
+}
+
+const INACTIVE_STATUSES = new Set(["suspended", "cancelled", "canceled", "expired"]);
+
+/** The roster for one organization from what was loaded. Everything the roster claims comes from here. */
+export function rosterFromState(
+  school: {
+    readonly id: string;
+    readonly subscription_tier?: string | null;
+    readonly subscription_status?: string | null;
+  },
+  state: AgentScreenState,
+): RosterView {
+  return buildOrgRoster({
+    tenant: {
+      tenantId: school.id,
+      tier: school.subscription_tier,
+      active: !INACTIVE_STATUSES.has((school.subscription_status ?? "").toLowerCase()),
+    },
+    enabledCodes: state.switches.enabledCodes,
+    pausedCodes: state.switches.pausedCodes,
+    platformPausedCodes: state.switches.platformPausedCodes,
+    addOnsApplied: state.applied,
+    members: state.members,
+    holdersKnown: state.holdersKnown,
+    stateKnown: state.canManage,
+  });
 }

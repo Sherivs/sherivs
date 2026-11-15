@@ -9,7 +9,6 @@ import { Link } from "@tanstack/react-router";
 import { useApp } from "@/contexts/app-context";
 import { supabase } from "@/integrations/supabase/client";
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
-import { buildOrgRoster } from "@/lib/org-workforce/roster-view";
 import {
   parseRoleContext,
   planCustomGrant,
@@ -27,6 +26,7 @@ import { planAgentAction, type AgentAction } from "@/lib/org-workforce/agent-act
 import {
   EMPTY_SWITCHES,
   loadAgentState,
+  rosterFromState,
   runAgentCall,
   type AgentScreenState,
 } from "@/lib/org-workforce/agent-state-loader";
@@ -55,8 +55,6 @@ const rows = (data: unknown): Row[] =>
   Array.isArray(data) ? data.filter((r): r is Row => typeof r === "object" && r !== null) : [];
 const text = (v: unknown): string => (typeof v === "string" ? v : "");
 
-const INACTIVE_STATUSES = new Set(["suspended", "cancelled", "canceled", "expired"]);
-
 function Back() {
   return (
     <Link to={APP_SHELL_HOME as never} className="app-shell-back">
@@ -76,12 +74,14 @@ export function OrgAgentsScreen() {
     applied: false,
     switches: EMPTY_SWITCHES,
     events: [],
+    members: [],
+    holdersKnown: false,
     error: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const { canManage, applied, switches, events } = state;
+  const { canManage, applied, events } = state;
 
   const load = useCallback(async () => {
     if (!orgId) return;
@@ -93,26 +93,7 @@ export function OrgAgentsScreen() {
     void load();
   }, [load]);
 
-  const view = useMemo(
-    () =>
-      school
-        ? buildOrgRoster({
-            tenant: {
-              tenantId: school.id,
-              tier: school.subscription_tier,
-              active: !INACTIVE_STATUSES.has((school.subscription_status ?? "").toLowerCase()),
-            },
-            enabledCodes: switches.enabledCodes,
-            pausedCodes: switches.pausedCodes,
-            platformPausedCodes: switches.platformPausedCodes,
-            addOnsApplied: applied,
-            // Who holds each agent's approving role is not loaded here yet.
-            holdersKnown: false,
-            stateKnown: canManage,
-          })
-        : null,
-    [school, switches, applied, canManage],
-  );
+  const view = useMemo(() => (school ? rosterFromState(school, state) : null), [school, state]);
 
   async function onAction(code: string, action: AgentAction, reason?: string) {
     const plan = planAgentAction({

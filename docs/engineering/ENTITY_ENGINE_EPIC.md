@@ -51,6 +51,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-19 | Organization agent roster, role packet selector and workspace policy editor screens              | 097           |
 | ENGINE-20 | Database proposal: org agent add-ons, event log, notification outbox, weekly report requests     | 098           |
 | ENGINE-21 | App wiring for org agent add-ons, event acknowledgement and the weekly report job                | 099           |
+| ENGINE-22 | Database proposal and loading for who holds the roles organization agents answer to              | 100           |
 
 ## Operator actions (not done by the agent)
 
@@ -61,7 +62,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-21 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-22 above.
 
 Not built, and not claimed:
 
