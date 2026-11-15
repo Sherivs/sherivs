@@ -55,6 +55,7 @@ import "@/components/app-entry/app-entry.css";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  head: () => ({ meta: [{ title: "Sign in — Sherivs" }] }),
   validateSearch: (search: Record<string, unknown>): { mode?: string; next?: string } => {
     const out: { mode?: string; next?: string } = {};
     if (typeof search.mode === "string") out.mode = search.mode;

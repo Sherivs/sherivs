@@ -2,6 +2,7 @@
   --shell-ink: #10182b;
   --shell-muted: #536078;
   --shell-line: rgba(16, 24, 43, 0.08);
+  --shell-control-line: #76819a; /* field edges: 3:1 (WCAG 1.4.11) */
   --shell-glass: rgba(255, 255, 255, 0.78);
   --shell-navy: #10182b;
   --shell-blue: #1848fd;
@@ -395,7 +396,7 @@ body:has(.app-shell-frame.is-student-mobility) {
 .app-shell-scope-switcher select {
   width: 100%;
   min-height: 2.5rem;
-  border: 1px solid var(--shell-line);
+  border: 1px solid var(--shell-control-line);
   border-radius: 0.75rem;
   padding: 0.45rem 0.6rem;
   background: #fff;
@@ -410,7 +411,7 @@ body:has(.app-shell-frame.is-student-mobility) {
   padding: 0.62rem 0.8rem;
   border-radius: 16px;
   background: var(--shell-glass);
-  border: 1px solid var(--shell-line);
+  border: 1px solid var(--shell-control-line);
   backdrop-filter: blur(16px);
 }
 
@@ -1371,8 +1372,13 @@ body:has(.workspace-preview) {
 }
 
 .app-shell :where(a, button, input, select, textarea):focus-visible {
-  outline: 3px solid #ffbf47;
+  outline: 3px solid #0d37ca; /* the shell surface is light in both themes */
   outline-offset: 3px;
+}
+
+/* The header is navy in both themes, so it takes the light ring. */
+.app-shell-header :where(a, button, input, select, textarea):focus-visible {
+  outline-color: #93b0ff;
 }
 
 .app-shell :where(button, input, select, textarea) {

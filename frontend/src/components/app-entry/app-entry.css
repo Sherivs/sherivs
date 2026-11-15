@@ -29,7 +29,7 @@
 
 .app-entry:focus-visible,
 .app-entry :focus-visible {
-  outline: 2px solid #7aa2ff;
+  outline: 2px solid #0d37ca;
   outline-offset: 3px;
 }
 
@@ -655,7 +655,7 @@
   min-height: 3.05rem;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   padding: 0.78rem 0.95rem 0.78rem 3.05rem;
   color: #10182b;
   outline: none;

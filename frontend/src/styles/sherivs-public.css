@@ -33,6 +33,8 @@
   --sherivs-text-muted: var(--sherivs-ink-muted);
   --sherivs-border: rgba(16, 24, 43, 0.1);
   --sherivs-border-strong: rgba(16, 24, 43, 0.14);
+  /* Form field edges: 3:1 against the page (WCAG 1.4.11). The hairline borders above are decoration. */
+  --sherivs-control-border: #76819a;
   --sherivs-glass: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.58));
   --sherivs-glass-border: rgba(255, 255, 255, 0.82);
   --sherivs-focus: #1848fd;
@@ -162,6 +164,17 @@ body:has(.sherivs-public) {
 .sherivs-public :focus-visible {
   outline: 2px solid var(--sherivs-focus);
   outline-offset: 3px;
+}
+
+/* The brand blue ring is 2.9:1 on the navy bands; they take the light ring. */
+.sherivs-public .sherivs-band-ink :focus-visible,
+.sherivs-public .sherivs-band-dusk :focus-visible {
+  outline-color: #93b0ff;
+}
+
+.sherivs-public .sherivs-band-ink .sherivs-glass-card :focus-visible,
+.sherivs-public .sherivs-band-dusk .sherivs-glass-card :focus-visible {
+  outline-color: var(--sherivs-focus);
 }
 
 .sherivs-public [id] {

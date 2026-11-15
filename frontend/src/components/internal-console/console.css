@@ -248,7 +248,7 @@
   max-width: 28rem;
   margin-inline: auto;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   border-radius: 12px;
   padding: 0.45rem 0.75rem;
 }
@@ -554,7 +554,7 @@
   min-height: 2.4rem;
   padding: 0.35rem 0.7rem;
   border-radius: 12px;
-  border: 1px solid rgba(16, 24, 43, 0.12);
+  border: 1px solid #76819a;
   background: #fff;
   color: var(--console-ink);
   font: inherit;
@@ -606,7 +606,7 @@
 .sherivs-console-form textarea {
   min-height: 2.7rem;
   border-radius: 12px;
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   background: rgba(255, 255, 255, 0.78);
   padding: 0.55rem 0.75rem;
   color: inherit;

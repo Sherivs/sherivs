@@ -366,4 +366,4 @@ export function Field({
 }
 
 export const inputClass =
-  "min-h-11 w-full rounded-[var(--sherivs-radius-sm)] border border-[var(--sherivs-border)] bg-white/78 px-3 text-sm text-[var(--sherivs-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md placeholder:text-[#9aa3b8]";
+  "min-h-11 w-full rounded-[var(--sherivs-radius-sm)] border border-[var(--sherivs-control-border)] bg-white/78 px-3 text-sm text-[var(--sherivs-ink)] shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md placeholder:text-[#566179]";
