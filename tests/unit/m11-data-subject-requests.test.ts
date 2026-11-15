@@ -31,7 +31,9 @@ describe("M11 data-subject requests migration", () => {
     expect(migration).toContain(
       "GRANT SELECT ON public.dsr_settings, public.dsr_requests, public.dsr_request_events TO authenticated;",
     );
-    expect(migration).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE)\b[^;]*\bTO\b[^;]*authenticated/i);
+    expect(migration).not.toMatch(
+      /GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE)\b[^;]*\bTO\b[^;]*authenticated/i,
+    );
     expect(migration).not.toMatch(/GRANT[^;]*\banon\b/i);
   });
 
@@ -62,7 +64,9 @@ describe("M11 data-subject requests migration", () => {
 
   it("never updates or deletes source records in erasure", () => {
     const decide = migration.match(/FUNCTION public\.dsr_erasure_decide[\s\S]*?\n\$\$;/)?.[0] ?? "";
-    expect(decide).not.toMatch(/\b(DELETE FROM|UPDATE public\.(attendance|messages|fees|student_platform_fee_ledger|staff_payroll|students|users))\b/);
+    expect(decide).not.toMatch(
+      /\b(DELETE FROM|UPDATE public\.(attendance|messages|fees|student_platform_fee_ledger|staff_payroll|students|users))\b/,
+    );
     expect(decide).toContain("dsr_erasure_blocking_holds");
   });
 

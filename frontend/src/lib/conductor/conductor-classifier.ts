@@ -53,7 +53,9 @@ export interface ConductorClassificationInput {
  * first, then the encoded destructive deny rules, then the approval gate,
  * then the bounded self-healing allow-list.
  */
-export function classifyConductorAction(input: ConductorClassificationInput): ConductorClassifierVerdict {
+export function classifyConductorAction(
+  input: ConductorClassificationInput,
+): ConductorClassifierVerdict {
   const { actionClass, underlyingAction } = input;
   if (typeof actionClass !== "string" || !isKnownActionClass(actionClass)) {
     return {

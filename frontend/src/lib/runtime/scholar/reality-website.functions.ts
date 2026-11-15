@@ -27,6 +27,7 @@ import {
 } from "@/lib/website/reality-sync";
 import { approvedSnapshot } from "@/lib/scholar/reality";
 import { load, scope } from "./reality-interview.functions";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
 
 export type WebsiteSyncPreview =
   | { readonly status: "not_approved" }
@@ -62,10 +63,12 @@ type DeriveResult =
       readonly status: "not_approved" | "website_exists" | "invalid" | "not_allowed";
     };
 
+const timeAuthority = new TimeAuthority(new SystemClock());
+
 const NOT_ALLOWED = "42501";
 
 async function derive(db: Db, schoolId: string): Promise<DeriveResult> {
-  const { state } = await load(db, schoolId, Date.now());
+  const { state } = await load(db, schoolId, timeAuthority.now().atMs);
   const snapshot = approvedSnapshot(state);
   if (snapshot.length === 0) return { ok: false, status: "not_approved" };
 

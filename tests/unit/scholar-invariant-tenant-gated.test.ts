@@ -706,3 +706,56 @@ defineFamilySuite({
     },
   ],
 });
+
+defineFamilySuite({
+  family: "reality-interview.functions.ts",
+  functions: [
+    {
+      fn: "getInterview",
+      method: "POST",
+      input: "zod",
+      gate: "school-admin",
+      gateMarker: /await scope\(context\)/,
+      audit: "pure-read",
+      note: "no-audit class: pure read over get_org_profile; empty-object POST contract",
+    },
+    ...["submitInterviewAnswer", "clearInterviewAnswer", "approveInterviewAnswers"].map(
+      (fn): FnSpec => ({
+        fn,
+        method: "POST",
+        input: "zod",
+        gate: "school-admin",
+        gateMarker: /await scope\(context\)/,
+        audit: "write-through",
+        auditMarkers: [/upsert_reality_profile/],
+        auditSource: "file",
+        note: "write is the shared save() compare-and-set RPC (expectedRevision), tenant resolved by the gate",
+      }),
+    ),
+  ],
+});
+
+defineFamilySuite({
+  family: "reality-website.functions.ts",
+  functions: [
+    {
+      fn: "previewWebsiteFromReality",
+      method: "POST",
+      input: "zod",
+      gate: "school-admin",
+      gateMarker: /await scope\(context\)/,
+      audit: "pure-read",
+      note: "no-audit class: derives a plan from approved answers and writes nothing",
+    },
+    {
+      fn: "publishWebsiteFromReality",
+      method: "POST",
+      input: "zod",
+      gate: "school-admin",
+      gateMarker: /await scope\(context\)/,
+      audit: "write-through",
+      auditMarkers: [/website_save_draft/],
+      note: "create-only draft write guarded by planHash and p_expected_rev 0",
+    },
+  ],
+});

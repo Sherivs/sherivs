@@ -636,9 +636,9 @@ describe("Conductor approval gate", () => {
     expect(result.report.escalations.some((e) => e.recordId.includes("exec-critical"))).toBe(true);
 
     // …but the repair was NEVER delegated or executed.
-    expect(intentCalls.filter((missionId) => missionId === "conductor-repair-exec-critical")).toEqual(
-      [],
-    );
+    expect(
+      intentCalls.filter((missionId) => missionId === "conductor-repair-exec-critical"),
+    ).toEqual([]);
     const repair = await store.getExecution(TENANT, "conductor-repair-exec-critical-exec-1");
     expect(repair).toBeNull();
   });
@@ -725,7 +725,12 @@ describe("Conductor memory provenance", () => {
 
   it("marks memory-sourced claims uncertain and DB-backed claims canonical", () => {
     const memoryClaim = conductorClaim("conductor_memory", "mem:1", T_CYCLE, "prior decision");
-    const dbClaim = conductorClaim("mission_record_port", "cg_execution_record:e1", T_CYCLE, "stage");
+    const dbClaim = conductorClaim(
+      "mission_record_port",
+      "cg_execution_record:e1",
+      T_CYCLE,
+      "stage",
+    );
     expect(memoryClaim.verified).toBe(false);
     expect(memoryClaim.confidence).toBe("uncertain");
     expect(dbClaim.verified).toBe(true);

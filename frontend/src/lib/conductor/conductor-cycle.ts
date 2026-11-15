@@ -145,7 +145,10 @@ function severityFor(kind: ConductorFinding["kind"]): ConductorFinding["severity
 }
 
 /** Deterministic assessment: finding kind → proposed action class + rationale. */
-function assessFinding(finding: ConductorFinding, underlyingAction: string | null): ConductorAssessment {
+function assessFinding(
+  finding: ConductorFinding,
+  underlyingAction: string | null,
+): ConductorAssessment {
   switch (finding.kind) {
     case "mission_stuck":
       return underlyingAction !== null && isCriticalUnderlying(underlyingAction)

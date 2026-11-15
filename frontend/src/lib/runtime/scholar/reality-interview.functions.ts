@@ -18,6 +18,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
 import { SCHOLAR_PROFILE_RUNTIME } from "@/lib/runtime/scholar/org-profile.functions";
 import {
   INTERVIEW_PROFILE_KEY,
@@ -52,6 +53,8 @@ const answerInput = z
   .strict();
 
 const revision = z.number().int().min(0).max(1_000_000);
+
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 export type InterviewOutcome =
   | { readonly ok: true; readonly view: InterviewView }
@@ -120,7 +123,11 @@ export const getInterview = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({}).strict().parse(input))
   .handler(async ({ context }): Promise<InterviewView> => {
     const schoolId = await scope(context);
-    const { state, notes } = await load(asKernelAdmin(context.supabase), schoolId, Date.now());
+    const { state, notes } = await load(
+      asKernelAdmin(context.supabase),
+      schoolId,
+      timeAuthority.now().atMs,
+    );
     return buildInterviewView(state, notes);
   });
 
@@ -132,7 +139,7 @@ export const submitInterviewAnswer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<InterviewOutcome> => {
     const schoolId = await scope(context);
     const db = asKernelAdmin(context.supabase);
-    const nowMs = Date.now();
+    const nowMs = timeAuthority.now().atMs;
     const { state, notes } = await load(db, schoolId, nowMs);
     // The source is always "human": this endpoint only ever carries an admin's own answer.
     const answer = { ...data.answer, source: "human" } as DiscoveryAnswer;
@@ -155,7 +162,7 @@ export const clearInterviewAnswer = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<InterviewOutcome> => {
     const schoolId = await scope(context);
     const db = asKernelAdmin(context.supabase);
-    const nowMs = Date.now();
+    const nowMs = timeAuthority.now().atMs;
     const { state, notes } = await load(db, schoolId, nowMs);
     const result = clearAnswer(state, data.questionId, nowMs, data.expectedRevision);
     if (!result.ok)
@@ -171,7 +178,7 @@ export const approveInterviewAnswers = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<InterviewOutcome> => {
     const schoolId = await scope(context);
     const db = asKernelAdmin(context.supabase);
-    const nowMs = Date.now();
+    const nowMs = timeAuthority.now().atMs;
     const { state, notes } = await load(db, schoolId, nowMs);
     // The approver is the verified actor; the client cannot name one.
     const result = approveInterview(state, context.userId, nowMs, data.expectedRevision);

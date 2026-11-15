@@ -181,7 +181,9 @@ export type ConductorObservationListResult =
  */
 export interface ConductorObservationRecorder {
   readonly backend: "memory" | "db";
-  recordObservation(input: ConductorObservationRecordInput): Promise<ConductorObservationRecordResult>;
+  recordObservation(
+    input: ConductorObservationRecordInput,
+  ): Promise<ConductorObservationRecordResult>;
   listObservations(tenantId: string): Promise<ConductorObservationListResult>;
 }
 
@@ -240,7 +242,10 @@ export function createInMemoryConductorObservationPort(): ConductorObservationRe
       };
       const parsedRecord = conductorObservationSchema.safeParse(observation);
       if (!parsedRecord.success) {
-        return { ok: false, error: `conductor observation rejected: ${parsedRecord.error.message}` };
+        return {
+          ok: false,
+          error: `conductor observation rejected: ${parsedRecord.error.message}`,
+        };
       }
       records.push(parsedRecord.data);
       return {

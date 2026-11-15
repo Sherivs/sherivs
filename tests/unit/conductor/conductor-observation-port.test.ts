@@ -33,7 +33,8 @@ const {
   resolveConductorObservationBackend,
   CONDUCTOR_OBSERVATION_SUBSTRATE_GAP,
 } = await import("@/lib/conductor/conductor-observation-db.server");
-const { createInMemoryConductorObservationPort } = await import("@/lib/conductor/conductor-observation");
+const { createInMemoryConductorObservationPort } =
+  await import("@/lib/conductor/conductor-observation");
 
 type DbClient = Parameters<typeof createConductorObservationPortDb>[0];
 
@@ -202,7 +203,9 @@ describe("Conductor observation backend selection", () => {
 
   it("resolves 'db' when configured and THROWS on an unknown backend", () => {
     expect(resolveConductorObservationBackend("db")).toBe("db");
-    expect(() => resolveConductorObservationBackend("sqlite")).toThrow(/CONDUCTOR_OBSERVATION_BACKEND/);
+    expect(() => resolveConductorObservationBackend("sqlite")).toThrow(
+      /CONDUCTOR_OBSERVATION_BACKEND/,
+    );
   });
 
   it("createConductorObservationPort returns the in-memory port by default", async () => {
@@ -246,7 +249,11 @@ describe("In-memory Conductor observation port (default backend)", () => {
 
   it("stamps §12 provenance itself — the caller cannot claim it", async () => {
     const port = createInMemoryConductorObservationPort();
-    await port.recordObservation({ observation: observationInput(), observedBy: CONDUCTOR, now: NOW });
+    await port.recordObservation({
+      observation: observationInput(),
+      observedBy: CONDUCTOR,
+      now: NOW,
+    });
     const listed = await port.listObservations(TENANT);
     if (!listed.ok) throw new Error(listed.error);
     const observation = listed.observations[0];
@@ -317,7 +324,11 @@ describe("Append-only semantics", () => {
 
   it("a replayed observation id leaves the ORIGINAL record verbatim (in-memory)", async () => {
     const port = createInMemoryConductorObservationPort();
-    await port.recordObservation({ observation: observationInput(), observedBy: CONDUCTOR, now: NOW });
+    await port.recordObservation({
+      observation: observationInput(),
+      observedBy: CONDUCTOR,
+      now: NOW,
+    });
 
     const replay = await port.recordObservation({
       observation: observationInput({ statement: { stage: "TAMPERED" } }),

@@ -153,7 +153,9 @@ describe("Duplicate delivery collapse / replay", () => {
     const mapping = observationFromEvent(idless, { tenantId: TENANT, conductorId: CONDUCTOR });
     if (!mapping.ok) throw new Error(mapping.reason);
     expect(mapping.observation.eventRef).toMatch(/^digest:[0-9a-f]{16}$/);
-    expect(conductorEventObservationId(idless)).toBe(conductorEventObservationId(event({ id: "other" })));
+    expect(conductorEventObservationId(idless)).toBe(
+      conductorEventObservationId(event({ id: "other" })),
+    );
   });
 
   it("a re-ingestion over unchanged state replays — zero new observations", async () => {

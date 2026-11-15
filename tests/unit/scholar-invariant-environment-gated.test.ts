@@ -6,7 +6,7 @@
  * environment gate (ALLOW_DEMO_PROVISIONING, default OFF in every
  * environment). The suite pins that gate and records the gap honestly.
  *
- * Part 2 — the coverage ledger: all 28 Scholar server-function families are
+ * Part 2 — the coverage ledger: all 30 Scholar server-function families are
  * partitioned across exactly the five M-R-121 T2 §27 invariant suites, so a
  * new family cannot silently escape the invariant regime.
  */
@@ -316,6 +316,8 @@ const SUITE_PARTITION: Readonly<Record<string, readonly string[]>> = {
     "workforce-positions.functions.ts",
     "mobility-advisory.functions.ts",
     "personal-twin.functions.ts",
+    "reality-interview.functions.ts",
+    "reality-website.functions.ts",
   ],
   "scholar-invariant-staff-platform-gated.test.ts": [
     "expense-insights.functions.ts",
@@ -344,11 +346,11 @@ describe("§27 invariant coverage ledger — Scholar server-function families", 
     .filter((f) => f.endsWith(".functions.ts"))
     .sort();
 
-  it("all 28 families exist on disk and are partitioned exactly once across the five suites", () => {
-    expect(onDisk).toHaveLength(28);
+  it("all 30 families exist on disk and are partitioned exactly once across the five suites", () => {
+    expect(onDisk).toHaveLength(30);
     const covered = Object.values(SUITE_PARTITION).flat();
-    expect(covered).toHaveLength(28);
-    expect(new Set(covered).size, "no family may be covered twice").toBe(28);
+    expect(covered).toHaveLength(30);
+    expect(new Set(covered).size, "no family may be covered twice").toBe(30);
     expect([...covered].sort()).toEqual(onDisk);
     for (const suite of Object.keys(SUITE_PARTITION)) {
       expect(() => readFileSync(join(ROOT, "tests/unit", suite), "utf8"), suite).not.toThrow();
