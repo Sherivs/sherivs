@@ -3,8 +3,9 @@
  *
  * Each Monday at 06:30 UTC (07:30 in Lagos) the scheduler calls the cron route, which calls
  * this. It asks the database to open one report request per organization that has an agent
- * switched on, builds each report from that organization's events, and stores it. It does not
- * send anything: sending needs the notification worker, which is not part of this change.
+ * switched on, builds each report from that organization's events, stores it, and queues one
+ * email to the administrator. It does not send anything: the notification worker
+ * (notification-worker.server.ts) sends what is queued.
  *
  * Safe to run twice: the window is the most recent Monday 06:30 UTC, so a retry or a manual
  * call asks for the same window and the database keeps one request per organization and week.
@@ -103,7 +104,9 @@ export type WeeklyJobResult =
       readonly newlyRequested: number;
       readonly built: number;
       readonly failed: readonly { readonly reportId: string; readonly error: string }[];
-      /** Always zero: sending is not part of this job. */
+      /** Emails queued for the administrator. The notification worker sends them. */
+      readonly queued: number;
+      /** Always zero: sending is the notification worker's job, not this one's. */
       readonly sent: 0;
     };
 
@@ -116,6 +119,33 @@ const isMissing = (e: Err): boolean =>
     /could not find the (function|table)|does not exist/i.test(e.message));
 
 const shortError = (e: Err): string => (e ? e.message.slice(0, 120) : "failed");
+
+/** Escalation order for who receives the weekly report (ADR-096). */
+export const ADMINISTRATOR_ROLES = ["admin", "principal", "hq"] as const;
+export const REPORT_SUBJECT = "Your Sherivs weekly report";
+const REPORT_TEXT_MAX = 1500;
+
+/** The first active member of the administrator chain, or null when nobody holds it. */
+export async function findAdministrator(admin: JobClient, orgId: string): Promise<string | null> {
+  for (const role of ADMINISTRATOR_ROLES) {
+    const found = await admin
+      .from("organization_memberships")
+      .select("user_id")
+      .eq("school_id", orgId)
+      .eq("role", role)
+      .eq("is_active", true)
+      .limit(1);
+    if (found.error) throw new Error(shortError(found.error));
+    const id = Array.isArray(found.data) ? (found.data[0] as { user_id?: unknown })?.user_id : null;
+    if (typeof id === "string") return id;
+  }
+  return null;
+}
+
+export function reportText(lines: readonly string[]): string {
+  const text = lines.join("\n");
+  return text.length > REPORT_TEXT_MAX ? `${text.slice(0, REPORT_TEXT_MAX - 1)}…` : text;
+}
 
 export async function runWeeklyReports(input: {
   readonly admin: JobClient;
@@ -142,6 +172,7 @@ export async function runWeeklyReports(input: {
   if (pending.error) throw new Error(shortError(pending.error));
 
   let built = 0;
+  let queued = 0;
   const failed: { reportId: string; error: string }[] = [];
   const reports = Array.isArray(pending.data) ? pending.data : [];
   for (const r of reports) {
@@ -179,9 +210,29 @@ export async function runWeeklyReports(input: {
       });
       if (stored.error) throw new Error(shortError(stored.error));
       built += 1;
+      // Only the run that flipped requested to built reaches here, so this queues once per report.
+      const to = await findAdministrator(input.admin, orgId);
+      if (to) {
+        const queuedRow = await input.admin.rpc("enqueue_org_notification", {
+          p_org: orgId,
+          p_event: null,
+          p_recipient: to,
+          p_channel: report.channel,
+          p_send_after: input.now.toISOString(),
+          p_redacted: false,
+          p_payload: {
+            kind: "weekly_report",
+            severity: "info",
+            subject: REPORT_SUBJECT,
+            text: reportText(report.lines),
+          },
+        });
+        if (queuedRow.error) throw new Error(shortError(queuedRow.error));
+        queued += 1;
+      }
     } catch (e) {
       failed.push({ reportId, error: e instanceof Error ? e.message.slice(0, 120) : "failed" });
     }
   }
-  return { status: "ok", windowEnd: windowEndIso, newlyRequested, built, failed, sent: 0 };
+  return { status: "ok", windowEnd: windowEndIso, newlyRequested, built, failed, queued, sent: 0 };
 }
