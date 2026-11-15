@@ -8,6 +8,7 @@ import { resolveSchoolByHost, schoolDomainLoginAllowed } from "@/lib/domains/sch
 import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
+import { tenantForegrounds } from "@/lib/brand/tenant-contrast";
 import {
   GOOGLE_UNINVITED_ERROR,
   persistOAuthError,
@@ -94,10 +95,18 @@ function applyBrandColors(school: SchoolRow | null) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const colors = customTenantColors(school?.primary_color, school?.secondary_color);
+  const text = tenantForegrounds(colors.primary, colors.secondary);
   if (colors.primary) root.style.setProperty("--tenant-primary", colors.primary);
   else root.style.removeProperty("--tenant-primary");
   if (colors.secondary) root.style.setProperty("--tenant-secondary", colors.secondary);
   else root.style.removeProperty("--tenant-secondary");
+  // Text on the school's colours: the best-reading of white or navy, or the default when none was chosen.
+  if (text.primaryForeground)
+    root.style.setProperty("--primary-foreground", text.primaryForeground);
+  else root.style.removeProperty("--primary-foreground");
+  if (text.secondaryForeground)
+    root.style.setProperty("--secondary-foreground", text.secondaryForeground);
+  else root.style.removeProperty("--secondary-foreground");
 }
 
 async function clearClientOfflineData(scope?: { tenantId: string; userId: string; role: string }) {

@@ -226,7 +226,7 @@ body:has(.sherivs-public) {
 }
 
 .sherivs-kicker {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -691,7 +691,7 @@ body:has(.sherivs-public) {
 
 .sherivs-map-kicker {
   margin: 0;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.12em;
   line-height: 1.45;
@@ -800,7 +800,7 @@ body:has(.sherivs-public) {
   background: #fff4df;
   color: #6e3b00;
   font-family: inherit;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.35;

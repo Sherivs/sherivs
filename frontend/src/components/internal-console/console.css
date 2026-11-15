@@ -168,7 +168,7 @@
 
 .sherivs-console-brand-copy small {
   color: var(--console-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -213,7 +213,7 @@
 }
 
 .sherivs-console-env {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: 999px;
@@ -295,7 +295,7 @@
   place-items: center;
   background: linear-gradient(135deg, #4b86ff, #1848fd);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -314,7 +314,7 @@
 
 .sherivs-console-kicker {
   margin: 0.7rem 0.55rem 0.25rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--console-muted);
@@ -674,7 +674,7 @@
   align-items: center;
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.02em;
   background: rgba(16, 24, 43, 0.06);
@@ -785,7 +785,7 @@
 
 .sherivs-console-page-kicker {
   margin: 0 0 0.35rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--console-muted);
