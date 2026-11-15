@@ -40,6 +40,7 @@ Sherivs adapters with an exit plan.
 | ENGINE-08 | Restack: runner approval gates through the JARVIS durable approval inbox                     | 086           |
 | ENGINE-09 | Owner alert delivery through the JARVIS channel gates (SMS never planned)                    | 087           |
 | ENGINE-10 | Agent Charter v1, roster validator and charters of the seven existing agents                 | 088           |
+| ENGINE-11 | Eight additional agent packs and charters; complete approval action coverage                 | 089           |
 
 ## Operator actions (not done by the agent)
 
@@ -50,7 +51,7 @@ Sherivs adapters with an exit plan.
 
 ## Status and what is not built
 
-Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-10 above.
+Built and tested as drafts (nothing applied, merged or deployed): ENGINE-01 to ENGINE-11 above.
 
 Not built, and not claimed:
 
@@ -59,6 +60,6 @@ Not built, and not claimed:
 - Connector adapters beyond the read-only GitHub adapter (Slack, email, WhatsApp, SMS, social, payments, CRM, n8n, IAM), any write-capable adapter, and the secret manager behind the vault references (ENGINE-06 ships the gate and the GitHub read adapter only).
 - Channel adapters for owner alerts (voice, WhatsApp, SMS), and the owner's consent for live outbound.
 - The JARVIS service identity. ENGINE-08 wires the runner's approval gates to the JARVIS inbox and ladder; ENGINE-09 gates alert channels through the ladder's rules but nothing is sent, and the TWIN-03 sleep/wake scheduler is not wired to the runner.
-- Runtime use of charters, evaluation suites (named, not written), the eight additional agents recommended in `AGENT_WORKFORCE_AUDIT.md`, and the completed JARVIS action map.
+- Runtime use of charters, evaluation suites (named, not written), bindings, roles and scheduling for the eight additional agents (their packs and charters exist but are unbound and the role seed is an unapplied proposal), and a risk-policy action for publishing social posts.
 - Console and shell UI for the passport, approval inbox, workforce view and kill switch.
 - The `cg_personal_twin` cutover to the person passport (ADR-077).

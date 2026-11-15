@@ -12,6 +12,7 @@ import {
 } from "../../frontend/src/lib/jarvis/inbox-escalation";
 import {
   ACTION_MAP,
+  actionMapFor,
   MIN_APPROVAL_TTL_MS,
   approvalIdFor,
   inboxVerdict,
@@ -118,7 +119,7 @@ function raised(cap: string, approver: "platform_staff" | "sheriff", run = waiti
 
 describe("ENGINE-08 action map", () => {
   it("maps every bridged capability to a JARVIS action of the same tier", () => {
-    expect(validateActionMap(base)).toEqual([]);
+    expect(validateActionMap(base, actionMapFor(base))).toEqual([]);
     expect(Object.keys(ACTION_MAP)).not.toContain("publish.social.post");
   });
 

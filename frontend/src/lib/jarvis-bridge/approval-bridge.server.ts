@@ -46,7 +46,66 @@ export const ACTION_MAP: Readonly<Record<string, JarvisRiskActionId>> = Object.f
   "request.refund": "spend_money",
   "request.deploy": "deploy_production",
   "request.access.grant": "invite_privileged_staff",
+  "send.reply": "send_customer_communications",
+  "send.outreach": "send_customer_communications",
+  "notify.tenants": "send_customer_communications",
+  "send.data.notice": "send_customer_communications",
+  "publish.status.update": "send_customer_communications",
+  "send.checkin": "send_customer_communications",
+  "send.payment.reminder": "send_customer_communications",
+  "schedule.maintenance": "change_platform_configuration",
+  "quarantine.worker": "change_platform_configuration",
+  "request.credential.rotation": "access_secrets",
 });
+
+/** Gated capabilities that deliberately have no JARVIS action yet (ENGINE-11, ADR-089). */
+export const UNMAPPED_BY_DESIGN: readonly string[] = Object.freeze(["publish.social.post"]);
+
+/** The part of the map that applies to one pack. */
+export const actionMapFor = (pack: RolePack): Readonly<Record<string, JarvisRiskActionId>> =>
+  Object.fromEntries(
+    Object.entries(ACTION_MAP).filter(([id]) => pack.capabilities.some((c) => c.id === id)),
+  );
+
+/**
+ * Pack-wide guard: every capability at T2 or above in any pack is either mapped to a
+ * tier-equal JARVIS action or listed in `UNMAPPED_BY_DESIGN`; every map entry names a
+ * capability that exists and agrees on tier in every pack that has it.
+ */
+export function validateActionCoverage(
+  packs: readonly RolePack[],
+  map: Readonly<Record<string, string>> = ACTION_MAP,
+  unmapped: readonly string[] = UNMAPPED_BY_DESIGN,
+): readonly string[] {
+  const problems: string[] = [];
+  const known = new Set(packs.flatMap((p) => p.capabilities.map((c) => c.id)));
+  for (const id of Object.keys(map)) {
+    if (!known.has(id)) problems.push(`${id}: not a capability of any pack`);
+  }
+  for (const id of unmapped) {
+    if (!known.has(id)) problems.push(`${id}: listed as unmapped but not a capability of any pack`);
+    if (map[id] !== undefined) problems.push(`${id}: both mapped and listed as unmapped`);
+  }
+  for (const pack of packs) {
+    problems.push(
+      ...validateActionMap(
+        pack,
+        Object.fromEntries(
+          Object.entries(map).filter(([id]) => pack.capabilities.some((c) => c.id === id)),
+        ),
+      ).map((p) => `${pack.code}: ${p}`),
+    );
+    for (const cap of pack.capabilities) {
+      const gated = cap.tier === "T2" || cap.tier === "T3";
+      if (gated && map[cap.id] === undefined && !unmapped.includes(cap.id)) {
+        problems.push(
+          `${pack.code}: ${cap.id} (${cap.tier}) has no JARVIS action and is not listed as unmapped`,
+        );
+      }
+    }
+  }
+  return problems;
+}
 
 export function validateActionMap(
   pack: RolePack,

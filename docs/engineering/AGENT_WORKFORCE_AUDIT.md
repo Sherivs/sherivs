@@ -29,7 +29,7 @@ Roster rules checked across agents: unique codes, existing supervisors and hando
 
 `charters/existing-charters.ts` holds the seven charters. The roster check currently reports five handoffs to agents that ENGINE-11 adds (customer success, compliance, revenue assurance, reliability); this is asserted exactly in the tests, so it cannot hide other defects.
 
-## 4. Recommended additional workforce (ENGINE-11, proposed)
+## 4. Additional workforce (ENGINE-11: packs and charters built, unbound)
 
 | Agent                      | Tier       | Purpose                                                          | Highest tier it may reach      |
 | -------------------------- | ---------- | ---------------------------------------------------------------- | ------------------------------ |
