@@ -8,7 +8,7 @@
  * against memory in tests.
  *
  * Safety properties (each is pinned by a test):
- *  - a paused JARVIS does nothing;
+ *  - a paused JARVIS, or one whose service identity is missing or suspended, does nothing;
  *  - the tick never contacts a person unless mode is live, the channel is enabled, and an
  *    unexpired authorization names that channel and an approver (planAlertDelivery);
  *  - in test mode an external channel only ever writes a delivery row marked test_sink;
@@ -61,6 +61,8 @@ export type SendOutcome =
 export interface TickPorts {
   nowMs(): number;
   isPaused(): Promise<boolean>;
+  /** False when the JARVIS service identity is missing, suspended or revoked. */
+  serviceActive(): Promise<boolean>;
   loadConfig(): Promise<TickConfig | null>;
   readSignals(): Promise<readonly OwnerSignal[]>;
   /** Creates the alert, or returns the open one that already has this dedupe key. */
@@ -94,7 +96,7 @@ export interface TickPorts {
 }
 
 export interface TickReport {
-  readonly status: "ok" | "paused" | "not_configured" | "signals_unavailable";
+  readonly status: "ok" | "paused" | "suspended" | "not_configured" | "signals_unavailable";
   readonly signals: number;
   readonly alertsHandled: number;
   readonly suppressed: Readonly<Record<string, number>>;
@@ -137,6 +139,9 @@ export async function runOwnerAlertTick(ports: TickPorts): Promise<TickReport> {
 
   if (await safe(() => ports.isPaused(), true, errors, "pause_check_failed")) {
     return report("paused");
+  }
+  if (!(await safe(() => ports.serviceActive(), false, errors, "identity_check_failed"))) {
+    return report("suspended");
   }
   const cfg = await safe(() => ports.loadConfig(), null, errors, "config_unavailable");
   if (!cfg || !cfg.consoleOrigin) return report("not_configured");

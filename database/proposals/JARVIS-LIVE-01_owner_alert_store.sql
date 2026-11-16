@@ -8,6 +8,7 @@
 --   owner_alert_deliveries  one row per channel attempt, unique by idempotency key
 --   owner_alert_channels    the per-channel switch (the delivery-gateway toggle)
 --   owner_alert_settings    one row: test or live mode, quiet hours, recorded live authorization
+--   platform_service_identities  the governed service principal svc:jarvis (status and permissions)
 --
 -- Rules:
 --  * Deny by default. FORCE RLS on every table. Authenticated users may only SELECT, and only
@@ -85,6 +86,30 @@ CREATE TABLE IF NOT EXISTS public.owner_alert_settings (
                        AND live_expires_at IS NOT NULL AND cardinality(live_channels) > 0))
 );
 
+CREATE TABLE IF NOT EXISTS public.platform_service_identities (
+  code               text PRIMARY KEY CHECK (code ~ '^[a-z][a-z0-9-]{1,40}$'),
+  display_name       text NOT NULL CHECK (char_length(display_name) BETWEEN 1 AND 80),
+  status             text NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'suspended', 'revoked')),
+  permissions        text[] NOT NULL DEFAULT '{}',
+  credential_policy  text NOT NULL DEFAULT 'short_lived'
+                       CHECK (credential_policy IN ('short_lived', 'rotated', 'static_restricted')),
+  created_at         timestamptz NOT NULL DEFAULT now(),
+  status_changed_at  timestamptz,
+  status_changed_by  text,
+  -- A service identity can never be granted these, whatever a row says.
+  CONSTRAINT service_identity_no_forbidden_permission CHECK (
+    NOT (permissions && ARRAY['approval.decide', 'secrets.read', 'finance.write',
+      'credentials.create', 'identity.create', 'policy.change', 'migration.apply',
+      'production.deploy'])
+  )
+);
+
+INSERT INTO public.platform_service_identities (code, display_name, status, permissions) VALUES
+  ('jarvis', 'JARVIS executive', 'active',
+   ARRAY['signals.read', 'owner_alert.write', 'owner_alert.deliver', 'approval.request',
+         'tool_ledger.read'])
+ON CONFLICT (code) DO NOTHING;
+
 INSERT INTO public.owner_alert_channels (channel, enabled, updated_by) VALUES
   ('voice', true, 'owner-instruction-2026-11-16'),
   ('whatsapp', true, 'owner-instruction-2026-11-16'),
@@ -103,13 +128,18 @@ ALTER TABLE public.owner_alert_channels ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.owner_alert_channels FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.owner_alert_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.owner_alert_settings FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_service_identities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_service_identities FORCE ROW LEVEL SECURITY;
 
 REVOKE ALL ON TABLE public.owner_alerts, public.owner_alert_deliveries,
-  public.owner_alert_channels, public.owner_alert_settings FROM PUBLIC, anon, authenticated;
+  public.owner_alert_channels, public.owner_alert_settings, public.platform_service_identities
+  FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON TABLE public.owner_alerts, public.owner_alert_deliveries,
-  public.owner_alert_channels, public.owner_alert_settings TO authenticated;
+  public.owner_alert_channels, public.owner_alert_settings, public.platform_service_identities
+  TO authenticated;
 GRANT ALL ON TABLE public.owner_alerts, public.owner_alert_deliveries,
-  public.owner_alert_channels, public.owner_alert_settings TO service_role;
+  public.owner_alert_channels, public.owner_alert_settings, public.platform_service_identities
+  TO service_role;
 
 DROP POLICY IF EXISTS owner_alerts_audit_read ON public.owner_alerts;
 CREATE POLICY owner_alerts_audit_read ON public.owner_alerts FOR SELECT TO authenticated
@@ -127,6 +157,11 @@ CREATE POLICY owner_alert_settings_audit_read ON public.owner_alert_settings
   FOR SELECT TO authenticated
   USING ((SELECT public.has_platform_capability('platform.audit.read')));
 
+DROP POLICY IF EXISTS platform_service_identities_audit_read ON public.platform_service_identities;
+CREATE POLICY platform_service_identities_audit_read ON public.platform_service_identities
+  FOR SELECT TO authenticated
+  USING ((SELECT public.has_platform_capability('platform.audit.read')));
+
 COMMENT ON TABLE public.owner_alert_deliveries IS
   'One row per owner-alert channel attempt. Never holds a contact detail or message body.';
 
@@ -134,4 +169,4 @@ COMMIT;
 
 -- ROLLBACK (also in database/supabase/rollbacks/20261116000100_sherivs_jarvis_live01_owner_alert_store.sql):
 --   DROP TABLE IF EXISTS public.owner_alert_deliveries, public.owner_alerts,
---     public.owner_alert_channels, public.owner_alert_settings;
+--     public.owner_alert_channels, public.owner_alert_settings, public.platform_service_identities;

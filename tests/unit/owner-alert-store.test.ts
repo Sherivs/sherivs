@@ -15,6 +15,13 @@ function fakeDb(seed: Record<string, Row[]>, opts: { paused?: boolean; failTable
     owner_alert_deliveries: [],
     owner_alert_channels: [],
     owner_alert_settings: [],
+    platform_service_identities: [
+      {
+        code: "jarvis",
+        status: "active",
+        permissions: ["signals.read", "owner_alert.write", "owner_alert.deliver"],
+      },
+    ],
     security_incidents: [],
     jarvis_approval_requests: [],
     ...seed,
@@ -165,6 +172,21 @@ describe("owner-alert store ports", () => {
       owner_alert_channels: channels(),
     }).ports.loadConfig();
     expect(live?.authorization?.channels).toEqual(["sms", "email"]);
+  });
+
+  it("treats a suspended, missing or over-privileged service identity as inactive", async () => {
+    const live = (rows: Row[]) =>
+      ports({ platform_service_identities: rows }).ports.serviceActive();
+    const granted = ["signals.read", "owner_alert.write"];
+    expect(await live([{ code: "jarvis", status: "active", permissions: granted }])).toBe(true);
+    expect(await live([{ code: "jarvis", status: "suspended", permissions: granted }])).toBe(false);
+    expect(await live([{ code: "jarvis", status: "revoked", permissions: granted }])).toBe(false);
+    expect(await live([])).toBe(false);
+    expect(
+      await live([
+        { code: "jarvis", status: "active", permissions: [...granted, "approval.decide"] },
+      ]),
+    ).toBe(false);
   });
 
   it("reports no config when the settings row is missing", async () => {

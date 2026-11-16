@@ -17,6 +17,7 @@ import {
 } from "@/lib/jarvis-bridge/owner-alert-store.server";
 import { createOwnerAlertSender } from "@/lib/jarvis-bridge/owner-alert-sender.server";
 import { runOwnerAlertTick } from "@/lib/jarvis-bridge/owner-alert-tick";
+import { JARVIS_SERVICE_ACTOR } from "@/lib/jarvis-bridge/service-identity";
 import { CONSOLE_ORIGIN } from "@/lib/experience/console-host-routing";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 
@@ -44,6 +45,28 @@ async function run(request: Request): Promise<Response> {
       createOwnerAlertSender({ env: process.env }),
     );
     const report = await runOwnerAlertTick(ports);
+    try {
+      const { writeAuditRecord } = await import("@/lib/server/write-audit");
+      await writeAuditRecord(supabaseAdmin as never, {
+        action: "jarvis.owner_alert.tick",
+        gate: "service_identity:svc:jarvis",
+        tenantId: null,
+        actorId: null,
+        actorRef: JARVIS_SERVICE_ACTOR,
+        actorKind: "agent",
+        actorEmail: JARVIS_SERVICE_ACTOR,
+        table: "owner_alerts",
+        outcome: report.status === "ok" ? "succeeded" : "denied",
+        details: {
+          status: report.status,
+          signals: report.signals,
+          alerts: report.alertsHandled,
+          errors: report.errors.length,
+        },
+      });
+    } catch {
+      /* the tick's own tables are the record; audit is best effort */
+    }
     return Response.json({ ok: report.status === "ok", ...report });
   } catch {
     return Response.json({ ok: false, error: "tick_failed" }, { status: 500 });

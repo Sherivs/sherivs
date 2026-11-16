@@ -190,6 +190,7 @@ function liveRig(titles: string[]) {
   }));
   const ports: TickPorts = {
     nowMs: () => NOW,
+    serviceActive: async () => true,
     isPaused: async () => false,
     loadConfig: async () => cfg,
     readSignals: async () => signals,

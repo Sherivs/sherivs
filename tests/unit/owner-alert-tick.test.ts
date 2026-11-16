@@ -64,6 +64,7 @@ function rig(
   cfg: TickConfig | null,
   over: Partial<{
     paused: boolean | "throw";
+    serviceActive: boolean;
     send: TickPorts["send"];
     signalsThrow: boolean;
   }> = {},
@@ -75,6 +76,7 @@ function rig(
   let n = 0;
   const ports: TickPorts = {
     nowMs: () => clock.ms,
+    serviceActive: async () => over.serviceActive !== false,
     isPaused: async () => {
       if (over.paused === "throw") throw new Error("db down");
       return over.paused === true;
@@ -162,6 +164,14 @@ describe("owner-alert tick: refuses to run unsafely", () => {
       expect(r.alerts.size).toBe(0);
       expect(r.sent).toHaveLength(0);
     }
+  });
+
+  it("does nothing while the JARVIS service identity is suspended", async () => {
+    const r = rig([signal("incident:1", incident)], testCfg(), { serviceActive: false });
+    const out = await runOwnerAlertTick(r.ports);
+    expect(out.status).toBe("suspended");
+    expect(r.alerts.size).toBe(0);
+    expect(r.sent).toHaveLength(0);
   });
 
   it("reports not_configured without a config or console origin", async () => {

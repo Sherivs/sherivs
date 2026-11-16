@@ -13,6 +13,12 @@
  *  - pending rows in jarvis_approval_requests          -> severity from the request's risk tier
  */
 import type { QuietHours } from "../jarvis-executive/owner-alert";
+import {
+  JARVIS_SERVICE_CODE,
+  authorizeService,
+  registryRowIsValid,
+  type ServiceStatus,
+} from "./service-identity";
 import type { SeverityFacts } from "../jarvis-executive/severity";
 import type { RolePackTier } from "../twin-engine/role-pack";
 import type { OwnerExternalChannel } from "./alert-delivery";
@@ -80,6 +86,25 @@ export function createOwnerAlertPorts(
       const r = await db.rpc("is_agent_paused", { p_agent: OWNER_ALERT_AGENT });
       if (r.error) throw new Error("pause_check_failed");
       return r.data === true;
+    },
+
+    async serviceActive(): Promise<boolean> {
+      const r = await db
+        .from("platform_service_identities")
+        .select("code, status, permissions")
+        .eq("code", JARVIS_SERVICE_CODE)
+        .maybeSingle();
+      if (r.error || !r.data) return false;
+      const row = {
+        code: str(r.data.code),
+        status: str(r.data.status) as ServiceStatus,
+        permissions: Array.isArray(r.data.permissions) ? (r.data.permissions as string[]) : [],
+      };
+      if (!registryRowIsValid(row)) return false;
+      return (
+        authorizeService(row, "owner_alert.write").allowed &&
+        authorizeService(row, "signals.read").allowed
+      );
     },
 
     async loadConfig(): Promise<TickConfig | null> {
