@@ -177,6 +177,7 @@ jobs:
             /opt/cursor/artifacts/rls-battery-results.json
             /opt/cursor/artifacts/rls-battery-results.log
           if-no-files-found: ignore
+          retention-days: 7
 
   restore-recovery-drill:
     name: Restore/recovery drill (V1CAP-074)
@@ -263,3 +264,4 @@ jobs:
             /opt/cursor/artifacts/restore-recovery-transcript.log
             /opt/cursor/artifacts/restore-drill-backup.json
           if-no-files-found: ignore
+          retention-days: 7
