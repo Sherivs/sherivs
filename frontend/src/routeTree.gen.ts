@@ -55,6 +55,7 @@ import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleAccountRouteImport } from './routes/console/account'
 import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activity/route'
+import { Route as ConsoleAlertsRouteImport } from './routes/console/alerts'
 import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
@@ -370,6 +371,11 @@ const ConsoleAccountRoute = ConsoleAccountRouteImport.update({
 const ConsoleActivityRouteRoute = ConsoleActivityRouteRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleAlertsRoute = ConsoleAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleCommunicationsRoute = ConsoleCommunicationsRouteImport.update({
@@ -868,6 +874,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -987,6 +994,7 @@ export interface FileRoutesByTo {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -1121,6 +1129,7 @@ export interface FileRoutesById {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -1255,6 +1264,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1374,6 +1384,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1507,6 +1518,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1951,6 +1963,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/console/activity'
       preLoaderRoute: typeof ConsoleActivityRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
+    '/console/alerts': {
+      id: '/console/alerts'
+      path: '/alerts'
+      fullPath: '/console/alerts'
+      preLoaderRoute: typeof ConsoleAlertsRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
     '/console/communications': {
@@ -2834,6 +2853,7 @@ interface ConsoleRouteRouteChildren {
   ConsoleWorkforceRouteRoute: typeof ConsoleWorkforceRouteRouteWithChildren
   ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
   ConsoleAccountRoute: typeof ConsoleAccountRoute
+  ConsoleAlertsRoute: typeof ConsoleAlertsRoute
   ConsoleCommunicationsRoute: typeof ConsoleCommunicationsRoute
   ConsoleHelpRoute: typeof ConsoleHelpRoute
   ConsoleSettingsRoute: typeof ConsoleSettingsRoute
@@ -2848,6 +2868,7 @@ const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleWorkforceRouteRoute: ConsoleWorkforceRouteRouteWithChildren,
   ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
   ConsoleAccountRoute: ConsoleAccountRoute,
+  ConsoleAlertsRoute: ConsoleAlertsRoute,
   ConsoleCommunicationsRoute: ConsoleCommunicationsRoute,
   ConsoleHelpRoute: ConsoleHelpRoute,
   ConsoleSettingsRoute: ConsoleSettingsRoute,
