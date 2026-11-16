@@ -2,15 +2,17 @@
  * JARVIS-LIVE-01: the real senders behind the owner-alert tick (Authority: Owner; Origin: owner
  * instruction of 2026-11-16; Creator: Claude; Created: 2026-11-16; Status: Active).
  *
- * Reuses the adapters that already exist: Resend (email), WhatsApp Cloud, Twilio SMS and Twilio
- * voice. It adds no provider code. Each channel is dormant (returns a code, makes no network
+ * Channels: Resend (email), WhatsApp Cloud (existing adapters), BulkSMS (SMS) and Africa's
+ * Talking (voice). Each channel is dormant (returns a code, makes no network
  * call) until BOTH the owner's destination and that provider's secrets are present in server
  * configuration:
  *
  *   OWNER_ALERT_EMAIL      owner's email address            (with RESEND_API_KEY, RESEND_FROM_ADDRESS)
  *   OWNER_ALERT_WHATSAPP   owner's WhatsApp number, E.164   (with WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID,
  *                                                            OWNER_ALERT_WHATSAPP_TEMPLATE [+ _LANGUAGE])
- *   OWNER_ALERT_PHONE      owner's phone number, E.164      (SMS and voice; with the Twilio variables)
+ *   OWNER_ALERT_PHONE      owner's phone number, E.164      (SMS: with BULKSMS_TOKEN_ID, BULKSMS_TOKEN_SECRET; voice: with
+ *                                                            AT_USERNAME, AT_API_KEY, AT_VOICE_FROM_NUMBER,
+ *                                                            AT_VOICE_WEBHOOK_TOKEN, OWNER_ALERT_VOICE_CALLBACK_URL)
  *
  * A destination is never stored in the database, never logged and never returned: outcomes carry
  * a code only. WhatsApp uses an approved template because a business-initiated message outside a
@@ -24,16 +26,8 @@ import {
   resendEmailConfigFromEnv,
 } from "@/lib/communications/resend-email.server";
 import { WhatsAppCloudAdapter } from "@/lib/communications/whatsapp-cloud.server";
-import {
-  createTwilioSmsSender,
-  twilioSmsConfigFromEnv,
-} from "@/lib/communications/twilio-sms.server";
-import {
-  createTwilioVoiceAdapter,
-  createTwilioVoiceProviderRegistry,
-  twilioVoiceConfigFromEnv,
-} from "@/lib/communications/twilio-voice.server";
-import { isTelephonyCallReceipt } from "@/lib/communications/telephony-adapter-contract";
+import { sendBulkSms } from "./owner-alert-bulksms.server";
+import { placeOwnerAlertCall, voiceScript as ownerVoiceScript } from "./owner-alert-voice.server";
 import { isEmailDeliveryReceipt } from "@/lib/notifications/email-adapter-contract";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import type { SendOutcome, SendRequest } from "./owner-alert-tick";
@@ -74,14 +68,7 @@ export function ownerContactsFromEnv(env: Env): OwnerContacts {
   };
 }
 
-const SEVERITY_WORDS = { S1: "one", S2: "two", S3: "three", S4: "four" } as const;
-
-export function voiceScript(severity: SendRequest["severity"]): string {
-  return (
-    `This is a Sherivs priority alert. Severity ${SEVERITY_WORDS[severity]}. ` +
-    "Please open your Sherivs console to review it. This call cannot approve anything."
-  );
-}
+export const voiceScript = ownerVoiceScript;
 
 export interface OwnerAlertSenderOptions {
   readonly env: Env;
@@ -148,32 +135,24 @@ export function createOwnerAlertSender(
       }
       case "sms": {
         if (!contacts.phone) return { ok: false, code: "contact_not_configured" };
-        const send = createTwilioSmsSender(twilioSmsConfigFromEnv(env), fetcher);
-        const result = await send({
-          tenantId: "platform",
-          notificationRef: request.idempotencyKey,
-          to: contacts.phone,
-          body: request.body,
-        });
-        if (result.outcome === "sent") return { ok: true, providerRef: result.providerMessageId };
-        return { ok: false, code: result.code };
+        const result = await sendBulkSms(env, { to: contacts.phone, body: request.body }, fetcher);
+        return result.ok
+          ? { ok: true, providerRef: result.providerRef }
+          : { ok: false, code: result.code };
       }
       case "voice": {
         if (!contacts.phone) return { ok: false, code: "contact_not_configured" };
-        const adapter = createTwilioVoiceAdapter(twilioVoiceConfigFromEnv(env));
-        const result = await adapter.placeCall(
+        const result = await placeOwnerAlertCall(
+          env,
           {
-            callKind: "owner_alert",
-            tenantRef: "platform",
-            recipientName: "Owner",
-            recipientPhone: contacts.phone,
-            script: voiceScript(request.severity),
-            triggerEvent: request.idempotencyKey.slice(0, 120),
+            to: contacts.phone,
+            severity: request.severity,
+            idempotencyKey: request.idempotencyKey,
           },
-          createTwilioVoiceProviderRegistry(env),
+          fetcher,
         );
-        return isTelephonyCallReceipt(result)
-          ? { ok: true, providerRef: result.callId }
+        return result.ok
+          ? { ok: true, providerRef: result.providerRef }
           : { ok: false, code: result.code };
       }
     }

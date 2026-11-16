@@ -1,4 +1,4 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-16 as migration 20261116000100_sherivs_jarvis_live01_owner_alert_store.
 -- Authority: Owner (instruction of 2026-11-16 to build the durable alert store and switch the
 -- delivery gateway on). Origin: JARVIS-LIVE-01. Creator: Claude. Created: 2026-11-16.
 -- Status: Proposed. Apply as migration 20261116000100_sherivs_jarvis_live01_owner_alert_store.
@@ -8,7 +8,7 @@
 --   owner_alert_deliveries  one row per channel attempt, unique by idempotency key
 --   owner_alert_channels    the per-channel switch (the delivery-gateway toggle)
 --   owner_alert_settings    one row: test or live mode, quiet hours, recorded live authorization
---   platform_service_identities  the governed service principal svc:jarvis (status and permissions)
+--   platform_service_identities  the governed service identity svc:jarvis (status and permissions)
 --
 -- Rules:
 --  * Deny by default. FORCE RLS on every table. Authenticated users may only SELECT, and only

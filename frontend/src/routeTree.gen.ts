@@ -134,6 +134,7 @@ import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
@@ -783,6 +784,12 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
     path: '/api/public/webhooks/africas-talking-voice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksOwnerAlertVoiceRoute =
+  ApiPublicWebhooksOwnerAlertVoiceRouteImport.update({
+    id: '/api/public/webhooks/owner-alert-voice',
+    path: '/api/public/webhooks/owner-alert-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPaystackRoute =
   ApiPublicWebhooksPaystackRouteImport.update({
     id: '/api/public/webhooks/paystack',
@@ -949,6 +956,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1069,6 +1077,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1204,6 +1213,7 @@ export interface FileRoutesById {
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1339,6 +1349,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1459,6 +1470,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1593,6 +1605,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1633,6 +1646,7 @@ export interface RootRouteChildren {
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
@@ -2518,6 +2532,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/owner-alert-voice': {
+      id: '/api/public/webhooks/owner-alert-voice'
+      path: '/api/public/webhooks/owner-alert-voice'
+      fullPath: '/api/public/webhooks/owner-alert-voice'
+      preLoaderRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/paystack': {
       id: '/api/public/webhooks/paystack'
       path: '/api/public/webhooks/paystack'
@@ -2941,6 +2962,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksOwnerAlertVoiceRoute: ApiPublicWebhooksOwnerAlertVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,

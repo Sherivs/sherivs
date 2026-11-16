@@ -1,3 +1,4 @@
+import { answerOwnerAlertCallback } from "@/lib/jarvis-bridge/owner-alert-voice.server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createOwnerAlertSender,
@@ -95,22 +96,22 @@ describe("owner-alert sender is dormant until destination AND provider secrets e
 });
 
 describe("owner-alert sender when fully configured", () => {
-  it("sends SMS through Twilio and returns only the provider reference", async () => {
-    const fetcher = vi.fn(async () => json({ sid: "SM0123456789", status: "queued" }, 201));
+  it("sends SMS through BulkSMS and returns only the provider reference", async () => {
+    const fetcher = vi.fn(async () => json([{ id: "bs-0123", type: "SENT" }], 201));
     const send = createOwnerAlertSender({
       env: {
         OWNER_ALERT_PHONE: PHONE,
-        TWILIO_ACCOUNT_SID: "AC00000000000000000000000000000000",
-        TWILIO_AUTH_TOKEN: "auth-token-value",
-        TWILIO_FROM_NUMBER: "+15005550006",
+        BULKSMS_TOKEN_ID: "token-id-value",
+        BULKSMS_TOKEN_SECRET: "token-secret-value",
       },
       fetcher: fetcher as never,
     });
     const out = await send(req("sms"));
-    expect(out).toEqual({ ok: true, providerRef: "SM0123456789" });
+    expect(out).toEqual({ ok: true, providerRef: "bs-0123" });
     const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
-    expect(url).toContain("api.twilio.com");
-    expect(String(init.body)).toContain("Body=");
+    expect(url).toBe("https://api.bulksms.com/v1/messages");
+    expect((init.headers as Record<string, string>).Authorization).toMatch(/^Basic /);
+    expect(JSON.parse(String(init.body)).to).toBe(PHONE);
     expect(JSON.stringify(out)).not.toContain(PHONE);
   });
 
@@ -154,25 +155,43 @@ describe("owner-alert sender when fully configured", () => {
     expect(JSON.stringify(out)).not.toContain(MAIL);
   });
 
-  it("places a voice call whose script holds the severity and no approval, link or secret", async () => {
-    const fetcher = vi.fn(async () => json({ sid: "CA0123456789" }, 201));
-    vi.stubGlobal("fetch", fetcher);
-    const send = createOwnerAlertSender({
-      env: {
-        OWNER_ALERT_PHONE: PHONE,
-        TWILIO_ACCOUNT_SID: "AC00000000000000000000000000000000",
-        TWILIO_API_KEY: "SK00000000000000000000000000000000",
-        TWILIO_API_SECRET: "api-secret-value",
-        TWILIO_FROM_NUMBER: "+15005550006",
-      },
-      fetcher: fetcher as never,
-    });
+  it("places a voice call through Africa's Talking with a signed callback and no script in the request", async () => {
+    const fetcher = vi.fn(async () =>
+      json({ entries: [{ status: "Queued", sessionId: "ATVId_0123" }] }, 201),
+    );
+    const env = {
+      OWNER_ALERT_PHONE: PHONE,
+      AT_USERNAME: "sherivs",
+      AT_API_KEY: "at-api-key-value",
+      AT_VOICE_FROM_NUMBER: "+254711082222",
+      AT_VOICE_WEBHOOK_TOKEN: "w".repeat(40),
+      OWNER_ALERT_VOICE_CALLBACK_URL:
+        "https://console.example.test/api/public/webhooks/owner-alert-voice",
+    };
+    const send = createOwnerAlertSender({ env, fetcher: fetcher as never });
     const out = await send(req("voice"));
-    expect(out).toEqual({ ok: true, providerRef: "CA0123456789" });
-    const init = (fetcher.mock.calls[0] as unknown as [string, RequestInit])[1];
-    const twiml = new URLSearchParams(String(init.body)).get("Twiml") ?? "";
-    expect(twiml).toContain("Severity one");
-    expect(twiml).not.toMatch(/https?:|approve code|token/i);
+    expect(out).toEqual({ ok: true, providerRef: "ATVId_0123" });
+    const [url, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe("https://voice.africastalking.com/call");
+    const form = new URLSearchParams(String(init.body));
+    expect(form.get("to")).toBe(PHONE);
+    const callback = new URL(form.get("callbackUrl") ?? "");
+    expect(callback.searchParams.get("s")).toBe("S1");
+    expect(callback.searchParams.get("token")).toMatch(/^[a-f0-9]{64}$/);
+    expect(JSON.stringify(out)).not.toContain(PHONE);
+
+    // The callback answers only that exact call, and says only the fixed sentence.
+    const ok = answerOwnerAlertCallback(new Request(callback, { method: "POST" }), env);
+    expect(ok.status).toBe(200);
+    const xml = await ok.text();
+    expect(xml).toContain("Severity one");
+    expect(xml).not.toMatch(/https?:|approve code|token/i);
+    const forged = new URL(callback);
+    forged.searchParams.set("s", "S2");
+    expect(answerOwnerAlertCallback(new Request(forged, { method: "POST" }), env).status).toBe(403);
+    expect(answerOwnerAlertCallback(new Request(callback, { method: "GET" }), env).status).toBe(
+      403,
+    );
     expect(voiceScript("S2")).toContain("Severity two");
   });
 
@@ -181,9 +200,8 @@ describe("owner-alert sender when fully configured", () => {
     const send = createOwnerAlertSender({
       env: {
         OWNER_ALERT_PHONE: PHONE,
-        TWILIO_ACCOUNT_SID: "AC00000000000000000000000000000000",
-        TWILIO_AUTH_TOKEN: "auth-token-value",
-        TWILIO_FROM_NUMBER: "+15005550006",
+        BULKSMS_TOKEN_ID: "token-id-value",
+        BULKSMS_TOKEN_SECRET: "token-secret-value",
       },
       fetcher: fetcher as never,
     });

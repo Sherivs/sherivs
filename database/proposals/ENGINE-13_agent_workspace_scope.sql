@@ -1,4 +1,4 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-16 as migration 20261116000050_sherivs_engine13_agent_workspace_scope (190 rows, 25 agents).
 -- ENGINE-13 (ADR-091): database-side agent workspace scopes.
 -- The code-side check is authorizeScope in frontend/src/lib/workforce-charter/workspace.ts.
 -- This proposal gives the database the same rules so a bug in an agent, a tool or a

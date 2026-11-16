@@ -558,8 +558,23 @@ describe("ENGINE-13 authorizeScope denies by default", () => {
 });
 
 describe("ENGINE-13 database proposal matches the workspace definitions", () => {
-  it("is a proposal, deny-by-default, forced RLS, with a rollback", () => {
-    expect(scopeSql).toContain("NOT APPLIED");
+  it("is applied, deny-by-default, forced RLS, with a rollback and the same body as the migration", () => {
+    expect(scopeSql).toContain("APPLIED TO PRODUCTION 2026-11-16");
+    expect(scopeSql).not.toContain("NOT APPLIED");
+    const migration = readFileSync(
+      "database/supabase/migrations/20261116000050_sherivs_engine13_agent_workspace_scope.sql",
+      "utf8",
+    );
+    expect(migration).toContain("FORCE ROW LEVEL SECURITY");
+    expect(migration.match(/^ {2}\('[a-z0-9-]+', '/gm)?.length).toBe(
+      scopeSql.match(/^ {2}\('[a-z0-9-]+', '/gm)?.length,
+    );
+    expect(
+      readFileSync(
+        "database/supabase/rollbacks/20261116000050_sherivs_engine13_agent_workspace_scope.sql",
+        "utf8",
+      ),
+    ).toContain("DROP TABLE IF EXISTS public.agent_workspace_scopes");
     expect(scopeSql).toContain("ENABLE ROW LEVEL SECURITY");
     expect(scopeSql).toContain("FORCE ROW LEVEL SECURITY");
     expect(scopeSql).toContain("REVOKE ALL ON TABLE public.agent_workspace_scopes");

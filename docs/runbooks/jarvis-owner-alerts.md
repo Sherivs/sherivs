@@ -5,7 +5,7 @@ Origin: Claude Code agent, mission E-002 (JARVIS-LIVE-01, owner instruction of 2
 Creator: Claude Code agent
 Created: 2026-11-16
 
-Status: Built and tested in code. The database migration is proposed, not applied. Nothing here sends a real message until every step below is done.
+Status: Tables applied to production on 2026-11-16 (migration 20261116000100). Live authorization recorded 2026-11-16, expires 2026-11-23. Nothing sends until the scheduler, contacts and provider secrets below exist.
 
 ## What it does
 
@@ -23,29 +23,33 @@ The migration seeds all four channels on, mode `test`, and no authorization. In 
 
 ## Steps (owner)
 
-1. **Apply the migration** `database/proposals/JARVIS-LIVE-01_owner_alert_store.sql` as `20261116000100_sherivs_jarvis_live01_owner_alert_store`. Rollback is the `DROP TABLE` line at the foot of the file.
+1. **Migration: done.** `20261116000100_sherivs_jarvis_live01_owner_alert_store` is applied. Rollback: `database/supabase/rollbacks/20261116000100_sherivs_jarvis_live01_owner_alert_store.sql`.
 2. **Set `CRON_SECRET`** in the Vercel project (production) if it is not set already.
 3. **Schedule** `GET https://<site>/api/public/cron/jarvis-tick` every 5 minutes with header `Authorization: Bearer <CRON_SECRET>` from the same scheduler as the other cron routes. Without the secret it returns 401; with `CRON_SECRET` unset it returns 503.
 4. **Open `/console/alerts`.** In test mode you should see alerts for any open incident or pending approval, with delivery rows marked "test only, nothing was sent".
-5. **Add the destinations** as server environment variables (never in code or the database):
+5. **Add the destinations** as server environment variables in the Vercel production project (never in code or the database):
 
-   | Variable               | Value                                                        |
-   | ---------------------- | ------------------------------------------------------------ |
-   | `OWNER_ALERT_EMAIL`    | your email address                                           |
-   | `OWNER_ALERT_PHONE`    | your phone number in international format, for SMS and voice |
-   | `OWNER_ALERT_WHATSAPP` | your WhatsApp number in international format                 |
+   | Variable               | Value                            |
+   | ---------------------- | -------------------------------- |
+   | `OWNER_ALERT_EMAIL`    | `Hello@sherivs.com`              |
+   | `OWNER_ALERT_PHONE`    | `+2349015056201` (SMS and voice) |
+   | `OWNER_ALERT_WHATSAPP` | `+2349015056201`                 |
 
-6. **Add the provider credentials**:
+   Numbers must be in international format (`+234…`), not `090…`; a number in any other form is treated as missing.
 
-   | Channel       | Variables                                                                                                                                                              |
-   | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-   | Email         | `RESEND_API_KEY`, `RESEND_FROM_ADDRESS` (a verified sending domain)                                                                                                    |
-   | WhatsApp      | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `OWNER_ALERT_WHATSAPP_TEMPLATE` (an approved template with one text parameter), optional `OWNER_ALERT_WHATSAPP_LANGUAGE` |
-   | SMS and voice | `TWILIO_ACCOUNT_SID` with either `TWILIO_AUTH_TOKEN` or `TWILIO_API_KEY` and `TWILIO_API_SECRET`, and `TWILIO_FROM_NUMBER`                                             |
+6. **Add the provider credentials** (Resend, WhatsApp Cloud, Africa's Talking, BulkSMS):
+
+   | Channel                  | Variables                                                                                                                                                                                                                             |
+   | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | Email (Resend)           | `RESEND_API_KEY`, `RESEND_FROM_ADDRESS` (a verified sending domain)                                                                                                                                                                   |
+   | WhatsApp Cloud           | `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `OWNER_ALERT_WHATSAPP_TEMPLATE` (an approved template with one text parameter), optional `OWNER_ALERT_WHATSAPP_LANGUAGE`                                                                |
+   | SMS (BulkSMS)            | `BULKSMS_TOKEN_ID`, `BULKSMS_TOKEN_SECRET` (a BulkSMS API token), optional `BULKSMS_SENDER`                                                                                                                                           |
+   | Voice (Africa's Talking) | `AT_USERNAME`, `AT_API_KEY`, `AT_VOICE_FROM_NUMBER` (your Africa's Talking voice number), `AT_VOICE_WEBHOOK_TOKEN` (32+ random characters), `OWNER_ALERT_VOICE_CALLBACK_URL` = `https://<site>/api/public/webhooks/owner-alert-voice` |
 
    WhatsApp only delivers a business-initiated message through an approved template, so a template is required.
+   Africa's Talking asks the callback URL what to say when you answer; that route only answers a call this server placed, and says one fixed sentence.
 
-7. **Go live** by recording your authorization. Use a short expiry and renew it, so a forgotten switch cannot stay open:
+7. **Live authorization: recorded.** On 2026-11-16 the owner authorized all four channels: approval reference `owner-decision-2026-11-16`, approved by `human:Vibeora`, expiring 2026-11-23 13:16 UTC. Renew before it expires, or the gateway falls back to test sinks. The one-row switch:
 
    ```sql
    UPDATE public.owner_alert_settings
@@ -60,7 +64,8 @@ The migration seeds all four channels on, mode `test`, and no authorization. In 
 
    To go back to test mode: `UPDATE public.owner_alert_settings SET mode = 'test' WHERE singleton;`
 
-8. **Prove it** with one real alert before relying on it, and confirm each channel arrives.
+8. **Enroll your passkey** at `/console/alerts`, section "Your passkeys": press "Register a passkey" and approve on your device. Approving anything needs it.
+9. **Prove it** with one real alert before relying on it, and confirm each channel arrives. The voice callback in particular must be proven by one real call, because it depends on Africa's Talking calling the callback URL we send.
 
 ## Stopping it
 

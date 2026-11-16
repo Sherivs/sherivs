@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { ConsoleNotice } from "./console-primitives";
+import { PasskeyManager } from "@/components/auth/passkey-manager";
 import {
   acknowledgeOwnerAlert,
   beginOwnerApprovalStepUp,
@@ -126,7 +127,7 @@ export function OwnerAlertsScreen() {
       {view.passkeyCount === 0 ? (
         <ConsoleNotice tone="warning">
           You have no passkey enrolled. You can deny a request, but approving needs a passkey. Add
-          one in Account settings first.
+          one in "Your passkeys" at the bottom of this page, then reload.
         </ConsoleNotice>
       ) : null}
       {view.approvals.length === 0 ? (
@@ -223,6 +224,9 @@ export function OwnerAlertsScreen() {
       ) : (
         <p>Gateway settings are not available yet.</p>
       )}
+
+      <h2>Your passkeys</h2>
+      <PasskeyManager variant="console" />
     </section>
   );
 }
