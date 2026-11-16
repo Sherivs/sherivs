@@ -30,6 +30,7 @@ import {
   type TickConfig,
   type TickPorts,
 } from "../../frontend/src/lib/jarvis-bridge/owner-alert-tick";
+import { isHiddenCodePoint } from "../../frontend/src/lib/jarvis-executive/owner-alert";
 import { SEVERITIES, type Severity } from "../../frontend/src/lib/jarvis-executive/severity";
 
 const NOW = Date.parse("2026-11-16T12:00:00.000Z");

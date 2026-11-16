@@ -37,8 +37,20 @@ export const inQuietHours = (nowMs: number, q: QuietHours | null): boolean => {
     : h >= q.startHour || h < q.endHour;
 };
 
-const CONTROL_AND_BIDI =
-  /[\u0000-\u001f\u007f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
+/** Control characters and text-direction overrides that can hide or reorder what the owner reads. */
+export function isHiddenCodePoint(c: number): boolean {
+  return (
+    c <= 0x1f ||
+    c === 0x7f ||
+    (c >= 0x200b && c <= 0x200f) ||
+    c === 0x2028 ||
+    c === 0x2029 ||
+    (c >= 0x202a && c <= 0x202e) ||
+    (c >= 0x2066 && c <= 0x2069)
+  );
+}
+const stripHidden = (text: string): string =>
+  Array.from(text, (ch) => (isHiddenCodePoint(ch.codePointAt(0) ?? 0) ? " " : ch)).join("");
 const SCHEME_OR_WWW = /(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S*/gi;
 const DOMAIN_PATH = /\S*[a-z0-9-]\.[a-z]{2,}\/\S*/gi;
 const BARE_DOMAIN =
@@ -51,8 +63,7 @@ const MAX_TITLE = 140;
  * characters are removed and the length is capped. The only link in an alert is the console link.
  */
 export function sanitizeAlertTitle(title: string): string {
-  const cleaned = title
-    .replace(CONTROL_AND_BIDI, " ")
+  const cleaned = stripHidden(title)
     .replace(SCHEME_OR_WWW, "[link removed]")
     .replace(DOMAIN_PATH, "[link removed]")
     .replace(BARE_DOMAIN, "[link removed]")
