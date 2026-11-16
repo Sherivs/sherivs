@@ -1,0 +1,14 @@
+== forward (as applied by replay): force_rls|constraint
+t|t
+== rollback
+f|f
+== rollback again (idempotent)
+psql:database/supabase/rollbacks/20261105000100_sv1_reality_r3_adaptive_onboarding.sql:6: NOTICE:  constraint "cg_org_profile_reality_interview_size" of relation "cg_org_profile" does not exist, skipping
+f|f
+== forward again
+psql:database/supabase/migrations/20261105000100_sv1_reality_r3_adaptive_onboarding.sql:28: NOTICE:  constraint "cg_org_profile_reality_interview_size" of relation "cg_org_profile" does not exist, skipping
+t|t
+== forward twice (idempotent)
+t|t
+== harness after round trip
+psql:tests/integration/sv1-reality-r3.local.sql:192: NOTICE:  SV1-REALITY-R3 storage checks: ALL PASS

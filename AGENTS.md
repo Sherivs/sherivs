@@ -938,3 +938,16 @@ Then change the system.
 ───
 
 END OF COREGRID ASI ENGINEERING CONSTITUTION v1.0
+
+───
+
+## Cursor Cloud specific instructions
+
+The runnable product is the TanStack Start app at the repository root. `backend/` and `api/` are placeholders. Mobile is a separate Expo package under `mobile/`.
+
+- Node 22 (`.nvmrc`). Install with `npm ci --no-audit --fund=false` at the root and `npm ci --prefix mobile --no-audit --fund=false`. Do not use a floating `npm install`. Playwright: `npx playwright install --with-deps chromium`.
+- Dev server for agents and Playwright: `npm run dev -- --host 0.0.0.0 --port 8080 --strictPort`. Bare `npm run dev` does not bind port 8080. Playwright expects `http://localhost:8080`.
+- SSR returns 500 until `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set. Server names `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` may be used when they match the `VITE_` pair; a mismatch is refused. When those variables are unset, the Cloud Agent start script exports matching local placeholders (`http://127.0.0.1:54321` and `local-dev-publishable-key`) and writes them to gitignored `.env` so `/`, `/request-demo`, `/status`, and `/health.json` render. Sign-in and tenant data need a real non-production Supabase project. Do not point e2e at production (`nwrflbpbhyiqdptmlccm` or `sherivs.com`).
+- `npm run test:unit` and `npm run build` are the useful checks. `npm run typecheck` currently fails in `frontend/src/routes/api/public/webhooks/ussd.ts` (`FormData.get`). Full `npm run lint` is not the CI gate; CI lints only changed files. `npm run test:unit` executes `scripts/audit-phase-completion.mjs`, which rewrites architecture proof files. Discard that drift unless the audit itself is the task.
+- Public visitor check, with the dev server already on port 8080: `npx playwright test tests/e2e/sherivs-public.spec.ts`. On a narrow viewport, Sign in is inside the header menu.
+- `tools/sim-lab` is the migration dry-run, not part of the default dev server. It needs its own Postgres toolchain.

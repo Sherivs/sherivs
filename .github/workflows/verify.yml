@@ -166,6 +166,77 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/whatsapp-n8n-ambiguity-fix.local.sql 2>&1 | tee /tmp/wafix.out
           test "$(grep -c 'WA-FIX PASS' /tmp/wafix.out)" -ge 10
+      - name: M12 retention tombstones (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m12-retention-tombstones.local.sql 2>&1 | tee /tmp/m12-retention.out
+          grep -q 'M12 ALL PASS' /tmp/m12-retention.out
+      - name: M11 data-subject requests (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m11-data-subject-requests.local.sql 2>&1 | tee /tmp/m11-dsr.out
+          grep -q 'M11 ALL PASS' /tmp/m11-dsr.out
+      - name: SV1-TWIN-01 provisioning and isolation (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/sv1-twin-personal.local.sql 2>&1 | tee /tmp/sv1-twin.out
+          ! grep -Fq 'SV1-TWIN-01 FAIL' /tmp/sv1-twin.out
+          grep -Fq 'SV1-TWIN-01 provisioning and isolation checks: ALL PASS' /tmp/sv1-twin.out
+      - name: ENGINE-01 person twin, role packs and isolation (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine01-person-twin.local.sql 2>&1 | tee /tmp/engine01.out
+          ! grep -Fq 'ENGINE-01 FAIL' /tmp/engine01.out
+          grep -Fq 'ENGINE-01 HARNESS PASSED' /tmp/engine01.out
+      - name: ENGINE-02 conductor compatibility view posture (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine02-conductor-compat.local.sql 2>&1 | tee /tmp/engine02.out
+          ! grep -Fq 'ENGINE-02 FAIL' /tmp/engine02.out
+          grep -Fq 'ENGINE-02 HARNESS PASSED' /tmp/engine02.out
+      - name: ENGINE-03 tool broker registry, vault references and append-only ledger (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          PGOPTIONS="-c coregrid.test_disposable_database=on" \
+            psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+              -f tests/integration/engine03-tool-broker.local.sql 2>&1 | tee /tmp/engine03.out
+          ! grep -Fq 'ENGINE-03 FAIL' /tmp/engine03.out
+          grep -Fq 'ENGINE-03 HARNESS PASSED' /tmp/engine03.out
+      - name: FIN-01 wallet authorization, overdraft and atomicity (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/fin-01-wallet-authorization.local.sql 2>&1 | tee /tmp/fin01.out
+          grep -q 'FIN-01 RESULT: pass=37 fail=0' /tmp/fin01.out
+          test "$(grep -c 'FIN-01 PASS' /tmp/fin01.out)" -ge 37
+          ! grep -q 'FIN-01 FAIL' /tmp/fin01.out
+      - name: FIN-01 concurrent metering (real Postgres, many connections)
+        working-directory: tools/sim-lab
+        run: |
+          node ../../tests/integration/fin-01-wallet-concurrency.local.mjs 2>&1 | tee /tmp/fin01-conc.out
+          grep -q 'FIN-01-CONC RESULT: pass=7 fail=0' /tmp/fin01-conc.out
+      - name: ENT-01 subscription authorization and entitlement catalog (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ent-01-subscription-authorization.local.sql 2>&1 | tee /tmp/ent01.out
+          grep -q 'ENT-01 RESULT: pass=64 fail=0' /tmp/ent01.out
+          test "$(grep -c 'ENT-01 PASS' /tmp/ent01.out)" -ge 64
+          ! grep -q 'ENT-01 FAIL' /tmp/ent01.out
+      - name: ENT-01 concurrent elevation attempts and rollback (real Postgres, many connections)
+        working-directory: tools/sim-lab
+        run: |
+          node ../../tests/integration/ent-01-subscription-concurrency.local.mjs 2>&1 | tee /tmp/ent01-conc.out
+          grep -q 'ENT-01-CONC RESULT: pass=8 fail=0' /tmp/ent01-conc.out
+      - name: SEC-02 privilege hardening (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/sec02-privilege-hardening.local.sql 2>&1 | tee /tmp/sec02.out
+          grep -q 'SEC02 ALL PASS' /tmp/sec02.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
@@ -178,6 +249,11 @@ jobs:
           node sim/security-audit.mjs > security-audit.json
           node -e "const a=require('./security-audit.json'); const bad=a.rls_disabled.length+a.rls_not_forced.length+a.secdef_no_search_path.length; if(bad){console.error(a);process.exit(1)}"
           node sim/rls-e-check.mjs
+      - name: DB-12 feature_flags primary key and duplicate index (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/db12-flags-pk-and-index.local.sql 2>&1 | tee /tmp/db12.out
+          grep -q 'DB12 ALL PASS' /tmp/db12.out
       - name: k6 smoke (50 VUs, key flows)
         working-directory: tools/sim-lab
         run: |
