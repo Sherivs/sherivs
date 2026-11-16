@@ -18,6 +18,10 @@ import {
 } from "@/lib/runtime/scholar-school-templates";
 import { featureCodesForReality } from "@/lib/scholar/capability-codes";
 import { featureGateSnapshot, type FeatureGateDecision } from "@/lib/scholar/feature-gate";
+import {
+  decideSchoolCallingAgentAccess,
+  SCHOOL_CALLING_AGENT_CODE,
+} from "@/lib/communications/school-calling-agent";
 import { EDUCATION_LEVELS, type EducationLevel } from "@/lib/scholar/roles/role-definition";
 import { roleIdsForWorkforceKind } from "@/lib/scholar/roles/role-registry";
 import type { InstitutionReality } from "@/lib/scholar/roles/role-template-engine";
@@ -97,9 +101,22 @@ export const getMyFeatureAccess = createServerFn({ method: "POST" })
       (membershipKind ? (MEMBERSHIP_TO_WORKFORCE_KIND[membershipKind] ?? null) : null);
 
     const roleIds = workforceKindCode ? roleIdsForWorkforceKind(workforceKindCode) : [];
+    const tierResult = (await context.supabase.rpc("voice_agent_subscription_tier" as never)) as {
+      data: unknown;
+      error: unknown;
+    };
+    const tier = !tierResult.error && typeof tierResult.data === "string" ? tierResult.data : null;
+    const calling = decideSchoolCallingAgentAccess({
+      identityId: context.userId,
+      tenantRef: tenantId,
+      roleIds,
+      tier,
+    });
     const decisions = featureGateSnapshot({
       actor: { identityId: context.userId, tenantId, roleIds },
-    });
+    }).map((decision) =>
+      decision.code === SCHOOL_CALLING_AGENT_CODE ? calling.decision : decision,
+    );
 
     return {
       tenantId,
@@ -148,7 +165,8 @@ export const previewTenantExperience = createServerFn({ method: "POST" })
     // session validity is attested from the verified token's exp claim.
     const schoolId = await requireSchoolAdminScope(context.supabase, {
       lifecycle: null,
-      sessionValid: typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
+      sessionValid:
+        typeof context?.claims?.exp === "number" && tokenMsRemaining(context.claims.exp) > 0,
     });
     const reality = normaliseReality(data);
     const experience: GeneratedExperience = generateExperience({ reality });

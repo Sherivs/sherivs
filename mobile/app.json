@@ -11,7 +11,9 @@
       "bundleIdentifier": "com.coregrid.app",
       "buildNumber": "1",
       "supportsTablet": true,
-      "associatedDomains": ["webcredentials:sherivs.com"],
+      "associatedDomains": [
+        "webcredentials:sherivs.com"
+      ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -40,9 +42,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3cea9979-47ba-4428-b1e8-67fe0671bac8"
+        "projectId": "2e19ca55-cc79-4634-ae8a-bf8b551a6a20"
       }
     },
-    "owner": "vibeoraai-bit"
+    "owner": "sherivs"
   }
 }

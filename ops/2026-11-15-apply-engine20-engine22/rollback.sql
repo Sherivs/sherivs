@@ -1,0 +1,21 @@
+-- Rollback. Run ENGINE-22 first, then ENGINE-20, in ONE transaction. Export the append-only logs first.
+BEGIN;
+DROP FUNCTION IF EXISTS public.org_agent_holders(uuid);
+DROP FUNCTION IF EXISTS public.store_org_weekly_report(uuid, text, jsonb, text[]);
+DROP FUNCTION IF EXISTS public.request_org_weekly_reports(timestamptz);
+DROP TABLE IF EXISTS public.org_weekly_reports;
+DROP FUNCTION IF EXISTS public.complete_org_notification(uuid, boolean);
+DROP FUNCTION IF EXISTS public.claim_org_notifications(int);
+DROP FUNCTION IF EXISTS public.enqueue_org_notification(uuid, uuid, uuid, text, timestamptz, boolean, jsonb);
+DROP TABLE IF EXISTS public.org_notification_outbox;
+DROP FUNCTION IF EXISTS public.ack_org_agent_event(uuid);
+DROP FUNCTION IF EXISTS public.raise_org_agent_event(uuid, text, text, text, text, text, bigint, text);
+DROP TABLE IF EXISTS public.org_agent_events;
+DROP FUNCTION IF EXISTS public.org_agent_events_guard();
+DROP FUNCTION IF EXISTS public.change_org_agent(uuid, text, text, text);
+DROP FUNCTION IF EXISTS public.org_agent_state(uuid, text);
+DROP TABLE IF EXISTS public.org_agent_addon_events;
+DROP FUNCTION IF EXISTS public.org_append_only();
+DROP FUNCTION IF EXISTS public.org_tier_rank(text);
+DROP TABLE IF EXISTS public.org_agent_catalog;
+COMMIT;

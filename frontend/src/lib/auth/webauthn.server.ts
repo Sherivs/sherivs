@@ -545,6 +545,137 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
       }
     },
 
+    /**
+     * Step-up assertion options for an ALREADY signed-in user. The caller supplies the
+     * challenge (a digest that binds the assertion to one action); it is stored one-time and
+     * only the user's own credentials for this relying party are offered.
+     */
+    async assertionOptions(input: {
+      userId: string;
+      origin: string;
+      rateKey: string;
+      challenge: string;
+    }): Promise<PublicKeyCredentialRequestOptionsJSON> {
+      await enforceRate("stepup", input.rateKey);
+      const { origin, config } = await ceremonyFor(input.origin);
+      const owned = await credentialsForRp(input.userId, config.rpID);
+      if (owned.length === 0) throw new WebAuthnServiceError("unavailable", 409);
+      const options = await verify.generateAuthenticationOptions({
+        rpID: config.rpID,
+        userVerification: "required",
+        timeout: config.challengeTtlMs,
+        challenge: input.challenge,
+        allowCredentials: owned.map((c) => ({
+          id: c.credentialId,
+          transports: sanitizeTransports(c.transports),
+        })),
+      });
+      const now = deps.time.now();
+      await deps.store.insertChallenge({
+        challenge: options.challenge,
+        ceremony: "authentication",
+        userId: input.userId,
+        rpId: config.rpID,
+        origin,
+        expiresAtMs: now.atMs + config.challengeTtlMs,
+      });
+      return options;
+    },
+
+    /**
+     * Verifies a step-up assertion WITHOUT minting a session. Succeeds only when the stored
+     * challenge was issued to this user, `challengeAccepted` confirms it is the digest for the
+     * action being authorised, the credential belongs to this user, and the signature,
+     * origin, RP ID, user verification and counter all check out.
+     */
+    async verifyAssertion(input: {
+      userId: string;
+      origin: string;
+      rateKey: string;
+      response: AuthenticationResponseJSON;
+      challengeAccepted: (signedChallenge: string) => boolean;
+    }): Promise<{ credentialRowId: string; verifiedAtMs: number }> {
+      await enforceRate("stepup-verify", input.rateKey);
+      const { origin, config } = await ceremonyFor(input.origin);
+      const signed = challengeFromClientDataJSON(input.response.response.clientDataJSON);
+      if (!signed || !input.challengeAccepted(signed)) {
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      const now = deps.time.now();
+      const stored = await deps.store.consumeChallenge(signed, "authentication", now.atMs);
+      if (
+        !stored ||
+        stored.userId !== input.userId ||
+        stored.rpId !== config.rpID ||
+        stored.origin !== origin
+      ) {
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      const credential = await deps.store.getCredentialByCredentialId(input.response.id);
+      if (!credential || credential.rpId !== config.rpID || credential.userId !== input.userId) {
+        await auditSafe({
+          action: "webauthn.step_up.verify",
+          userId: input.userId,
+          tenantUserId: null,
+          schoolId: null,
+          actorEmail: null,
+          recordId: null,
+          outcome: "denied",
+          details: { reason: "credential_not_owned" },
+        });
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      let verification: Awaited<ReturnType<typeof verifyAuthenticationResponse>>;
+      try {
+        verification = await verify.verifyAuthenticationResponse({
+          response: input.response,
+          expectedChallenge: stored.challenge,
+          expectedOrigin: origin,
+          expectedRPID: config.rpID,
+          credential: toWebAuthnCredential(credential),
+          requireUserVerification: true,
+        });
+      } catch {
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      if (!verification.verified) throw new WebAuthnServiceError("auth_failed");
+      const info = verification.authenticationInfo;
+      if (info.origin !== origin || info.rpID !== config.rpID) {
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      const counter = decideSignatureCounter(credential.counter, info.newCounter);
+      if (!counter.ok) {
+        await auditSafe({
+          action: "webauthn.step_up.verify",
+          userId: input.userId,
+          tenantUserId: null,
+          schoolId: null,
+          actorEmail: null,
+          recordId: credential.id,
+          outcome: "denied",
+          details: { reason: "cloned_authenticator" },
+        });
+        throw new WebAuthnServiceError("auth_failed");
+      }
+      await deps.store.updateCredential(credential.id, credential.userId, {
+        counter: counter.next,
+        lastUsedAt: now.at,
+        backedUp: info.credentialBackedUp,
+        deviceType: info.credentialDeviceType,
+      });
+      await auditSafe({
+        action: "webauthn.step_up.verify",
+        userId: input.userId,
+        tenantUserId: null,
+        schoolId: null,
+        actorEmail: null,
+        recordId: credential.id,
+        outcome: "succeeded",
+        details: { credential_id_prefix: credentialIdPrefix(credential.credentialId) },
+      });
+      return { credentialRowId: credential.id, verifiedAtMs: now.atMs };
+    },
+
     async list(input: { userId: string; origin?: string }): Promise<PasskeyListItem[]> {
       const rpId = input.origin ? (await ceremonyFor(input.origin)).config.rpID : undefined;
       const rows = await deps.store.listCredentials(input.userId, rpId);

@@ -3,7 +3,7 @@
   max-width: 100%;
   overflow-x: clip;
   --console-ink: #10182b;
-  --console-muted: #6b7690;
+  --console-muted: #566179;
   --console-line: rgba(16, 24, 43, 0.08);
   --console-glass: rgba(255, 255, 255, 0.78);
   --console-navy: #10182b;
@@ -11,7 +11,7 @@
   --console-cyan: #14a8fc;
   --console-violet: #8254f6;
   --console-green: #12805c;
-  --console-amber: #b45309;
+  --console-amber: #92400e;
   --console-red: #b42318;
   --console-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --console-sidebar: 16.5rem;
@@ -168,7 +168,7 @@
 
 .sherivs-console-brand-copy small {
   color: var(--console-muted);
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -213,7 +213,7 @@
 }
 
 .sherivs-console-env {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   border-radius: 999px;
@@ -248,7 +248,7 @@
   max-width: 28rem;
   margin-inline: auto;
   background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   border-radius: 12px;
   padding: 0.45rem 0.75rem;
 }
@@ -269,6 +269,7 @@
 }
 
 .sherivs-console-icon-btn {
+  flex: none;
   appearance: none;
   border: 0;
   background: transparent;
@@ -293,9 +294,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #4b86ff, #1848fd);
+  background: linear-gradient(135deg, #3366ff, #1848fd);
   color: #fff;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
 }
 
@@ -314,7 +315,7 @@
 
 .sherivs-console-kicker {
   margin: 0.7rem 0.55rem 0.25rem;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--console-muted);
@@ -353,7 +354,8 @@
 .sherivs-console-nav a.is-active,
 .sherivs-console-nav-label.is-active {
   background: rgba(24, 72, 253, 0.1);
-  color: var(--console-blue);
+  /* The brand blue is 4.3:1 here; a deeper blue keeps AA over the orb glow. */
+  color: #1238c9;
   font-weight: 650;
 }
 
@@ -500,7 +502,7 @@
   line-height: 1.2;
   border-radius: 12px;
   border: 1px solid transparent;
-  background: linear-gradient(180deg, #4b86ff, #1848fd);
+  background: linear-gradient(180deg, #3366ff, #1848fd);
   color: #fff;
   cursor: pointer;
   font-weight: 650;
@@ -552,7 +554,7 @@
   min-height: 2.4rem;
   padding: 0.35rem 0.7rem;
   border-radius: 12px;
-  border: 1px solid rgba(16, 24, 43, 0.12);
+  border: 1px solid #76819a;
   background: #fff;
   color: var(--console-ink);
   font: inherit;
@@ -604,7 +606,7 @@
 .sherivs-console-form textarea {
   min-height: 2.7rem;
   border-radius: 12px;
-  border: 1px solid rgba(16, 24, 43, 0.1);
+  border: 1px solid #76819a;
   background: rgba(255, 255, 255, 0.78);
   padding: 0.55rem 0.75rem;
   color: inherit;
@@ -674,7 +676,7 @@
   align-items: center;
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.02em;
   background: rgba(16, 24, 43, 0.06);
@@ -785,7 +787,7 @@
 
 .sherivs-console-page-kicker {
   margin: 0 0 0.35rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--console-muted);

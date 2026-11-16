@@ -13,6 +13,16 @@ import {
   isTelephonyCallReceipt,
   type TelephonyCallCommand,
 } from "@/lib/communications/telephony-adapter-contract";
+import {
+  assertNoRawVoiceNumber,
+  voiceAgentConfigureInput,
+  voiceCallRequestInput,
+} from "@/lib/communications/voice-number-binding";
+import { decideSchoolCallingAgentAccess } from "@/lib/communications/school-calling-agent";
+import { isAcceptableVoicePin } from "@/lib/communications/voice-pin";
+import { schoolCallingAgentEntitlement } from "@/lib/payments/tier-entitlements";
+import { roleIdsForWorkforceKind } from "@/lib/scholar/roles/role-registry";
+import { tenantId } from "@/lib/tenant-core";
 
 const emptyInput = z.object({});
 const callIdInput = z.object({ callId: z.string().uuid() });
@@ -24,6 +34,8 @@ const settingsInput = z.object({
   voiceLive: z.boolean(),
   voiceMinutesQuota: z.coerce.number().int().nonnegative(),
   voiceMinutesUsed: z.coerce.number().int().nonnegative(),
+  subscriptionTier: z.string(),
+  callingEntitled: z.boolean(),
 });
 const privateSettingsInput = settingsInput.extend({ tenantRef: z.string().uuid() });
 const callInput = z.object({
@@ -39,56 +51,111 @@ const callInput = z.object({
 export type VoiceAgentSettings = z.infer<typeof settingsInput>;
 export type VoiceAgentCall = z.infer<typeof callInput>;
 
-async function loadPrivateSettings(supabase: unknown) {
+const MEMBERSHIP_TO_WORKFORCE_KIND: Readonly<Record<string, string>> = {
+  admin: "head_of_school",
+  principal: "head_of_school",
+  teacher: "subject_teacher",
+  bursar: "bursar",
+  driver: "driver",
+  hq: "education_ministry_liaison",
+  super_admin: "head_of_school",
+};
+
+async function loadPrivateSettings(supabase: unknown, userId: string) {
   const rpcClient = supabase as {
     rpc: (name: never, args: never) => PromiseLike<{ data: unknown; error: unknown }>;
   };
   const { data, error } = await rpcClient.rpc("voice_agent_settings" as never, {} as never);
   if (error) throw new Error("Voice agent settings are unavailable.");
-  return privateSettingsInput.parse(data);
+  const parsed = privateSettingsInput
+    .omit({ subscriptionTier: true, callingEntitled: true })
+    .parse(data);
+  const tierResult = await rpcClient.rpc("voice_agent_subscription_tier" as never, {} as never);
+  const subscriptionTier =
+    !tierResult.error && typeof tierResult.data === "string" && tierResult.data.trim()
+      ? tierResult.data
+      : "trial";
+  const commercial = schoolCallingAgentEntitlement(tenantId(parsed.tenantRef), subscriptionTier);
+  const settings = privateSettingsInput.parse({
+    ...parsed,
+    subscriptionTier,
+    callingEntitled: commercial.entitled,
+  });
+  const access = await readCallingAccess(rpcClient, userId, settings);
+  return { ...settings, callingEntitled: access.allowed };
+}
+
+async function readCallingAccess(
+  supabase: {
+    rpc: (name: never, args: never) => PromiseLike<{ data: unknown; error: unknown }>;
+  },
+  userId: string,
+  settings: z.infer<typeof privateSettingsInput>,
+) {
+  const roleResult = await supabase.rpc("get_my_role" as never, {} as never);
+  const membershipKind = typeof roleResult.data === "string" ? roleResult.data : null;
+  const workforceKind = membershipKind
+    ? (MEMBERSHIP_TO_WORKFORCE_KIND[membershipKind] ?? null)
+    : null;
+  const roleIds = workforceKind ? roleIdsForWorkforceKind(workforceKind) : [];
+  return decideSchoolCallingAgentAccess({
+    identityId: userId,
+    tenantRef: settings.tenantRef,
+    roleIds,
+    tier: settings.subscriptionTier,
+  });
+}
+
+async function assertCallingAgentAllowed(
+  supabase: {
+    rpc: (name: never, args: never) => PromiseLike<{ data: unknown; error: unknown }>;
+  },
+  userId: string,
+  settings: z.infer<typeof privateSettingsInput>,
+) {
+  const access = await readCallingAccess(supabase, userId, settings);
+  if (!access.allowed) {
+    throw new Error("Calling agent is not included for this organization.");
+  }
 }
 
 export const getVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => emptyInput.parse(input ?? {}))
   .handler(async ({ context }) => {
-    const settings = await loadPrivateSettings(context.supabase);
+    const settings = await loadPrivateSettings(context.supabase, context.userId);
     return publicSettings(settings);
   });
 
+const voiceProviderContract = z
+  .object({
+    provider: z.literal("africas_talking"),
+  })
+  .parse({ provider: AFRICAS_TALKING_PROVIDER_ID });
+
 export const configureVoiceAgent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) =>
-    z
-      .object({
-        enabled: z.boolean(),
-        provider: z.literal("africas_talking"),
-        providerNumber: z
-          .string()
-          .trim()
-          .regex(/^\+[1-9][0-9]{7,14}$/),
-        extension: z
-          .string()
-          .trim()
-          .max(12)
-          .regex(/^[0-9A-Za-z*#]{1,12}$/)
-          .optional()
-          .or(z.literal("")),
-      })
-      .parse(input),
-  )
+  .validator((input: unknown) => {
+    assertNoRawVoiceNumber(input);
+    return voiceAgentConfigureInput.parse(input);
+  })
   .handler(async ({ data, context }) => {
+    const current = await loadPrivateSettings(context.supabase, context.userId);
+    if (data.enabled) {
+      await assertCallingAgentAllowed(context.supabase, context.userId, current);
+    }
+    if (data.enabled && current.provider && current.provider !== voiceProviderContract.provider) {
+      throw new Error("Voice provider is not Africa's Talking.");
+    }
     const { error } = await context.supabase.rpc(
       "voice_agent_configure" as never,
       {
         p_enabled: data.enabled,
-        p_provider: data.provider,
-        p_provider_number: data.providerNumber,
         p_extension: data.extension || null,
       } as never,
     );
     if (error) throw new Error("Voice agent settings could not be saved.");
-    return publicSettings(await loadPrivateSettings(context.supabase));
+    return publicSettings(await loadPrivateSettings(context.supabase, context.userId));
   });
 
 function publicSettings(settings: z.infer<typeof privateSettingsInput>): VoiceAgentSettings {
@@ -96,25 +163,47 @@ function publicSettings(settings: z.infer<typeof privateSettingsInput>): VoiceAg
   return visible;
 }
 
+const consentedRecipientInput = z.object({
+  user_id: z.string().uuid(),
+  display_name: z.string(),
+  phone_redacted: z.string(),
+});
+
+export const listVoiceConsentedRecipients = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => {
+    assertNoRawVoiceNumber(input ?? {});
+    return emptyInput.parse(input ?? {});
+  })
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc(
+      "voice_agent_consented_recipients" as never,
+      {} as never,
+    );
+    if (error) throw new Error("Consented voice recipients are unavailable.");
+    return z
+      .array(consentedRecipientInput)
+      .parse(data ?? [])
+      .map((row) => ({
+        userId: row.user_id,
+        displayName: row.display_name,
+        phoneRedacted: row.phone_redacted,
+      }));
+  });
+
 export const requestVoiceCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) =>
-    z
-      .object({
-        category: z.enum(["fee_reminder", "absence_alert"]),
-        recipientPhone: z
-          .string()
-          .trim()
-          .regex(/^\+[1-9][0-9]{7,14}$/),
-      })
-      .parse(input),
-  )
+  .validator((input: unknown) => {
+    assertNoRawVoiceNumber(input);
+    return voiceCallRequestInput.parse(input);
+  })
   .handler(async ({ data, context }) => {
-    const settings = await loadPrivateSettings(context.supabase);
+    const settings = await loadPrivateSettings(context.supabase, context.userId);
+    await assertCallingAgentAllowed(context.supabase, context.userId, settings);
     if (!settings.enabled) throw new Error("Voice agent is not enabled for this organization.");
     const { assertVoiceRecipientConsent } =
       await import("@/lib/communications/voice-consent.server");
-    await assertVoiceRecipientConsent(settings.tenantRef, data.recipientPhone);
+    await assertVoiceRecipientConsent(settings.tenantRef, data.recipientUserId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: callId, error } = await supabaseAdmin.rpc(
       "voice_agent_request_call" as never,
@@ -122,7 +211,7 @@ export const requestVoiceCall = createServerFn({ method: "POST" })
         p_tenant_ref: settings.tenantRef,
         p_requester: context.userId,
         p_category: data.category,
-        p_recipient_phone: data.recipientPhone,
+        p_recipient_user: data.recipientUserId,
         p_subject_ref: null,
       } as never,
     );
@@ -172,7 +261,8 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((input: unknown) => callIdInput.parse(input))
   .handler(async ({ data, context }) => {
-    const settings = await loadPrivateSettings(context.supabase);
+    const settings = await loadPrivateSettings(context.supabase, context.userId);
+    await assertCallingAgentAllowed(context.supabase, context.userId, settings);
     if (!settings.enabled || !settings.voiceLive) return { status: "live_voice_disabled" as const };
 
     const config = africaTalkingVoiceConfigFromEnv(process.env);
@@ -187,7 +277,7 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
     const targetCall = z
       .object({
         tenantRef: z.string().uuid(),
-        recipientPhone: z.string().regex(/^\+[1-9][0-9]{7,14}$/),
+        recipientUserId: z.string().uuid(),
       })
       .parse(target);
     if (targetCall.tenantRef !== settings.tenantRef) {
@@ -195,13 +285,24 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
     }
     const { assertVoiceRecipientConsent } =
       await import("@/lib/communications/voice-consent.server");
-    await assertVoiceRecipientConsent(settings.tenantRef, targetCall.recipientPhone);
+    await assertVoiceRecipientConsent(settings.tenantRef, targetCall.recipientUserId);
     const { data: claimed, error: claimError } = await supabaseAdmin.rpc(
       "voice_agent_claim_call" as never,
       { p_call_id: data.callId, p_tenant_ref: settings.tenantRef } as never,
     );
     if (claimError) throw new Error("Approved call could not be claimed for dispatch.");
     const call = claimedCallInput.parse(claimed);
+    if (
+      !settings.providerNumber ||
+      call.fromNumber !== settings.providerNumber ||
+      call.tenantRef !== settings.tenantRef
+    ) {
+      await supabaseAdmin.rpc(
+        "voice_agent_finish_call" as never,
+        { p_call_id: call.id, p_succeeded: false, p_provider_call_id: null } as never,
+      );
+      throw new Error("Outbound voice number is not bound to this organization.");
+    }
     const adapter = createAfricaTalkingVoiceAdapter({
       config,
       fromNumber: call.fromNumber,
@@ -240,4 +341,52 @@ export const dispatchApprovedVoiceCall = createServerFn({ method: "POST" })
     );
     if (finishError) throw new Error("Voice call outcome could not be recorded.");
     return { status: receipt ? ("completed" as const) : ("failed" as const) };
+  });
+
+const callLogInput = z.object({
+  id: z.string().uuid(),
+  kind: z.enum(["inbound", "outbound"]),
+  status: z.string().max(40),
+  summary: z.string().max(80),
+  signal: z.enum(["member_locked"]).nullable().optional(),
+  at: z.string(),
+});
+
+export type VoiceCallLogEntry = z.infer<typeof callLogInput>;
+
+const voicePinInput = z.object({
+  pin: z.string().regex(/^[0-9]{6,8}$/),
+});
+
+export const setVoicePin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => {
+    const parsed = voicePinInput.parse(input);
+    if (!isAcceptableVoicePin(parsed.pin)) {
+      throw new Error("Choose a 6 to 8 digit PIN that is not a simple sequence.");
+    }
+    return parsed;
+  })
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc(
+      "voice_agent_set_own_pin" as never,
+      { p_pin: data.pin } as never,
+    );
+    if (error) throw new Error("Voice PIN could not be saved.");
+    return { saved: true as const };
+  });
+
+export const listVoiceCallLog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) => {
+    assertNoRawVoiceNumber(input ?? {});
+    return emptyInput.parse(input ?? {});
+  })
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.rpc(
+      "voice_agent_call_log" as never,
+      {} as never,
+    );
+    if (error) throw new Error("Voice call log is unavailable.");
+    return z.array(callLogInput).parse(data ?? []);
   });

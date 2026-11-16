@@ -104,6 +104,41 @@ export function tierEntitlementsForTenant(
   );
 }
 
+/**
+ * Dedicated school calling agent (COMMS-02). Professional and Enterprise plans
+ * include one organization-scoped agent. Trial, Starter, and Growth do not.
+ * This is a commercial fact. Whether this actor may use it is decided by the
+ * feature gate, not by this function.
+ */
+export const SCHOOL_CALLING_AGENT_ENTITLEMENT = "school_calling_agent" as const;
+
+const SCHOOL_CALLING_AGENT_TIERS: ReadonlySet<TierName> = new Set(["professional", "enterprise"]);
+
+export interface SchoolCallingAgentEntitlement {
+  tenantId: TenantId;
+  tier: TierName;
+  feature: typeof SCHOOL_CALLING_AGENT_ENTITLEMENT;
+  entitled: boolean;
+  source: TierEntitlementSource;
+}
+
+export function schoolCallingAgentEntitlement(
+  tenantId: TenantId,
+  tier: string | null | undefined,
+): SchoolCallingAgentEntitlement {
+  if (tenantId.trim() === "") {
+    throw new Error("Tier entitlement requires a tenant id — fail closed");
+  }
+  const resolvedTier = getTier(tier?.trim().toLowerCase());
+  return {
+    tenantId,
+    tier: resolvedTier,
+    feature: SCHOOL_CALLING_AGENT_ENTITLEMENT,
+    entitled: SCHOOL_CALLING_AGENT_TIERS.has(resolvedTier),
+    source: "legacy-tier-catalog",
+  };
+}
+
 /** Features a tenant's plan commercially entitles, as a stable string list. */
 export function entitledFeaturesForTenant(
   tenantId: TenantId,

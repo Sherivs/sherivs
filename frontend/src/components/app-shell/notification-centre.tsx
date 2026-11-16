@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useApp } from "@/contexts/app-context";
 import { createOfflineStore } from "@/lib/offline/indexeddb-store";
 import { permittedNotificationLink } from "@/lib/shell/notification-links";
+import { APP_SHELL_NOTIFICATIONS } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 
 type NotificationRow = {
@@ -18,7 +19,7 @@ type NotificationRow = {
 
 type NotificationFilter = "all" | "unread" | "read";
 
-export function NotificationCentre() {
+export function NotificationCentre({ compact = false }: { compact?: boolean }) {
   const app = useApp();
   const shell = useAppShell();
   const userId = app.profile?.id;
@@ -65,10 +66,12 @@ export function NotificationCentre() {
     void load();
   }, [load]);
 
-  const visibleRows = useMemo(
-    () => rows.filter((row) => filter === "all" || Boolean(row.is_read) === (filter === "read")),
-    [filter, rows],
-  );
+  const visibleRows = useMemo(() => {
+    const filtered = rows.filter(
+      (row) => filter === "all" || Boolean(row.is_read) === (filter === "read"),
+    );
+    return compact ? filtered.slice(0, 3) : filtered;
+  }, [compact, filter, rows]);
   const destinations = [...shell.nav, ...shell.drawer];
 
   async function markRead(row: NotificationRow) {
@@ -107,26 +110,31 @@ export function NotificationCentre() {
       aria-labelledby="notification-centre-heading"
     >
       <div className="app-shell-section-title">
-        <h2 id="notification-centre-heading">Notification centre</h2>
+        <h2 id="notification-centre-heading">
+          {compact ? "Recent notifications" : "Notification centre"}
+        </h2>
         <span>{rows.filter((row) => !row.is_read).length} unread</span>
+        {compact ? <Link to={APP_SHELL_NOTIFICATIONS as never}>View all</Link> : null}
       </div>
-      <div
-        className="app-shell-notification-filters"
-        role="group"
-        aria-label="Filter notifications"
-      >
-        {(["all", "unread", "read"] as const).map((value) => (
-          <button
-            type="button"
-            key={value}
-            className={filter === value ? "is-active" : undefined}
-            aria-pressed={filter === value}
-            onClick={() => setFilter(value)}
-          >
-            {value === "all" ? "All" : value === "unread" ? "Unread" : "Read"}
-          </button>
-        ))}
-      </div>
+      {!compact ? (
+        <div
+          className="app-shell-notification-filters"
+          role="group"
+          aria-label="Filter notifications"
+        >
+          {(["all", "unread", "read"] as const).map((value) => (
+            <button
+              type="button"
+              key={value}
+              className={filter === value ? "is-active" : undefined}
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+            >
+              {value === "all" ? "All" : value === "unread" ? "Unread" : "Read"}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="app-shell-empty" role="status">
