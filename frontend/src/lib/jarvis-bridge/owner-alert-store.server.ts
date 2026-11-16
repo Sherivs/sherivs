@@ -52,6 +52,13 @@ export interface OwnerAlertStoreOptions {
 }
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
+/** Free-text fields become words only: no dots, slashes or colons that could form a link. */
+const words = (v: unknown): string =>
+  str(v)
+    .replace(/[^A-Za-z0-9 _-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
 
 export function createOwnerAlertPorts(
   options: OwnerAlertStoreOptions,
@@ -129,7 +136,7 @@ export function createOwnerAlertPorts(
         out.push({
           key: `incident:${str(i.id)}`,
           source: "security_incidents",
-          title: `Security incident (${sev || "unrated"}, ${str(i.category) || "uncategorised"})`,
+          title: `Security incident (${words(sev) || "unrated"}, ${words(i.category) || "uncategorised"})`,
           facts: {
             tier: "T1",
             scope: sev === "critical" || sev === "high" ? "platform" : "tenant",
@@ -162,7 +169,7 @@ export function createOwnerAlertPorts(
         out.push({
           key: `approval:${str(a.approval_id)}`,
           source: "jarvis_approval_requests",
-          title: `Approval waiting (${t}): ${str(a.action_id) || "action"}`,
+          title: `Approval waiting (${t}): ${words(a.action_id) || "action"}`,
           facts,
         });
       }

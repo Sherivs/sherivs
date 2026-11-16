@@ -37,6 +37,32 @@ export const inQuietHours = (nowMs: number, q: QuietHours | null): boolean => {
     : h >= q.startHour || h < q.endHour;
 };
 
+const CONTROL_AND_BIDI =
+  /[\u0000-\u001f\u007f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2066-\u2069]/g;
+const SCHEME_OR_WWW = /(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S*/gi;
+const DOMAIN_PATH = /\S*[a-z0-9-]\.[a-z]{2,}\/\S*/gi;
+const BARE_DOMAIN =
+  /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|app|dev|co|ng|xyz|info|biz|me|ly|link|click|top|example)\b/gi;
+const MAX_TITLE = 140;
+
+/**
+ * An alert title can come from data a customer or attacker influenced. What reaches the owner's
+ * phone must not be able to carry a link or hidden text, so links, control and direction-override
+ * characters are removed and the length is capped. The only link in an alert is the console link.
+ */
+export function sanitizeAlertTitle(title: string): string {
+  const cleaned = title
+    .replace(CONTROL_AND_BIDI, " ")
+    .replace(SCHEME_OR_WWW, "[link removed]")
+    .replace(DOMAIN_PATH, "[link removed]")
+    .replace(BARE_DOMAIN, "[link removed]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_TITLE)
+    .trim();
+  return cleaned.length > 0 ? cleaned : "Alert";
+}
+
 export interface AlertInput {
   readonly severity: Severity;
   readonly title: string;
@@ -89,9 +115,7 @@ export function planOwnerAlert(i: AlertInput): AlertPlan {
   if (i.severity !== "S1" && inQuietHours(i.nowMs, i.quiet))
     return { send: false, reason: "quiet_hours" };
 
-  const safeTitle = looksLikeSecretValue(i.title)
-    ? "[withheld]"
-    : i.title.replace(/\s+/g, " ").trim();
+  const safeTitle = looksLikeSecretValue(i.title) ? "[withheld]" : sanitizeAlertTitle(i.title);
   const body =
     `[${i.severity}] ${safeTitle}`.slice(0, MAX_BODY - url.toString().length - 20) +
     ` Review in console: ${url.toString()}`;
