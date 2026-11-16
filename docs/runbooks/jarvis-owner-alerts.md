@@ -1,9 +1,10 @@
 # JARVIS owner alerts: turning them on
 
 Authority: AGENTS.md §§12, 17, 26, 31; ADR-082, ADR-087.
-Origin: Owner instruction of 2026-11-16
+Origin: Claude Code agent, mission E-002 (JARVIS-LIVE-01, owner instruction of 2026-11-16)
 Creator: Claude Code agent
 Created: 2026-11-16
+
 Status: Built and tested in code. The database migration is proposed, not applied. Nothing here sends a real message until every step below is done.
 
 ## What it does

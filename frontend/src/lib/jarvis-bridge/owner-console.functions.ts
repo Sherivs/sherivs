@@ -16,6 +16,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { WEBAUTHN_PUBLIC_ERROR } from "@/lib/auth/webauthn-policy";
 
+/** J-023: time enters only via the kernel time-authority (server-side, loaded on demand). */
+async function serverNowMs(): Promise<number> {
+  const { SystemClock, TimeAuthority } = await import("@/lib/kernel/time-authority");
+  return new TimeAuthority(new SystemClock()).now().atMs;
+}
+
 const AuthenticationResponseSchema = z.object({
   id: z.string().min(16).max(1024),
   rawId: z.string().min(1).max(1024),
@@ -140,6 +146,7 @@ export const loadOwnerConsole = createServerFn({ method: "GET" })
       passkeyCount = 0;
     }
 
+    const nowMs = await serverNowMs();
     const approvalsQ = await db
       .from("jarvis_approval_requests")
       .select("approval_id, action_id, risk_tier, requested_at, expires_at, requester_ref, status")
@@ -147,7 +154,7 @@ export const loadOwnerConsole = createServerFn({ method: "GET" })
       .order("requested_at", { ascending: false })
       .limit(50);
     const approvals = (approvalsQ.data ?? [])
-      .filter((r) => Date.parse(str(r.expires_at)) > Date.now())
+      .filter((r) => Date.parse(str(r.expires_at)) > nowMs)
       .map((r) => ({
         approvalId: str(r.approval_id),
         actionId: str(r.action_id),
@@ -242,7 +249,7 @@ export const acknowledgeOwnerAlert = createServerFn({ method: "POST" })
       .from("owner_alerts")
       .update({
         status: "acknowledged",
-        acknowledged_at: new Date().toISOString(),
+        acknowledged_at: new Date(await serverNowMs()).toISOString(),
         acknowledged_by: context.userId,
       })
       .eq("id", data.alertId)
@@ -281,7 +288,7 @@ export const beginOwnerApprovalStepUp = createServerFn({ method: "POST" })
       found.error ||
       !found.data ||
       found.data.status !== "pending" ||
-      Date.parse(str(found.data.expires_at)) <= Date.now()
+      Date.parse(str(found.data.expires_at)) <= (await serverNowMs())
     ) {
       throw new Error("This approval is no longer pending.");
     }
@@ -356,7 +363,7 @@ export const decideOwnerApproval = createServerFn({ method: "POST" })
       approverId: context.userId,
       approverRole: "sheriff",
       passkeyStepUpVerified: stepUpVerified,
-      nowIso: new Date().toISOString(),
+      nowIso: new Date(await serverNowMs()).toISOString(),
     });
     try {
       await writeAuditRecord(sb as never, {
