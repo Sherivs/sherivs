@@ -3,6 +3,11 @@ import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain .mjs script without types
 import { compareLedger, readRepoState } from "../../scripts/verify-migration-ledger.mjs";
+import {
+  checkMigrationsFolder,
+  tablesWithoutGrant,
+  // @ts-expect-error plain .mjs script without types
+} from "../../scripts/verify-migration-grants.mjs";
 
 const register = [{ ledgerName: "20260101000300_kept_elsewhere" }];
 
@@ -47,6 +52,41 @@ describe("M0 migration ledger drift check", () => {
     const report = compareLedger({ ledger: [], fileStems: [], outOfFolder: register });
     expect(report.status).toBe("FAIL");
     expect(report.staleRegister).toEqual(["20260101000300_kept_elsewhere"]);
+  });
+
+  it("matches a migration applied under an apply-time version by its unique bare name", () => {
+    const report = compareLedger({
+      ledger: [{ version: "20261110095926", name: "sherivs_comms01_at_number_binding" }],
+      fileStems: ["20261104032000_sherivs_comms01_at_number_binding"],
+      outOfFolder: [],
+    });
+    expect(report.status).toBe("PASS");
+    expect(report.matchedByBareName).toEqual([
+      "20261110095926:sherivs_comms01_at_number_binding -> 20261104032000_sherivs_comms01_at_number_binding",
+    ]);
+  });
+
+  it("does not guess when two files share a bare name", () => {
+    const report = compareLedger({
+      ledger: [{ version: "20261110095926", name: "twice" }],
+      fileStems: ["20261104032000_twice", "20261104033000_twice"],
+      outOfFolder: [],
+    });
+    expect(report.status).toBe("FAIL");
+    expect(report.ledgerWithoutFile).toEqual(["20261110095926:twice"]);
+  });
+
+  it("warns about a migration recorded more than once", () => {
+    const report = compareLedger({
+      ledger: [
+        { version: "20261103181438", name: "20261103140000_sec01" },
+        { version: "20261103181444", name: "20261103140000_sec01" },
+      ],
+      fileStems: ["20261103140000_sec01"],
+      outOfFolder: [],
+    });
+    expect(report.status).toBe("PASS");
+    expect(report.duplicateLedgerNames).toEqual(["sec01"]);
   });
 
   it("reports legacy rows named by a bare UUID without failing", () => {
@@ -98,6 +138,7 @@ describe("M0 SEC-M0 privilege proposal", () => {
     const grants = [...body.matchAll(/GRANT ([A-Z, ]+?) ON ([A-Z%s ]+?) %s TO anon/g)].map(
       (m) => `${m[1]} ${m[2].trim()}`,
     );
+    expect(body).not.toMatch(/REVOKE [^;]*SELECT[^;]*ON TABLE %s FROM anon', *\n? *CASE/);
     expect(grants.sort()).toEqual(
       ["EXECUTE %s", "INSERT TABLE", "SELECT TABLE", "USAGE SEQUENCE"].sort(),
     );
@@ -105,19 +146,40 @@ describe("M0 SEC-M0 privilege proposal", () => {
     expect(body).not.toMatch(/TO PUBLIC/);
   });
 
-  it("keeps the public surface to the 16 read tables, one insert table and 14 functions", () => {
+  it("keeps the public surface to 16 read tables, one insert table, one column-read table and 14 signatures", () => {
     const list = (name: string) =>
       [
         ...(
           body.match(new RegExp(`${name} constant text\\[\\] := ARRAY\\[([^\\]]+)\\]`))?.[1] ?? ""
-        ).matchAll(/'([a-z_]+)'/g),
+        ).matchAll(/'([^']+)'/g),
       ].map((m) => m[1]);
     expect(list("public_read")).toHaveLength(16);
     expect(list("public_insert")).toEqual(["admission_applications"]);
+    expect(list("column_read")).toEqual(["schools"]);
     expect(list("public_exec")).toHaveLength(14);
-    for (const sensitive of ["students", "subscriptions", "staff_payroll", "clinic_visits"]) {
+    for (const signature of list("public_exec")) expect(signature).toMatch(/^[a-z_]+\([a-z, ]*\)$/);
+    for (const sensitive of [
+      "students",
+      "subscriptions",
+      "staff_payroll",
+      "clinic_visits",
+      "users",
+    ]) {
       expect(list("public_read")).not.toContain(sensitive);
+      expect(list("column_read")).not.toContain(sensitive);
     }
+  });
+
+  it("takes a snapshot the rollback restores from, and the rollback grants nothing wholesale", () => {
+    expect(body).toContain("ops_private.sec_m0_acl_snapshot");
+    expect(body).toContain("REVOKE ALL ON SCHEMA ops_private FROM PUBLIC, anon, authenticated");
+    const rollback = readFileSync(
+      "database/proposals/SEC-M0_privilege_consolidation.rollback.sql",
+      "utf8",
+    ).replace(/^--.*$/gm, "");
+    expect(rollback).toContain("ops_private.sec_m0_acl_snapshot");
+    expect(rollback).toContain("no ACL snapshot found");
+    expect(rollback).not.toMatch(/ON ALL (TABLES|SEQUENCES|FUNCTIONS|ROUTINES) IN SCHEMA/);
   });
 
   it("makes subscriptions read-only for tenants and never widens a policy", () => {
@@ -129,5 +191,37 @@ describe("M0 SEC-M0 privilege proposal", () => {
       /CREATE POLICY tenant_read_subscriptions[\s\S]+?FOR SELECT TO authenticated/,
     );
     expect(body).not.toMatch(/DISABLE ROW LEVEL SECURITY|NO FORCE/);
+  });
+});
+
+describe("M0 migration grant check (private by default needs explicit grants)", () => {
+  it("flags a new public table that no GRANT or REVOKE names", () => {
+    expect(
+      tablesWithoutGrant(
+        "CREATE TABLE IF NOT EXISTS public.cg_thing (id uuid);\nCREATE POLICY p ON public.cg_thing FOR SELECT TO authenticated USING (true);",
+      ),
+    ).toEqual(["cg_thing"]);
+  });
+
+  it("accepts an explicit grant, a multi-table grant, or an explicit revoke", () => {
+    expect(
+      tablesWithoutGrant(
+        "CREATE TABLE public.a (id int); CREATE TABLE public.b (id int); CREATE TABLE public.c (id int);\n" +
+          "GRANT SELECT ON TABLE public.a, public.b TO authenticated;\n" +
+          "REVOKE ALL ON TABLE public.c FROM PUBLIC, anon, authenticated;",
+      ),
+    ).toEqual([]);
+  });
+
+  it("ignores a grant that only appears in a comment", () => {
+    expect(
+      tablesWithoutGrant(
+        "CREATE TABLE public.a (id int);\n-- GRANT SELECT ON public.a TO authenticated;",
+      ),
+    ).toEqual(["a"]);
+  });
+
+  it("passes on the repository's migrations folder", () => {
+    expect(checkMigrationsFolder("database/supabase/migrations")).toEqual([]);
   });
 });

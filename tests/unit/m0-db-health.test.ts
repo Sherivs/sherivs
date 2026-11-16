@@ -46,6 +46,22 @@ describe("M0 database health check", () => {
     vi.useRealTimers();
   });
 
+  it("does not leave a rejection unhandled when the probe fails after the time limit", async () => {
+    vi.useFakeTimers();
+    let reject: (e: Error) => void = () => {};
+    const check = createDatabaseHealthCheck({
+      probe: () => new Promise<boolean>((_, r) => (reject = r)),
+      nowMs: () => 0,
+      timeoutMs: 50,
+    });
+    const pending = check.check();
+    await vi.advanceTimersByTimeAsync(60);
+    expect((await pending).detail).toBe("no answer in time");
+    reject(new Error("late failure"));
+    await vi.advanceTimersByTimeAsync(1);
+    vi.useRealTimers();
+  });
+
   it("caches the answer so repeated calls do not each query the database", async () => {
     let now = 0;
     const probe = vi.fn(async () => true);

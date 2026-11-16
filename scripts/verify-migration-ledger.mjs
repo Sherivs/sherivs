@@ -6,6 +6,10 @@
  * database/supabase/migrations plus the reviewed register of SQL kept elsewhere
  * (database/supabase/applied-out-of-folder.json).
  *
+ * A ledger row matches a file by its full name, by version plus name, or, when a migration was
+ * applied under an apply-time version, by its bare name, provided exactly one file carries that
+ * name. Duplicate ledger rows are reported as warnings.
+ *
  * FAIL when the ledger holds a migration with no file and no register entry, or the folder holds
  * a file the ledger has not recorded. Legacy ledger rows named with a bare UUID (dashboard-era
  * changes later captured by a platform capture migration) are reported, not failed.
@@ -30,8 +34,22 @@ export function ledgerKeys(row) {
   return [name, `${version}_${name}`];
 }
 
+const VERSION_PREFIX = /^\d{14}_/;
+
+/** The name without a leading 14-digit version. */
+export function bareName(value) {
+  return String(value ?? "").replace(VERSION_PREFIX, "");
+}
+
 export function compareLedger({ ledger, fileStems, outOfFolder }) {
   const stems = new Set(fileStems);
+  const stemsByBareName = new Map();
+  for (const stem of fileStems) {
+    const key = bareName(stem);
+    stemsByBareName.set(key, [...(stemsByBareName.get(key) ?? []), stem]);
+  }
+  const seenNames = new Map();
+  const matchedByBareName = [];
   const registered = new Set(outOfFolder.map((e) => e.ledgerName));
   const matchedStems = new Set();
   const ledgerWithoutFile = [];
@@ -39,9 +57,15 @@ export function compareLedger({ ledger, fileStems, outOfFolder }) {
   const legacyUnnamed = [];
   for (const row of ledger) {
     const keys = ledgerKeys(row);
+    const nameKey = bareName(row.name);
+    seenNames.set(nameKey, (seenNames.get(nameKey) ?? 0) + 1);
     const hit = keys.find((k) => stems.has(k));
+    const byName = stemsByBareName.get(nameKey) ?? [];
     if (hit) {
       matchedStems.add(hit);
+    } else if (byName.length === 1 && !UUID.test(nameKey)) {
+      matchedStems.add(byName[0]);
+      matchedByBareName.push(`${row.version}:${row.name} -> ${byName[0]}`);
     } else if (keys.some((k) => registered.has(k))) {
       registeredOutOfFolder.push(keys.find((k) => registered.has(k)));
     } else if (UUID.test(String(row.name))) {
@@ -59,6 +83,11 @@ export function compareLedger({ ledger, fileStems, outOfFolder }) {
     counts: { ledger: ledger.length, files: fileStems.length, matched: matchedStems.size },
     ledgerWithoutFile: ledgerWithoutFile.sort(),
     filesNotInLedger,
+    matchedByBareName: matchedByBareName.sort(),
+    duplicateLedgerNames: [...seenNames]
+      .filter(([, n]) => n > 1)
+      .map(([name]) => name)
+      .sort(),
     registeredOutOfFolder: registeredOutOfFolder.sort(),
     staleRegister,
     legacyUnnamed: legacyUnnamed.sort(),

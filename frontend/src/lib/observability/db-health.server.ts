@@ -32,17 +32,23 @@ export function createDatabaseHealthCheck(options: DatabaseHealthOptions): Named
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const outcome = await Promise.race([
-        options.probe().then((ok) => (ok ? "ok" : "error")),
+        // A probe that rejects after the time limit has already won must not go unhandled.
+        options.probe().then(
+          (ok) => (ok ? "ok" : "error"),
+          () => "unreachable" as const,
+        ),
         new Promise<"timeout">((resolve) => {
           timer = setTimeout(() => resolve("timeout"), timeoutMs);
         }),
       ]);
       if (outcome === "ok") return { name: DB_HEALTH_CHECK_NAME, status: "ok" };
-      return {
-        name: DB_HEALTH_CHECK_NAME,
-        status: "failing",
-        detail: outcome === "timeout" ? "no answer in time" : "query failed",
-      };
+      const detail =
+        outcome === "timeout"
+          ? "no answer in time"
+          : outcome === "unreachable"
+            ? "not reachable"
+            : "query failed";
+      return { name: DB_HEALTH_CHECK_NAME, status: "failing", detail };
     } catch {
       return { name: DB_HEALTH_CHECK_NAME, status: "failing", detail: "not reachable" };
     } finally {
