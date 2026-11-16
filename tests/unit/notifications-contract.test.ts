@@ -241,7 +241,7 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
       const migration = readFileSync(
         new URL(
-          "../../database/supabase/migrations/20261103143000_core19_notification_delivery.sql",
+          "../../database/supabase/migrations/20261116000300_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",
@@ -262,7 +262,7 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
       const rollback = readFileSync(
         new URL(
-          "../../database/supabase/rollbacks/20261103143000_core19_notification_delivery.sql",
+          "../../database/supabase/rollbacks/20261116000300_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",
@@ -310,7 +310,8 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
       expect(rollback).toContain("DROP COLUMN idempotency_key");
       expect(rollback).toContain("DROP TRIGGER core19_notification_membership_guard");
-      expect(rollback).toContain("NO FORCE ROW LEVEL SECURITY");
+      // Both tables were forced before this migration; the rollback must not weaken them.
+      expect(rollback.replace(/^--.*$/gm, "")).not.toContain("NO FORCE ROW LEVEL SECURITY");
       expect(
         rollback.indexOf("DROP INDEX public.notifications_school_user_idempotency_key_uq"),
       ).toBeLessThan(rollback.indexOf("DROP COLUMN idempotency_key"));
@@ -339,7 +340,7 @@ describe("notification contract (tenant isolation, §17)", () => {
     it("allows switching active organization without moving existing notifications", () => {
       const migration = readFileSync(
         new URL(
-          "../../database/supabase/migrations/20261103143000_core19_notification_delivery.sql",
+          "../../database/supabase/migrations/20261116000300_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",

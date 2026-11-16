@@ -99,10 +99,15 @@ same.
 
 ---
 
-## 4. Sentry — what you still need
+## 4. Sentry — staging only
+
+Sentry receives events only when `APP_ENV` and `VITE_APP_ENV` are exactly
+`staging`. Do not put `SENTRY_DSN`, `VITE_SENTRY_DSN`, or `SENTRY_AUTH_TOKEN`
+on the Vercel **production** environment. Production uses Datadog,
+CloudWatch, and provider-native consoles and must not export to Sentry.
 
 Your current token works (verified) but is narrow (`org:ci` — release
-automation only). For full integration you need two things:
+automation only). For staging integration you need two things:
 
 1. **A broader token** (for release/source-map upload in CI):
    - https://sentry.io → **Settings → Auth Tokens → Create New Token**
@@ -117,10 +122,15 @@ Until then the health check honestly reports "auth-verified, scope-limited".
 
 ---
 
-## 5. PostHog — grab the project API key
+## 5. PostHog — staging project key only
+
+PostHog initialises only when `APP_ENV` and `VITE_APP_ENV` are exactly
+`staging`, and only after analytics consent. Do not set `VITE_POSTHOG_KEY`
+or `VITE_POSTHOG_HOST` on Vercel production. A production build defines
+those names as empty so the key is not bundled.
 
 Your personal key is verified but CANNOT ingest client events (a known
-PostHog rule). For product analytics you need the PROJECT key:
+PostHog rule). For staging product analytics you need the PROJECT key:
 
 1. Open https://us.posthog.com (your project is US-region, id 532234).
 2. Click the gear (Settings) → **Project API key** — it starts with `phc_`.

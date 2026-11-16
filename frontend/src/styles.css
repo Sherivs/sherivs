@@ -26,6 +26,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-text: var(--primary-text);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -89,15 +90,15 @@
   /* Radii, transitions, shadows */
   --radius-card: 20px;
   --radius-btn: 12px;
-  --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  --transition-fast: all 0.15s ease;
+  --transition-smooth: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.4);
   --shadow-hover: 0 20px 40px rgba(0, 0, 0, 0.5);
 
   /* Text */
   --text-primary: rgba(255, 255, 255, 0.95);
   --text-secondary: rgba(255, 255, 255, 0.60);
-  --text-muted: rgba(255, 255, 255, 0.35);
+  --text-muted: rgba(255, 255, 255, 0.5); /* 4.4:1+ on every dark surface (was 0.35 = 3.2:1) */
 
   /* shadcn tokens mapped to the navy palette */
   --background: var(--surface-1);
@@ -139,6 +140,11 @@
   --primary-rgb: 24, 78, 253;
   --primary: var(--tenant-primary);
   --primary-foreground: #ffffff;
+  /* Brand blue as text. The raw colour is 3.2:1 on the dark surfaces, so text gets a fitted tone
+     (lib/brand/tenant-contrast.ts fitTextOn); a school's own colour is fitted at runtime. */
+  --tenant-primary-text-dark: #4f78fd;
+  --tenant-primary-text-light: #184efd;
+  --primary-text: var(--tenant-primary-text-dark);
   --secondary: var(--tenant-secondary);
   --secondary-foreground: #0a0f1e;
 }
@@ -240,7 +246,7 @@
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     backdrop-filter: blur(20px) saturate(180%);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .uos-glass:hover {
     background: var(--glass-hover);
@@ -327,7 +333,7 @@
     background:
       linear-gradient(var(--surface-2), var(--surface-2)) padding-box,
       linear-gradient(135deg, color-mix(in oklab, var(--tenant-primary) 40%, transparent), transparent) border-box;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .uos-stat:hover {
     transform: translateY(-2px);
@@ -364,7 +370,7 @@
     font-weight: 600;
     letter-spacing: 0.01em;
     padding: 0.6rem 1.1rem;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .uos-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
   .uos-btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
@@ -681,9 +687,9 @@ a:focus-visible,
   --color-success-bg: rgba(16, 185, 129, 0.1);
   --color-warning: #f59e0b;
   --color-warning-bg: rgba(245, 158, 11, 0.1);
-  --color-danger: #ef4444;
+  --color-danger: #f87171;
   --color-danger-bg: rgba(239, 68, 68, 0.1);
-  --color-info: #3b82f6;
+  --color-info: #60a5fa;
   --color-info-bg: rgba(59, 130, 246, 0.1);
 
   /* Elevation/shadow (dark mode defaults) */
@@ -697,13 +703,14 @@ a:focus-visible,
 /* Light mode variant overrides */
 .light,
 .light ::backdrop {
-  --color-success: #059669;
+  --primary-text: var(--tenant-primary-text-light);
+  --color-success: #047857;
   --color-success-bg: rgba(16, 185, 129, 0.12);
-  --color-warning: #d97706;
+  --color-warning: #92400e;
   --color-warning-bg: rgba(217, 119, 6, 0.12);
-  --color-danger: #dc2626;
+  --color-danger: #b91c1c;
   --color-danger-bg: rgba(220, 38, 38, 0.12);
-  --color-info: #2563eb;
+  --color-info: #1d4ed8;
   --color-info-bg: rgba(37, 99, 235, 0.12);
 
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -905,8 +912,8 @@ a:focus-visible,
   --shadow-hover: 0 16px 40px rgba(15, 23, 42, 0.12);
 
   --text-primary: rgba(17, 24, 39, 0.95);
-  --text-secondary: rgba(17, 24, 39, 0.62);
-  --text-muted: rgba(17, 24, 39, 0.42);
+  --text-secondary: rgba(17, 24, 39, 0.72);
+  --text-muted: rgba(17, 24, 39, 0.62); /* 4.6:1+ on every light surface (was 0.42 = 2.6:1) */
 
   --muted: rgba(15, 23, 42, 0.05);
   --accent: rgba(15, 23, 42, 0.06);
@@ -933,3 +940,46 @@ a:focus-visible,
 
 :root { color-scheme: dark; }
 .light { color-scheme: light; }
+
+/* ---------------------------------------------------------------
+ * Accessibility baseline (UI-01)
+ * Zero-specificity fallbacks: any component rule still wins.
+ * --------------------------------------------------------------- */
+:root { --focus-ring: #93b0ff; } /* 9.0:1 on the navy surfaces */
+.light { --focus-ring: #0d37ca; } /* 8.7:1 on white */
+
+:where(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* Search fields whose inner input hides its own outline show the ring on the wrapper. */
+.app-shell-search:focus-within,
+.mobility-search:focus-within,
+.sherivs-console-search:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+/* The fixed bottom navigation must not cover the element that has keyboard focus (WCAG 2.2, 2.4.11). */
+html:has(.app-shell-bottom) {
+  scroll-padding-bottom: 6rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch targets: keep desktop density, give fingers 44x44px. */
+@media (pointer: coarse) {
+  :where(button, [role="button"], [role="tab"], select, input:not([type="checkbox"], [type="radio"], [type="hidden"])) {
+    min-height: 44px;
+  }
+}
