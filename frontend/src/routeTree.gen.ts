@@ -55,6 +55,7 @@ import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleAccountRouteImport } from './routes/console/account'
 import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activity/route'
+import { Route as ConsoleAlertsRouteImport } from './routes/console/alerts'
 import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
@@ -127,11 +128,13 @@ import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
 import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
+import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public/cron/jarvis-tick'
 import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
@@ -369,6 +372,11 @@ const ConsoleAccountRoute = ConsoleAccountRouteImport.update({
 const ConsoleActivityRouteRoute = ConsoleActivityRouteRouteImport.update({
   id: '/activity',
   path: '/activity',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleAlertsRoute = ConsoleAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleCommunicationsRoute = ConsoleCommunicationsRouteImport.update({
@@ -741,6 +749,11 @@ const ApiPublicCronIntegrationsSyncRoute =
     path: '/api/public/cron/integrations-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronJarvisTickRoute = ApiPublicCronJarvisTickRouteImport.update({
+  id: '/api/public/cron/jarvis-tick',
+  path: '/api/public/cron/jarvis-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronOrgNotificationsRoute =
   ApiPublicCronOrgNotificationsRouteImport.update({
     id: '/api/public/cron/org-notifications',
@@ -769,6 +782,12 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
   ApiPublicWebhooksAfricasTalkingVoiceRouteImport.update({
     id: '/api/public/webhooks/africas-talking-voice',
     path: '/api/public/webhooks/africas-talking-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksOwnerAlertVoiceRoute =
+  ApiPublicWebhooksOwnerAlertVoiceRouteImport.update({
+    id: '/api/public/webhooks/owner-alert-voice',
+    path: '/api/public/webhooks/owner-alert-voice',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWebhooksPaystackRoute =
@@ -862,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -930,11 +950,13 @@ export interface FileRoutesByFullPath {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -980,6 +1002,7 @@ export interface FileRoutesByTo {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -1048,11 +1071,13 @@ export interface FileRoutesByTo {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1113,6 +1138,7 @@ export interface FileRoutesById {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -1181,11 +1207,13 @@ export interface FileRoutesById {
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
@@ -1246,6 +1274,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1314,11 +1343,13 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1364,6 +1395,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1432,11 +1464,13 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1496,6 +1530,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1564,11 +1599,13 @@ export interface FileRouteTypes {
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
@@ -1603,11 +1640,13 @@ export interface RootRouteChildren {
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
+  ApiPublicCronJarvisTickRoute: typeof ApiPublicCronJarvisTickRoute
   ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
@@ -1938,6 +1977,13 @@ declare module '@tanstack/react-router' {
       path: '/activity'
       fullPath: '/console/activity'
       preLoaderRoute: typeof ConsoleActivityRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
+    '/console/alerts': {
+      id: '/console/alerts'
+      path: '/alerts'
+      fullPath: '/console/alerts'
+      preLoaderRoute: typeof ConsoleAlertsRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
     '/console/communications': {
@@ -2444,6 +2490,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronIntegrationsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/jarvis-tick': {
+      id: '/api/public/cron/jarvis-tick'
+      path: '/api/public/cron/jarvis-tick'
+      fullPath: '/api/public/cron/jarvis-tick'
+      preLoaderRoute: typeof ApiPublicCronJarvisTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/org-notifications': {
       id: '/api/public/cron/org-notifications'
       path: '/api/public/cron/org-notifications'
@@ -2477,6 +2530,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/africas-talking-voice'
       fullPath: '/api/public/webhooks/africas-talking-voice'
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/owner-alert-voice': {
+      id: '/api/public/webhooks/owner-alert-voice'
+      path: '/api/public/webhooks/owner-alert-voice'
+      fullPath: '/api/public/webhooks/owner-alert-voice'
+      preLoaderRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/paystack': {
@@ -2814,6 +2874,7 @@ interface ConsoleRouteRouteChildren {
   ConsoleWorkforceRouteRoute: typeof ConsoleWorkforceRouteRouteWithChildren
   ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
   ConsoleAccountRoute: typeof ConsoleAccountRoute
+  ConsoleAlertsRoute: typeof ConsoleAlertsRoute
   ConsoleCommunicationsRoute: typeof ConsoleCommunicationsRoute
   ConsoleHelpRoute: typeof ConsoleHelpRoute
   ConsoleSettingsRoute: typeof ConsoleSettingsRoute
@@ -2828,6 +2889,7 @@ const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleWorkforceRouteRoute: ConsoleWorkforceRouteRouteWithChildren,
   ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
   ConsoleAccountRoute: ConsoleAccountRoute,
+  ConsoleAlertsRoute: ConsoleAlertsRoute,
   ConsoleCommunicationsRoute: ConsoleCommunicationsRoute,
   ConsoleHelpRoute: ConsoleHelpRoute,
   ConsoleSettingsRoute: ConsoleSettingsRoute,
@@ -2892,6 +2954,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
+  ApiPublicCronJarvisTickRoute: ApiPublicCronJarvisTickRoute,
   ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
   ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
   ApiPublicCronWalletTopupReconcileRoute:
@@ -2899,6 +2962,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksOwnerAlertVoiceRoute: ApiPublicWebhooksOwnerAlertVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,

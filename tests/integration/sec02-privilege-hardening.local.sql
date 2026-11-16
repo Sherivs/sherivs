@@ -86,10 +86,18 @@ INSERT INTO public.org_credentials (org_id, provider, name, ciphertext, wrapped_
 SELECT id, 'provider-x', 'synthetic-b', repeat('B', 40), 'wrapped-synthetic', 'v1'
   FROM s02.ids WHERE name = 'org_b';
 
--- A stand-in trigger function for the out-of-band production function (it is not in any
--- repository migration), so the revoke branch is exercised too.
-CREATE FUNCTION public.schools_audit_commercial_change() RETURNS trigger LANGUAGE plpgsql
-  AS $$ BEGIN RETURN NEW; END $$;
+-- A stand-in trigger function for the production function, so the revoke branch is exercised
+-- too. Since ENT-01 (20261104051000) a repository migration defines it, so create the stand-in
+-- only when it is absent, and in both cases put back the open EXECUTE the audit observed.
+DO $standin$
+BEGIN
+  IF to_regprocedure('public.schools_audit_commercial_change()') IS NULL THEN
+    CREATE FUNCTION public.schools_audit_commercial_change() RETURNS trigger LANGUAGE plpgsql
+      AS $fn$ BEGIN RETURN NEW; END $fn$;
+  END IF;
+END
+$standin$;
+GRANT EXECUTE ON FUNCTION public.schools_audit_commercial_change() TO PUBLIC, anon, authenticated;
 
 -- Recreate the production state that the audit observed.
 GRANT ALL ON public.org_credential_inventory TO anon, authenticated;

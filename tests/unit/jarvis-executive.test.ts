@@ -252,7 +252,7 @@ describe("ENGINE-04 owner alerts", () => {
       });
     }
     const s1 = planOwnerAlert({ ...base, severity: "S1", nowMs: night, quiet });
-    expect(s1.send && s1.channels).toEqual(["voice", "whatsapp", "sms", "console"]);
+    expect(s1.send && s1.channels).toEqual(["voice", "whatsapp", "sms", "email", "console"]);
   });
 
   it("dedupes, rate limits, and withholds secret-shaped titles", () => {

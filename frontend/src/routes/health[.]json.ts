@@ -4,6 +4,7 @@
  * JSON only, no auth (load balancers / uptime probes cannot authenticate),
  * but deliberately leak-free: the payload is the fixed whitelist produced by
  * `buildHealthReport` — status, ts, uptime, memory, version, check results.
+ * One dependency check runs: a cached, time-limited database ping (mission M0).
  * No env vars, no connection strings, no stack traces, no query handling.
  *
  * `failing` reports 503 so orchestrators can drain the instance; `degraded`
@@ -30,7 +31,11 @@ export const Route = createFileRoute("/health.json")({
   server: {
     handlers: {
       GET: async () => {
-        const report = await buildHealthReport({ version: await readPackageVersion() });
+        const { databaseHealthCheck } = await import("@/lib/observability/db-health.server");
+        const report = await buildHealthReport({
+          version: await readPackageVersion(),
+          dependencyChecks: [databaseHealthCheck()],
+        });
         return new Response(JSON.stringify(report), {
           status: report.status === "failing" ? 503 : 200,
           headers: {
