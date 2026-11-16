@@ -127,6 +127,7 @@ import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
 import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
+import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public/cron/jarvis-tick'
 import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
@@ -741,6 +742,11 @@ const ApiPublicCronIntegrationsSyncRoute =
     path: '/api/public/cron/integrations-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronJarvisTickRoute = ApiPublicCronJarvisTickRouteImport.update({
+  id: '/api/public/cron/jarvis-tick',
+  path: '/api/public/cron/jarvis-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCronOrgNotificationsRoute =
   ApiPublicCronOrgNotificationsRouteImport.update({
     id: '/api/public/cron/org-notifications',
@@ -930,6 +936,7 @@ export interface FileRoutesByFullPath {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1048,6 +1055,7 @@ export interface FileRoutesByTo {
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1181,6 +1189,7 @@ export interface FileRoutesById {
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
@@ -1314,6 +1323,7 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -1432,6 +1442,7 @@ export interface FileRouteTypes {
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -1564,6 +1575,7 @@ export interface FileRouteTypes {
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
@@ -1603,6 +1615,7 @@ export interface RootRouteChildren {
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
+  ApiPublicCronJarvisTickRoute: typeof ApiPublicCronJarvisTickRoute
   ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
@@ -2444,6 +2457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronIntegrationsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/jarvis-tick': {
+      id: '/api/public/cron/jarvis-tick'
+      path: '/api/public/cron/jarvis-tick'
+      fullPath: '/api/public/cron/jarvis-tick'
+      preLoaderRoute: typeof ApiPublicCronJarvisTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/org-notifications': {
       id: '/api/public/cron/org-notifications'
       path: '/api/public/cron/org-notifications'
@@ -2892,6 +2912,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
+  ApiPublicCronJarvisTickRoute: ApiPublicCronJarvisTickRoute,
   ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
   ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
   ApiPublicCronWalletTopupReconcileRoute:
