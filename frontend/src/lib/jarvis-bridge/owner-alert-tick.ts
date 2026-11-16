@@ -48,6 +48,7 @@ export type DeliveryStatus = "sent" | "failed" | "skipped";
 
 export interface SendRequest {
   readonly channel: OwnerExternalChannel;
+  readonly severity: Severity;
   readonly body: string;
   readonly link: string;
   readonly idempotencyKey: string;
@@ -234,6 +235,7 @@ export async function runOwnerAlertTick(ports: TickPorts): Promise<TickReport> {
         }
         const outcome = await safeSend(ports, {
           channel: d.channel as OwnerExternalChannel,
+          severity,
           body: plan.body,
           link: plan.link,
           idempotencyKey: key,
