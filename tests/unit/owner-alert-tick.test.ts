@@ -260,7 +260,13 @@ describe("owner-alert tick: live mode", () => {
 
   it("withholds a secret-shaped title instead of sending it", async () => {
     const r = rig(
-      [signal("incident:1", incident, "key " + ["sk", "live", "abcdefghijklmnopqrstuvwxyz123456"].join("_") + "")],
+      [
+        signal(
+          "incident:1",
+          incident,
+          "key " + ["sk", "live", "abcdefghijklmnopqrstuvwxyz123456"].join("_") + "",
+        ),
+      ],
       liveCfg(["email"]),
     );
     await runOwnerAlertTick(r.ports);
