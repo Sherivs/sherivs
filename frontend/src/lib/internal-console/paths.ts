@@ -26,6 +26,7 @@ export const CONSOLE_PATHS = {
   workforceAgent: (code: string) => `${CONSOLE_HOME_PATH}/workforce/${encodeURIComponent(code)}`,
   workforceWorkbench: (code: string) =>
     `${CONSOLE_HOME_PATH}/workforce/${encodeURIComponent(code)}/workbench`,
+  alerts: `${CONSOLE_HOME_PATH}/alerts`,
   activity: `${CONSOLE_HOME_PATH}/activity`,
   activityAdmin: `${CONSOLE_HOME_PATH}/activity/admin`,
   activitySecurity: `${CONSOLE_HOME_PATH}/activity/security`,

@@ -8,7 +8,7 @@
 import { looksLikeSecretValue } from "../tool-broker/connector-vault";
 import type { Severity } from "./severity";
 
-export type AlertChannel = "voice" | "whatsapp" | "sms" | "console";
+export type AlertChannel = "voice" | "whatsapp" | "sms" | "email" | "console";
 
 export interface QuietHours {
   /** Local-hour window, inclusive start, exclusive end; may wrap midnight. */
@@ -19,8 +19,8 @@ export interface QuietHours {
 
 export const CHANNELS_BY_SEVERITY: Readonly<Record<Severity, readonly AlertChannel[]>> =
   Object.freeze({
-    S1: ["voice", "whatsapp", "sms", "console"],
-    S2: ["whatsapp", "sms", "console"],
+    S1: ["voice", "whatsapp", "sms", "email", "console"],
+    S2: ["whatsapp", "sms", "email", "console"],
     S3: ["console"],
     S4: ["console"],
   });
@@ -36,6 +36,43 @@ export const inQuietHours = (nowMs: number, q: QuietHours | null): boolean => {
     ? h >= q.startHour && h < q.endHour
     : h >= q.startHour || h < q.endHour;
 };
+
+/** Control characters and text-direction overrides that can hide or reorder what the owner reads. */
+export function isHiddenCodePoint(c: number): boolean {
+  return (
+    c <= 0x1f ||
+    c === 0x7f ||
+    (c >= 0x200b && c <= 0x200f) ||
+    c === 0x2028 ||
+    c === 0x2029 ||
+    (c >= 0x202a && c <= 0x202e) ||
+    (c >= 0x2066 && c <= 0x2069)
+  );
+}
+const stripHidden = (text: string): string =>
+  Array.from(text, (ch) => (isHiddenCodePoint(ch.codePointAt(0) ?? 0) ? " " : ch)).join("");
+const SCHEME_OR_WWW = /(?:[a-z][a-z0-9+.-]*:\/\/|www\.)\S*/gi;
+const DOMAIN_PATH = /\S*[a-z0-9-]\.[a-z]{2,}\/\S*/gi;
+const BARE_DOMAIN =
+  /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|io|app|dev|co|ng|xyz|info|biz|me|ly|link|click|top|example)\b/gi;
+const MAX_TITLE = 140;
+
+/**
+ * An alert title can come from data a customer or attacker influenced. What reaches the owner's
+ * phone must not be able to carry a link or hidden text, so links, control and direction-override
+ * characters are removed and the length is capped. The only link in an alert is the console link.
+ */
+export function sanitizeAlertTitle(title: string): string {
+  const cleaned = stripHidden(title)
+    .replace(SCHEME_OR_WWW, "[link removed]")
+    .replace(DOMAIN_PATH, "[link removed]")
+    .replace(BARE_DOMAIN, "[link removed]")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, MAX_TITLE)
+    .trim();
+  return cleaned.length > 0 ? cleaned : "Alert";
+}
 
 export interface AlertInput {
   readonly severity: Severity;
@@ -89,9 +126,7 @@ export function planOwnerAlert(i: AlertInput): AlertPlan {
   if (i.severity !== "S1" && inQuietHours(i.nowMs, i.quiet))
     return { send: false, reason: "quiet_hours" };
 
-  const safeTitle = looksLikeSecretValue(i.title)
-    ? "[withheld]"
-    : i.title.replace(/\s+/g, " ").trim();
+  const safeTitle = looksLikeSecretValue(i.title) ? "[withheld]" : sanitizeAlertTitle(i.title);
   const body =
     `[${i.severity}] ${safeTitle}`.slice(0, MAX_BODY - url.toString().length - 20) +
     ` Review in console: ${url.toString()}`;

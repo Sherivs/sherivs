@@ -1,34 +1,44 @@
 /**
- * Owner alert delivery through the JARVIS channel gates (ENGINE-09, ADR-087).
+ * Owner alert delivery through the JARVIS channel gates (ENGINE-09, ADR-087; amended 2026-11-16).
  *
  * ENGINE-04 decides WHAT to tell the owner and on which channels by severity (content,
- * safe console link, dedupe, rate limit). The JARVIS ladder (ADR-037) owns WHETHER an
- * external channel may be used at all: test mode by default, per-channel owner
- * enablement, and a recorded live-outbound authorization. This module applies the
- * second to the first and adds no send capability of its own: it only returns a plan.
+ * safe console link, dedupe, rate limit). This module decides WHETHER each external
+ * channel may be used, and adds no send capability of its own: it only returns a plan.
  *
  * Rules:
  *  - the console is always deliverable (in-app);
- *  - WhatsApp and voice need owner enablement; in live mode they also need an
- *    unexpired authorization that names the channel and carries an approver;
- *  - SMS is never deliverable here: its activation is an owner decision that has not
- *    been recorded in the ladder's authorization model;
+ *  - WhatsApp, voice, SMS and email each need per-channel owner enablement; in live mode
+ *    each also needs an unexpired authorization that names that channel and carries an
+ *    approver. Missing either means the channel is skipped with a reason, never sent;
+ *  - SMS and email were activated by the owner's recorded instruction of 2026-11-16 and
+ *    follow exactly the same gate as WhatsApp and voice (this replaces the earlier rule
+ *    that SMS was never deliverable);
  *  - in test mode every external channel goes to a synthetic sink, never a contact;
  *  - an S1 alert still breaks quiet hours (ENGINE-04); approvals follow the ladder's
  *    quiet-hours rules instead, because they can wait.
  */
-import type {
-  EscalationConfig,
-  ExternalLadderChannel,
-  LiveOutboundAuthorization,
-} from "../jarvis/inbox-escalation";
 import {
   planOwnerAlert,
   type AlertChannel,
   type AlertInput,
 } from "../jarvis-executive/owner-alert";
 
-export type SkipCode = "channel_not_enabled" | "external_send_not_authorized" | "sms_not_activated";
+export type OwnerExternalChannel = Exclude<AlertChannel, "console">;
+
+export interface OwnerAlertConfig {
+  readonly mode: "test" | "live";
+  /** A channel that is absent counts as disabled. */
+  readonly ownerEnabled: Readonly<Partial<Record<OwnerExternalChannel, boolean>>>;
+}
+
+export interface OwnerLiveAuthorization {
+  readonly approvalRef: string;
+  readonly approvedBy: string;
+  readonly channels: readonly OwnerExternalChannel[];
+  readonly expiresAt: string;
+}
+
+export type SkipCode = "channel_not_enabled" | "external_send_not_authorized";
 
 export interface DeliveryItem {
   readonly channel: AlertChannel;
@@ -52,12 +62,9 @@ export type DeliveryPlan =
       readonly reason: "quiet_hours" | "deduped" | "rate_limited" | "unsafe_link";
     };
 
-const isExternalLadder = (c: AlertChannel): c is ExternalLadderChannel =>
-  c === "whatsapp" || c === "voice";
-
 function authorized(
-  channel: ExternalLadderChannel,
-  auth: LiveOutboundAuthorization | undefined,
+  channel: OwnerExternalChannel,
+  auth: OwnerLiveAuthorization | undefined,
   nowMs: number,
 ): boolean {
   return (
@@ -73,8 +80,8 @@ function authorized(
 
 export function planAlertDelivery(
   input: AlertInput & { readonly alertId: string },
-  config: Pick<EscalationConfig, "mode" | "ownerEnabled">,
-  liveOutbound?: LiveOutboundAuthorization,
+  config: OwnerAlertConfig,
+  liveOutbound?: OwnerLiveAuthorization,
 ): DeliveryPlan {
   const plan = planOwnerAlert(input);
   if (!plan.send) return plan;
@@ -85,10 +92,6 @@ export function planAlertDelivery(
     const idempotencyKey = `${input.alertId}:${channel}`;
     if (channel === "console") {
       deliveries.push({ channel, destination: { kind: "in_app" }, idempotencyKey });
-      continue;
-    }
-    if (!isExternalLadder(channel)) {
-      skipped.push({ channel, code: "sms_not_activated" });
       continue;
     }
     if (config.ownerEnabled[channel] !== true) {
