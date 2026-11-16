@@ -253,7 +253,10 @@ BEGIN
   -- the founder (an admin of that new organization) is now subject to the same guard
   r := ent01.upd('authenticated', ent01.ctxid('u_founder'), v, $s$subscription_tier = 'enterprise'$s$);
   PERFORM ent01.expect('D5 the founder of a self-serve organization cannot promote it', r LIKE 'err:42501:%' AND ent01.tier(v) = 'trial', r);
-  -- a row inserted by the owner without an explicit tier also lands in trial
+  -- a row inserted by the owner without an explicit tier also lands in trial.
+  -- The earlier calls leave a signed-in caller in this transaction's settings; an owner insert has
+  -- no caller, so clear it (the retention audit trigger records the caller as the actor).
+  PERFORM set_config('request.jwt.claims', json_build_object('role', 'service_role')::text, true);
   INSERT INTO public.schools (name, slug) VALUES ('ENT01 default', 'ent01-default') RETURNING id INTO v;
   PERFORM ent01.expect('D6 an insert that names no tier lands in trial', ent01.tier(v) = 'trial', ent01.tier(v));
 END $t$;
