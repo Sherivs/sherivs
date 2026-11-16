@@ -230,7 +230,9 @@ describe("layer 3: hostile text through the whole tick", () => {
       expect(urls.every((u) => u.startsWith(s.link))).toBe(true);
       expect(s.body).not.toMatch(/evil\.example/i);
       expect(s.body).not.toMatch(/sk_live/);
-      expect(s.body).not.toMatch(/[\u0000-\u001f‪-‮]/);
+      expect(Array.from(s.body).some((ch) => isHiddenCodePoint(ch.codePointAt(0) ?? 0))).toBe(
+        false,
+      );
       expect(s.body.length).toBeLessThan(400);
     }
   });
