@@ -1,4 +1,4 @@
--- NOT APPLIED. Needs the founder's written approval; the orchestrator applies it from merged master.
+-- APPLIED TO PRODUCTION 2026-11-16 22:22 UTC (project nwrflbpbhyiqdptmlccm) on the founder's written instruction.
 -- M12B: the retention policy audit trigger must not block the first organization a person creates.
 -- Origin: Claude Code agent, mission E-003 (M0). Found by CI on 2026-11-16, the first run since
 -- the retention migration (20261104014000) merged: integration test ENT-01 D2 fails with
