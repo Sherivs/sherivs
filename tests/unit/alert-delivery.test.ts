@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { DEFAULT_ESCALATION_CONFIG } from "../../frontend/src/lib/jarvis/inbox-escalation";
 import {
-  DEFAULT_ESCALATION_CONFIG,
-  type LiveOutboundAuthorization,
-} from "../../frontend/src/lib/jarvis/inbox-escalation";
-import { planAlertDelivery } from "../../frontend/src/lib/jarvis-bridge/alert-delivery";
+  planAlertDelivery,
+  type OwnerLiveAuthorization,
+} from "../../frontend/src/lib/jarvis-bridge/alert-delivery";
 import { SEVERITIES, type Severity } from "../../frontend/src/lib/jarvis-executive/severity";
 
 const NOW = Date.parse("2026-11-15T12:00:00.000Z");
@@ -21,7 +21,7 @@ const input = (severity: Severity, over: Record<string, unknown> = {}) => ({
 });
 const off = { whatsapp: false, voice: false } as const;
 const on = { whatsapp: true, voice: true } as const;
-const auth = (over: Partial<LiveOutboundAuthorization> = {}): LiveOutboundAuthorization => ({
+const auth = (over: Partial<OwnerLiveAuthorization> = {}): OwnerLiveAuthorization => ({
   approvalRef: "ap-1",
   approvedBy: "human:sheriff-1",
   channels: ["whatsapp", "voice"],
@@ -42,7 +42,8 @@ describe("ENGINE-09 alert delivery through the JARVIS gates", () => {
     expect(p.skipped).toEqual([
       { channel: "voice", code: "channel_not_enabled" },
       { channel: "whatsapp", code: "channel_not_enabled" },
-      { channel: "sms", code: "sms_not_activated" },
+      { channel: "sms", code: "channel_not_enabled" },
+      { channel: "email", code: "channel_not_enabled" },
     ]);
   });
 
@@ -63,7 +64,7 @@ describe("ENGINE-09 alert delivery through the JARVIS gates", () => {
     expect(channels(ok)).toEqual(["whatsapp", "console"]);
     if (ok.send) expect(ok.deliveries[0]!.destination).toEqual({ kind: "registered_contact" });
 
-    const bad: Array<[string, LiveOutboundAuthorization | undefined]> = [
+    const bad: Array<[string, OwnerLiveAuthorization | undefined]> = [
       ["none", undefined],
       ["expired", auth({ expiresAt: "2026-11-15T11:59:59.000Z" })],
       ["expires now", auth({ expiresAt: "2026-11-15T12:00:00.000Z" })],
@@ -89,13 +90,37 @@ describe("ENGINE-09 alert delivery through the JARVIS gates", () => {
       expect(p.skipped).toContainEqual({ channel: "whatsapp", code: "channel_not_enabled" });
   });
 
-  it("never delivers by SMS, whatever the configuration", () => {
-    for (const mode of ["test", "live"] as const) {
-      for (const s of SEVERITIES) {
-        const p = planAlertDelivery(input(s), { mode, ownerEnabled: on }, auth());
-        expect(channels(p)).not.toContain("sms");
-      }
+  it("delivers by SMS and email only when each is enabled, and in live mode each is named in the authorization", () => {
+    const all = { whatsapp: true, voice: true, sms: true, email: true } as const;
+    // Enabled in test mode: synthetic sinks.
+    const t = planAlertDelivery(input("S1"), { mode: "test", ownerEnabled: all });
+    expect(channels(t)).toEqual(["voice", "whatsapp", "sms", "email", "console"]);
+    // Live, authorization names only voice and whatsapp: sms and email are refused.
+    const l = planAlertDelivery(input("S1"), { mode: "live", ownerEnabled: all }, auth());
+    expect(channels(l)).toEqual(["voice", "whatsapp", "console"]);
+    if (l.send) {
+      expect(l.skipped).toEqual([
+        { channel: "sms", code: "external_send_not_authorized" },
+        { channel: "email", code: "external_send_not_authorized" },
+      ]);
     }
+    // Live, authorization names all four and is unexpired: all go to the registered contact.
+    const full = auth({ channels: ["voice", "whatsapp", "sms", "email"] });
+    const f = planAlertDelivery(input("S1"), { mode: "live", ownerEnabled: all }, full);
+    expect(channels(f)).toEqual(["voice", "whatsapp", "sms", "email", "console"]);
+    // An expired authorization refuses every external channel.
+    const e = planAlertDelivery(
+      input("S1"),
+      { mode: "live", ownerEnabled: all },
+      { ...full, expiresAt: "2026-11-15T11:00:00.000Z" },
+    );
+    expect(channels(e)).toEqual(["console"]);
+    // S3 and S4 never reach an external channel.
+    for (const s of ["S3", "S4"] as const)
+      expect(
+        channels(planAlertDelivery(input(s), { mode: "live", ownerEnabled: all }, full)),
+      ).toEqual(["console"]);
+    expect(SEVERITIES).toHaveLength(4);
   });
 
   it("S3 and S4 stay on the console", () => {

@@ -8,7 +8,7 @@
 import { looksLikeSecretValue } from "../tool-broker/connector-vault";
 import type { Severity } from "./severity";
 
-export type AlertChannel = "voice" | "whatsapp" | "sms" | "console";
+export type AlertChannel = "voice" | "whatsapp" | "sms" | "email" | "console";
 
 export interface QuietHours {
   /** Local-hour window, inclusive start, exclusive end; may wrap midnight. */
@@ -19,8 +19,8 @@ export interface QuietHours {
 
 export const CHANNELS_BY_SEVERITY: Readonly<Record<Severity, readonly AlertChannel[]>> =
   Object.freeze({
-    S1: ["voice", "whatsapp", "sms", "console"],
-    S2: ["whatsapp", "sms", "console"],
+    S1: ["voice", "whatsapp", "sms", "email", "console"],
+    S2: ["whatsapp", "sms", "email", "console"],
     S3: ["console"],
     S4: ["console"],
   });
