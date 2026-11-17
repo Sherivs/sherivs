@@ -157,6 +157,8 @@ INSERT INTO auth.users (id) SELECT id FROM wf01t.ids WHERE name IN ('adminA','me
 INSERT INTO public.schools (id, name, slug) VALUES
   (wf01t.id('orgA'), 'WF01 Synthetic Org A', 'wf01-synthetic-a'),
   (wf01t.id('orgB'), 'WF01 Synthetic Org B', 'wf01-synthetic-b');
+INSERT INTO public.wf_org_settings (org_id, workflows_enabled) VALUES
+  (wf01t.id('orgA'), true), (wf01t.id('orgB'), true);
 INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALUES
   (wf01t.id('adminA'), wf01t.id('orgA'), 'WF01 Admin A', 'admin-a@wf01.invalid', 'admin', true),
   (wf01t.id('memberA'), wf01t.id('orgA'), 'WF01 Member A', 'member-a@wf01.invalid', 'teacher', true),
