@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
+import { readFileSync } from "node:fs";
 import worker, { ROUTES } from "../../infra/cloudflare/sherivs-cron/src/index.js";
 
 type FetchFunction = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+const workerConfig = readFileSync("infra/cloudflare/sherivs-cron/wrangler.jsonc", "utf8");
 const secret = "scheduled-test-value";
 const allEnabled = Object.fromEntries(ROUTES.map((route) => [route.setting, "true"]));
 
@@ -25,6 +27,20 @@ afterEach(() => {
 });
 
 describe("sherivs-cron scheduler", () => {
+  it("uses a single cron and keeps preview URLs off with only the staging tick enabled", () => {
+    expect(workerConfig.match(/"crons":/g)).toHaveLength(1);
+    expect(workerConfig).toContain('"crons": ["* * * * *"]');
+    expect(workerConfig).toContain('"workers_dev": true');
+    expect(workerConfig).toContain('"preview_urls": false');
+    expect(workerConfig).toContain('"name": "sherivs-cron-staging"');
+    expect(workerConfig).toContain('"TARGET_BASE_URL": "https://staging-placeholder.invalid"');
+    expect(workerConfig).toContain('"ROUTE_WALLET_TOPUP_RECONCILE": "false"');
+    expect(workerConfig).toContain('"ROUTE_WORKFLOW_TICK": "true"');
+    expect(ROUTES.filter((route) => route.defaultEnabled).map((route) => route.name)).toEqual([
+      "wallet-topup-reconcile",
+    ]);
+  });
+
   it.each([
     ["wallet-topup-reconcile", "2026-11-17T12:20:00.000Z", true],
     ["wallet-topup-reconcile", "2026-11-17T12:21:00.000Z", false],
@@ -88,6 +104,38 @@ describe("sherivs-cron scheduler", () => {
     );
     expect(unknown.status).toBe(404);
     expect(disabled.status).toBe(409);
+  });
+
+  it("manually runs only the named fixed route and returns counts without proxying a body", async () => {
+    const fetchImpl = vi.fn<FetchFunction>(
+      async () =>
+        new Response("private response body", {
+          status: 202,
+        }),
+    );
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.stubGlobal("fetch", fetchImpl);
+    const response = await worker.fetch(
+      new Request("https://worker.test/?route=workflow-tick&url=https%3A%2F%2Fexample.invalid", {
+        headers: { Authorization: "Bearer " + secret },
+      }),
+      {
+        CRON_SECRET: secret,
+        TARGET_BASE_URL: "https://staging.example.invalid",
+        ROUTE_WORKFLOW_TICK: "true",
+      },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      route: "workflow-tick",
+      status: 202,
+      ms: expect.any(Number),
+    });
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(new URL(String(fetchImpl.mock.calls[0][0])).href).toBe(
+      "https://staging.example.invalid/api/public/cron/workflow-tick",
+    );
+    expect(log).not.toHaveBeenCalledWith(expect.stringContaining("private response body"));
   });
 
   it("continues after one route fails and never logs credentials or response bodies", async () => {
