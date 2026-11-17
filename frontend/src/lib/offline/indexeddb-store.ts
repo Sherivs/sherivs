@@ -1,4 +1,5 @@
 import { isNetworkError } from "./save-or-queue";
+import type { OutboxRecord } from "./outbox";
 
 export type OfflineDomain = "timetable" | "results" | "attendance" | "messages" | "workspace";
 export type OfflineMutationKind = "attendance" | "score";
@@ -21,14 +22,32 @@ export interface OfflineMutation<T = unknown> {
   conflict?: string;
 }
 
+/**
+ * One row of the scope-indexed outbox object store: either a legacy mutation
+ * (attendance/score queues) or a generic outbox record (ADR-109). Both carry
+ * `scopeKey`, so a scope wipe removes both.
+ */
+export type StoredOutboxRow = OfflineMutation | OutboxRecord;
+
+export function isLegacyMutation(row: StoredOutboxRow): row is OfflineMutation {
+  return (row as { type?: unknown }).type !== "outbox";
+}
+
 export interface OfflineDatabase {
   readRecord<T>(id: string): Promise<{ scopeKey: string; value: T; cachedAt: string } | undefined>;
   writeRecord<T>(id: string, scopeKey: string, value: T, cachedAt: string): Promise<void>;
-  readMutations(scopeKey: string): Promise<OfflineMutation[]>;
-  writeMutation(mutation: OfflineMutation): Promise<void>;
+  readMutations(scopeKey: string): Promise<StoredOutboxRow[]>;
+  writeMutation(mutation: StoredOutboxRow): Promise<void>;
   deleteMutation(id: string): Promise<void>;
   deleteScope(scopeKey: string): Promise<void>;
   clear(): Promise<void>;
+  /** Every queued row across all scopes (used only to count unsent items before a full wipe). */
+  readAllMutations?(): Promise<StoredOutboxRow[]>;
+}
+
+/** Record id of the per-scope "last successful sync" marker; wiped with the scope. */
+export function lastSyncRecordId(scopeKey: string): string {
+  return `${scopeKey}\u001fmeta\u001flast-sync`;
 }
 
 export interface OfflineSyncResult {
@@ -52,6 +71,8 @@ export interface OfflineStore {
   discard(id: string): Promise<void>;
   markConflict(id: string, reason: string): Promise<void>;
   setSyncing(syncing: boolean): Promise<void>;
+  /** Record a successful delivery to the server for this scope (shown as "last sync"). */
+  markSynced(): Promise<void>;
   sync(
     send: (
       mutation: OfflineMutation,
@@ -91,7 +112,7 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-function createBrowserDatabase(): OfflineDatabase {
+export function createBrowserDatabase(): OfflineDatabase {
   let opening: Promise<IDBDatabase> | undefined;
   const open = (): Promise<IDBDatabase> => {
     if (typeof indexedDB === "undefined")
@@ -141,14 +162,21 @@ function createBrowserDatabase(): OfflineDatabase {
       tx.objectStore(RECORDS).put({ id, scopeKey, value, cachedAt });
       await transactionDone(tx);
     },
-    async readMutations(scopeKey: string): Promise<OfflineMutation[]> {
+    async readMutations(scopeKey: string): Promise<StoredOutboxRow[]> {
       const db = await open();
       const tx = db.transaction(OUTBOX, "readonly");
       const result = await requestResult(tx.objectStore(OUTBOX).index(SCOPES).getAll(scopeKey));
       await transactionDone(tx);
-      return result as OfflineMutation[];
+      return result as StoredOutboxRow[];
     },
-    async writeMutation(mutation: OfflineMutation): Promise<void> {
+    async readAllMutations(): Promise<StoredOutboxRow[]> {
+      const db = await open();
+      const tx = db.transaction(OUTBOX, "readonly");
+      const result = await requestResult(tx.objectStore(OUTBOX).getAll());
+      await transactionDone(tx);
+      return result as StoredOutboxRow[];
+    },
+    async writeMutation(mutation: StoredOutboxRow): Promise<void> {
       const db = await open();
       const tx = db.transaction(OUTBOX, "readwrite");
       tx.objectStore(OUTBOX).put(mutation);
@@ -196,9 +224,10 @@ export function createOfflineStore(
   const maxStaleMs = options.maxStaleMs ?? 24 * 60 * 60 * 1000;
   const recordId = (domain: OfflineDomain, key: string) => `${scopeKey}\u001f${domain}\u001f${key}`;
   let syncing = false;
+  const legacyRows = async () => (await database.readMutations(scopeKey)).filter(isLegacyMutation);
   const publishStatus = async () => {
     if (typeof window === "undefined") return;
-    const mutations = await database.readMutations(scopeKey);
+    const mutations = await legacyRows();
     const pendingItems = mutations.filter((mutation) => mutation.state === "pending").length;
     const conflictItems = mutations.filter((mutation) => mutation.state === "conflict").length;
     window.dispatchEvent(
@@ -251,7 +280,7 @@ export function createOfflineStore(
       return mutation;
     },
     async list(kind?: OfflineMutationKind) {
-      const mutations = await database.readMutations(scopeKey);
+      const mutations = await legacyRows();
       return mutations.filter((mutation) => !kind || mutation.kind === kind);
     },
     async pending(kind?: OfflineMutationKind) {
@@ -274,13 +303,17 @@ export function createOfflineStore(
       syncing = value;
       await publishStatus();
     },
+    async markSynced() {
+      const at = now().toISOString();
+      await database.writeRecord(lastSyncRecordId(scopeKey), scopeKey, { at }, at);
+    },
     async sync(
       send: (
         mutation: OfflineMutation,
       ) => Promise<{ outcome: "applied" | "conflict"; reason?: string }>,
       kind?: OfflineMutationKind,
     ) {
-      const queue = await database.readMutations(scopeKey);
+      const queue = await legacyRows();
       let applied = 0;
       let error: string | undefined;
       const conflicts: OfflineMutation[] = [];
