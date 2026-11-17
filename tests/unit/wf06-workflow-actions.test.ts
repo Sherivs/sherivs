@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   effectiveWorkflowAutonomy,
+  isWorkflowConfidentialDataClass,
   isWorkflowEffectfulAction,
   isWorkflowMassCommunication,
+  isWorkflowWebhookTargetAllowed,
   parseWorkflowDeliveryMode,
   workflowActionHasMoneyEffect,
+  workflowActionCategory,
+  workflowActionDefinitionIsValid,
   workflowDeliveryGate,
   WORKFLOW_ACTION_CATEGORY_CAPS,
   WORKFLOW_AUTONOMY_LEVELS,
@@ -73,6 +77,54 @@ describe("WF-06 action policy", () => {
     ).toBe(true);
   });
 
+  it("caps confidential and minor-sensitive messages without reading event text", () => {
+    for (const dataClass of ["confidential", "minor_sensitive", "minor-sensitive"]) {
+      expect(isWorkflowConfidentialDataClass(dataClass)).toBe(true);
+      expect(
+        workflowActionCategory({
+          actionClass: "internal",
+          recipientCount: 1,
+          hasAudienceSelector: false,
+          dataClass,
+        }),
+      ).toBe("mass_message");
+    }
+    expect(isWorkflowConfidentialDataClass("internal")).toBe(false);
+    expect(
+      workflowActionCategory({
+        actionClass: "internal",
+        recipientCount: 25,
+        hasAudienceSelector: false,
+        dataClass: "internal",
+      }),
+    ).toBe("internal");
+  });
+
+  it("accepts only template references and recipient IDs, never message or address fields", () => {
+    expect(
+      workflowActionDefinitionIsValid({
+        kind: "email",
+        templateRef: "attendance.notice",
+        templateParams: { first_name: "Ada" },
+        recipientIds: ["a3f77e2c-0f47-4a80-81dc-f520a885c772"],
+      }),
+    ).toBe(true);
+    expect(
+      workflowActionDefinitionIsValid({
+        kind: "email",
+        templateRef: "attendance.notice",
+        body: "untrusted event text",
+      }),
+    ).toBe(false);
+    expect(
+      workflowActionDefinitionIsValid({
+        kind: "email",
+        templateRef: "attendance.notice",
+        recipientAddresses: ["ada@example.test"],
+      }),
+    ).toBe(false);
+  });
+
   it("defaults unset and invalid delivery modes to off", () => {
     for (const value of [undefined, "", "OFF", "invalid"]) {
       expect(parseWorkflowDeliveryMode(value)).toBe("off");
@@ -132,5 +184,29 @@ describe("WF-06 action policy", () => {
     expect(workflowActionHasMoneyEffect("money")).toBe(true);
     expect(workflowActionHasMoneyEffect("money_movement")).toBe(true);
     expect(workflowActionHasMoneyEffect("customer_visible")).toBe(false);
+  });
+
+  it("allows only registered, public HTTPS webhook endpoints", () => {
+    const now = () => "2026-11-17T00:00:00.000Z";
+    const targetUrl = "https://hooks.example.test/workflow";
+    expect(isWorkflowWebhookTargetAllowed({ targetUrl, registeredTargetUrl: targetUrl, now })).toBe(
+      true,
+    );
+    for (const target of [
+      "http://hooks.example.test/workflow",
+      "https://127.0.0.1/workflow",
+      "https://10.0.0.1/workflow",
+      "https://localhost/workflow",
+      "******hooks.example.test/workflow",
+      "https://hooks.example.test.evil.test/workflow",
+    ]) {
+      expect(
+        isWorkflowWebhookTargetAllowed({
+          targetUrl: target,
+          registeredTargetUrl: targetUrl,
+          now,
+        }),
+      ).toBe(false);
+    }
   });
 });

@@ -1,4 +1,5 @@
-import type { WorkflowAutonomyLevel } from "./workflow-runtime";
+import { z } from "zod";
+import { EgressAllowlist } from "../ai-gateway/egress-allowlist";
 
 export const WORKFLOW_ACTION_KINDS = [
   "email",
@@ -12,12 +13,46 @@ export const WORKFLOW_ACTION_KINDS = [
 
 export type WorkflowActionKind = (typeof WORKFLOW_ACTION_KINDS)[number];
 
+export const workflowActionDefinitionSchema = z
+  .strictObject({
+    kind: z.enum(WORKFLOW_ACTION_KINDS),
+    templateRef: z
+      .string()
+      .regex(/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$/)
+      .optional(),
+    templateParams: z
+      .record(
+        z.string().regex(/^[a-z][a-z0-9_]{0,63}$/),
+        z.union([z.string().max(512), z.number().finite(), z.boolean()]),
+      )
+      .default({}),
+    recipientIds: z.array(z.string().uuid()).max(500).default([]),
+    audienceSelector: z.enum(["whole_class", "all_guardians", "all_staff"]).optional(),
+    dataClass: z.string().max(64).optional(),
+    targetUrl: z.string().url().max(2048).optional(),
+  })
+  .refine(
+    (action) =>
+      !["email", "whatsapp", "sms", "in_app"].includes(action.kind) || !!action.templateRef,
+  )
+  .refine((action) => action.kind !== "webhook" || !!action.targetUrl);
+
+export type WorkflowActionDefinition = z.infer<typeof workflowActionDefinitionSchema>;
+
+export function workflowActionDefinitionIsValid(
+  candidate: unknown,
+): candidate is WorkflowActionDefinition {
+  return workflowActionDefinitionSchema.safeParse(candidate).success;
+}
+
 export const WORKFLOW_AUTONOMY_LEVELS = [
   "suggest",
   "draft",
   "act_with_approval",
   "act_and_report",
 ] as const;
+
+export type WorkflowAutonomyLevel = (typeof WORKFLOW_AUTONOMY_LEVELS)[number];
 
 export const WORKFLOW_ACTION_CATEGORY_CAPS = Object.freeze({
   money_movement: "draft",
@@ -70,6 +105,32 @@ export function isWorkflowMassCommunication(input: {
     input.recipientCount > WORKFLOW_MASS_RECIPIENT_THRESHOLD ||
     input.hasAudienceSelector
   );
+}
+
+export function isWorkflowConfidentialDataClass(dataClass: string | undefined): boolean {
+  const normalized = dataClass
+    ?.trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-");
+  return normalized === "confidential" || normalized === "minor-sensitive";
+}
+
+export function workflowActionCategory(input: {
+  actionClass: string;
+  recipientCount: number;
+  hasAudienceSelector: boolean;
+  dataClass?: string;
+}): string {
+  if (
+    isWorkflowMassCommunication({
+      recipientCount: input.recipientCount,
+      hasAudienceSelector: input.hasAudienceSelector,
+    }) ||
+    isWorkflowConfidentialDataClass(input.dataClass)
+  ) {
+    return "mass_message";
+  }
+  return input.actionClass;
 }
 
 export function isWorkflowEffectfulAction(kind: WorkflowActionKind): boolean {
@@ -126,4 +187,40 @@ export function workflowDeliveryGate(input: WorkflowDeliveryGateInput): Workflow
 
 export function workflowActionHasMoneyEffect(effect: string): boolean {
   return effect === "money" || effect === "money_movement";
+}
+
+export function isWorkflowWebhookTargetAllowed(input: {
+  targetUrl: string;
+  registeredTargetUrl: string | null;
+  now?: () => string;
+}): boolean {
+  if (!input.registeredTargetUrl || input.targetUrl !== input.registeredTargetUrl) return false;
+  let pathname: string;
+  try {
+    pathname = new URL(input.registeredTargetUrl).pathname;
+  } catch {
+    return false;
+  }
+  try {
+    const allowlist = new EgressAllowlist({
+      bindings: [
+        {
+          providerClass: "workflow-webhook",
+          endpoint: input.registeredTargetUrl,
+          pathPrefix: pathname,
+          methods: ["POST"],
+        },
+      ],
+      ...(input.now ? { now: input.now } : {}),
+    });
+    return (
+      allowlist.decide({
+        url: input.targetUrl,
+        method: "POST",
+        providerClass: "workflow-webhook",
+      }).verdict === "allow"
+    );
+  } catch {
+    return false;
+  }
 }
