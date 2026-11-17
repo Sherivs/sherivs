@@ -99,12 +99,13 @@ describe("M0 migration ledger drift check", () => {
     expect(report.legacyUnnamed).toHaveLength(1);
   });
 
-  it("the register names real files and the two ENGINE migrations kept out of the folder", () => {
+  it("the register names real files and the migrations kept out of the folder", () => {
     const repo = readRepoState(process.cwd());
     expect(repo.missingSql).toEqual([]);
     expect(repo.outOfFolder.map((e: { ledgerName: string }) => e.ledgerName)).toEqual([
       "20261110000400_sherivs_engine20_org_agent_addons_events_reports",
       "20261110000500_sherivs_engine22_org_agent_role_holders",
+      "20261117000300_sherivs_sec_m0_privilege_consolidation",
     ]);
     for (const e of repo.outOfFolder) expect(repo.fileStems).not.toContain(e.ledgerName);
   });
@@ -124,8 +125,8 @@ describe("M0 SEC-M0 privilege proposal", () => {
   const sql = readFileSync("database/proposals/SEC-M0_privilege_consolidation.sql", "utf8");
   const body = sql.replace(/^--.*$/gm, "");
 
-  it("is a proposal with a rollback and a behaviour test", () => {
-    expect(sql.startsWith("-- PROPOSAL ONLY. NOT APPLIED.")).toBe(true);
+  it("is recorded as applied, with a rollback and a behaviour test", () => {
+    expect(sql.startsWith("-- APPLIED TO PRODUCTION 2026-11-17")).toBe(true);
     expect(
       readFileSync("database/proposals/SEC-M0_privilege_consolidation.rollback.sql", "utf8"),
     ).toContain("tenant_all_subscriptions");

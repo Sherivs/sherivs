@@ -1,7 +1,8 @@
 -- NOT APPLIED. Needs the founder's written approval; the orchestrator applies it from merged master.
+-- Renumbered from 20261116000400 to 20261117002200 on 2026-11-17: after the latest version applied in production.
 -- M06 V1 continuous-assessment weights, terminal scores, and governed results.
 -- Renumbered from 20261104010000 on 2026-11-16 so that file order matches apply order.
--- Rollback: database/supabase/rollbacks/20261116000400_sherivs_m06_ca_terminal_results.sql
+-- Rollback: database/supabase/rollbacks/20261117002200_sherivs_m06_ca_terminal_results.sql
 DO $guard$
 DECLARE missing text[] := ARRAY[]::text[];
 BEGIN

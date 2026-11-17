@@ -1,4 +1,4 @@
--- Data-preserving rollback for 20261116000400_sherivs_m06_ca_terminal_results.sql.
+-- Data-preserving rollback for 20261117002200_sherivs_m06_ca_terminal_results.sql.
 -- Refuses rollback after M06 weights, scores, approvals, or amendments are stored.
 BEGIN;
 

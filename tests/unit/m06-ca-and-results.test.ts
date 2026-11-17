@@ -4,11 +4,11 @@ import { computeTermResult, type TermResultWeights } from "@/lib/scholar/result-
 import type { GradingModel } from "@/lib/scholar/grading";
 
 const migration = readFileSync(
-  "database/supabase/migrations/20261116000400_sherivs_m06_ca_terminal_results.sql",
+  "database/supabase/migrations/20261117002200_sherivs_m06_ca_terminal_results.sql",
   "utf8",
 );
 const rollback = readFileSync(
-  "database/supabase/rollbacks/20261116000400_sherivs_m06_ca_terminal_results.sql",
+  "database/supabase/rollbacks/20261117002200_sherivs_m06_ca_terminal_results.sql",
   "utf8",
 );
 const harness = readFileSync("tests/integration/m06-ca-and-results.local.sql", "utf8");
