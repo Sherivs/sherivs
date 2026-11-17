@@ -1,0 +1,2 @@
+-- Rollback for 20261115000700_sherivs_engine11_13_platform_roles. Fails if any staff member still holds one of these roles (foreign key), which is the intended guard.
+DELETE FROM public.platform_roles WHERE code IN ('compliance','reliability','customer_success','finops','audit','knowledge','product','market','onboarding','safeguarding','qa','evaluation','marketing','localisation','data','legal','people','investor');

@@ -44,8 +44,8 @@ CREATE TABLE c03.ctx (k text PRIMARY KEY, v text);
 GRANT ALL ON c03.results, c03.ctx TO PUBLIC;
 
 \if :apply_migration
-  \i database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql
-  \i database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql
+  \i database/supabase/migrations/20261116000800_sherivs_comms03_sms_dispatch_financials.sql
+  \i database/supabase/migrations/20261116000800_sherivs_comms03_sms_dispatch_financials.sql
 \endif
 
 CREATE FUNCTION c03.expect(p_name text, p_ok boolean, p_detail text DEFAULT '') RETURNS void LANGUAGE plpgsql AS $$

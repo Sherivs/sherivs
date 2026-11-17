@@ -139,7 +139,10 @@ export const ResendEmailResponseSchema = z.object({
  * null/omit when no substrate is configured: the send result stays exactly
  * as typed.
  */
-export function createResendEmailAdapter(config: ResendEmailConfig, evidence: DeliveryEvidenceSink | null = null): EmailAdapter {
+export function createResendEmailAdapter(
+  config: ResendEmailConfig,
+  evidence: DeliveryEvidenceSink | null = null,
+): EmailAdapter {
   const raw: EmailAdapter = {
     providerId: RESEND_EMAIL_PROVIDER_ID,
 
@@ -193,6 +196,8 @@ export function createResendEmailAdapter(config: ResendEmailConfig, evidence: De
           headers: {
             Authorization: `Bearer ${config.apiKey as string}`,
             "Content-Type": "application/json",
+            // Provider-side dedupe so a worker retry never double-sends.
+            "Idempotency-Key": command.notification.id,
           },
           body: JSON.stringify(parsedPayload.data),
         });
@@ -241,5 +246,8 @@ export function createResendEmailAdapter(config: ResendEmailConfig, evidence: De
   // Evidence wraps OUTSIDE the failure policy so the recorded row reflects
   // the attempt's FINAL typed outcome — including a transport failure the
   // policy contained as a structured failure.
-  return withEmailDeliveryEvidence(withEmailFailurePolicy(raw, DEFAULT_EMAIL_FAILURE_POLICY), evidence);
+  return withEmailDeliveryEvidence(
+    withEmailFailurePolicy(raw, DEFAULT_EMAIL_FAILURE_POLICY),
+    evidence,
+  );
 }

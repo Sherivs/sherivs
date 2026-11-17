@@ -898,7 +898,7 @@
 }
 .sw-date small {
   display: block;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   font-weight: 700;
   font-family: var(--sw-font);

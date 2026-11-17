@@ -4,12 +4,12 @@
 ||---|---|
 || Status | PROPOSED (security review and operator approval before any production migration) |
 || Date | 2026-11-13 |
-|| Author | Claude Code coding agent (Claude Sonnet 5.5) under the COMMS-03 mission authorization of 2026-11-13. Implements the proposal of the COMMS-03 financial-integrity review (`docs/proposals/comms-03-financial-entitlement/`) after FIN-01 (ADR-070) and ENT-01 (ADR-071). The paid-SMS send path it completes was delivered by `copilot-swe-agent[bot]` in PR #222 (issue #221); the BulkSMS Nigeria adapter and dispatcher by ADR-069. |
+|| Author | Claude Code coding agent (Claude Sonnet 5.5) under the COMMS-03 mission authorization of 2026-11-13. Implements the proposal of the COMMS-03 financial-integrity review (`docs/proposals/comms-03-financial-entitlement/`) after FIN-01 (ADR-070) and ENT-01 (ADR-071). The paid-SMS send path it completes was delivered by `copilot-swe-agent[bot]` in PR #222 (issue #221); the BulkSMS Nigeria adapter and dispatcher by ADR-103. |
 || Mission | COMMS-03 — BulkSMS readiness: dispatcher write path, simulated-message charges, refund and reconciliation policy, plan enforcement in the database |
 || Capabilities | V1 communications fabric (`comms_send`, `outbound_messages`); wallet metering and refunds; SMS plan entitlement |
-|| Supersedes-in-part | None. Corrects the ADR-069 dispatcher write path (direct `UPDATE`s that migration `20261024000270` denies) and replaces proposals 01–03 of the review. Proposals 04 and 05 are superseded by FIN-01 and ENT-01 and are not reapplied. |
-|| Cites | `database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql`; its rollback; `tests/integration/comms-03-sms-dispatch-financials.local.sql`; `tests/integration/comms-03-sms-concurrency.local.mjs`; `tests/unit/communications/sms-fabric.test.ts`; `frontend/src/lib/communications/sms-fabric.server.ts` |
-|| Minimal ownership artifact | `database/supabase/migrations/20261104052000_sherivs_comms03_sms_dispatch_financials.sql` and its matching rollback |
+|| Supersedes-in-part | None. Corrects the ADR-103 dispatcher write path (direct `UPDATE`s that migration `20261024000270` denies) and replaces proposals 01–03 of the review. Proposals 04 and 05 are superseded by FIN-01 and ENT-01 and are not reapplied. |
+|| Cites | `database/supabase/migrations/20261116000800_sherivs_comms03_sms_dispatch_financials.sql`; its rollback; `tests/integration/comms-03-sms-dispatch-financials.local.sql`; `tests/integration/comms-03-sms-concurrency.local.mjs`; `tests/unit/communications/sms-fabric.test.ts`; `frontend/src/lib/communications/sms-fabric.server.ts` |
+|| Minimal ownership artifact | `database/supabase/migrations/20261116000800_sherivs_comms03_sms_dispatch_financials.sql` and its matching rollback |
 
 ## Context
 
@@ -58,7 +58,7 @@ All writes go through `SECURITY DEFINER` functions the client roles cannot execu
 
 ### Neutrality baseline extension (ADR-004)
 
-The COMMS-03 migration necessarily uses the platform's existing physical column `school_id` and, in the verbatim `comms_send` body, the existing vocabulary of that function. The domain-neutrality guard reports these as new hits in a new file. Per ADR-004 an entry may be added only with a dedicated ADR recording the decision; this ADR is that record. The entries are limited to `20261104052000_sherivs_comms03_sms_dispatch_financials.sql`; no table, grant or domain code was added to a neutral surface. This follows the same decision taken in ADR-070 and ADR-071 and is flagged for reviewer confirmation because the baseline header says the baseline is shrink-only.
+The COMMS-03 migration necessarily uses the platform's existing physical column `school_id` and, in the verbatim `comms_send` body, the existing vocabulary of that function. The domain-neutrality guard reports these as new hits in a new file. Per ADR-004 an entry may be added only with a dedicated ADR recording the decision; this ADR is that record. The entries are limited to `20261116000800_sherivs_comms03_sms_dispatch_financials.sql`; no table, grant or domain code was added to a neutral surface. This follows the same decision taken in ADR-070 and ADR-071 and is flagged for reviewer confirmation because the baseline header says the baseline is shrink-only.
 
 ## Consequences (summary)
 

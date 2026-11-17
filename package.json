@@ -91,7 +91,7 @@
     "@radix-ui/react-toggle": "^1.1.10",
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
-    "@sentry/tanstackstart-react": "^11.8.0",
+    "@sentry/tanstackstart-react": "^11.12.0",
     "@sherivs/contracts": "file:packages/contracts",
     "@simplewebauthn/browser": "^13.3.0",
     "@simplewebauthn/server": "^13.3.3",
