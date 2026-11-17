@@ -82,7 +82,26 @@ SELECT wf02t.expect_true('template catalogue is forced RLS and service-role writ
     SELECT 1 FROM aclexplode(coalesce(
       (SELECT relacl FROM pg_class WHERE oid = 'public.wf_template'::regclass),
       acldefault('r', (SELECT relowner FROM pg_class WHERE oid = 'public.wf_template'::regclass))
-    )) a WHERE a.grantee = 0
+    )) a
+     WHERE a.grantee IN (0, (SELECT oid FROM pg_roles WHERE rolname = 'anon'))
+  ));
+SELECT wf02t.expect_true('WF-02 guard functions have no client, service or public execute grants',
+  NOT EXISTS (
+    SELECT 1
+      FROM pg_proc p
+      CROSS JOIN LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+     WHERE p.oid IN (
+       'public.wf_version_editor_stamp()'::regprocedure,
+       'public.wf_version_sod_guard()'::regprocedure,
+       'public.wf_approval_sod_guard()'::regprocedure
+     )
+       AND a.grantee IN (
+         0,
+         (SELECT oid FROM pg_roles WHERE rolname = 'anon'),
+         (SELECT oid FROM pg_roles WHERE rolname = 'authenticated'),
+         (SELECT oid FROM pg_roles WHERE rolname = 'service_role')
+       )
+       AND a.privilege_type = 'EXECUTE'
   ));
 SELECT wf02t.expect_true('all three global template records are seeded',
   (SELECT count(*) = 3 FROM public.wf_template)
@@ -265,7 +284,7 @@ SELECT wf02t.expect_error('management approval must identify its target version'
 SELECT wf02t.expect_error('approval target version is immutable',
   $q$UPDATE public.wf_approval SET target_version_id = 'f0220000-0000-4000-8000-0000000000b1'
       WHERE id = 'f0250000-0000-4000-8000-0000000000a1'$q$, '42501');
-UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0200000-0000-4000-8000-000000000003',
+UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0200000-0000-4000-8000-000000000004',
        decided_at = now(), decision_channel = 'console' WHERE id = 'f0250000-0000-4000-8000-0000000000a1';
 SELECT wf02t.pass('an unrelated person in the console can decide the approval');
 SELECT wf02t.logout();

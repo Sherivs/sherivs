@@ -199,7 +199,7 @@ INSERT INTO public.wf_run_event (org_id, run_id, kind, actor_kind, actor_ref) VA
   (wf01t.id('orgB'), 'f0150000-0000-4000-8000-0000000000b2', 'run.started', 'system', 'service');
 INSERT INTO public.wf_approval (id, org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at) VALUES
   ('f0170000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'f0150000-0000-4000-8000-0000000000a1', 'f0160000-0000-4000-8000-0000000000a1',
-   'Send reminder batch', 'user', 'f0100000-0000-4000-8000-000000000001', now() + interval '1 day'),
+   'Send reminder batch', 'user', 'f0100000-0000-4000-8000-000000000002', now() + interval '1 day'),
   ('f0170000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'f0150000-0000-4000-8000-0000000000b2', 'f0160000-0000-4000-8000-0000000000b2',
    'Send reminder batch', 'agent', 'agent:reminders', now() + interval '1 day');
 SELECT wf01t.pass('service role seeded both organizations');
@@ -209,8 +209,9 @@ SELECT wf01t.expect_error('fk: step in org B cannot point at a run in org A',
   $q$INSERT INTO public.wf_step_run (org_id, run_id, step_key, kind, idempotency_key)
      VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0150000-0000-4000-8000-0000000000a1', 's9', 'action', 'cross-tenant-step')$q$, '23503');
 SELECT wf01t.expect_error('fk: version in org B cannot attach to a definition in org A',
-  $q$INSERT INTO public.wf_version (org_id, definition_id, version)
-     VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0110000-0000-4000-8000-0000000000a1', 9)$q$, '23503');
+  $q$INSERT INTO public.wf_version (org_id, definition_id, version, created_by)
+     VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0110000-0000-4000-8000-0000000000a1', 9,
+             'f0100000-0000-4000-8000-000000000001')$q$, '23503');
 SELECT wf01t.expect_error('approval in org A cannot reference a step in org B (guard fires before the composite FK)',
   $q$INSERT INTO public.wf_approval (org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at)
      VALUES ('f0100000-0000-4000-8000-0000000000a1', 'f0150000-0000-4000-8000-0000000000a1', 'f0160000-0000-4000-8000-0000000000b2',
@@ -387,7 +388,7 @@ SELECT wf01t.expect_error('approval: a decision needs a person (no agent or syst
   $q$UPDATE public.wf_approval SET status = 'approved', decided_at = now(), decision_channel = 'console'
       WHERE id = 'f0170000-0000-4000-8000-0000000000b2'$q$, '23514');
 SELECT wf01t.expect_error('approval: the requester cannot approve their own request',
-  $q$UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0100000-0000-4000-8000-000000000001',
+  $q$UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0100000-0000-4000-8000-000000000002',
        decided_at = now(), decision_channel = 'console' WHERE id = 'f0170000-0000-4000-8000-0000000000a1'$q$, '23514');
 SELECT wf01t.expect_error('approval: expiry is at most 30 days',
   $q$INSERT INTO public.wf_approval (org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at)

@@ -65,7 +65,8 @@ describe("WF-02 workflow permissions and templates (static posture)", () => {
     expect(body).toContain("CREATE TRIGGER wf_approval_20_sod_guard");
     expect(body).toContain("NEW.decided_by = v.created_by OR NEW.decided_by = v.updated_by");
     expect(body).toContain("FROM PUBLIC, anon, authenticated, service_role");
-    expect(body).toContain("WF-02: an active assignment would combine workflow editing and approval");
+    expect(body).toContain("PERFORM public.workspace_role_sod_validate_schedule(v_user.org_id, v_user.user_id)");
+    expect(body).toContain("d.delegate_user_id");
   });
 
   it("creates a global versioned catalogue with forced RLS and explicit privileges", () => {
