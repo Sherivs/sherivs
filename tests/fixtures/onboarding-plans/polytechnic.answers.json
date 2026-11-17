@@ -1,0 +1,18 @@
+{
+  "entry.org.institution_type": "polytechnic_federal",
+  "entry.location.state": "kaduna",
+  "polytechnic.authority.regulators": ["nbte"],
+  "polytechnic.structure.school_count": 6,
+  "polytechnic.structure.department_count": 40,
+  "polytechnic.programmes.levels": ["nd", "hnd", "pre_nd"],
+  "polytechnic.calendar.model": "two_semester",
+  "polytechnic.assessment.scale": "four_point_cgpa",
+  "polytechnic.intake.routes": ["jamb_utme_caps", "direct_entry", "part_time"],
+  "polytechnic.welfare.hostels": true,
+  "polytechnic.placements.industrial_training": true,
+  "polytechnic.enterprise.consultancy_unit": true,
+  "polytechnic.governance.academic_body": "academic_board",
+  "polytechnic.layout.campus_count": 2,
+  "polytechnic.size.population_band": "over_5000",
+  "polytechnic.profile.languages": ["en"]
+}
