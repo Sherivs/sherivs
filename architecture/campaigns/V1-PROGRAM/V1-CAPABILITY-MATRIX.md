@@ -36,7 +36,7 @@ Status: IMPLEMENTED (code + evidence) · PARTIAL (code exists, gap documented) �
 | V1CAP-26 | Event fabric | P18 | PARTIAL | events recorded; delivery pass manual |
 | V1CAP-27 | Audit trail (immutable) | P19 | IMPLEMENTED | — |
 | V1CAP-28 | Secrets hygiene / fail-closed semantics | P20 | IMPLEMENTED | rotation of exposed NVIDIA keys still owed |
-| V1CAP-29 | Observability (structured logs, health) | P21 | IMPLEMENTED | Sentry/PostHog deferred to V2 |
+| V1CAP-29 | Observability (structured logs, health) | P21 | IMPLEMENTED | Sentry/PostHog are staging-only (INFRA-01); production sinks are Datadog, CloudWatch, and provider-native |
 | V1CAP-30 | PWA installable | P22 | PARTIAL | sw.js/robots.txt build bug + offline shell (V1-001) |
 | V1CAP-31 | Mobile client (shared contracts, iOS+Android) | §21/§22 | ABSENT | V1-010 |
 | V1CAP-32 | E2E vertical slice | §37 | PARTIAL | foundation-loop is a slice; full visitor→outcome journey untested (F-13) |
@@ -52,7 +52,7 @@ Status: IMPLEMENTED (code + evidence) · PARTIAL (code exists, gap documented) �
 
 ## V2 (24)
 
-Sentry + PostHog vendors; pgvector semantic retrieval; advanced scheduling/cron UI; billing UI self-serve; per-org cost rollup dashboards; organization website SEO suite; accessibility audit cycle; load/resilience harness beyond smoke; Redis-backed queue scale-out; multi-region; granular notification preferences; knowledge graph UI; digital-twin projections UI; template marketplace; n8n adapter polish; support ticket lifecycle UI; SSO/SAML; org-level audit export UI; custom domain provisioning; content governance workflow; i18n; dark-mode design pass; e2e mobile device farm; backup/restore drill automation.
+Datadog and CloudWatch production account wiring; pgvector semantic retrieval; advanced scheduling/cron UI; billing UI self-serve; per-org cost rollup dashboards; organization website SEO suite; accessibility audit cycle; load/resilience harness beyond smoke; Redis-backed queue scale-out; multi-region; granular notification preferences; knowledge graph UI; digital-twin projections UI; template marketplace; n8n adapter polish; support ticket lifecycle UI; SSO/SAML; org-level audit export UI; custom domain provisioning; content governance workflow; i18n; dark-mode design pass; e2e mobile device farm; backup/restore drill automation.
 
 ## DEFERRED-BEYOND-V2 (17) — with explicit reasons
 

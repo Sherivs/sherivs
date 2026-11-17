@@ -52,12 +52,14 @@ async function runInboundVerification({
   timestamp = String(Math.floor(Date.now() / 1000)),
   signature,
   includeBinary = true,
+  secretEnv = { N8N_WHATSAPP_SIGNING_SECRET: inboundSecret } as Record<string, string>,
 }: {
   body?: string;
   signedBody?: string;
   timestamp?: string;
   signature?: string;
   includeBinary?: boolean;
+  secretEnv?: Record<string, string>;
 } = {}) {
   const workflow = workflows.get("sherivs-wa-inbound-handler.json");
   if (!workflow) throw new Error("Missing inbound handler export");
@@ -89,7 +91,7 @@ async function runInboundVerification({
       return crypto;
     },
     $input: { first: () => input },
-    process: { env: { N8N_WHATSAPP_SIGNING_SECRET: inboundSecret } },
+    $env: secretEnv,
     Buffer,
     Date,
   }) as Promise<Array<{ json: { valid: boolean } }>>;
@@ -190,6 +192,34 @@ describe("n8n workflow exports", () => {
       signedBody: inboundBody,
     });
     expect(whitespaceChanged[0].json.valid).toBe(false);
+  });
+
+  it("rejects (not errors) on missing, mutated or absent-secret signatures", async () => {
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const valid = `sha256=${crypto.createHmac("sha256", inboundSecret).update(`${timestamp}.${inboundBody}`).digest("hex")}`;
+    const mutated = valid.slice(0, -1) + (valid.endsWith("0") ? "1" : "0");
+    expect((await runInboundVerification({ timestamp, signature: mutated }))[0].json.valid).toBe(
+      false,
+    );
+    expect((await runInboundVerification({ signature: "" }))[0].json.valid).toBe(false);
+    expect((await runInboundVerification({ secretEnv: {} }))[0].json.valid).toBe(false);
+  });
+
+  it("never references process. in Code nodes and pins a webhookId", () => {
+    for (const [file, workflow] of workflows) {
+      for (const node of workflow.nodes) {
+        if (node.type === "n8n-nodes-base.code") {
+          expect(node.parameters.jsCode as string, `${file}:${node.name}`).not.toMatch(
+            /\bprocess\./,
+          );
+        }
+      }
+    }
+    const webhook = findNode(workflows.get("sherivs-wa-inbound-handler.json")!, "Inbound webhook");
+    expect((webhook as unknown as { webhookId?: string }).webhookId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(webhook.parameters.path).toBe("sherivs-wa-inbound-placeholder");
   });
 
   it("runs the authenticated outbox tick every minute", () => {

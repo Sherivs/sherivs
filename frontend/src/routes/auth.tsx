@@ -55,6 +55,7 @@ import "@/components/app-entry/app-entry.css";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  head: () => ({ meta: [{ title: "Sign in — Sherivs" }] }),
   validateSearch: (search: Record<string, unknown>): { mode?: string; next?: string } => {
     const out: { mode?: string; next?: string } = {};
     if (typeof search.mode === "string") out.mode = search.mode;
@@ -257,7 +258,7 @@ function AuthPage() {
 
   if (busy && busyKind === "password") {
     return (
-      <main id="main-content" className="auth-shell app-entry app-entry-login">
+      <main id="main-content" tabIndex={-1} className="auth-shell app-entry app-entry-login">
         <div className="app-entry-login-orbs" aria-hidden="true">
           <span className="app-entry-orb app-entry-orb-cyan" />
           <span className="app-entry-orb app-entry-orb-blue" />
@@ -273,7 +274,7 @@ function AuthPage() {
   }
 
   return (
-    <main id="main-content" className="auth-shell app-entry app-entry-login">
+    <main id="main-content" tabIndex={-1} className="auth-shell app-entry app-entry-login">
       <div className="app-entry-login-orbs" aria-hidden="true">
         <span className="app-entry-orb app-entry-orb-cyan" />
         <span className="app-entry-orb app-entry-orb-blue" />
@@ -492,7 +493,7 @@ function AuthPage() {
           {hostKind !== "internal" ? (
             <Link
               to="/"
-              className="block min-h-11 py-3 text-xs text-muted-foreground hover:text-foreground"
+              className="flex min-h-11 items-center text-xs text-muted-foreground hover:text-foreground"
             >
               Back to site
             </Link>

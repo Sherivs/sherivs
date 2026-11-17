@@ -307,7 +307,7 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
       className={`sherivs-console${drawer ? " is-drawer" : ""}${collapsed ? " is-collapsed" : ""}`}
       data-testid="internal-console"
     >
-      <a className="sherivs-console-skip-link" href="#console-main">
+      <a className="sherivs-console-skip-link" href="#main-content">
         Skip to main content
       </a>
       <div className="sherivs-console-orbs" aria-hidden="true">
@@ -455,7 +455,6 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                 onFocus={() => setOpenSearch(true)}
                 placeholder="Search authorized resources"
                 aria-label="Search authorized resources"
-                aria-expanded={openSearch && query.trim().length >= 2}
                 aria-controls={
                   openSearch && query.trim().length >= 2 ? "console-search-results" : undefined
                 }
@@ -667,7 +666,7 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
           </nav>
         </aside>
 
-        <main id="console-main" className="sherivs-console-main" tabIndex={-1}>
+        <main id="main-content" className="sherivs-console-main" tabIndex={-1}>
           <div className="sherivs-console-sheet">
             {consoleVisualFixtureActive() || overview?.workspaceStore === "derived-fallback" ? (
               <section
