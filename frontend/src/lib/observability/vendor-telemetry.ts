@@ -7,6 +7,12 @@
  * Names only. This file never reads or prints credential values.
  */
 
+import {
+  CLIENT_POSTHOG_SWITCH_ENV,
+  CLIENT_SENTRY_SWITCH_ENV,
+  sentrySwitchOn,
+} from "./vendor-switches.ts";
+
 export const VENDOR_TELEMETRY_ENV_VALUE = "staging" as const;
 
 /** Client identifiers Vite would otherwise inline into the browser bundle. */
@@ -39,6 +45,10 @@ export interface VendorTelemetryInput {
   command?: string | null;
   /** Vite mode. The shipping define runs only for "production". */
   mode?: string | null;
+  /** OBS-DD-01 OBSERVABILITY_SENTRY_ENABLED. Unset keeps Sentry on (still staging-only). */
+  sentrySwitch?: string | null;
+  /** OBS-DD-01 OBSERVABILITY_POSTHOG_ENABLED. Unset keeps PostHog on (still staging-only). */
+  posthogSwitch?: string | null;
 }
 
 function exact(value: string | null | undefined): string {
@@ -128,12 +138,31 @@ export function vendorBuildDefine(input: VendorTelemetryInput = {}): Record<stri
   return {
     ...clientVendorDefine(input),
     ...serverVendorDefine(input),
+    ...clientSwitchDefine(input),
   };
+}
+
+/**
+ * OBS-DD-01. Bakes the server switch names into the browser bundle so one
+ * Vercel variable controls both sides. Only a switch that is actually set
+ * is defined; unset leaves Vite's own env injection alone, which keeps the
+ * client default (on) and today's bundle unchanged.
+ */
+export function clientSwitchDefine(input: VendorTelemetryInput = {}): Record<string, string> {
+  const define: Record<string, string> = {};
+  if (typeof input.sentrySwitch === "string" && input.sentrySwitch !== "") {
+    define[`import.meta.env.${CLIENT_SENTRY_SWITCH_ENV}`] = JSON.stringify(input.sentrySwitch);
+  }
+  if (typeof input.posthogSwitch === "string" && input.posthogSwitch !== "") {
+    define[`import.meta.env.${CLIENT_POSTHOG_SWITCH_ENV}`] = JSON.stringify(input.posthogSwitch);
+  }
+  return define;
 }
 
 /** Source-map upload follows the same staging-only, fail-closed rule. */
 export function sentrySourceMapUploadEnabled(input: VendorTelemetryInput = {}): boolean {
   if (input.vitest === true) return false;
+  if (!sentrySwitchOn(input.sentrySwitch)) return false;
   if (!vendorTelemetryEnabled(input)) return false;
   return Boolean(String(input.authToken ?? "").trim());
 }
