@@ -9,11 +9,11 @@ import {
 } from "../../frontend/src/lib/scholar/pilot-metrics-report";
 
 const migration = readFileSync(
-  "database/supabase/migrations/20261116000700_sherivs_m14_pilot_metrics.sql",
+  "database/supabase/migrations/20261117002500_sherivs_m14_pilot_metrics.sql",
   "utf8",
 );
 const rollback = readFileSync(
-  "database/supabase/rollbacks/20261116000700_sherivs_m14_pilot_metrics.sql",
+  "database/supabase/rollbacks/20261117002500_sherivs_m14_pilot_metrics.sql",
   "utf8",
 );
 const harness = readFileSync("tests/integration/m14-pilot-metrics.local.sql", "utf8");

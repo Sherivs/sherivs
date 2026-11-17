@@ -1,4 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval; applied from merged master only.
+-- Renumbered from 20261116000700 to 20261117002500 on 2026-11-17: after the latest version applied in production.
 -- Renumbered from 20261104017000 on 2026-11-17 so that file order matches apply order.
 -- M14: aggregate-only pilot metrics. No personal identifiers anywhere in this schema.
 -- Forward-only. Tenant-owned, RLS ENABLED and FORCED. Authenticated users get SELECT only;
