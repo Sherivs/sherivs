@@ -41,15 +41,20 @@ describe("M14 pilot metrics schema", () => {
       expect(migration).toContain(`ALTER TABLE public.${t} ENABLE ROW LEVEL SECURITY;`);
       expect(migration).toContain(`ALTER TABLE public.${t} FORCE ROW LEVEL SECURITY;`);
     }
-    expect(migration).toMatch(/GRANT SELECT ON public\.pilot_metric_definitions[^;]*TO authenticated;/);
+    expect(migration).toMatch(
+      /GRANT SELECT ON public\.pilot_metric_definitions[^;]*TO authenticated;/,
+    );
     expect(migration).not.toMatch(/GRANT[^;]*\banon\b/i);
-    expect(migration).not.toMatch(/GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE)\b[^;]*TO authenticated/i);
+    expect(migration).not.toMatch(
+      /GRANT[^;]*\b(INSERT|UPDATE|DELETE|TRUNCATE)\b[^;]*TO authenticated/i,
+    );
   });
 
   it("pins search_path on every SECURITY DEFINER function", () => {
     const fns = migration.match(/CREATE OR REPLACE FUNCTION[\s\S]*?\n\$\$;/g) ?? [];
     expect(fns.length).toBeGreaterThanOrEqual(8);
-    for (const f of fns) if (/SECURITY DEFINER/.test(f)) expect(f).toContain("SET search_path = ''");
+    for (const f of fns)
+      if (/SECURITY DEFINER/.test(f)) expect(f).toContain("SET search_path = ''");
   });
 
   it("suppresses small cohorts and keeps history append-only", () => {
@@ -96,8 +101,14 @@ describe("M14 report from synthetic fixtures", () => {
 
   it("compares to a baseline only when both sides are visible", () => {
     const [asc, att, fee, res] = report.metrics;
-    expect(compareToBaseline(att, { ...att, value: 0.9 })).toEqual({ direction: "up", change: 0.2 });
-    expect(compareToBaseline(res, { ...res, value: 18000 })).toEqual({ direction: "down", change: -0.5 });
+    expect(compareToBaseline(att, { ...att, value: 0.9 })).toEqual({
+      direction: "up",
+      change: 0.2,
+    });
+    expect(compareToBaseline(res, { ...res, value: 18000 })).toEqual({
+      direction: "down",
+      change: -0.5,
+    });
     expect(compareToBaseline(asc, asc).direction).toBe("flat");
     expect(compareToBaseline(fee, res).direction).toBe("unavailable");
   });

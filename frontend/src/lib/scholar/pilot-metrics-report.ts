@@ -43,7 +43,10 @@ export function formatSeconds(seconds: number): string {
   return `${minutes}m`;
 }
 
-export function formatPilotMetric(row: PilotMetricRow, minObservations: number): PilotMetricDisplay {
+export function formatPilotMetric(
+  row: PilotMetricRow,
+  minObservations: number,
+): PilotMetricDisplay {
   if (row.suppressed || row.value === null) {
     return {
       metricKey: row.metricKey,
@@ -71,7 +74,12 @@ export function compareToBaseline(
   baseline: PilotMetricRow,
   outcome: PilotMetricRow,
 ): { direction: "up" | "down" | "flat" | "unavailable"; change: number | null } {
-  if (baseline.suppressed || outcome.suppressed || baseline.value === null || outcome.value === null) {
+  if (
+    baseline.suppressed ||
+    outcome.suppressed ||
+    baseline.value === null ||
+    outcome.value === null
+  ) {
     return { direction: "unavailable", change: null };
   }
   if (baseline.value === 0) return { direction: "unavailable", change: null };
