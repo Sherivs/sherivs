@@ -20,11 +20,15 @@ import {
   type AssistantProposal,
 } from "@/lib/assistant/assistant-client";
 import { assistantPersonaForRole } from "@/lib/assistant/assistant-persona";
+import { createTwinBriefClient } from "@/lib/assistant/twin-brief-client";
 import { APP_SHELL_HOME } from "@/lib/shell/paths";
 import { useAppShell } from "./shell-context";
 import { ShellGlassIcon } from "./glass-icon";
+import { TwinBriefPanel } from "./twin-brief-panel";
 
 const assistantClient = createAssistantClient();
+// No transport is wired yet, so the brief reports "not available" instead of inventing content.
+const twinBriefClient = createTwinBriefClient();
 const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 const QUICK_REPLIES = ["Help me plan my day", "What needs my attention?", "Show my assigned work"];
 
@@ -331,6 +335,11 @@ export function AssistantScreen() {
           Assistant context is unavailable until your authorized role and organization load.
         </p>
       ) : null}
+
+      <TwinBriefPanel
+        client={twinBriefClient}
+        contextKey={contextReady ? `${app.profile?.id}|${app.school?.id}|${app.role}` : ""}
+      />
 
       <div className="app-shell-assistant-transcript" aria-live="polite" aria-label="Conversation">
         {!messages.length ? (

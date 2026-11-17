@@ -28,9 +28,9 @@ import {
   compareIssued,
   isAfterInIssuanceOrder,
   isAuthorityTimestampShape,
-  issuanceCoordinate,
   type IssuedTimestamp,
 } from "@/lib/kernel/time-authority";
+import { issuanceCoordinate } from "@/lib/kernel/time-authority-coordinate";
 import { eventDraft, isTimestamp } from "@/lib/kernel/reality";
 
 const BASE_MS = Date.parse("2026-10-01T00:00:00.000Z");
@@ -171,7 +171,9 @@ describe("time authority — anti-pattern guards (raw time rejection)", () => {
     expect(isAuthorityTimestampShape(null)).toBe(false);
     expect(isAuthorityTimestampShape(undefined)).toBe(false);
     expect(isAuthorityTimestampShape([])).toBe(false);
-    expect(isAuthorityTimestampShape({ at: "2026-10-01T00:00:00.000Z", atMs: BASE_MS })).toBe(false);
+    expect(isAuthorityTimestampShape({ at: "2026-10-01T00:00:00.000Z", atMs: BASE_MS })).toBe(
+      false,
+    );
     expect(() => assertAuthorityTimestamp(null)).toThrow(RawTimeSourceError);
   });
 
@@ -200,9 +202,24 @@ describe("time authority — anti-pattern guards (raw time rejection)", () => {
 
 describe("time authority — total order surviving concurrent writers", () => {
   it("breaks ties on the same millisecond by sequence, then issuer", () => {
-    const early: IssuedTimestamp = { at: new Date(BASE_MS).toISOString(), atMs: BASE_MS, sequence: 1, issuer: "time-authority:clock:a" };
-    const late: IssuedTimestamp = { at: new Date(BASE_MS).toISOString(), atMs: BASE_MS, sequence: 2, issuer: "time-authority:clock:a" };
-    const other: IssuedTimestamp = { at: new Date(BASE_MS).toISOString(), atMs: BASE_MS, sequence: 1, issuer: "time-authority:clock:b" };
+    const early: IssuedTimestamp = {
+      at: new Date(BASE_MS).toISOString(),
+      atMs: BASE_MS,
+      sequence: 1,
+      issuer: "time-authority:clock:a",
+    };
+    const late: IssuedTimestamp = {
+      at: new Date(BASE_MS).toISOString(),
+      atMs: BASE_MS,
+      sequence: 2,
+      issuer: "time-authority:clock:a",
+    };
+    const other: IssuedTimestamp = {
+      at: new Date(BASE_MS).toISOString(),
+      atMs: BASE_MS,
+      sequence: 1,
+      issuer: "time-authority:clock:b",
+    };
     expect(compareIssued(early, late)).toBe(-1);
     expect(compareIssued(late, early)).toBe(1);
     expect(compareIssued(early, other)).toBe(-1);

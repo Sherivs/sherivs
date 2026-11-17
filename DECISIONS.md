@@ -3056,3 +3056,12 @@ Owner: CoreGrid Architecture Governance; executing agent: credential-integration
 Consumers: frontend/src/lib/providers/provider-credentials.ts, frontend/src/lib/observability/provider-health.server.ts, frontend/src/lib/rate-limit/redis-rate-limiter.server.ts, scripts/provision-vercel-env.mjs.
 Blast radius: PROVIDER PLANE (no domain behavior, no security-boundary change; the security boundary of every adapter is unchanged — credentials stay server/infra-scoped).
 Status: RATIFIED (2026-10-06) — authority record: this entry + operator chat transcript 2026-10-06.
+
+───
+
+205. INFRA-01 — STAGING-ONLY SENTRY AND POSTHOG; PRODUCTION SINKS NAMED
+Decision (RATIFIED 2026-11-10): Amend PLATFORM-013 for event export. Sentry and PostHog initialise only when the explicit app environment is staging (`APP_ENV` and `VITE_APP_ENV` both exactly `staging`, and not contradicted). Unset, `development`, `production`, and any disagreement fail closed. A Vercel production or development target also fails closed. Production builds must not bundle `VITE_SENTRY_DSN`, `VITE_POSTHOG_KEY`, or `VITE_POSTHOG_HOST`, must not upload source maps to Sentry, and must not export events to either vendor. Production observability sinks are Datadog, CloudWatch, and provider-native consoles. Development uses local structured logs only. The company is self-funding: this decision names sinks and does not authorise a new paid subscription or a production Vercel change. Boundary error logs go through the structured logger and scrubber with pseudonymous `trace_id` / `correlation_id`, and do not log raw error objects, tokens, or student or parent data.
+Rationale: Operator mission INFRA-01. Presence of a DSN or project key was enabling the vendors in every environment, including production builds.
+Owner: INFRA-OPS. Consumers: `frontend/src/lib/observability/vendor-telemetry.ts`, `frontend/src/lib/observability/sentry-config.ts`, `frontend/src/lib/analytics/posthog.ts`, `vite.config.ts`, `.github/workflows/verify.yml`, `docs/architecture/observability.md`, `architecture/campaigns/V1-PROGRAM/OPERATIONS.md`.
+Blast radius: OBSERVABILITY (no auth, RLS, tenant-isolation, or audit change).
+Status: RATIFIED (2026-11-10) — authority record: operator mission INFRA-01.

@@ -55,12 +55,14 @@ import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleAccountRouteImport } from './routes/console/account'
 import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activity/route'
+import { Route as ConsoleAlertsRouteImport } from './routes/console/alerts'
 import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
 import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
 import { Route as ConsoleSettingsRouteImport } from './routes/console/settings'
 import { Route as ConsoleTeamRouteRouteImport } from './routes/console/team/route'
+import { Route as ConsoleWorkforceRouteRouteImport } from './routes/console/workforce/route'
 import { Route as ConsoleWorkspacesRouteRouteImport } from './routes/console/workspaces/route'
 import { Route as HomeIndexRouteImport } from './routes/home/index'
 import { Route as HomeAiRouteImport } from './routes/home/ai'
@@ -118,19 +120,27 @@ import { Route as ConsoleTeamAccessRouteImport } from './routes/console/team/acc
 import { Route as ConsoleTeamInvitationsRouteImport } from './routes/console/team/invitations'
 import { Route as ConsoleTeamRolesRouteImport } from './routes/console/team/roles'
 import { Route as ConsoleTeamSuspendedRouteImport } from './routes/console/team/suspended'
+import { Route as ConsoleWorkforceIndexRouteImport } from './routes/console/workforce/index'
+import { Route as ConsoleWorkforceAgentCodeRouteImport } from './routes/console/workforce/$agentCode'
 import { Route as ConsoleWorkspacesIndexRouteImport } from './routes/console/workspaces/index'
 import { Route as ConsoleWorkspacesWorkspaceIdRouteImport } from './routes/console/workspaces/$workspaceId'
 import { Route as HomeSSectionRouteImport } from './routes/home/s.$section'
 import { Route as siteInsightsCategorySlugRouteImport } from './routes/(site)/insights.category.$slug'
 import { Route as ApiPublicAuditPasswordResetRouteImport } from './routes/api/public/audit.password-reset'
 import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/public/cron/integrations-sync'
+import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public/cron/jarvis-tick'
+import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
+import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
+import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
 import { Route as ApiPublicWebhooksUssdRouteImport } from './routes/api/public/webhooks/ussd'
 import { Route as ApiPublicWebhooksWhatsappRouteImport } from './routes/api/public/webhooks/whatsapp'
 import { Route as ApiPublicWebhooksWhatsappReplyRouteImport } from './routes/api/public/webhooks/whatsapp-reply'
+import { Route as ConsoleWorkforceAgentCodeWorkbenchRouteImport } from './routes/console/workforce/$agentCode_.workbench'
 import { Route as ApiPublicWebhooksIntegrationsWebhookIdRouteImport } from './routes/api/public/webhooks/integrations/$webhookId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -364,6 +374,11 @@ const ConsoleActivityRouteRoute = ConsoleActivityRouteRouteImport.update({
   path: '/activity',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
+const ConsoleAlertsRoute = ConsoleAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
 const ConsoleCommunicationsRoute = ConsoleCommunicationsRouteImport.update({
   id: '/communications',
   path: '/communications',
@@ -393,6 +408,11 @@ const ConsoleSettingsRoute = ConsoleSettingsRouteImport.update({
 const ConsoleTeamRouteRoute = ConsoleTeamRouteRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleWorkforceRouteRoute = ConsoleWorkforceRouteRouteImport.update({
+  id: '/workforce',
+  path: '/workforce',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleWorkspacesRouteRoute = ConsoleWorkspacesRouteRouteImport.update({
@@ -684,6 +704,17 @@ const ConsoleTeamSuspendedRoute = ConsoleTeamSuspendedRouteImport.update({
   path: '/suspended',
   getParentRoute: () => ConsoleTeamRouteRoute,
 } as any)
+const ConsoleWorkforceIndexRoute = ConsoleWorkforceIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleWorkforceRouteRoute,
+} as any)
+const ConsoleWorkforceAgentCodeRoute =
+  ConsoleWorkforceAgentCodeRouteImport.update({
+    id: '/$agentCode',
+    path: '/$agentCode',
+    getParentRoute: () => ConsoleWorkforceRouteRoute,
+  } as any)
 const ConsoleWorkspacesIndexRoute = ConsoleWorkspacesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -718,6 +749,23 @@ const ApiPublicCronIntegrationsSyncRoute =
     path: '/api/public/cron/integrations-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronJarvisTickRoute = ApiPublicCronJarvisTickRouteImport.update({
+  id: '/api/public/cron/jarvis-tick',
+  path: '/api/public/cron/jarvis-tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicCronOrgNotificationsRoute =
+  ApiPublicCronOrgNotificationsRouteImport.update({
+    id: '/api/public/cron/org-notifications',
+    path: '/api/public/cron/org-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronOrgWeeklyReportsRoute =
+  ApiPublicCronOrgWeeklyReportsRouteImport.update({
+    id: '/api/public/cron/org-weekly-reports',
+    path: '/api/public/cron/org-weekly-reports',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
@@ -736,12 +784,23 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
     path: '/api/public/webhooks/africas-talking-voice',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksOwnerAlertVoiceRoute =
+  ApiPublicWebhooksOwnerAlertVoiceRouteImport.update({
+    id: '/api/public/webhooks/owner-alert-voice',
+    path: '/api/public/webhooks/owner-alert-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicWebhooksPaystackRoute =
   ApiPublicWebhooksPaystackRouteImport.update({
     id: '/api/public/webhooks/paystack',
     path: '/api/public/webhooks/paystack',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksResendRoute = ApiPublicWebhooksResendRouteImport.update({
+  id: '/api/public/webhooks/resend',
+  path: '/api/public/webhooks/resend',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebhooksUssdRoute = ApiPublicWebhooksUssdRouteImport.update({
   id: '/api/public/webhooks/ussd',
   path: '/api/public/webhooks/ussd',
@@ -758,6 +817,12 @@ const ApiPublicWebhooksWhatsappReplyRoute =
     id: '/api/public/webhooks/whatsapp-reply',
     path: '/api/public/webhooks/whatsapp-reply',
     getParentRoute: () => rootRouteImport,
+  } as any)
+const ConsoleWorkforceAgentCodeWorkbenchRoute =
+  ConsoleWorkforceAgentCodeWorkbenchRouteImport.update({
+    id: '/$agentCode_/workbench',
+    path: '/$agentCode/workbench',
+    getParentRoute: () => ConsoleWorkforceRouteRoute,
   } as any)
 const ApiPublicWebhooksIntegrationsWebhookIdRoute =
   ApiPublicWebhooksIntegrationsWebhookIdRouteImport.update({
@@ -786,6 +851,7 @@ export interface FileRoutesByFullPath {
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workforce': typeof ConsoleWorkforceRouteRouteWithChildren
   '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/about': typeof siteAboutRoute
   '/accessibility': typeof siteAccessibilityRoute
@@ -815,6 +881,7 @@ export interface FileRoutesByFullPath {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -866,6 +933,7 @@ export interface FileRoutesByFullPath {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/help/': typeof siteHelpIndexRoute
@@ -877,17 +945,24 @@ export interface FileRoutesByFullPath {
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workforce/': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
+  '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesByTo {
@@ -927,6 +1002,7 @@ export interface FileRoutesByTo {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -978,6 +1054,7 @@ export interface FileRoutesByTo {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/help': typeof siteHelpIndexRoute
@@ -989,17 +1066,24 @@ export interface FileRoutesByTo {
   '/console/organizations': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes': typeof ConsoleRuntimesIndexRoute
   '/console/team': typeof ConsoleTeamIndexRoute
+  '/console/workforce': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces': typeof ConsoleWorkspacesIndexRoute
   '/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
+  '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRoutesById {
@@ -1024,6 +1108,7 @@ export interface FileRoutesById {
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
+  '/console/workforce': typeof ConsoleWorkforceRouteRouteWithChildren
   '/console/workspaces': typeof ConsoleWorkspacesRouteRouteWithChildren
   '/(site)/about': typeof siteAboutRoute
   '/(site)/accessibility': typeof siteAccessibilityRoute
@@ -1053,6 +1138,7 @@ export interface FileRoutesById {
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
+  '/console/alerts': typeof ConsoleAlertsRoute
   '/console/communications': typeof ConsoleCommunicationsRoute
   '/console/help': typeof ConsoleHelpRoute
   '/console/settings': typeof ConsoleSettingsRoute
@@ -1104,6 +1190,7 @@ export interface FileRoutesById {
   '/console/team/invitations': typeof ConsoleTeamInvitationsRoute
   '/console/team/roles': typeof ConsoleTeamRolesRoute
   '/console/team/suspended': typeof ConsoleTeamSuspendedRoute
+  '/console/workforce/$agentCode': typeof ConsoleWorkforceAgentCodeRoute
   '/console/workspaces/$workspaceId': typeof ConsoleWorkspacesWorkspaceIdRoute
   '/home/s/$section': typeof HomeSSectionRoute
   '/(site)/help/': typeof siteHelpIndexRoute
@@ -1115,17 +1202,24 @@ export interface FileRoutesById {
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
+  '/console/workforce/': typeof ConsoleWorkforceIndexRoute
   '/console/workspaces/': typeof ConsoleWorkspacesIndexRoute
   '/(site)/insights/category/$slug': typeof siteInsightsCategorySlugRoute
   '/api/public/audit/password-reset': typeof ApiPublicAuditPasswordResetRoute
   '/api/public/cron/integrations-sync': typeof ApiPublicCronIntegrationsSyncRoute
+  '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
+  '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
+  '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
+  '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
   '/api/public/webhooks/ussd': typeof ApiPublicWebhooksUssdRoute
   '/api/public/webhooks/whatsapp': typeof ApiPublicWebhooksWhatsappRoute
   '/api/public/webhooks/whatsapp-reply': typeof ApiPublicWebhooksWhatsappReplyRoute
+  '/console/workforce/$agentCode_/workbench': typeof ConsoleWorkforceAgentCodeWorkbenchRoute
   '/api/public/webhooks/integrations/$webhookId': typeof ApiPublicWebhooksIntegrationsWebhookIdRoute
 }
 export interface FileRouteTypes {
@@ -1150,6 +1244,7 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/about'
     | '/accessibility'
@@ -1179,6 +1274,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1230,6 +1326,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/help/'
@@ -1241,17 +1338,24 @@ export interface FileRouteTypes {
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
+    | '/console/workforce/'
     | '/console/workspaces/'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
+    | '/api/public/cron/org-notifications'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1291,6 +1395,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1342,6 +1447,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/help'
@@ -1353,17 +1459,24 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
+    | '/api/public/cron/org-notifications'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   id:
     | '__root__'
@@ -1387,6 +1500,7 @@ export interface FileRouteTypes {
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
+    | '/console/workforce'
     | '/console/workspaces'
     | '/(site)/about'
     | '/(site)/accessibility'
@@ -1416,6 +1530,7 @@ export interface FileRouteTypes {
     | '/.well-known/assetlinks.json'
     | '/api/webauthn'
     | '/console/account'
+    | '/console/alerts'
     | '/console/communications'
     | '/console/help'
     | '/console/settings'
@@ -1467,6 +1582,7 @@ export interface FileRouteTypes {
     | '/console/team/invitations'
     | '/console/team/roles'
     | '/console/team/suspended'
+    | '/console/workforce/$agentCode'
     | '/console/workspaces/$workspaceId'
     | '/home/s/$section'
     | '/(site)/help/'
@@ -1478,17 +1594,24 @@ export interface FileRouteTypes {
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
+    | '/console/workforce/'
     | '/console/workspaces/'
     | '/(site)/insights/category/$slug'
     | '/api/public/audit/password-reset'
     | '/api/public/cron/integrations-sync'
+    | '/api/public/cron/jarvis-tick'
+    | '/api/public/cron/org-notifications'
+    | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
+    | '/api/public/webhooks/resend'
     | '/api/public/webhooks/ussd'
     | '/api/public/webhooks/whatsapp'
     | '/api/public/webhooks/whatsapp-reply'
+    | '/console/workforce/$agentCode_/workbench'
     | '/api/public/webhooks/integrations/$webhookId'
   fileRoutesById: FileRoutesById
 }
@@ -1517,10 +1640,15 @@ export interface RootRouteChildren {
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
+  ApiPublicCronJarvisTickRoute: typeof ApiPublicCronJarvisTickRoute
+  ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
+  ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
+  ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
   ApiPublicWebhooksUssdRoute: typeof ApiPublicWebhooksUssdRoute
   ApiPublicWebhooksWhatsappRoute: typeof ApiPublicWebhooksWhatsappRoute
   ApiPublicWebhooksWhatsappReplyRoute: typeof ApiPublicWebhooksWhatsappReplyRoute
@@ -1851,6 +1979,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleActivityRouteRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
+    '/console/alerts': {
+      id: '/console/alerts'
+      path: '/alerts'
+      fullPath: '/console/alerts'
+      preLoaderRoute: typeof ConsoleAlertsRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
     '/console/communications': {
       id: '/console/communications'
       path: '/communications'
@@ -1891,6 +2026,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/console/team'
       preLoaderRoute: typeof ConsoleTeamRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
+    '/console/workforce': {
+      id: '/console/workforce'
+      path: '/workforce'
+      fullPath: '/console/workforce'
+      preLoaderRoute: typeof ConsoleWorkforceRouteRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
     '/console/workspaces': {
@@ -2292,6 +2434,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleTeamSuspendedRouteImport
       parentRoute: typeof ConsoleTeamRouteRoute
     }
+    '/console/workforce/': {
+      id: '/console/workforce/'
+      path: '/'
+      fullPath: '/console/workforce/'
+      preLoaderRoute: typeof ConsoleWorkforceIndexRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
+    }
+    '/console/workforce/$agentCode': {
+      id: '/console/workforce/$agentCode'
+      path: '/$agentCode'
+      fullPath: '/console/workforce/$agentCode'
+      preLoaderRoute: typeof ConsoleWorkforceAgentCodeRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
+    }
     '/console/workspaces/': {
       id: '/console/workspaces/'
       path: '/'
@@ -2334,6 +2490,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronIntegrationsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/jarvis-tick': {
+      id: '/api/public/cron/jarvis-tick'
+      path: '/api/public/cron/jarvis-tick'
+      fullPath: '/api/public/cron/jarvis-tick'
+      preLoaderRoute: typeof ApiPublicCronJarvisTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/org-notifications': {
+      id: '/api/public/cron/org-notifications'
+      path: '/api/public/cron/org-notifications'
+      fullPath: '/api/public/cron/org-notifications'
+      preLoaderRoute: typeof ApiPublicCronOrgNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/org-weekly-reports': {
+      id: '/api/public/cron/org-weekly-reports'
+      path: '/api/public/cron/org-weekly-reports'
+      fullPath: '/api/public/cron/org-weekly-reports'
+      preLoaderRoute: typeof ApiPublicCronOrgWeeklyReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
@@ -2355,11 +2532,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/webhooks/owner-alert-voice': {
+      id: '/api/public/webhooks/owner-alert-voice'
+      path: '/api/public/webhooks/owner-alert-voice'
+      fullPath: '/api/public/webhooks/owner-alert-voice'
+      preLoaderRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webhooks/paystack': {
       id: '/api/public/webhooks/paystack'
       path: '/api/public/webhooks/paystack'
       fullPath: '/api/public/webhooks/paystack'
       preLoaderRoute: typeof ApiPublicWebhooksPaystackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/resend': {
+      id: '/api/public/webhooks/resend'
+      path: '/api/public/webhooks/resend'
+      fullPath: '/api/public/webhooks/resend'
+      preLoaderRoute: typeof ApiPublicWebhooksResendRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/ussd': {
@@ -2382,6 +2573,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/public/webhooks/whatsapp-reply'
       preLoaderRoute: typeof ApiPublicWebhooksWhatsappReplyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/console/workforce/$agentCode_/workbench': {
+      id: '/console/workforce/$agentCode_/workbench'
+      path: '/$agentCode/workbench'
+      fullPath: '/console/workforce/$agentCode/workbench'
+      preLoaderRoute: typeof ConsoleWorkforceAgentCodeWorkbenchRouteImport
+      parentRoute: typeof ConsoleWorkforceRouteRoute
     }
     '/api/public/webhooks/integrations/$webhookId': {
       id: '/api/public/webhooks/integrations/$webhookId'
@@ -2634,6 +2832,24 @@ const ConsoleTeamRouteRouteChildren: ConsoleTeamRouteRouteChildren = {
 const ConsoleTeamRouteRouteWithChildren =
   ConsoleTeamRouteRoute._addFileChildren(ConsoleTeamRouteRouteChildren)
 
+interface ConsoleWorkforceRouteRouteChildren {
+  ConsoleWorkforceAgentCodeRoute: typeof ConsoleWorkforceAgentCodeRoute
+  ConsoleWorkforceIndexRoute: typeof ConsoleWorkforceIndexRoute
+  ConsoleWorkforceAgentCodeWorkbenchRoute: typeof ConsoleWorkforceAgentCodeWorkbenchRoute
+}
+
+const ConsoleWorkforceRouteRouteChildren: ConsoleWorkforceRouteRouteChildren = {
+  ConsoleWorkforceAgentCodeRoute: ConsoleWorkforceAgentCodeRoute,
+  ConsoleWorkforceIndexRoute: ConsoleWorkforceIndexRoute,
+  ConsoleWorkforceAgentCodeWorkbenchRoute:
+    ConsoleWorkforceAgentCodeWorkbenchRoute,
+}
+
+const ConsoleWorkforceRouteRouteWithChildren =
+  ConsoleWorkforceRouteRoute._addFileChildren(
+    ConsoleWorkforceRouteRouteChildren,
+  )
+
 interface ConsoleWorkspacesRouteRouteChildren {
   ConsoleWorkspacesWorkspaceIdRoute: typeof ConsoleWorkspacesWorkspaceIdRoute
   ConsoleWorkspacesIndexRoute: typeof ConsoleWorkspacesIndexRoute
@@ -2655,8 +2871,10 @@ interface ConsoleRouteRouteChildren {
   ConsoleOrganizationsRouteRoute: typeof ConsoleOrganizationsRouteRouteWithChildren
   ConsoleRuntimesRouteRoute: typeof ConsoleRuntimesRouteRouteWithChildren
   ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
+  ConsoleWorkforceRouteRoute: typeof ConsoleWorkforceRouteRouteWithChildren
   ConsoleWorkspacesRouteRoute: typeof ConsoleWorkspacesRouteRouteWithChildren
   ConsoleAccountRoute: typeof ConsoleAccountRoute
+  ConsoleAlertsRoute: typeof ConsoleAlertsRoute
   ConsoleCommunicationsRoute: typeof ConsoleCommunicationsRoute
   ConsoleHelpRoute: typeof ConsoleHelpRoute
   ConsoleSettingsRoute: typeof ConsoleSettingsRoute
@@ -2668,8 +2886,10 @@ const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleOrganizationsRouteRoute: ConsoleOrganizationsRouteRouteWithChildren,
   ConsoleRuntimesRouteRoute: ConsoleRuntimesRouteRouteWithChildren,
   ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
+  ConsoleWorkforceRouteRoute: ConsoleWorkforceRouteRouteWithChildren,
   ConsoleWorkspacesRouteRoute: ConsoleWorkspacesRouteRouteWithChildren,
   ConsoleAccountRoute: ConsoleAccountRoute,
+  ConsoleAlertsRoute: ConsoleAlertsRoute,
   ConsoleCommunicationsRoute: ConsoleCommunicationsRoute,
   ConsoleHelpRoute: ConsoleHelpRoute,
   ConsoleSettingsRoute: ConsoleSettingsRoute,
@@ -2734,12 +2954,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
+  ApiPublicCronJarvisTickRoute: ApiPublicCronJarvisTickRoute,
+  ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
+  ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksOwnerAlertVoiceRoute: ApiPublicWebhooksOwnerAlertVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
+  ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,
   ApiPublicWebhooksUssdRoute: ApiPublicWebhooksUssdRoute,
   ApiPublicWebhooksWhatsappRoute: ApiPublicWebhooksWhatsappRoute,
   ApiPublicWebhooksWhatsappReplyRoute: ApiPublicWebhooksWhatsappReplyRoute,

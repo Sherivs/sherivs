@@ -128,6 +128,7 @@ describe("internal console V1 contract", () => {
       "organizations",
       "workspaces",
       "runtimes",
+      "workforce",
       "activity",
     ]);
     expect(
@@ -328,7 +329,7 @@ describe("console host routing for /console", () => {
     expect(shell).toContain("ConsoleLoadingState");
     expect(shell).toContain("consoleSignInSearch");
     expect(shell).toContain('aria-controls="console-navigation"');
-    expect(shell).toContain('href="#console-main"');
+    expect(shell).toContain('href="#main-content"');
     const authz = readFileSync(
       "frontend/src/components/internal-console/not-authorised.tsx",
       "utf8",
