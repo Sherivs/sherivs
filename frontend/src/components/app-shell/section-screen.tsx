@@ -13,11 +13,17 @@ import { CommunicationInboxScreen } from "./communication-inbox";
 import { StudentMobilityScreen } from "./student-mobility-screen";
 import { PrivacyRegisterScreen } from "./privacy-register-screen";
 import { AscExportScreen } from "./asc-export-screen";
+import { OrgAgentsScreen, RolePacketScreen, WorkspacePolicyScreen } from "./org-workforce-screens";
+import { InstitutionInterviewScreen } from "./institution-interview-screen";
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
   if (sectionKey === "roles") return <RoleManagementScreen />;
+  if (sectionKey === "agents") return <OrgAgentsScreen />;
+  if (sectionKey === "role-packets") return <RolePacketScreen />;
+  if (sectionKey === "workspace-policies") return <WorkspacePolicyScreen />;
+  if (sectionKey === "school_setup") return <InstitutionInterviewScreen />;
   if (
     sectionKey === "privacy" ||
     sectionKey === "privacy-register" ||
