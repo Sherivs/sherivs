@@ -116,12 +116,13 @@ describe("app-entry wiring", () => {
     expect(splash).toContain("onSigningChange");
   });
 
-  it("keeps Sherivs-team onboarding as a mailto, never Auth sign-up", () => {
+  it("keeps Sherivs-team onboarding request-based (intake endpoint, mailto fallback), never Auth sign-up", () => {
     const onboarding = read("frontend/src/components/app-entry/app-onboarding-screen.tsx");
     expect(onboarding).toContain("buildOnboardingMailto");
+    expect(onboarding).toContain("useIntakeForm");
     expect(onboarding).not.toContain("signUp");
     expect(onboarding).toContain("Bring your school into Sherivs.");
-    expect(onboarding).toContain("window.location.href = href");
+    expect(onboarding).not.toContain("window.location.href = href");
     expect(onboarding).not.toContain("submitted successfully");
     expect(onboarding).not.toContain("self-service sign-up");
     const route = read("frontend/src/routes/onboarding.tsx");
