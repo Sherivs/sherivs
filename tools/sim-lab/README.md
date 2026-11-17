@@ -39,6 +39,22 @@ to `results/wf04-workflow-tick-*.json`. The separate operator-only staging SQL p
 `../../tests/load/wf04-staging-claim-throughput.sql`; it is intentionally guarded and rolls back
 its measurement fixtures.
 
+### WF-05 event-source end-to-end
+
+With the sim database, seeded synthetic schools, local JWT secret and loopback PostgREST running:
+
+```bash
+node load/wf05-event-e2e.mjs
+```
+
+The probe posts a synthetic wallet top-up through the existing atomic `_wallet_post` path,
+verifies the WF-05 event, then drives the real `runWorkflowTick` and Supabase port against a
+published event-bound workflow. It asserts dispatch, the workflow audit-chain row and `dup=0`,
+then disables the synthetic organization's workflow setting. It retains the synthetic source,
+workflow and audit rows in the local disposable database to preserve append-only evidence, and
+requires a school with no existing workflow or audit history. It refuses non-loopback Postgres and
+blocks requests outside local PostgREST.
+
 ## Archetypes (full scale)
 | Institution | Kind | Plan | Students |
 |---|---|---|---|
