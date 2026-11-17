@@ -1,0 +1,278 @@
+-- PROPOSED TESTS for proposals 01-05. Self-contained: builds synthetic organizations and users inside ONE transaction and
+-- ends with ROLLBACK, so it leaves nothing behind. Run it BEFORE the proposal (it must report the defects as FAIL) and AFTER
+-- (every line must be PASS). Only for a throwaway database built from the repo migrations; never for a shared database.
+--   psql -X -q -f tests.sql        (prints one PASS/FAIL line per check, then a summary)
+\set ON_ERROR_STOP off
+\pset pager off
+\pset footer off
+\pset tuples_only on
+BEGIN;
+CREATE TEMP TABLE t_result (n serial, name text, ok boolean, detail text);
+CREATE TEMP TABLE t_ctx (k text PRIMARY KEY, v text);
+GRANT ALL ON t_result, t_ctx TO PUBLIC;
+
+-- ---------- synthetic fixtures (owner role) ----------
+DO $$
+DECLARE s_trial uuid; s_growth uuid; s_starter uuid;
+BEGIN
+  INSERT INTO public.schools (name, slug, subscription_tier) VALUES ('T Trial','t-trial','trial') RETURNING id INTO s_trial;
+  INSERT INTO public.schools (name, slug, subscription_tier) VALUES ('T Growth','t-growth','growth') RETURNING id INTO s_growth;
+  INSERT INTO public.schools (name, slug, subscription_tier) VALUES ('T Starter','t-starter','starter') RETURNING id INTO s_starter;
+  INSERT INTO t_ctx VALUES ('trial', s_trial::text), ('growth', s_growth::text), ('starter', s_starter::text);
+  INSERT INTO auth.users (id,email,phone,email_confirmed_at,phone_confirmed_at) VALUES
+   ('00000000-0000-0000-0000-00000000f001','ta1@t.test','2348020000001',now(),now()),
+   ('00000000-0000-0000-0000-00000000f002','ta2@t.test','2348020000002',now(),now()),
+   ('00000000-0000-0000-0000-00000000f003','tp1@t.test','2348020000003',now(),now()),
+   ('00000000-0000-0000-0000-00000000f101','ga1@t.test','2348020000101',now(),now()),
+   ('00000000-0000-0000-0000-00000000f102','ga2@t.test','2348020000102',now(),now()),
+   ('00000000-0000-0000-0000-00000000f103','gp1@t.test','2348020000103',now(),now());
+  INSERT INTO public.users (id, school_id, full_name, role, email, phone, is_active) VALUES
+   ('00000000-0000-0000-0000-00000000f001', s_trial,  'Trial Admin 1','admin','ta1@t.test','2348020000001',true),
+   ('00000000-0000-0000-0000-00000000f002', s_trial,  'Trial Admin 2','admin','ta2@t.test','2348020000002',true),
+   ('00000000-0000-0000-0000-00000000f003', s_trial,  'Trial Parent','parent','tp1@t.test','2348020000003',true),
+   ('00000000-0000-0000-0000-00000000f101', s_growth, 'Growth Admin 1','admin','ga1@t.test','2348020000101',true),
+   ('00000000-0000-0000-0000-00000000f102', s_growth, 'Growth Admin 2','admin','ga2@t.test','2348020000102',true),
+   ('00000000-0000-0000-0000-00000000f103', s_growth, 'Growth Parent','parent','gp1@t.test','2348020000103',true);
+  INSERT INTO auth.users (id,email,email_confirmed_at) VALUES ('00000000-0000-0000-0000-00000000f0aa','sa@t.test',now());
+  INSERT INTO public.super_admins (id, full_name, email, is_active) VALUES ('00000000-0000-0000-0000-00000000f0aa','T Super','sa@t.test', true);
+END $$;
+
+-- fund the growth and trial organizations as the payment webhook does (service_role)
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims','{"role":"service_role"}',true) \gset
+SELECT public.wallet_credit_topup((SELECT v::uuid FROM t_ctx WHERE k='growth'), 1000, 'T-TOPUP-G-0001') \gset
+SELECT public.wallet_credit_topup((SELECT v::uuid FROM t_ctx WHERE k='trial'), 1000, 'T-TOPUP-T-0001') \gset
+RESET ROLE;
+
+-- ===== C2 [05] a school admin cannot change its own tier; can still edit the school profile =====
+DO $$
+DECLARE tr uuid := (SELECT v::uuid FROM t_ctx WHERE k='trial'); ok1 boolean := false; ok2 boolean := false; d1 text := 'tier changed'; tier_after text;
+BEGIN
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000f001","role":"authenticated"}',true);
+  BEGIN UPDATE public.schools SET subscription_tier='enterprise' WHERE id = tr;
+  EXCEPTION WHEN insufficient_privilege THEN ok1 := true; d1 := 'denied (42501)'; WHEN others THEN d1 := SQLERRM; END;
+  BEGIN UPDATE public.schools SET motto='hello' WHERE id = tr; ok2 := true; EXCEPTION WHEN others THEN ok2 := false; END;
+  EXECUTE 'RESET ROLE';
+  SELECT subscription_tier INTO tier_after FROM public.schools WHERE id = tr;
+  INSERT INTO t_result(name, ok, detail) VALUES ('C2a school admin cannot self-upgrade the plan', ok1 AND tier_after='trial', d1||'; tier now '||tier_after);
+  INSERT INTO t_result(name, ok, detail) VALUES ('C2b school admin can still edit non-commercial school fields', ok2, 'motto update');
+END $$;
+
+-- ===== C3 [05] platform paths still work: service_role and super admin may change the tier =====
+DO $$
+DECLARE tr uuid := (SELECT v::uuid FROM t_ctx WHERE k='trial'); ok1 boolean := false; ok2 boolean := false; t1 text; t2 text;
+BEGIN
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  BEGIN UPDATE public.schools SET subscription_tier='starter' WHERE id = tr; ok1 := true; EXCEPTION WHEN others THEN ok1 := false; END;
+  EXECUTE 'RESET ROLE';
+  SELECT subscription_tier INTO t1 FROM public.schools WHERE id = tr;
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000f0aa","role":"authenticated"}',true);
+  BEGIN UPDATE public.schools SET subscription_tier='trial' WHERE id = tr; ok2 := true; EXCEPTION WHEN others THEN ok2 := false; END;
+  EXECUTE 'RESET ROLE';
+  SELECT subscription_tier INTO t2 FROM public.schools WHERE id = tr;
+  INSERT INTO t_result(name, ok, detail) VALUES ('C3 service_role and super admin can still change the plan', ok1 AND ok2 AND t1='starter' AND t2='trial', 'service='||t1||' super='||t2);
+END $$;
+
+-- ===== F1 [02] dispatcher write path: claim / settle compare-and-set, via the new functions only =====
+-- build one released proposal per message for the growth organization and queue it with sms_live on
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims','{"role":"service_role"}',true) \gset
+SELECT public.flag_set('sms_live', (SELECT v::uuid FROM t_ctx WHERE k='growth'), true) \gset
+RESET ROLE;
+CREATE OR REPLACE FUNCTION pg_temp.release(p_school uuid, p_user uuid, p_admin1 uuid, p_admin2 uuid) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE v_pid uuid := gen_random_uuid();
+BEGIN
+  INSERT INTO public.comms_send_proposals (id, org_id, school_id, channel, template_code, language, category, audience_spec,
+     recipient_user_ids, template_vars, draft_body, status, proposed_by, approved_by, approved_at, released_at)
+  VALUES (v_pid, p_school, p_school, 'sms', 'fee_reminder', 'en', 'utility', '{"kind":"user"}', ARRAY[p_user], '{}', 'x',
+     'released', p_admin1, p_admin2, now(), now());
+  RETURN v_pid::text || ':' || p_user::text;
+END $$;
+SELECT pg_temp.release((SELECT v::uuid FROM t_ctx WHERE k='growth'), '00000000-0000-0000-0000-00000000f103','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102') AS rA \gset
+SELECT pg_temp.release((SELECT v::uuid FROM t_ctx WHERE k='growth'), '00000000-0000-0000-0000-00000000f103','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102') AS rB \gset
+SELECT pg_temp.release((SELECT v::uuid FROM t_ctx WHERE k='growth'), '00000000-0000-0000-0000-00000000f103','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102') AS rC \gset
+SELECT pg_temp.release((SELECT v::uuid FROM t_ctx WHERE k='growth'), '00000000-0000-0000-0000-00000000f103','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102') AS rD \gset
+SELECT balance AS g_bal0 FROM public.school_wallets WHERE school_id=(SELECT v::uuid FROM t_ctx WHERE k='growth') \gset
+SET LOCAL ROLE service_role;
+SELECT set_config('request.jwt.claims','{"role":"service_role"}',true) \gset
+SELECT (public.comms_send((SELECT v::uuid FROM t_ctx WHERE k='growth'),'sms','2348020000103','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',:'ra','en'))->>'id' AS idA \gset
+SELECT (public.comms_send((SELECT v::uuid FROM t_ctx WHERE k='growth'),'sms','2348020000103','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',:'rb','en'))->>'id' AS idB \gset
+SELECT (public.comms_send((SELECT v::uuid FROM t_ctx WHERE k='growth'),'sms','2348020000103','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',:'rc','en'))->>'id' AS idC \gset
+SELECT (public.comms_send((SELECT v::uuid FROM t_ctx WHERE k='growth'),'sms','2348020000103','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',:'rd','en'))->>'id' AS idD \gset
+RESET ROLE;
+INSERT INTO t_ctx VALUES ('idA',:'ida'),('idB',:'idb'),('idC',:'idc'),('idD',:'idd'),('g_bal0',:'g_bal0');
+INSERT INTO t_result(name, ok, detail)
+  SELECT 'B0 four live sends were queued and debited',
+         (SELECT count(*) FROM public.outbound_messages WHERE id = ANY(ARRAY[:'ida',:'idb',:'idc',:'idd']::uuid[]) AND status='queued') = 4
+         AND (SELECT balance FROM public.school_wallets WHERE school_id=(SELECT v::uuid FROM t_ctx WHERE k='growth')) = :g_bal0 - 40,
+         'four queued rows, wallet delta -40';
+
+-- ===== F1 [02] claim / settle / delivery report through the new functions =====
+DO $$
+DECLARE g uuid := (SELECT v::uuid FROM t_ctx WHERE k='growth'); a uuid := (SELECT v::uuid FROM t_ctx WHERE k='idA');
+  c1 text := 'claim:' || gen_random_uuid()::text; c2 text := 'claim:' || gen_random_uuid()::text;
+  r1 boolean; r2 boolean; r3 boolean; r4 boolean; r5 boolean; r6 boolean; r7 boolean; denied boolean := false; d text := '';
+BEGIN
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  BEGIN
+    r1 := public.comms_sms_claim(a, g, c1, 'bulksmsnigeria');
+    r2 := public.comms_sms_claim(a, g, c2, 'bulksmsnigeria');
+    r3 := public.comms_sms_settle(a, g, c2, 'sent', 'bulksmsnigeria', 'prov-A', NULL);
+    r4 := public.comms_sms_settle(a, g, c1, 'sent', 'bulksmsnigeria', 'prov-A', NULL);
+    r5 := public.comms_sms_settle(a, g, c1, 'failed', NULL, NULL, 'late');
+    r6 := public.comms_sms_report_delivery(a, g, 'delivered', 'DELIVRD');
+    r7 := public.comms_sms_report_delivery(a, g, 'failed', 'LATE');
+  EXCEPTION WHEN undefined_function THEN d := 'functions missing';
+  WHEN others THEN d := SQLERRM; END;
+  BEGIN UPDATE public.outbound_messages SET status='delivered' WHERE id = a; EXCEPTION WHEN insufficient_privilege THEN denied := true; END;
+  EXECUTE 'RESET ROLE';
+  INSERT INTO t_result(name, ok, detail) VALUES ('F1a only one worker wins the claim', coalesce(r1 AND NOT r2, false), d);
+  INSERT INTO t_result(name, ok, detail) VALUES ('F1b settle is compare-and-set on the claim held', coalesce(NOT r3 AND r4 AND NOT r5, false), d);
+  INSERT INTO t_result(name, ok, detail) VALUES ('F1c delivery report moves sent to delivered once', coalesce(r6 AND NOT r7, false), d);
+  INSERT INTO t_result(name, ok, detail) VALUES ('F1d service_role still cannot UPDATE the table directly', denied, 'direct UPDATE denied');
+END $$;
+
+-- ===== B2 [01] refund policy =====
+DO $$
+DECLARE g uuid := (SELECT v::uuid FROM t_ctx WHERE k='growth'); a uuid := (SELECT v::uuid FROM t_ctx WHERE k='idA');
+  b uuid := (SELECT v::uuid FROM t_ctx WHERE k='idB'); c uuid := (SELECT v::uuid FROM t_ctx WHERE k='idC'); dd uuid := (SELECT v::uuid FROM t_ctx WHERE k='idD');
+  cb text := 'claim:' || gen_random_uuid()::text; cc text := 'claim:' || gen_random_uuid()::text; bal0 numeric := (SELECT v::numeric FROM t_ctx WHERE k='g_bal0');
+  bal_b numeric; bal_c numeric; bal_d numeric; bal_op numeric; rb boolean; rc boolean; rd boolean; again jsonb; op jsonb; refused boolean := false; d text := '';
+BEGIN
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  BEGIN
+    PERFORM public.comms_sms_claim(b, g, cb, 'bulksmsnigeria');
+    rb := public.comms_sms_settle(b, g, cb, 'failed', NULL, NULL, 'provider_rejected', 'provider_rejected');
+    bal_b := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+    again := public.comms_refund_unsubmitted(b, g, 'provider_rejected');
+    PERFORM public.comms_sms_claim(c, g, cc, 'bulksmsnigeria');
+    rc := public.comms_sms_settle(c, g, cc, 'failed', NULL, NULL, 'provider_error');
+    bal_c := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+    rd := public.comms_sms_settle(dd, g, NULL, 'failed', NULL, NULL, 'blocked by consent', 'rejected_before_submission');
+    bal_d := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+    op := public.comms_refund_unsubmitted(c, g, 'provider_rejected');
+    bal_op := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+    BEGIN PERFORM public.comms_refund_unsubmitted(a, g, 'provider_rejected'); EXCEPTION WHEN others THEN refused := true; END;
+  EXCEPTION WHEN undefined_function THEN d := 'functions missing';
+  WHEN others THEN d := SQLERRM; END;
+  EXECUTE 'RESET ROLE';
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2a provider-rejected message is refunded atomically with the close', coalesce(rb AND bal_b = bal0 - 40 + 10, false), d || ' balance ' || coalesce(bal_b::text,'?'));
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2b a second refund of the same message is a no-op', coalesce((again->>'refunded')::boolean = false AND again->>'reason' = 'already_refunded', false), d);
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2c an ambiguous failure (provider_error) is NOT auto-refunded', coalesce(rc AND bal_c = bal_b, false), d || ' balance ' || coalesce(bal_c::text,'?'));
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2d a rejection before submission is refunded', coalesce(rd AND bal_d = bal_c + 10, false), d || ' balance ' || coalesce(bal_d::text,'?'));
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2e an operator can refund a reconciled ambiguous failure', coalesce((op->>'refunded')::boolean AND bal_op = bal_d + 10, false), d || ' balance ' || coalesce(bal_op::text,'?'));
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2f a provider-accepted message can never be refunded', refused, 'refund of accepted message refused');
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2g net charge is exactly the one accepted message',
+     coalesce((SELECT balance FROM public.school_wallets WHERE school_id = g) = bal0 - 10, false), 'wallet = start - 10');
+END $$;
+
+-- ===== B1 [03] simulated sends are free; pool-funded refunds restore the pool =====
+DO $$
+DECLARE g2 uuid; ra text; rb text; ida uuid; idb uuid; cl text := 'claim:' || gen_random_uuid()::text; st text; cost numeric; bal_before numeric; bal_after numeric;
+  ue int; used_before numeric; used_after numeric; ok_settle boolean; d text := '';
+BEGIN
+  INSERT INTO public.schools (name, slug, subscription_tier) VALUES ('T Growth 2','t-growth2','growth') RETURNING id INTO g2;
+  INSERT INTO auth.users (id,email,phone,email_confirmed_at,phone_confirmed_at) VALUES ('00000000-0000-0000-0000-00000000f203','g2p@t.test','2348020000203',now(),now());
+  INSERT INTO public.users (id, school_id, full_name, role, email, phone, is_active) VALUES
+    ('00000000-0000-0000-0000-00000000f203', g2, 'G2 Parent','parent','g2p@t.test','2348020000203',true);
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  PERFORM public.wallet_credit_topup(g2, 1000, 'T-TOPUP-G2-0001');
+  EXECUTE 'RESET ROLE';
+  ra := pg_temp.release(g2, '00000000-0000-0000-0000-00000000f203','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102');
+  rb := pg_temp.release(g2, '00000000-0000-0000-0000-00000000f203','00000000-0000-0000-0000-00000000f101','00000000-0000-0000-0000-00000000f102');
+  bal_before := (SELECT balance FROM public.school_wallets WHERE school_id = g2);
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  -- sms_live is OFF for this organization
+  st := (public.comms_send(g2,'sms','2348020000203','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',ra,'en'))->>'status';
+  cost := (SELECT o.cost FROM public.outbound_messages o WHERE o.org_id = g2 AND o.reference = ra);
+  EXECUTE 'RESET ROLE';
+  bal_after := (SELECT balance FROM public.school_wallets WHERE school_id = g2);
+  ue := (SELECT count(*) FROM public.usage_events WHERE school_id = g2);
+  INSERT INTO t_result(name, ok, detail) VALUES ('B1 a simulated (sent_stub) SMS is not charged and records no usage', st = 'sent_stub' AND cost = 0 AND bal_after = bal_before AND ue = 0,
+     'status=' || st || ' cost=' || cost || ' wallet delta=' || (bal_after - bal_before) || ' usage_events=' || ue);
+  -- pool-funded message, live: refund must give the pool allowance back and leave the wallet untouched
+  INSERT INTO public.term_usage_pools (school_id, academic_year, term, item, allowance, used) VALUES (g2, 'y1', 't1', 'sms', 5, 0);
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  PERFORM public.flag_set('sms_live', g2, true);
+  st := (public.comms_send(g2,'sms','2348020000203','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',rb,'en'))->>'status';
+  idb := (SELECT o.id FROM public.outbound_messages o WHERE o.org_id = g2 AND o.reference = rb);
+  used_before := (SELECT used FROM public.term_usage_pools WHERE school_id = g2 AND item = 'sms');
+  BEGIN
+    PERFORM public.comms_sms_claim(idb, g2, cl, 'bulksmsnigeria');
+    ok_settle := public.comms_sms_settle(idb, g2, cl, 'failed', NULL, NULL, 'provider_rejected', 'provider_rejected');
+  EXCEPTION WHEN others THEN d := SQLERRM; ok_settle := false; END;
+  EXECUTE 'RESET ROLE';
+  used_after := (SELECT used FROM public.term_usage_pools WHERE school_id = g2 AND item = 'sms');
+  INSERT INTO t_result(name, ok, detail) VALUES ('B2h a pool-funded message refund restores the pool and not the wallet',
+     coalesce(used_before = 1 AND used_after = 0 AND ok_settle AND (SELECT balance FROM public.school_wallets WHERE school_id = g2) = bal_before, false), d || ' pool ' || used_before || '->' || coalesce(used_after::text,'?'));
+END $$;
+
+-- ===== D4 [03] plan gate: Trial and Starter never queue, meter or send SMS =====
+DO $$
+DECLARE tr uuid := (SELECT v::uuid FROM t_ctx WHERE k='trial'); rt text; st text; bal0 numeric; bal1 numeric; q int; e1 boolean; e2 boolean; e3 boolean; e4 boolean; e5 boolean; d text := '';
+BEGIN
+  rt := pg_temp.release(tr, '00000000-0000-0000-0000-00000000f003','00000000-0000-0000-0000-00000000f001','00000000-0000-0000-0000-00000000f002');
+  bal0 := (SELECT balance FROM public.school_wallets WHERE school_id = tr);
+  EXECUTE 'SET LOCAL ROLE service_role';
+  PERFORM set_config('request.jwt.claims','{"role":"service_role"}',true);
+  PERFORM public.flag_set('sms_live', tr, true);   -- even with the live flag on, the plan decides
+  st := (public.comms_send(tr,'sms','2348020000003','fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,NULL,'normal',rt,'en'))->>'status';
+  EXECUTE 'RESET ROLE';
+  bal1 := (SELECT balance FROM public.school_wallets WHERE school_id = tr);
+  q := (SELECT count(*) FROM public.outbound_messages WHERE org_id = tr AND status = 'queued');
+  INSERT INTO t_result(name, ok, detail) VALUES ('D4a a Trial organization with sms_live ON is blocked by plan, not charged, not queued', st = 'blocked_plan' AND bal1 = bal0 AND q = 0, 'status=' || coalesce(st,'?') || ' wallet delta=' || (bal1-bal0) || ' queued=' || q);
+  BEGIN
+    e1 := NOT (SELECT public.sms_plan_entitled(tr));
+    UPDATE public.schools SET subscription_tier='starter' WHERE id = tr; e2 := NOT public.sms_plan_entitled(tr);
+    UPDATE public.schools SET subscription_tier='growth' WHERE id = tr; e3 := public.sms_plan_entitled(tr);
+    UPDATE public.schools SET subscription_tier='professional' WHERE id = tr; e4 := public.sms_plan_entitled(tr);
+    UPDATE public.schools SET subscription_tier='enterprise' WHERE id = tr; e5 := public.sms_plan_entitled(tr);
+    UPDATE public.schools SET subscription_tier='trial' WHERE id = tr;
+  EXCEPTION WHEN undefined_function THEN d := 'sms_plan_entitled missing'; WHEN others THEN d := SQLERRM; END;
+  INSERT INTO t_result(name, ok, detail) VALUES ('D4b plan function agrees with the TypeScript catalog (trial/starter no; growth/professional/enterprise yes)', coalesce(e1 AND e2 AND e3 AND e4 AND e5, false), d);
+END $$;
+
+-- ===== A1 approval path (authenticated approver) still works end to end, debits once, and respects the plan =====
+DO $$
+DECLARE g uuid := (SELECT v::uuid FROM t_ctx WHERE k='growth'); tr uuid := (SELECT v::uuid FROM t_ctx WHERE k='trial'); pg jsonb; ap jsonb; bal0 numeric; bal1 numeric; st text; d text := '';
+BEGIN
+  bal0 := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+  BEGIN
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000f101","role":"authenticated"}',true);
+    pg := public.comms_propose_send(g,'sms','{"kind":"user","user_id":"00000000-0000-0000-0000-00000000f103"}'::jsonb,'fee_reminder','{"student":"K","amount":"1","link":"https://x.test"}'::jsonb,'en');
+    PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000f102","role":"authenticated"}',true);
+    ap := public.comms_approve_send(g, (pg->>'proposal_id')::uuid);
+    EXECUTE 'RESET ROLE';
+  EXCEPTION WHEN others THEN EXECUTE 'RESET ROLE'; d := SQLERRM; END;
+  bal1 := (SELECT balance FROM public.school_wallets WHERE school_id = g);
+  st := (SELECT status FROM public.outbound_messages WHERE proposal_id = (pg->>'proposal_id')::uuid LIMIT 1);
+  INSERT INTO t_result(name, ok, detail) VALUES ('A1 propose then approve (authenticated) on a Growth organization queues one message and debits NGN10', coalesce(st = 'queued' AND bal1 = bal0 - 10 AND (ap->>'released_count')::int = 1, false), d || ' status=' || coalesce(st,'?') || ' delta=' || (bal1 - bal0));
+END $$;
+
+-- ===== C1 [04] (runs last: in the BEFORE state it overdraws the synthetic growth wallet) a parent cannot call meter_usage directly (no message, no outbound row) =====
+DO $$
+DECLARE g uuid := (SELECT v::uuid FROM t_ctx WHERE k='growth'); r jsonb; ok boolean := false; d text := 'call succeeded';
+BEGIN
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  PERFORM set_config('request.jwt.claims','{"sub":"00000000-0000-0000-0000-00000000f103","role":"authenticated"}',true);
+  BEGIN
+    r := public.meter_usage(g,'sms',1000,'t-attack:1',NULL,'safety');
+  EXCEPTION WHEN insufficient_privilege THEN ok := true; d := 'denied (42501)';
+  WHEN others THEN d := SQLERRM; END;
+  EXECUTE 'RESET ROLE';
+  INSERT INTO t_result(name, ok, detail) VALUES ('C1 parent cannot meter/overdraw the wallet directly', ok, d);
+END $$;
+
+-- ---------- report ----------
+SELECT CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || '  ' || name || CASE WHEN detail IS NOT NULL AND detail <> '' THEN '   [' || detail || ']' ELSE '' END FROM t_result ORDER BY n;
+SELECT 'SUMMARY  pass=' || count(*) FILTER (WHERE ok) || '  fail=' || count(*) FILTER (WHERE NOT ok) FROM t_result;
+ROLLBACK;

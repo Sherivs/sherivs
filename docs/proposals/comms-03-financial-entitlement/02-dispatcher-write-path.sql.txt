@@ -1,0 +1,69 @@
+-- PROPOSAL 02 — database write path for the SMS dispatcher and the delivery-report webhook.
+-- NOT APPLIED. This is the COMMS-03 blocker: migration 20261024000270 revokes every write on outbound_messages from
+-- service_role (SELECT only), so the dispatcher's direct UPDATEs are denied. Writes go through service_role-only
+-- SECURITY DEFINER functions that keep the compare-and-set semantics the dispatcher relies on.
+-- Depends on: 01 (settle may refund atomically).
+
+CREATE OR REPLACE FUNCTION public.comms_sms_claim(p_message uuid, p_org uuid, p_claim text, p_provider text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_n int;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
+  IF p_claim IS NULL OR p_claim !~ '^claim:[0-9a-f-]{36}$' THEN RAISE EXCEPTION 'invalid claim'; END IF;
+  IF p_provider IS NULL OR p_provider !~ '^[a-z0-9_]{1,40}$' THEN RAISE EXCEPTION 'invalid provider'; END IF;
+  UPDATE public.outbound_messages SET provider = p_provider, provider_ref = p_claim, updated_at = now()
+   WHERE id = p_message AND org_id = p_org AND channel = 'sms' AND status = 'queued' AND provider_ref IS NULL;
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n = 1;
+END $$;
+
+-- Compare-and-set close. p_expected_ref is the claim the caller holds (NULL for a rejection before any claim).
+-- p_status: 'sent' (needs the provider's message id), 'failed', or 'queued' (release the claim for a retry).
+-- p_refund_reason, when given, refunds the charge in the same transaction; callers pass it only when the provider
+-- provably never accepted the message.
+CREATE OR REPLACE FUNCTION public.comms_sms_settle(
+  p_message uuid, p_org uuid, p_expected_ref text, p_status text, p_provider text, p_provider_ref text,
+  p_error text, p_refund_reason text DEFAULT NULL
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_ref text;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
+  IF p_status NOT IN ('queued','sent','failed') THEN RAISE EXCEPTION 'invalid status'; END IF;
+  IF p_status = 'sent' AND (p_provider_ref IS NULL OR p_provider_ref LIKE 'claim:%') THEN
+    RAISE EXCEPTION 'a sent message needs the provider message id';
+  END IF;
+  IF p_status <> 'sent' AND p_provider_ref IS NOT NULL THEN RAISE EXCEPTION 'only a sent message carries a provider id'; END IF;
+  IF p_refund_reason IS NOT NULL AND (p_status <> 'failed' OR p_refund_reason NOT IN
+     ('rejected_before_submission','provider_rejected','provider_duplicate')) THEN
+    RAISE EXCEPTION 'invalid refund request';
+  END IF;
+  UPDATE public.outbound_messages
+     SET status = p_status, provider = coalesce(p_provider, provider), provider_ref = p_provider_ref,
+         error = left(p_error, 200), updated_at = now()
+   WHERE id = p_message AND org_id = p_org AND channel = 'sms' AND status = 'queued'
+     AND provider_ref IS NOT DISTINCT FROM p_expected_ref
+  RETURNING reference INTO v_ref;
+  IF v_ref IS NULL THEN RETURN false; END IF;
+  IF p_refund_reason IS NOT NULL THEN PERFORM public._comms_refund_charge(p_org, v_ref, p_refund_reason); END IF;
+  RETURN true;
+END $$;
+
+-- Delivery report: only a message the provider accepted ('sent') can move to delivered or failed, once. No refund.
+CREATE OR REPLACE FUNCTION public.comms_sms_report_delivery(p_message uuid, p_org uuid, p_status text, p_code text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_n int;
+BEGIN
+  IF coalesce(auth.role(), '') <> 'service_role' THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
+  IF p_status NOT IN ('delivered','failed') THEN RAISE EXCEPTION 'invalid status'; END IF;
+  UPDATE public.outbound_messages SET status = p_status, error = left(p_code, 200), updated_at = now()
+   WHERE id = p_message AND org_id = p_org AND channel = 'sms' AND status = 'sent';
+  GET DIAGNOSTICS v_n = ROW_COUNT;
+  RETURN v_n = 1;
+END $$;
+
+REVOKE ALL ON FUNCTION public.comms_sms_claim(uuid, uuid, text, text),
+  public.comms_sms_settle(uuid, uuid, text, text, text, text, text, text),
+  public.comms_sms_report_delivery(uuid, uuid, text, text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.comms_sms_claim(uuid, uuid, text, text),
+  public.comms_sms_settle(uuid, uuid, text, text, text, text, text, text),
+  public.comms_sms_report_delivery(uuid, uuid, text, text) TO service_role;
