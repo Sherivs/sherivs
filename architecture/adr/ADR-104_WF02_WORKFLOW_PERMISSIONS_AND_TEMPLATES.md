@@ -4,6 +4,9 @@
 | --- | --- |
 | Status | Proposed; migration and rollback are not applied |
 | Date | 2026-11-17 |
+| Author | GitHub Copilot coding agent (WF-02) |
+| Creator | `copilot-swe-agent[bot]` (GitHub Copilot coding agent, mission WF-02, issue #430) |
+| Mission | WF-02 (workflow permissions, separation of duties, and template catalogue; issue #430) |
 | Scope | V1 organizational workflow authorization and reusable templates |
 | Depends on | [ADR-103](ADR-103_WF01_POSTGRES_WORKFLOW_ENGINE_AND_RUNTIME_PORT.md), ADR-101, SHERIVS-017, M009-A1 |
 
