@@ -11,6 +11,7 @@ import type { WorkflowEvent } from "@/lib/workflow/workflow-runtime";
 import { startRun, type WorkflowActorScope } from "@/lib/workflow/workflow-engine";
 import { tenantId } from "@/lib/tenant-core";
 import type { WorkflowDefinition } from "@/lib/workflow/workflow-contract";
+import type { WorkflowActionDefinition } from "@/lib/workflow/workflow-actions";
 
 const event: WorkflowEvent = {
   id: "event-1",
@@ -23,7 +24,13 @@ const event: WorkflowEvent = {
   payload: {},
 };
 
-async function runBudgetScenario(budgetUnits: number, spentUnits: number, costUnits = 1) {
+async function runBudgetScenario(
+  budgetUnits: number,
+  spentUnits: number,
+  costUnits = 1,
+  autonomyLevel: "suggest" | "draft" | "act_with_approval" | "act_and_report" = "act_and_report",
+  action?: WorkflowActionDefinition,
+) {
   const orgId = "org-budget";
   const actor: WorkflowActorScope = {
     actorId: "agent-budget",
@@ -46,6 +53,7 @@ async function runBudgetScenario(budgetUnits: number, spentUnits: number, costUn
         assignment: { kind: "ai", agentRef: "agent-budget" },
         authorizedActions: ["internal.action"],
         actionClass: "internal",
+        ...(action ? { action } : {}),
       },
     ],
     onFailure: { kind: "halt" },
@@ -86,7 +94,7 @@ async function runBudgetScenario(budgetUnits: number, spentUnits: number, costUn
     idempotencyKey: "wf-step-run-budget-act-0",
     timeoutSeconds: 30,
     actionClass: "internal",
-    autonomyLevel: "act_and_report",
+    autonomyLevel,
     budgetUnits,
     spentUnits,
   });
@@ -95,6 +103,7 @@ async function runBudgetScenario(budgetUnits: number, spentUnits: number, costUn
     worker: "worker-budget",
     executeAction: async () => {
       actionCalls += 1;
+      return autonomyLevel === "draft" ? { status: "draft" as const } : undefined;
     },
     estimateActionCost: () => costUnits,
   });
@@ -119,6 +128,17 @@ describe("workflow runtime reliability", () => {
       expect(result.transition.status).toBe("dead");
       expect(result.transition.errorCode).toBe("budget.exhausted");
     }
+  });
+
+  it("runs the action callback at draft autonomy so it can persist a review draft", async () => {
+    const result = await runBudgetScenario(0, 0, 0, "draft", {
+      kind: "email",
+      templateRef: "attendance.notice",
+      templateParams: {},
+      recipientIds: [],
+    });
+    expect(result.actionCalls).toBe(1);
+    expect(result.transition.status).toBe("waiting");
   });
 
   it("executes an effect when its estimated cost fits the remaining budget", async () => {

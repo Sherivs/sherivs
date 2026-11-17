@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   effectiveWorkflowAutonomy,
@@ -26,7 +28,22 @@ const combinations = (): Array<
     ),
   ) as Array<[WorkflowAutonomyLevel, WorkflowAutonomyLevel, WorkflowAutonomyLevel]>;
 
+function workflowSourceFiles(path: string): string[] {
+  return readdirSync(path, { withFileTypes: true }).flatMap((entry) => {
+    const child = join(path, entry.name);
+    if (entry.isDirectory()) return workflowSourceFiles(child);
+    return entry.isFile() && entry.name.endsWith(".ts") ? [readFileSync(child, "utf8")] : [];
+  });
+}
+
 describe("WF-06 action policy", () => {
+  it("keeps provider imports out of the workflow runtime", () => {
+    const source = workflowSourceFiles("frontend/src/lib/workflow").join("\n");
+    expect(source).not.toMatch(
+      /from\s+["'][^"']*(?:resend|twilio|whatsapp|sendgrid|mailgun|stripe|provider)[^"']*["']/i,
+    );
+  });
+
   it("never raises a capped category above draft for any autonomy combination", () => {
     for (const actionClass of Object.keys(WORKFLOW_ACTION_CATEGORY_CAPS)) {
       for (const [template, tenant, agent] of combinations()) {
