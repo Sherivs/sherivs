@@ -303,7 +303,13 @@ async function main() {
     console.log(
       `WF04-LOAD RESULT: events=${row.events_dispatched} steps=${row.steps_succeeded} steps_per_minute=${result.steps_per_minute} dup=${row.duplicate_executions}`,
     );
-    if (row.duplicate_executions > 0 || result.steps_per_minute === 0) {
+    if (
+      row.duplicate_executions > 0 ||
+      result.steps_per_minute === 0 ||
+      row.events_dispatched !== eventsToSeed ||
+      row.steps_succeeded < eventsToSeed ||
+      row.steps_dead > 0
+    ) {
       throw new Error("WF04 load test failed its throughput or duplicate-execution check");
     }
   } finally {

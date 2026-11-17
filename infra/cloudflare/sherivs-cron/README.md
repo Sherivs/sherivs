@@ -41,14 +41,14 @@ other route are off. Keep `WORKFLOWS_ENABLED` unset in production and do not ena
 organization. Route-setting changes require a separate explicit decision for that route; enabling
 the Worker route does not enable any organization's workflows.
 
-| Route | Setting | Default | UTC cadence |
-| --- | --- | --- | --- |
-| `wallet-topup-reconcile` | `ROUTE_WALLET_TOPUP_RECONCILE` | `"true"` | Every 10 minutes |
-| `workflow-tick` | `ROUTE_WORKFLOW_TICK` | Off | Every minute |
-| `org-notifications` | `ROUTE_ORG_NOTIFICATIONS` | Off | Every 5 minutes |
-| `jarvis-tick` | `ROUTE_JARVIS_TICK` | Off | Every 10 minutes |
-| `integrations-sync` | `ROUTE_INTEGRATIONS_SYNC` | Off | Every 30 minutes |
-| `org-weekly-reports` | `ROUTE_ORG_WEEKLY_REPORTS` | Off | Monday 05:00 (06:00 WAT) |
+| Route                    | Setting                        | Default  | UTC cadence              |
+| ------------------------ | ------------------------------ | -------- | ------------------------ |
+| `wallet-topup-reconcile` | `ROUTE_WALLET_TOPUP_RECONCILE` | `"true"` | Every 10 minutes         |
+| `workflow-tick`          | `ROUTE_WORKFLOW_TICK`          | Off      | Every minute             |
+| `org-notifications`      | `ROUTE_ORG_NOTIFICATIONS`      | Off      | Every 5 minutes          |
+| `jarvis-tick`            | `ROUTE_JARVIS_TICK`            | Off      | Every 10 minutes         |
+| `integrations-sync`      | `ROUTE_INTEGRATIONS_SYNC`      | Off      | Every 30 minutes         |
+| `org-weekly-reports`     | `ROUTE_ORG_WEEKLY_REPORTS`     | Off      | Monday 05:00 (06:00 WAT) |
 
 After an approved deployment, verify `preview_urls` remains off in Cloudflare's Worker settings and
 inspect activity with:
