@@ -1,4 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval; the orchestrator applies it from merged master.
+-- Renumbered from 20261116000300 to 20261117002100 on 2026-11-17: after the latest version applied in production.
 -- CORE-19: preserve the existing notification tables while enforcing replay
 -- safety and recipient/organization integrity. Authenticated delivery remains in-app.
 -- Renumbered from 20261103143000 on 2026-11-16 so that file order matches apply order.

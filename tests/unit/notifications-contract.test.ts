@@ -241,7 +241,7 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
       const migration = readFileSync(
         new URL(
-          "../../database/supabase/migrations/20261116000300_core19_notification_delivery.sql",
+          "../../database/supabase/migrations/20261117002100_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",
@@ -262,7 +262,7 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
       const rollback = readFileSync(
         new URL(
-          "../../database/supabase/rollbacks/20261116000300_core19_notification_delivery.sql",
+          "../../database/supabase/rollbacks/20261117002100_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",
@@ -340,7 +340,7 @@ describe("notification contract (tenant isolation, §17)", () => {
     it("allows switching active organization without moving existing notifications", () => {
       const migration = readFileSync(
         new URL(
-          "../../database/supabase/migrations/20261116000300_core19_notification_delivery.sql",
+          "../../database/supabase/migrations/20261117002100_core19_notification_delivery.sql",
           import.meta.url,
         ),
         "utf8",

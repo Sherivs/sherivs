@@ -6,11 +6,11 @@ const port = Number(process.env.PGPORT || 54329);
 const database = `core19_roundtrip_${process.pid}`;
 const admin = new pg.Client({ host: "127.0.0.1", port, user: "postgres", database: "postgres" });
 const migrationUrl = new URL(
-  "../../../database/supabase/migrations/20261116000300_core19_notification_delivery.sql",
+  "../../../database/supabase/migrations/20261117002100_core19_notification_delivery.sql",
   import.meta.url,
 );
 const rollbackUrl = new URL(
-  "../../../database/supabase/rollbacks/20261116000300_core19_notification_delivery.sql",
+  "../../../database/supabase/rollbacks/20261117002100_core19_notification_delivery.sql",
   import.meta.url,
 );
 
