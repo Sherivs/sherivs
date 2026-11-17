@@ -49,6 +49,7 @@ BEGIN
     RAISE EXCEPTION 'wf_claim_due_steps: worker id is required' USING ERRCODE = '22023';
   END IF;
 
+  -- Expired leases with no attempts left: dead, never re-run.
   UPDATE public.wf_step_run s
      SET status = 'dead', lease_owner = NULL, lease_expires_at = NULL, finished_at = now(),
          error_code = coalesce(s.error_code, 'lease.expired')
