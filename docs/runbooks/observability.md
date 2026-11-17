@@ -1,5 +1,9 @@
 # RUNBOOK — Observability vendors and switches (OBS-DD-01)
 
+Origin: owner decision of 17 Nov 2026 (Datadog behind a switch; Sentry and PostHog kept).
+Creator: Tumi (Grok Bot) agent, mission O-001 (OBS-DD-01, Datadog over OpenTelemetry)
+Created: 2026-11-17
+
 Status: **AUTHORED** with the PR that adds Datadog over OpenTelemetry behind a switch.
 Owner decision (17 Nov 2026): add Datadog through OpenTelemetry behind a switch, keep
 Sentry and PostHog running, and turn them off once the Datadog startup credits land.
