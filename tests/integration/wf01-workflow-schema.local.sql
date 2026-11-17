@@ -174,7 +174,7 @@ INSERT INTO public.wf_version (id, org_id, definition_id, version, graph) VALUES
   ('f0120000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 1, '{"steps":[{"id":"s1"}]}'),
   ('f0120000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'f0110000-0000-4000-8000-0000000000b2', 1, '{"steps":[{"id":"s1"}]}'),
   ('f0120000-0000-4000-8000-0000000000a2', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 2, '{"steps":[]}');
-UPDATE public.wf_version SET state = 'published'
+UPDATE public.wf_version SET state = 'published', published_by = 'f0100000-0000-4000-8000-000000000003'
  WHERE id IN ('f0120000-0000-4000-8000-0000000000a1', 'f0120000-0000-4000-8000-0000000000b2');
 UPDATE public.wf_definition SET current_version_id = 'f0120000-0000-4000-8000-0000000000a1' WHERE id = 'f0110000-0000-4000-8000-0000000000a1';
 UPDATE public.wf_definition SET current_version_id = 'f0120000-0000-4000-8000-0000000000b2' WHERE id = 'f0110000-0000-4000-8000-0000000000b2';
