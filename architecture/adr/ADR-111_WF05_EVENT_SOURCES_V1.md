@@ -77,3 +77,19 @@ organization is enabled by this mission.
 - **WHY?** To connect verified V1 domain transitions to the WF-03 runtime without exposing source PII.
 - **UNDER WHICH POLICY?** WF-01/02/03 tenant, authorization, audit and autonomy controls; disabled
   by default per organization.
+
+## Neutrality baseline extension
+
+Under ADR-004's "new ADR" mechanism (ADR-012/ADR-013 precedent), this ADR authorises the
+quarantine entries added to `NEUTRALITY_GUARD_BASELINE.json` for
+`20261117000700_sherivs_wf05_event_sources_v1.sql`. The migration reads the live legacy source
+tables by their existing names (`school_id`, fee, attendance, admissions and grade vocabulary).
+It adds no domain code to the universal surface and grants no new privileges to `anon` or
+`authenticated`. The neutral-tenant substrate conversion removes these entries in the same change
+when it lands.
+
+## Units
+
+`wallet_ledger.amount` is a numeric value in major units (naira), as posted by `_wallet_post`. The
+event payload carries `amount_minor = round(amount * 100)` (kobo), so every money key in a WF-05
+payload is an integer in minor units.
