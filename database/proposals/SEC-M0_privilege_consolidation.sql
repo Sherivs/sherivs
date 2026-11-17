@@ -1,4 +1,5 @@
--- PROPOSAL ONLY. NOT APPLIED. NOT IN THE MIGRATIONS DIRECTORY.
+-- APPLIED TO PRODUCTION 2026-11-17 04:45 UTC as 20261117000300_sherivs_sec_m0_privilege_consolidation,
+-- on the founder's written approval, after backup run 37. Kept outside the migrations directory.
 -- SEC-M0: one consolidated privilege change. It replaces PR #417 (SEC-H3) and extends PR #377
 -- (SEC-03). Origin: Claude Code agent, mission E-003 (M0), from the independent audit of
 -- 2026-11-16. Needs the founder's written approval and an independent security review before any

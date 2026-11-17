@@ -1,4 +1,4 @@
-# ADR-104: Role Catalogue Extension and the workspace_mode Rule
+# ADR-113: Role Catalogue Extension and the workspace_mode Rule
 
 | Field                      | Value                                                                                                                                                               |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

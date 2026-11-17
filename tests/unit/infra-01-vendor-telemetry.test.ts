@@ -422,7 +422,7 @@ describe("build env files and CI", () => {
     expect(forced.text).not.toContain(key);
   });
 
-  it("keeps required checks and shortens artifact retention without touching backups", () => {
+  it("keeps required checks, shortens artifact retention, and stores 90-day backups in R2", () => {
     const verify = readRepo(".github/workflows/verify.yml");
     const role =
       verify.split("name: Role management UI screenshots")[1]?.split("repo-guards:")[0] ?? "";
@@ -439,7 +439,15 @@ describe("build env files and CI", () => {
     expect(verify).toContain(
       "npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets",
     );
-    expect(readRepo(".github/workflows/nightly-db-backup.yml")).toContain("retention-days: 90");
+    const backup = readRepo(".github/workflows/nightly-db-backup.yml");
+    // Public repo: GitHub artifacts are downloadable, so keep them 7 days.
+    // The 90-day copy is the ciphertext in Cloudflare R2 (EU).
+    expect(backup).toContain("retention-days: 7");
+    expect(backup).not.toContain("retention-days: 90");
+    expect(backup).toContain("sherivs-db-backups");
+    expect(backup).toContain("Upload encrypted backup to Cloudflare R2 (EU)");
+    expect(backup).toContain("prod/${STAMP:0:4}/${STAMP:4:2}/${STAMP:6:2}/");
+    expect(backup).toContain("aws s3api head-object");
     expect(readRepo(".github/workflows/infrastructure-plan-apply.yml")).toContain(
       "retention-days: 7",
     );

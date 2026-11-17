@@ -1,4 +1,4 @@
--- Disposable proof for 20261117001000_sherivs_m2a_role_catalog_extension (ADR-104).
+-- Disposable proof for 20261117001000_sherivs_m2a_role_catalog_extension (ADR-113).
 -- Builds a production-shaped SHERIVS-017 catalogue on an EMPTY database, applies the M2a
 -- migration twice, proves the oversight defaults, the remap guard and the rollback.
 -- Run as a superuser:

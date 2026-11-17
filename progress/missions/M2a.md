@@ -12,7 +12,7 @@ Active persona: Principal Architect, with the Postgres and RLS Security Engineer
 
 1. Extend `tools/role-catalog/catalog.py` (single source) without editing the SHERIVS-017 data: §6.1 institution types, Appendix A/B templates, Appendix C permissions and SoD rules, and `workspace_mode`.
 2. Generate the TS mirror, the seed, the reserved migration `20261117001000` and its rollback from it. Make generation deterministic and add a `--check` mode.
-3. Add golden unit tests and an SQL behaviour test, update the one pinned seed assertion, and write ADR-104.
+3. Add golden unit tests and an SQL behaviour test, update the one pinned seed assertion, and write ADR-113.
 
 ## Report
 
