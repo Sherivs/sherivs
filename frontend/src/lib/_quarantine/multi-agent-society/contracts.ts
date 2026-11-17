@@ -72,6 +72,8 @@ const REF_MAX = 160;
 const MAX_MEMBERS = 1_024;
 const MAX_BALLOT = 4_096;
 const MAX_TRAIL = 65_536;
+// Matching control characters is the point of this pattern (input hygiene).
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 
 function refSchema(label: string) {
