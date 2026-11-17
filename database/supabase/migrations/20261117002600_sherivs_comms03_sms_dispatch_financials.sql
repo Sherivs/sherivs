@@ -1,4 +1,5 @@
 -- NOT APPLIED. Changes financial policy: needs the founder's written approval for this file; applied from merged master only.
+-- Renumbered from 20261116000800 to 20261117002600 on 2026-11-17: after the latest version applied in production.
 -- Renumbered from 20261104052000 on 2026-11-17 so that file order matches apply order.
 -- COMMS-03: SMS dispatch financial integrity and tenant entitlement (BulkSMS Nigeria readiness).
 --

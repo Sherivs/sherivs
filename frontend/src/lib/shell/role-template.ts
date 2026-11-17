@@ -1,3 +1,8 @@
+/**
+ * NOTICE (ADR-102, mission M1): role and permission logic has one canonical owner, the database
+ * permission functions and the role engine that ADR-102 names. Do not add new role logic here;
+ * mission M2 folds this module into the canonical owner.
+ */
 import type { AppRole } from "@/lib/roles";
 
 /** Map the live identity-store membership kind onto the catalog family template. */

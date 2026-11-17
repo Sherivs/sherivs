@@ -1,6 +1,6 @@
 # Sherivs SMS dispatch runbook (BulkSMS Nigeria)
 
-Authority: AGENTS.md §§12, 17, 26, 31; ADR-103 (`architecture/adr/ADR-103_COMMS03_BULKSMS_SMS_PROVIDER.md`); issue #330.
+Authority: AGENTS.md §§12, 17, 26, 31; ADR-112 (`architecture/adr/ADR-112_COMMS03_BULKSMS_SMS_PROVIDER.md`); issue #330.
 Creator: Claude Code coding agent (Claude Sonnet 5.5) for mission COMMS-03, following the runbook conventions of copilot-swe-agent[bot] in `docs/runbooks/whatsapp-e2e.md`.
 Created: 2026-11-13
 

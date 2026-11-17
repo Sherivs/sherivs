@@ -1,4 +1,4 @@
--- ROLLBACK for 20261116000800_sherivs_comms03_sms_dispatch_financials.sql. NOT run automatically.
+-- ROLLBACK for 20261117002600_sherivs_comms03_sms_dispatch_financials.sql. NOT run automatically.
 -- Order: revert the application change FIRST (the dispatcher and the delivery webhook must stop calling comms_sms_*),
 -- then run this file. After it, the dispatcher's direct writes are denied again (the F1 defect returns), so keep
 -- SMS inactive (no SMS_PROVIDER, scheduler off) until the migration is re-applied.

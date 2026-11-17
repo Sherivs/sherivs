@@ -1,5 +1,5 @@
 -- PROPOSAL 01 — refund primitives for SMS charges that never reached the provider.
--- NOT APPLIED. Not in database/supabase/migrations/. Requires owner approval of the refund policy (ADR-103, section 3).
+-- NOT APPLIED. Not in database/supabase/migrations/. Requires owner approval of the refund policy (ADR-112, section 3).
 -- Depends on: 20261024000260 (wallet_ledger kind 'refund', _wallet_post, usage_events, term_usage_pools).
 
 CREATE TABLE IF NOT EXISTS public.usage_event_reversals (
