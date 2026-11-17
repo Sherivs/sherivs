@@ -156,6 +156,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}" }
+      - run: npm ci --no-audit --fund=false
       - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: tools/sim-lab/bin
@@ -281,11 +282,15 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/db12-flags-pk-and-index.local.sql 2>&1 | tee /tmp/db12.out
           grep -q 'DB12 ALL PASS' /tmp/db12.out
-      - name: k6 smoke (50 VUs, key flows)
+      - name: WF-04 workflow load and k6 smoke
         working-directory: tools/sim-lab
         run: |
+          set -euo pipefail
           node load/tokens.mjs
           (bin/postgrest load/postgrest.conf > postgrest.log 2>&1 &) ; sleep 3
+          WF04_N=8 WF04_WORKERS=2 node load/workflow-tick-load.mjs 2>&1 | tee /tmp/wf04-load.out
+          grep -Eq 'WF04-LOAD RESULT: .* dup=0$' /tmp/wf04-load.out
+          grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -294,6 +299,7 @@ jobs:
           path: |
             tools/sim-lab/sim/scenario-results.json
             tools/sim-lab/security-audit.json
+            tools/sim-lab/results/wf04-workflow-tick-*.json
           if-no-files-found: ignore
           retention-days: 7
 
