@@ -10,9 +10,12 @@ BEGIN
      OR to_regclass('public.permission_catalog') IS NULL
      OR to_regclass('public.role_templates') IS NULL
      OR to_regclass('public.role_template_permissions') IS NULL
+     OR to_regclass('public.role_catalog') IS NULL
      OR to_regclass('public.sod_permission_rules') IS NULL
      OR to_regclass('public.org_role_permission_settings') IS NULL
      OR to_regclass('public.user_role_assignments') IS NULL
+     OR to_regclass('public.role_assignment_delegations') IS NULL
+     OR to_regprocedure('public.workspace_role_sod_validate_schedule(uuid,uuid)') IS NULL
      OR to_regprocedure('public.wf_version_guard()') IS NULL
      OR to_regprocedure('public.wf_approval_guard()') IS NULL
      OR to_regprocedure('auth.uid()') IS NULL THEN
@@ -64,22 +67,31 @@ INSERT INTO public.sod_permission_rules (permission_a, permission_b, description
 -- M009 does not revalidate role holders when global template grants are inserted.
 -- Reject this migration rather than silently activating a conflicting assignment.
 DO $sod_preflight$
+DECLARE v_user record;
 BEGIN
-  IF EXISTS (
-    SELECT 1
-      FROM public.user_role_assignments a
-      JOIN public.role_catalog r ON r.code = a.role_code
-      JOIN public.role_template_permissions tp ON tp.template_code = r.template_code
-      LEFT JOIN public.org_role_permission_settings s
-        ON s.org_id = a.org_id AND s.role_code = a.role_code AND s.permission_code = tp.permission_code
-     WHERE a.status = 'active'
-       AND (tp.kind = 'mandatory' OR coalesce(s.enabled, tp.default_on))
-       AND tp.permission_code IN ('workflows.manage', 'workflows.approve')
-     GROUP BY a.org_id, a.user_id
-    HAVING count(DISTINCT tp.permission_code) = 2
-  ) THEN
-    RAISE EXCEPTION 'WF-02: an active assignment would combine workflow editing and approval';
-  END IF;
+  FOR v_user IN
+    WITH affected_assignments AS (
+      SELECT DISTINCT a.org_id, a.id, a.user_id
+        FROM public.user_role_assignments a
+        JOIN public.role_catalog r ON r.code = a.role_code
+        JOIN public.role_template_permissions tp ON tp.template_code = r.template_code
+        LEFT JOIN public.org_role_permission_settings s
+          ON s.org_id = a.org_id AND s.role_code = a.role_code AND s.permission_code = tp.permission_code
+       WHERE a.status = 'active'
+         AND (tp.kind = 'mandatory' OR coalesce(s.enabled, tp.default_on))
+         AND tp.permission_code IN ('workflows.manage', 'workflows.approve')
+    ), affected_users AS (
+      SELECT org_id, user_id FROM affected_assignments
+      UNION
+      SELECT d.org_id, d.delegate_user_id
+        FROM public.role_assignment_delegations d
+        JOIN affected_assignments a ON a.org_id = d.org_id AND a.id = d.assignment_id
+       WHERE d.revoked_at IS NULL
+    )
+    SELECT DISTINCT org_id, user_id FROM affected_users
+  LOOP
+    PERFORM public.workspace_role_sod_validate_schedule(v_user.org_id, v_user.user_id);
+  END LOOP;
 END
 $sod_preflight$;
 
@@ -87,7 +99,12 @@ $sod_preflight$;
 -- 2. Durable editor identity and database-enforced version SoD
 -- -----------------------------------------------------------------------------
 ALTER TABLE public.wf_version ADD COLUMN updated_by uuid;
-UPDATE public.wf_version SET updated_by = created_by WHERE updated_by IS NULL;
+ALTER TABLE public.wf_approval ADD COLUMN target_version_id uuid;
+ALTER TABLE public.wf_approval
+  ADD CONSTRAINT wf_approval_target_version_fk FOREIGN KEY (org_id, target_version_id)
+  REFERENCES public.wf_version (org_id, id) ON DELETE RESTRICT;
+CREATE INDEX wf_approval_target_version_idx ON public.wf_approval (org_id, target_version_id)
+  WHERE target_version_id IS NOT NULL;
 
 CREATE FUNCTION public.wf_version_editor_stamp()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
@@ -98,6 +115,9 @@ BEGIN
       NEW.updated_by := auth.uid();
     ELSE
       NEW.updated_by := coalesce(NEW.updated_by, NEW.created_by);
+    END IF;
+    IF NEW.updated_by IS NULL THEN
+      RAISE EXCEPTION 'wf_version: draft creation requires a recorded person' USING ERRCODE = '42501';
     END IF;
   ELSIF OLD.state = 'draft' AND NEW.state = 'draft' THEN
     NEW.updated_by := coalesce(auth.uid(), NEW.updated_by, OLD.updated_by);
@@ -111,15 +131,56 @@ BEGIN
 END
 $$;
 
-CREATE FUNCTION public.wf_version_service_author_stamp()
+-- Preserve the service-supplied author independently from the editor stamp.
+-- Authenticated inserts still take created_by from auth.uid(), as in WF-01.
+CREATE OR REPLACE FUNCTION public.wf_version_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 BEGIN
-  IF auth.uid() IS NULL THEN
-    NEW.created_by := coalesce(NEW.created_by, NEW.updated_by);
-    NEW.updated_by := coalesce(NEW.updated_by, NEW.created_by);
+  IF TG_OP = 'DELETE' THEN
+    IF OLD.state <> 'draft' THEN
+      RAISE EXCEPTION 'wf_version: published versions are never deleted' USING ERRCODE = '42501';
+    END IF;
+    RETURN OLD;
   END IF;
-  RETURN NEW;
+  IF TG_OP = 'INSERT' THEN
+    IF NEW.state <> 'draft' THEN
+      RAISE EXCEPTION 'wf_version: a version starts as a draft' USING ERRCODE = '42501';
+    END IF;
+    NEW.created_by := coalesce(auth.uid(), NEW.created_by);
+    NEW.created_at := now();
+    NEW.updated_at := now();
+    RETURN NEW;
+  END IF;
+  IF NEW.definition_id IS DISTINCT FROM OLD.definition_id OR NEW.version IS DISTINCT FROM OLD.version
+     OR NEW.created_by IS DISTINCT FROM OLD.created_by OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+    RAISE EXCEPTION 'wf_version: identity fields are immutable' USING ERRCODE = '42501';
+  END IF;
+  IF OLD.state = 'draft' THEN
+    IF NEW.state = 'draft' THEN
+      NEW.published_at := NULL; NEW.published_by := NULL; NEW.graph_digest := NULL; NEW.retired_at := NULL;
+      RETURN NEW;
+    ELSIF NEW.state = 'published' THEN
+      IF auth.uid() IS NOT NULL THEN
+        RAISE EXCEPTION 'wf_version: publishing goes through the service publish path' USING ERRCODE = '42501';
+      END IF;
+      NEW.published_at := now();
+      NEW.graph_digest := encode(sha256(convert_to(NEW.graph::text, 'UTF8')), 'hex');
+      NEW.retired_at := NULL;
+      RETURN NEW;
+    END IF;
+    RAISE EXCEPTION 'wf_version: a draft can only be published' USING ERRCODE = '42501';
+  END IF;
+  IF OLD.state = 'published' AND NEW.state = 'retired' AND auth.uid() IS NULL
+     AND (NEW.graph, NEW.graph_digest, NEW.max_steps_per_run, NEW.max_run_depth, NEW.max_loop_iterations,
+          NEW.default_max_attempts, NEW.run_timeout_seconds, NEW.published_at, NEW.published_by)
+         IS NOT DISTINCT FROM
+         (OLD.graph, OLD.graph_digest, OLD.max_steps_per_run, OLD.max_run_depth, OLD.max_loop_iterations,
+          OLD.default_max_attempts, OLD.run_timeout_seconds, OLD.published_at, OLD.published_by) THEN
+    NEW.retired_at := now();
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'wf_version: published versions are immutable' USING ERRCODE = '42501';
 END
 $$;
 
@@ -128,6 +189,17 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 BEGIN
   IF TG_OP = 'UPDATE' AND OLD.state = 'draft' AND NEW.state = 'published' THEN
+    IF OLD.updated_by IS NULL THEN
+      RAISE EXCEPTION 'wf_version: the last editor is unknown; edit the draft before publishing'
+        USING ERRCODE = '42501';
+    END IF;
+    IF (NEW.graph, NEW.max_steps_per_run, NEW.max_run_depth, NEW.max_loop_iterations,
+        NEW.default_max_attempts, NEW.run_timeout_seconds)
+       IS DISTINCT FROM
+       (OLD.graph, OLD.max_steps_per_run, OLD.max_run_depth, OLD.max_loop_iterations,
+        OLD.default_max_attempts, OLD.run_timeout_seconds) THEN
+      RAISE EXCEPTION 'wf_version: save draft changes before publishing' USING ERRCODE = '42501';
+    END IF;
     IF NEW.published_by IS NULL THEN
       RAISE EXCEPTION 'wf_version: publishing requires a recorded person' USING ERRCODE = '42501';
     END IF;
@@ -144,16 +216,25 @@ CREATE FUNCTION public.wf_approval_sod_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 BEGIN
+  IF TG_OP = 'INSERT' AND NEW.required_permission = 'workflows.manage' AND NEW.target_version_id IS NULL THEN
+    RAISE EXCEPTION 'wf_approval: a management approval must identify its target version'
+      USING ERRCODE = '23514';
+  END IF;
+  IF TG_OP = 'UPDATE' AND NEW.target_version_id IS DISTINCT FROM OLD.target_version_id THEN
+    RAISE EXCEPTION 'wf_approval: target version is immutable' USING ERRCODE = '42501';
+  END IF;
   IF TG_OP = 'UPDATE' AND NEW.status IN ('approved', 'rejected') THEN
     IF EXISTS (
       SELECT 1
-        FROM public.wf_run r
-        JOIN public.wf_version v
-          ON v.org_id = r.org_id AND v.definition_id = r.definition_id AND v.id = r.version_id
-       WHERE r.org_id = NEW.org_id AND r.id = NEW.run_id
-         AND (NEW.decided_by = v.created_by OR NEW.decided_by = v.updated_by)
+        FROM public.wf_version v
+       WHERE v.org_id = NEW.org_id
+         AND (
+           v.id = (SELECT r.version_id FROM public.wf_run r WHERE r.org_id = NEW.org_id AND r.id = NEW.run_id)
+           OR v.id = NEW.target_version_id
+         )
+         AND (v.updated_by IS NULL OR NEW.decided_by = v.created_by OR NEW.decided_by = v.updated_by)
     ) THEN
-      RAISE EXCEPTION 'wf_approval: the version author or last editor cannot decide this request'
+      RAISE EXCEPTION 'wf_approval: the version author or last editor cannot decide this request, or its editor is unknown'
         USING ERRCODE = '42501';
     END IF;
   END IF;
@@ -164,18 +245,15 @@ $$;
 CREATE TRIGGER wf_version_05_editor_stamp
   BEFORE INSERT OR UPDATE ON public.wf_version
   FOR EACH ROW EXECUTE FUNCTION public.wf_version_editor_stamp();
-CREATE TRIGGER wf_version_15_service_author_stamp
-  BEFORE INSERT ON public.wf_version
-  FOR EACH ROW EXECUTE FUNCTION public.wf_version_service_author_stamp();
 CREATE TRIGGER wf_version_20_sod_guard
   BEFORE INSERT OR UPDATE ON public.wf_version
   FOR EACH ROW EXECUTE FUNCTION public.wf_version_sod_guard();
 CREATE TRIGGER wf_approval_20_sod_guard
-  BEFORE UPDATE ON public.wf_approval
+  BEFORE INSERT OR UPDATE ON public.wf_approval
   FOR EACH ROW EXECUTE FUNCTION public.wf_approval_sod_guard();
 
-REVOKE ALL ON FUNCTION public.wf_version_editor_stamp(), public.wf_version_service_author_stamp(),
-  public.wf_version_sod_guard(), public.wf_approval_sod_guard()
+REVOKE ALL ON FUNCTION public.wf_version_editor_stamp(), public.wf_version_sod_guard(),
+  public.wf_approval_sod_guard()
   FROM PUBLIC, anon, authenticated, service_role;
 
 -- -----------------------------------------------------------------------------
