@@ -4,12 +4,15 @@
  * No session recording; autocapture limited to clicks/submits on links,
  * buttons and forms, with all text and attributes masked. Users are
  * identified by internal id + role + tenant id only.
+ * OBSERVABILITY_POSTHOG_ENABLED="false" (OBS-DD-01, baked into the client
+ * build) also keeps posthog-js unloaded; unset keeps today's behaviour.
  */
 import type { PostHog } from "posthog-js";
 import {
   vendorTelemetryEnabled,
   type VendorTelemetryInput,
 } from "@/lib/observability/vendor-telemetry";
+import { posthogSwitchOn } from "@/lib/observability/vendor-switches";
 
 export const DEFAULT_POSTHOG_HOST = "https://eu.i.posthog.com";
 
@@ -19,6 +22,11 @@ export function readClientVendorEnv(): VendorTelemetryInput {
     viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
     vercelEnv: import.meta.env.VITE_VERCEL_ENV as string | undefined,
   };
+}
+
+/** OBS-DD-01 client switch, baked from OBSERVABILITY_POSTHOG_ENABLED at production build time. */
+export function readClientPosthogSwitch(): string | undefined {
+  return import.meta.env.VITE_OBSERVABILITY_POSTHOG_ENABLED as string | undefined;
 }
 
 export function posthogConfig(host: string | null | undefined) {
@@ -60,14 +68,16 @@ type PosthogModule = { default: { init: (key: string, config: unknown) => void }
 /**
  * Loads posthog-js only when the explicit app environment is staging and a
  * project key is present. Production, development, and unset return null
- * before the SDK is imported.
+ * before the SDK is imported. The PostHog switch set to "false" does too.
  */
 export async function startPosthog(
   key: string,
   host?: string | null,
   env: VendorTelemetryInput = readClientVendorEnv(),
   load?: () => Promise<PosthogModule>,
+  switchValue: string | null | undefined = readClientPosthogSwitch(),
 ): Promise<PostHog | null> {
+  if (!posthogSwitchOn(switchValue)) return null;
   if (!vendorTelemetryEnabled(env)) return null;
   if (!key.trim()) return null;
   if (client) {

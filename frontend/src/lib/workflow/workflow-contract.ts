@@ -94,9 +94,7 @@ export type WorkflowStepKind = "condition" | "task" | "approval" | "action" | "n
  * carry it out. Approval steps MUST be human-assigned (Part 13 law).
  */
 export type StepAssignment =
-  | { kind: "human"; roleRef: string }
-  | { kind: "ai"; agentRef: string }
-  | { kind: "unassigned" };
+  { kind: "human"; roleRef: string } | { kind: "ai"; agentRef: string } | { kind: "unassigned" };
 
 export type ConditionOperator = "equals" | "not_equals" | "exists" | "gte";
 
@@ -118,6 +116,9 @@ export interface WorkflowStep {
   stepId: string;
   kind: WorkflowStepKind;
   assignment: StepAssignment;
+  actionClass?: string;
+  timeoutSeconds?: number;
+  budgetUnits?: number;
   /**
    * The complete, closed set of actions this step may ever plan. Nothing
    * outside this declaration can be authorized by the step (Part 17).
@@ -155,9 +156,7 @@ export interface WorkflowDefinition {
   requiredApprovals: readonly ApprovalRequirement[];
 }
 
-export type DefinitionValidation =
-  | { ok: true }
-  | { ok: false; error: string };
+export type DefinitionValidation = { ok: true } | { ok: false; error: string };
 
 /**
  * Validate a definition (fail closed, Constitution §26/§31): unknown step
@@ -174,6 +173,28 @@ export function validateWorkflowDefinition(def: WorkflowDefinition): DefinitionV
   const ids = new Set(def.steps.map((s) => s.stepId));
   if (ids.size !== def.steps.length) {
     return { ok: false, error: "Duplicate stepId in workflow definition" };
+  }
+  if (
+    def.steps.some(
+      (step) => step.actionClass !== undefined && !/^[a-z][a-z0-9_]{1,63}$/.test(step.actionClass),
+    )
+  ) {
+    return { ok: false, error: "Invalid workflow action class" };
+  }
+  if (
+    def.steps.some(
+      (step) =>
+        (step.timeoutSeconds !== undefined &&
+          (!Number.isInteger(step.timeoutSeconds) ||
+            step.timeoutSeconds < 1 ||
+            step.timeoutSeconds > 900)) ||
+        (step.budgetUnits !== undefined &&
+          (!Number.isInteger(step.budgetUnits) ||
+            step.budgetUnits < 0 ||
+            step.budgetUnits > 1_000_000)),
+    )
+  ) {
+    return { ok: false, error: "Invalid workflow step limit" };
   }
 
   const approvalsByStep = new Map(def.requiredApprovals.map((a) => [a.stepId, a]));
@@ -254,11 +275,7 @@ export function validateWorkflowDefinition(def: WorkflowDefinition): DefinitionV
  * ────────────────────────────────────────────────────────────*/
 
 export type WorkflowRunState =
-  | "running"
-  | "waiting_approval"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "running" | "waiting_approval" | "completed" | "failed" | "cancelled";
 
 export const WORKFLOW_RUN_STATES: readonly WorkflowRunState[] = [
   "running",
@@ -384,8 +401,7 @@ export interface WorkflowActorScope {
 }
 
 export type ApproverRef =
-  | { kind: "human"; humanRef: string; roleRef: string }
-  | { kind: "ai"; agentRef: string };
+  { kind: "human"; humanRef: string; roleRef: string } | { kind: "ai"; agentRef: string };
 
 export interface ApprovalRecord {
   recordId: string;

@@ -1,5 +1,10 @@
 import "./lib/error-capture";
 import { captureServerError, withServerSentry } from "./lib/observability/sentry.server";
+import {
+  flushServerTelemetry,
+  startServerRequestTelemetry,
+  type RequestTelemetry,
+} from "./lib/observability/datadog-otel.server";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
@@ -20,6 +25,8 @@ type ServerEntry = {
 export type ServeFetchDeps = {
   loadEntry?: () => Promise<ServerEntry>;
   log?: LogEmitOptions;
+  /** OBS-DD-01 test seam. Defaults to the Datadog OTel runtime, a no-op unless enabled. */
+  startTelemetry?: (method: string, path: string, traceId: string) => RequestTelemetry;
 };
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;
@@ -80,6 +87,11 @@ export async function serveFetch(
   const path = scrubString(new URL(request.url).pathname);
   const trace = createTraceContext();
   const log = deps.log ?? {};
+  const telemetry = (deps.startTelemetry ?? startServerRequestTelemetry)(
+    request.method,
+    path,
+    trace.trace_id,
+  );
   try {
     const handler = await (deps.loadEntry ?? getServerEntry)();
     const response = await handler.fetch(request, env, ctx);
@@ -98,6 +110,7 @@ export async function serveFetch(
       }),
       log,
     );
+    telemetry.end(normalized.status);
     return withSecurityHeaders(normalized);
   } catch (error) {
     logBoundaryFailure(
@@ -115,7 +128,10 @@ export async function serveFetch(
       log,
     );
     captureServerError(error);
+    telemetry.end(500, error);
     return withSecurityHeaders(errorPage());
+  } finally {
+    flushServerTelemetry(request, ctx);
   }
 }
 

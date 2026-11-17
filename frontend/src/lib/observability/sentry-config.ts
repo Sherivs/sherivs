@@ -2,8 +2,11 @@
  * Shared Sentry options (client + server). Returns null unless a DSN is set
  * AND the explicit app environment is staging (INFRA-01). Unset, production,
  * and development fail closed. No session replay, no default PII.
+ * OBSERVABILITY_SENTRY_ENABLED="false" (OBS-DD-01) also returns null; unset
+ * keeps today's behaviour.
  */
 import { vendorTelemetryEnabled } from "./vendor-telemetry";
+import { sentrySwitchOn } from "./vendor-switches";
 import { scrubEvent, scrubString, scrubValue } from "./scrub";
 
 export const SENTRY_TRACES_SAMPLE_RATE = 0.1;
@@ -16,11 +19,14 @@ export type SentryEnv = {
   appEnv?: string | null;
   viteAppEnv?: string | null;
   vercelEnv?: string | null;
+  /** OBSERVABILITY_SENTRY_ENABLED. Unset means on; only exact "false" turns Sentry off. */
+  switchValue?: string | null;
 };
 
 export function sentryOptions(env: SentryEnv) {
   const dsn = (env.dsn ?? "").trim();
   if (!dsn) return null;
+  if (!sentrySwitchOn(env.switchValue)) return null;
   if (
     !vendorTelemetryEnabled({
       appEnv: env.appEnv,
