@@ -15,7 +15,7 @@ export const HELP_CATEGORIES = [
   "Organizations",
   "Team management",
   "AI workforce",
-  "Digital twins",
+  "Personal twins",
   "Integrations",
   "Security",
   "Billing",
@@ -33,7 +33,7 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
       {
         paragraphs: [
           "Request a demo at hello@sherivs.com or on the public website. The Sherivs team creates the organization's admin account. There is no self-service sign-up on app.sherivs.com and no public demo passwords.",
-          "After the admin account is provisioned, that admin invites every other user by email with login credentials. Invited users sign in on app.sherivs.com — they do not create their own accounts.",
+          "After the admin account is provisioned, that admin invites the other users. Invited users sign in on app.sherivs.com — they do not create their own accounts.",
         ],
       },
       {
@@ -99,24 +99,24 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     body: [
       {
         paragraphs: [
-          "Where AI workers are enabled, they operate with an owner, a purpose, and permissions. They should not be treated as administrators.",
-          "Some worker features require the platform's model credentials to be configured. If a worker surface is marked planned inside the product, it is not available for production use. Sherivs does not offer unlimited autonomous execution.",
+          "No AI worker runs today. AI workers exist only as written definitions, and they are limited to suggesting work.",
+          "When they are switched on, each worker will have an owner, a purpose, and permissions, and a person will approve what it suggests. Workers should not be treated as administrators. Sherivs does not offer unlimited autonomous execution.",
         ],
       },
     ],
   },
   {
     slug: "digital-twins",
-    category: "Digital twins",
-    title: "Digital twins in the product",
-    summary: "What exists today versus the long-term runtime.",
+    category: "Personal twins",
+    title: "Personal twins in the product",
+    summary: "What exists today and what does not.",
     status: "in_development",
     listed: false,
     body: [
       {
         paragraphs: [
-          "A digital twin is a governed digital model: identity, state, relationships, and events. Administrative screens exist in the application.",
-          "A complete event-driven twin runtime, including device and IoT twins, is not a generally available customer product in the current execution profile.",
+          "A personal twin is a stored record of a person's role and context. Today personal twins exist only as data and a short brief panel. They do not act on their own.",
+          "Device and IoT twins are not part of the product.",
         ],
       },
     ],
@@ -125,13 +125,13 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     slug: "integrations",
     category: "Integrations",
     title: "Payments and messaging",
-    summary: "Integrations that exist in code when configured.",
-    status: "available",
+    summary: "What is live today and what is not yet.",
+    status: "in_development",
     body: [
       {
         paragraphs: [
-          "Scholar fee collection can use Paystack when the organization and platform have configured it. If Paystack is not configured, checkout will not run.",
-          "WhatsApp Cloud webhooks exist when Meta credentials are present. Email and SMS delivery depend on configured providers and are not claimed as always-on from this help article.",
+          "Paystack fee payments run in test mode only. Schools cannot take real payments through Sherivs yet.",
+          "SMS, WhatsApp, and email sending are not switched on for customers yet. The code exists and is being finished.",
         ],
       },
     ],
@@ -155,12 +155,12 @@ export const HELP_ARTICLES: readonly HelpArticle[] = [
     slug: "billing",
     category: "Billing",
     title: "Plans and billing",
-    summary: "Public prices are a catalog view, not a checkout contract.",
+    summary: "Prices are not published yet.",
     status: "available",
     body: [
       {
         paragraphs: [
-          "The platform-detail page shows a commercial catalog in Nigerian naira, including a trial and quoted enterprise pricing. Entitlements are enforced in the product after activation, not by the marketing page.",
+          "Prices are not published on the website yet, and there is no online checkout. Entitlements are enforced in the product after activation, not by the marketing page.",
           "For procurement, request a demo or write to hello@sherivs.com. This help article does not state refund terms or an SLA.",
         ],
       },

@@ -3,7 +3,7 @@ import { POSITIONING_STATEMENT } from "@/lib/public-site/company";
 export const ARTICLE_CATEGORIES = [
   "AI and Intelligence Infrastructure",
   "AI Agents and Autonomous Work",
-  "Digital Twins",
+  "Twins",
   "Institutional Computing",
   "Architecture and Engineering",
   "Security and Governance",
@@ -106,7 +106,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
     author: { name: "Sherivs", role: "Editorial" },
     publishedAt: "2026-10-26",
     updatedAt: "2026-10-26",
-    category: "Digital Twins",
+    category: "Twins",
     tags: ["twins", "events", "state"],
     seoTitle: "Why digital twins need persistent state",
     seoDescription:
@@ -308,8 +308,8 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
       {
         heading: "What is in the product",
         paragraphs: [
-          "An organization admin, once provisioned, works with school records, academic information, and membership in one workspace. Teachers, students, and parents use that same workspace after they are invited. There is no separate application for each role.",
-          "Paystack and messaging integrations run only when an organization has configured them. They are not automatic for every school.",
+          "An organization admin, once provisioned, works with the school setup interview, roles, and student records in one workspace. Screens for classes, attendance, and assessments are still being built. Teachers, students, and parents use that same workspace after they are invited. There is no separate application for each role.",
+          "Paystack payments run in test mode only, and SMS, WhatsApp, and email sending are not switched on for schools yet.",
         ],
       },
     ],
@@ -338,7 +338,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
       {
         heading: "After the admin account exists",
         paragraphs: [
-          "The admin configures the school information the product supports, then invites administrators, teachers, students, and parents by email.",
+          "The admin configures the school information the product supports, then invites administrators, teachers, students, and parents.",
         ],
       },
     ],
@@ -369,7 +369,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
     slug: "parent-access-in-sherivs-scholar",
     title: "How parent access works",
     summary:
-      "Parents and guardians see information about their children when the school invites them with a parent role. It is not a public directory.",
+      "Parents and guardians can sign in when the school invites them with a parent role. Screens made for parents are still being built. It is not a public directory.",
     author: { name: "Sherivs", role: "Editorial" },
     publishedAt: "2026-10-28",
     updatedAt: "2026-10-28",
@@ -383,7 +383,7 @@ export const PUBLIC_ARTICLES: readonly PublicArticle[] = [
     sections: [
       {
         paragraphs: [
-          "A parent or guardian can sign in after the school invites them. They use the same workspace as the rest of the organization. The records they can open are the ones the school has authorized for that membership. Access ends when membership is revoked. There is no separate parent application.",
+          "A parent or guardian can sign in after the school invites them. They use the same workspace as the rest of the organization. The records they can open are the ones the school has authorized for that membership. Screens made for parents are still being built. Access ends when membership is revoked. There is no separate parent application.",
         ],
       },
     ],

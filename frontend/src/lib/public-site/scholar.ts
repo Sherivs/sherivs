@@ -15,6 +15,12 @@
  *
  * AI assistants, multi-campus management, and supported automated actions
  * are therefore labelled In development. They are not described as operational.
+ *
+ * Truth audit 2026-11-17 (docs/public-site/TRUTH_AUDIT_2026-11-17.md): about
+ * eight real workspace screens exist (roles, agents, role packets, workspace
+ * policies, school setup interview, messages, student records, ASC export).
+ * Class, attendance, assessment, health, transport, and parent screens do not
+ * exist yet, so cards for them say so.
  */
 import type { CapabilityStatus } from "@/lib/public-site/capabilities";
 import { PRODUCT_DESCRIPTOR } from "@/lib/public-site/company";
@@ -50,25 +56,25 @@ export const SCHOLAR_CAPABILITIES: readonly ScholarCapability[] = [
   {
     id: "administration",
     title: "School administration",
-    body: "Keep organization settings, membership, and administrative records together in the signed-in workspace.",
+    body: "Set up your school with a guided setup interview, manage roles and responsibilities, and keep student records in the signed-in workspace. Other administration screens are still being built.",
     href: "/solutions/education#administration",
   },
   {
     id: "academic",
     title: "Academic operations",
-    body: "Work with the academic records the product supports — classes, subjects, attendance, and assessment information — inside the same organization.",
+    body: "Screens for classes, subjects, attendance, and assessments are being built. They are not ready for daily use yet.",
     href: "/solutions/education#academic",
   },
   {
     id: "classroom",
     title: "Teacher and student work",
-    body: "Teachers and students sign in to the same workspace shell. What they can open follows membership and role. There is no separate teacher or student application.",
+    body: "Teachers and students sign in to the same workspace shell. What they can open follows membership and role. There is no separate teacher or student application. Many workspace sections are still placeholders.",
     href: "/solutions/education#academic",
   },
   {
     id: "families",
     title: "Parent and guardian access",
-    body: "Parents and guardians can be invited into the organization. They use the same workspace shell. There is no separate parent application.",
+    body: "Parents and guardians can be invited into the organization. They use the same workspace shell. There is no separate parent application. Screens made for parents are still being built.",
     href: "/solutions/education#academic",
   },
 ];
@@ -115,7 +121,7 @@ export const SCHOLAR_ORGANIZATION = {
   eyebrow: "THE SHERIVS APPROACH",
   headline: "Your school is more than its records.",
   description:
-    "A school is a living organization of people, responsibilities, relationships, places, and daily operations. Sherivs Scholar brings these realities together in one digital environment, giving each person a more coherent way to work within the organization.",
+    "A school is a living organization of people, responsibilities, relationships, places, and daily operations. Sherivs Scholar aims to bring these realities together in one digital environment, giving each person a more coherent way to work within the organization.",
   cards: [
     {
       id: "one-reality",
@@ -146,37 +152,42 @@ export const SCHOLAR_COMMUNITY = {
     {
       id: "leadership",
       title: "School leadership and administration",
-      body: "Coordinate institutional responsibilities, review relevant information, oversee operations, and make better-informed decisions within your authorized scope.",
+      body: "Set up the school, decide who holds each role and responsibility, and review student records today. Screens for overseeing daily operations are still being built.",
     },
     {
       id: "teachers",
       title: "Teachers and academic staff",
-      body: "Prepare lessons, organize academic work, review student progress, and identify students who may need additional attention.",
+      body: "Will help teachers prepare lessons, organize class work, and follow student progress. These screens are being built.",
+      status: "in_development",
     },
     {
       id: "students",
       title: "Students",
-      body: "Access relevant learning information, receive learning support where available, follow educational goals, and work toward academic and personal development.",
+      body: "Will give students their learning information and study support. These screens are being built.",
+      status: "in_development",
     },
     {
       id: "parents",
       title: "Parents and guardians",
-      body: "Stay connected to your children's educational journey through relevant school information, progress updates, and supported parent workflows.",
+      body: "Will keep parents up to date on their children's school information and progress. These screens are being built.",
+      status: "in_development",
     },
     {
       id: "health",
       title: "School nurses and health personnel",
-      body: "Support student welfare through authorized health information, relevant records, and appropriate follow-up workflows.",
+      body: "Will support student welfare through health records that only authorized staff can see. These screens are being built.",
+      status: "in_development",
     },
     {
       id: "operations-staff",
       title: "Transport and operational staff",
-      body: "Coordinate assigned operational responsibilities, schedules, resources, and relevant organizational information.",
+      body: "Will help transport and operations staff with their assigned tasks and schedules. These screens are being built.",
+      status: "in_development",
     },
     {
       id: "other-roles",
       title: "Every other authorized role",
-      body: "Accommodate the additional responsibilities that make each school unique, from library and laboratory personnel to maintenance teams, security staff, boarding-house personnel, and other operational roles.",
+      body: "Schools can create custom roles today for library, laboratory, maintenance, security, boarding, and other staff. Screens made for these roles are still being built.",
     },
   ] as const satisfies readonly HomepageCard[],
 };
@@ -291,11 +302,12 @@ export const SCHOLAR_FLEXIBILITY = {
       id: "relationships",
       title: "Connected organizational relationships",
       body: "Keep people, responsibilities, and relevant records connected to the organizational units they belong to.",
+      status: "in_development",
     },
     {
       id: "specific-operations",
       title: "School-specific operations",
-      body: "Accommodate the workflows and responsibilities that make your institution distinct, rather than forcing every school into an identical operating model.",
+      body: "Create custom roles and add-on responsibilities that fit how your institution works, instead of a fixed list of jobs.",
     },
   ] as const satisfies readonly HomepageCard[],
 };
@@ -380,22 +392,22 @@ export const SCHOLAR_START = {
     {
       step: "01",
       title: "Establish your institution",
-      body: "Create or request access to your organization's Sherivs Scholar environment through the supported onboarding process.",
+      body: "Request your organization's Sherivs Scholar environment. The Sherivs team sets it up with you.",
     },
     {
       step: "02",
       title: "Represent your school",
-      body: "Configure the organizational structure, people, roles, and operational information supported by the platform.",
+      body: "Answer the guided setup interview about how your school is organized, then set up roles and responsibilities.",
     },
     {
       step: "03",
       title: "Connect your community",
-      body: "Provide administrators, teachers, students, parents, and relevant staff with the access appropriate to their responsibilities.",
+      body: "Invite administrators, teachers, students, parents, and staff with the access that fits their role.",
     },
     {
       step: "04",
       title: "Begin operating",
-      body: "Use the available workflows and assistance to support the everyday activities of your institution.",
+      body: "Use the screens that are ready today. More screens and AI assistance will follow.",
     },
   ] as const satisfies readonly HomepageStep[],
 };

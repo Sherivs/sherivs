@@ -9,8 +9,7 @@ export const Route = createFileRoute("/(site)/security/disclosure")({
   head: () =>
     publicHead({
       title: "Vulnerability disclosure",
-      description:
-        "Report suspected security issues in Sherivs to the privacy and legal mailboxes.",
+      description: "Report suspected security issues in Sherivs to info@sherivs.com.",
       path: "/security/disclosure",
     }),
 });

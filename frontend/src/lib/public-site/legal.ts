@@ -13,6 +13,12 @@ export interface LegalDocument {
   lastUpdated?: string;
   /** If false, keep out of sitemap and mark noindex. */
   indexable: boolean;
+  /**
+   * Set to true only after legal counsel has reviewed this document. Until
+   * then a published document shows a short "not yet reviewed by counsel"
+   * notice (truth audit 2026-11-17). No document is counsel-reviewed today.
+   */
+  counselReviewed?: true;
   summary: string;
   unresolvedFacts: readonly string[];
   sections: readonly { heading: string; body: readonly string[] }[];
