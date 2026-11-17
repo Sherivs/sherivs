@@ -15,9 +15,11 @@ describe("UI/UX upgrade: internal console environment bar", () => {
   });
 
   it("keeps the full environment wording reachable, not deleted", () => {
-    expect(shell).toContain("This is not a production");
-    expect(shell).toContain("Persistent workspace storage is not connected.");
-    expect(shell).toContain("Compatibility workspaces are shown from role membership");
+    // The formatter may wrap JSX text across lines, so compare with whitespace collapsed.
+    const flat = shell.replace(/\s+/g, " ");
+    expect(flat).toContain("This is not a production");
+    expect(flat).toContain("Persistent workspace storage is not connected.");
+    expect(flat).toContain("Compatibility workspaces are shown from role membership");
     expect(shell).toContain("<summary>Environment notes</summary>");
   });
 
