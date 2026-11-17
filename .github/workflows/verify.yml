@@ -93,7 +93,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --no-audit --fund=false
-      - run: npm audit --omit=dev --audit-level=high
+      # npm audit --omit=dev at high/critical; dated, approved exceptions live in config/npm-audit-exceptions.json
+      - run: node scripts/verify-npm-audit.mjs
       - run: npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets
       - run: npm run verify:home-bundle:build
 
