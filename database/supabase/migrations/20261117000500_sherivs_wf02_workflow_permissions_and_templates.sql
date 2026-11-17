@@ -112,8 +112,12 @@ AS $$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     IF auth.uid() IS NOT NULL THEN
+      NEW.created_by := auth.uid();
       NEW.updated_by := auth.uid();
     ELSE
+      IF NEW.created_by IS NULL THEN
+        RAISE EXCEPTION 'wf_version: draft creation requires a recorded author' USING ERRCODE = '42501';
+      END IF;
       NEW.updated_by := coalesce(NEW.updated_by, NEW.created_by);
     END IF;
     IF NEW.updated_by IS NULL THEN
@@ -189,8 +193,8 @@ RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
 AS $$
 BEGIN
   IF TG_OP = 'UPDATE' AND OLD.state = 'draft' AND NEW.state = 'published' THEN
-    IF OLD.updated_by IS NULL THEN
-      RAISE EXCEPTION 'wf_version: the last editor is unknown; edit the draft before publishing'
+    IF OLD.created_by IS NULL OR OLD.updated_by IS NULL THEN
+      RAISE EXCEPTION 'wf_version: the author or last editor is unknown; edit the draft before publishing'
         USING ERRCODE = '42501';
     END IF;
     IF (NEW.graph, NEW.max_steps_per_run, NEW.max_run_depth, NEW.max_loop_iterations,
@@ -232,7 +236,8 @@ BEGIN
            v.id = (SELECT r.version_id FROM public.wf_run r WHERE r.org_id = NEW.org_id AND r.id = NEW.run_id)
            OR v.id = NEW.target_version_id
          )
-         AND (v.updated_by IS NULL OR NEW.decided_by = v.created_by OR NEW.decided_by = v.updated_by)
+         AND (v.created_by IS NULL OR v.updated_by IS NULL
+              OR NEW.decided_by = v.created_by OR NEW.decided_by = v.updated_by)
     ) THEN
       RAISE EXCEPTION 'wf_approval: the version author or last editor cannot decide this request, or its editor is unknown'
         USING ERRCODE = '42501';

@@ -59,6 +59,8 @@ describe("WF-02 workflow permissions and templates (static posture)", () => {
     expect(body).toContain("ALTER TABLE public.wf_version ADD COLUMN updated_by uuid");
     expect(body).toContain("CREATE TRIGGER wf_version_05_editor_stamp");
     expect(body).toContain("NEW.updated_by := auth.uid()");
+    expect(body).toContain("draft creation requires a recorded author");
+    expect(body).toContain("IF OLD.created_by IS NULL OR OLD.updated_by IS NULL");
     expect(body).toContain("NEW.published_by IS NOT DISTINCT FROM OLD.created_by");
     expect(body).toContain("NEW.published_by IS NOT DISTINCT FROM OLD.updated_by");
     expect(body).toContain("CREATE TRIGGER wf_version_20_sod_guard");

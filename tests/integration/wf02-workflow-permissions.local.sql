@@ -215,6 +215,11 @@ SELECT wf02t.expect_true('approver role receives approve without manage',
 SELECT wf02t.logout();
 
 SELECT wf02t.login_as('service_role');
+SELECT wf02t.expect_error('service draft requires recorded authorship',
+  $q$INSERT INTO public.wf_version (org_id, definition_id, version, updated_by)
+     VALUES ('f0200000-0000-4000-8000-0000000000a1',
+             'f0210000-0000-4000-8000-0000000000a1', 99,
+             'f0200000-0000-4000-8000-000000000002')$q$, '42501');
 SELECT wf02t.expect_error('author cannot publish the authored version',
   $q$UPDATE public.wf_version SET state = 'published', published_by = 'f0200000-0000-4000-8000-000000000001'
       WHERE id = 'f0220000-0000-4000-8000-0000000000a1'$q$, '42501');

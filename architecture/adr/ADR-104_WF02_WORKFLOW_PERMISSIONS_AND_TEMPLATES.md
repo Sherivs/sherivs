@@ -24,7 +24,7 @@ WF-02 is a V1 extension for organizational workflows. It does not introduce a se
 ## Security and operational consequences
 
 - The new per-version guards apply regardless of the user's organization-admin status. They complement, and do not replace, catalog role SoD.
-- Service publishing must identify its human actor in `published_by`. Service-created/edited drafts must provide `created_by` or `updated_by` when a person is responsible; null actors remain possible for system-authored drafts but cannot be used to publish without a recorded publisher.
+- Service publishing must identify its human actor in `published_by`. Draft creation requires a recorded author and last editor; a service-created draft may use the author as its initial editor. Drafts with unknown author or editor provenance fail closed for publication and approval decisions.
 - New global permission assignments may reveal a pre-existing manage/approve combination. The migration fails closed when its preflight detects one; it does not silently rewrite role assignments.
 - Authenticated users cannot publish, start runs, write steps, or decide approvals. `wf_claim_due_steps` remains service-role-only. Existing audit behavior and `audit_chain` are unchanged.
 - The rollback removes WF-02 permissions, template data, and added guard objects/column only. It does not modify WF-01 workflow tables or audit records.
