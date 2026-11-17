@@ -98,6 +98,8 @@ describe("Sentry options / no-DSN safety", () => {
   it("has no PII, no replay, low tracing, and scrubs in beforeSend", () => {
     const o = sentryOptions({
       dsn: "https://k@o1.ingest.de.sentry.io/1",
+      appEnv: "staging",
+      viteAppEnv: "staging",
       environment: "preview",
       release: "abc",
     })!;
@@ -106,7 +108,7 @@ describe("Sentry options / no-DSN safety", () => {
     expect(SENTRY_TRACES_SAMPLE_RATE).toBeLessThanOrEqual(0.1);
     expect(o.replaysSessionSampleRate).toBe(0);
     expect(o.replaysOnErrorSampleRate).toBe(0);
-    expect(o.environment).toBe("preview");
+    expect(o.environment).toBe("staging");
     expect(o.release).toBe("abc");
     const ev = o.beforeSend({ user: { id: "u", email: "a@b.cc" }, message: "hi a@b.cc" } as Record<
       string,
@@ -134,7 +136,8 @@ describe("beforeSendSpan", () => {
     const { sentryOptions } = await import("@/lib/observability/sentry-config");
     const o = sentryOptions({
       dsn: "https://k@o1.ingest.de.sentry.io/1",
-      environment: "test",
+      appEnv: "staging",
+      viteAppEnv: "staging",
       release: "x",
     })!;
     const s = o.beforeSendSpan({

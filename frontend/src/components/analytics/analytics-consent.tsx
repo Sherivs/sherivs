@@ -10,10 +10,20 @@ import {
   type AnalyticsConsent,
 } from "@/lib/analytics/consent";
 import { identifyPosthog, startPosthog, stopPosthog } from "@/lib/analytics/posthog";
+import { vendorTelemetryEnabled } from "@/lib/observability/vendor-telemetry";
 import { resolveExperienceHost } from "@/lib/experience/experience-host";
 
-const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-const HOST = import.meta.env.VITE_POSTHOG_HOST as string | undefined;
+const vendorEnv = {
+  appEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+  viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
+};
+/** Empty unless this build is explicit staging, so production bundles carry no project key. */
+const KEY = vendorTelemetryEnabled(vendorEnv)
+  ? ((import.meta.env.VITE_POSTHOG_KEY as string | undefined) ?? "")
+  : "";
+const HOST = vendorTelemetryEnabled(vendorEnv)
+  ? (import.meta.env.VITE_POSTHOG_HOST as string | undefined)
+  : undefined;
 
 /**
  * Consent banner + PostHog bridge. Nothing loads or is sent until the user
@@ -40,7 +50,7 @@ export function AnalyticsConsent() {
       stopPosthog();
       return;
     }
-    void startPosthog(KEY, HOST).then(() =>
+    void startPosthog(KEY, HOST, vendorEnv).then(() =>
       identifyPosthog({ id: profile?.id, role, tenantId: school?.id ?? profile?.school_id }),
     );
   }, [ready, allowed, profile?.id, role, school?.id, profile?.school_id]);

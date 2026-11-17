@@ -36,7 +36,7 @@
 
 .mobility-eyebrow {
   color: #64748b;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -62,7 +62,7 @@
   display: grid;
   gap: 0.35rem;
   color: #47546b;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   font-weight: 750;
 }
 
@@ -217,7 +217,7 @@
 
 .mobility-student-item-copy small {
   color: #77839a;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .mobility-avatar {
@@ -277,7 +277,7 @@
   padding: 0.32rem 0.6rem;
   color: #59667d;
   background: #f0f3f8;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
   text-transform: capitalize;
 }
@@ -312,7 +312,7 @@
 .mobility-balance-card small {
   max-width: 38rem;
   color: #738099;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .mobility-balance-icon {
@@ -483,7 +483,7 @@
 }
 
 .mobility-eligibility span {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .mobility-eligibility ul {
@@ -605,7 +605,7 @@
 .mobility-timeline-meta time,
 .mobility-timeline-item small {
   color: #738099;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .mobility-timeline-item p {
@@ -617,7 +617,7 @@
 
 .mobility-current-tag {
   padding: 0.22rem 0.5rem;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 .mobility-request-card {
@@ -637,7 +637,7 @@
 .mobility-request-title small,
 .mobility-request-card > small {
   color: #6b7890;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .status-pending {
@@ -660,7 +660,7 @@
   display: grid;
   gap: 0.35rem;
   color: #66738a;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .mobility-progress-track {
@@ -684,7 +684,7 @@
   padding: 0;
   list-style: none;
   color: #516079;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
 }
 
 .mobility-approval-list li {
@@ -762,7 +762,7 @@
 .mobility-bulk-header {
   color: #64748b;
   background: #f7f9fc;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 800;
 }
 
@@ -792,7 +792,7 @@
 
 .mobility-student-check small {
   color: #7a879b;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
 }
 
 .mobility-bulk-footer {
@@ -829,7 +829,7 @@
   border: 1px solid #e4e9f1;
   border-radius: 0.65rem;
   padding: 0.65rem 0.75rem;
-  font-size: 0.74rem;
+  font-size: 0.75rem;
 }
 
 .mobility-preview-row p {
@@ -884,7 +884,7 @@
   .mobility-primary {
     min-height: 2.35rem;
     padding: 0.45rem 0.6rem;
-    font-size: 0.74rem;
+    font-size: 0.75rem;
   }
 
   .mobility-workspace {
@@ -969,7 +969,7 @@
   }
 
   .mobility-profile-title p {
-    font-size: 0.69rem;
+    font-size: 0.75rem;
   }
 
   .mobility-balance-card strong {
@@ -977,12 +977,12 @@
   }
 
   .mobility-balance-card small {
-    font-size: 0.66rem;
+    font-size: 0.75rem;
     line-height: 1.4;
   }
 
   .mobility-count {
     padding: 0.25rem 0.45rem;
-    font-size: 0.62rem;
+    font-size: 0.75rem;
   }
 }

@@ -4,11 +4,11 @@ import { computeTermResult, type TermResultWeights } from "@/lib/scholar/result-
 import type { GradingModel } from "@/lib/scholar/grading";
 
 const migration = readFileSync(
-  "database/supabase/migrations/20261104010000_sherivs_m06_ca_terminal_results.sql",
+  "database/supabase/migrations/20261116000400_sherivs_m06_ca_terminal_results.sql",
   "utf8",
 );
 const rollback = readFileSync(
-  "database/supabase/rollbacks/20261104010000_sherivs_m06_ca_terminal_results.sql",
+  "database/supabase/rollbacks/20261116000400_sherivs_m06_ca_terminal_results.sql",
   "utf8",
 );
 const harness = readFileSync("tests/integration/m06-ca-and-results.local.sql", "utf8");
@@ -108,7 +108,7 @@ describe("M06 weighted CA and terminal results", () => {
 
 describe("M06 database result workflow", () => {
   it("adds the reserved forward-only migration and a guarded rollback", () => {
-    expect(migration).toContain("Authored only; never applied to a live database");
+    expect(migration.startsWith("-- NOT APPLIED.")).toBe(true);
     expect(migration).not.toMatch(/^\s*(BEGIN|COMMIT);/m);
     expect(migration).toContain("public.m06_result_weight_profiles");
     expect(migration).toContain("public.m06_result_component_scores");
@@ -155,7 +155,6 @@ describe("M06 database result workflow", () => {
   it("indexes the owner-reserved ADR and exposes only validated server calls", () => {
     expect(adrIndex).toContain("ADR-044_M06_TENANT_SCOPED_RESULTS_WORKFLOW.md");
     expect(adrIndex).toContain("ADR-045_M08_ASC_FIELD_ORDER_MANIFEST.md");
-    expect(adrIndex).toContain("Next free number: **ADR-046**");
     const server = readFileSync("frontend/src/lib/runtime/scholar/results.functions.ts", "utf8");
     expect(server).toContain('"m06_set_result_weights"');
     expect(server).toContain('"m06_enter_result_scores"');

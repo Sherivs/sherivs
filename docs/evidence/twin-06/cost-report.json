@@ -1,0 +1,80 @@
+{
+  "generatedFor": "SV1-TWIN-06",
+  "environment": {
+    "node": "v22.23.4",
+    "platform": "linux 6.18.44-fc-v445 x64",
+    "cpu": "Intel(R) Xeon(R) Processor @ 2.30GHz",
+    "cpuCount": 2,
+    "repetitions": 7,
+    "note": "single-process, in-memory, warmed up; absolute numbers are machine-specific, ratios are what matter"
+  },
+  "measured": {
+    "idleWakePlan": {
+      "medianMs": 0.00007,
+      "minMs": 0.00006,
+      "maxMs": 0.00014,
+      "perCall": "planNextWake with nothing queued",
+      "auditRecordsAdded": 0
+    },
+    "fullWakeCycle": {
+      "medianMs": 0.00871,
+      "minMs": 0.00586,
+      "maxMs": 0.01997,
+      "perCall": "enqueue + plan + 9 state-machine steps + complete (no model call)",
+      "auditRecordsAdded": 12
+    },
+    "proposalFlow": {
+      "medianMs": 0.00259,
+      "minMs": 0.00214,
+      "maxMs": 0.0041,
+      "perCall": "create + approve + prepare handoff",
+      "auditRecordsAdded": 3
+    },
+    "stateGrowth": [
+      {
+        "events": 1,
+        "stateBytes": 2112,
+        "auditRecords": 12
+      },
+      {
+        "events": 10,
+        "stateBytes": 19505,
+        "auditRecords": 120
+      },
+      {
+        "events": 100,
+        "stateBytes": 193548,
+        "auditRecords": 1200
+      },
+      {
+        "events": 1000,
+        "stateBytes": 1932241,
+        "auditRecords": 12000
+      }
+    ],
+    "stateBytesPerAuditRecord": 161
+  },
+  "configuredBudgets_notObserved": {
+    "perRun": {
+      "maxTokens": 8000,
+      "maxFinancialCost": 0.5,
+      "timeLimitMs": 120000,
+      "actionLimit": 5
+    },
+    "perUser": {
+      "maxWakes": 20,
+      "maxTokens": 50000
+    },
+    "perTenant": {
+      "maxWakes": 2000,
+      "maxTokens": 5000000
+    },
+    "windowMs": 3600000,
+    "eventTtlMs": 900000
+  },
+  "notMeasured": [
+    "Model / AI gateway cost: no gateway or token metering exists in these modules.",
+    "Network, storage and database cost of persisting audit records in production.",
+    "Cost under real traffic, concurrency or a multi-process host."
+  ]
+}

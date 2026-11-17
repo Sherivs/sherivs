@@ -52,6 +52,7 @@ jobs:
           name: cloud-fabric-foundation-proof
           path: architecture/proofs/cloud-fabric-foundation.proof.json
           if-no-files-found: error
+          retention-days: 7
 
   terraform-validate:
     name: Terraform fmt + validate (per provider root)

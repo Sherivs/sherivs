@@ -39,8 +39,6 @@
  * every consumer testable without waiting on real time.
  */
 
-import { createHash } from "node:crypto";
-
 /* ─────────────────────────────────────────────────────────────
  * Injected clock contract
  * ────────────────────────────────────────────────────────────*/
@@ -71,7 +69,8 @@ export class FixedClock implements Clock {
     private readonly ms: number,
     issuer = "clock:fixed",
   ) {
-    if (!Number.isFinite(ms)) throw new Error("time_authority: fixed clock requires a finite instant");
+    if (!Number.isFinite(ms))
+      throw new Error("time_authority: fixed clock requires a finite instant");
     this.issuer = issuer;
   }
   nowMs(): number {
@@ -175,7 +174,11 @@ export function isAuthorityTimestampShape(value: unknown): value is IssuedTimest
   const candidate = value as Partial<IssuedTimestamp>;
   if (typeof candidate.at !== "string" || !Number.isFinite(Date.parse(candidate.at))) return false;
   if (typeof candidate.atMs !== "number" || !Number.isFinite(candidate.atMs)) return false;
-  if (typeof candidate.sequence !== "number" || !Number.isInteger(candidate.sequence) || candidate.sequence < 0) {
+  if (
+    typeof candidate.sequence !== "number" ||
+    !Number.isInteger(candidate.sequence) ||
+    candidate.sequence < 0
+  ) {
     return false;
   }
   if (typeof candidate.issuer !== "string" || candidate.issuer.trim().length === 0) return false;
@@ -332,23 +335,4 @@ export class TimeAuthority {
       this.log.splice(0, this.log.length - this.maxIssuanceLog);
     }
   }
-}
-
-/* ─────────────────────────────────────────────────────────────
- * Deterministic derivation helper (UUIDv7 ordering dependency)
- * ────────────────────────────────────────────────────────────*/
-
-/**
- * Stable time-coordinate for minting time-ordered identifiers (UUIDv7's
- * embedded timestamp field): the issued `atMs` and `sequence` combined so
- * two issuances in the same millisecond never collide. IDs minted from this
- * coordinate sort lexicographically in the authority's total order; IDs
- * minted from anything else have NO ordering guarantee — that is the
- * documented UUIDv7 dependency this contract pins.
- */
-export function issuanceCoordinate(issued: IssuedTimestamp): string {
-  return createHash("sha256")
-    .update([issued.atMs, issued.sequence, issued.issuer].join("|"))
-    .digest("hex")
-    .slice(0, 32);
 }
