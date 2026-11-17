@@ -1,5 +1,5 @@
 -- Disposable proof for database/supabase/migrations/20261117001100_sherivs_m2_role_pack_engine.sql
--- (M2 part B, ADR-105). It builds a small production-shaped fixture (the ENGINE-01 pack registry
+-- (M2 part B, ADR-114). It builds a small production-shaped fixture (the ENGINE-01 pack registry
 -- and its guard verbatim, the 017 catalogue tables, the 016/018 helpers, SEC-M0 private-by-default
 -- privileges), applies the migration, proves the positive, negative and cross-organization cases,
 -- runs the migration a second time, rolls it back and applies it again.

@@ -1,5 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
--- M2 part B (mission E-007, ADR-105): Roles Pack Engine data model and database functions.
+-- M2 part B (mission E-007, ADR-114): Roles Pack Engine data model and database functions.
 -- Rollback: database/supabase/rollbacks/20261117001100_sherivs_m2_role_pack_engine.sql
 --
 -- Extends, never duplicates:
@@ -213,7 +213,7 @@ CREATE TABLE IF NOT EXISTS public.role_pack_items (
     REFERENCES public.cg_role_pack (code, version) ON DELETE CASCADE
 );
 COMMENT ON TABLE public.role_pack_items IS
-  'M2 (ADR-105) catalogue content of an institution pack. Not tenant data. Immutable once its pack '
+  'M2 (ADR-114) catalogue content of an institution pack. Not tenant data. Immutable once its pack '
   'is published. A template item carries {mandatory[], optional[], guardrails[]}; it may never drop '
   'a mandatory permission or a guardrail of the role template it names.';
 
@@ -321,7 +321,7 @@ CREATE TABLE IF NOT EXISTS public.role_pack_migrations (
     string_to_array(to_version, '.')::int[] > string_to_array(from_version, '.')::int[])
 );
 COMMENT ON TABLE public.role_pack_migrations IS
-  'M2 (ADR-105) catalogue: the declared upgrade path of an institution pack. Immutable once the '
+  'M2 (ADR-114) catalogue: the declared upgrade path of an institution pack. Immutable once the '
   'target version is published. An upgrade can only be applied along a declared path.';
 
 CREATE OR REPLACE FUNCTION public.role_pack_migrations_guard()

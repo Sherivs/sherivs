@@ -31,20 +31,20 @@ Only read-only `SELECT` statements were sent to production, to confirm column an
 
 - `database/supabase/migrations/20261117001100_sherivs_m2_role_pack_engine.sql` and its rollback
 - `tests/sql/m2-role-pack-engine.sql`, `tests/unit/m2-role-pack-engine-migration.test.ts`
-- `architecture/adr/ADR-105_M2_ROLE_PACK_ENGINE_DATA_MODEL.md`, one row in `architecture/adr/INDEX.md`
-- neutrality baseline entries added by the quarantine tool (ref ADR-105)
+- `architecture/adr/ADR-114_M2_ROLE_PACK_ENGINE_DATA_MODEL.md`, one row in `architecture/adr/INDEX.md`
+- neutrality baseline entries added by the quarantine tool (ref ADR-114)
 - Not touched: `tools/role-catalog` (another agent), TypeScript runtime, routes, components.
 
 ## Data changes
 
-See ADR-105. One migration, NOT APPLIED. Rollback fails closed while institution packs exist
+See ADR-114. One migration, NOT APPLIED. Rollback fails closed while institution packs exist
 unless `sherivs.rollback_purge_institution_packs = on` is set in the session.
 
 ## Risks
 
 - Changing `cg_role_pack_guard` touches ENGINE-01: the body is unchanged except the tier ceiling
   line; the rollback restores the ENGINE-01 body verbatim, and the SQL test checks it.
-- One active institution pack per organization is an assumption (ADR-105 UNKNOWNs).
+- One active institution pack per organization is an assumption (ADR-114 UNKNOWNs).
 
 ## Acceptance tests
 
@@ -59,7 +59,7 @@ run; the rollback; a re-apply after rollback.
 
 MISSION: M2 part B. STATUS: implemented, tested locally; draft PR open; not applied.
 
-- IMPLEMENTED: migration, rollback, guards, functions, ADR-105, INDEX row.
+- IMPLEMENTED: migration, rollback, guards, functions, ADR-114, INDEX row.
 - TESTED: SQL behaviour test passes (114 assertions); unit test (17 tests) passes; grants,
   neutrality, provenance checks PASS.
 - NOT ATTEMPTED: resolver and its cache, builder UI (M4), seeds (generator owner).

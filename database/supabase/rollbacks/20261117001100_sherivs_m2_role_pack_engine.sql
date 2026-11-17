@@ -1,4 +1,4 @@
--- Rollback for 20261117001100_sherivs_m2_role_pack_engine.sql (M2 part B, ADR-105). NOT APPLIED.
+-- Rollback for 20261117001100_sherivs_m2_role_pack_engine.sql (M2 part B, ADR-114). NOT APPLIED.
 -- Removes the Roles Pack Engine tables and functions and restores ENGINE-01's cg_role_pack kind
 -- check and guard exactly.
 --
