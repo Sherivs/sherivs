@@ -23,6 +23,9 @@ const telemetryInput = {
   authToken: process.env.SENTRY_AUTH_TOKEN,
   vitest: isVitest,
   release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VITE_SENTRY_RELEASE ?? "",
+  // OBS-DD-01 kill switches (default on). Only exact "false" turns a vendor off.
+  sentrySwitch: process.env.OBSERVABILITY_SENTRY_ENABLED,
+  posthogSwitch: process.env.OBSERVABILITY_POSTHOG_ENABLED,
 };
 const sentryUpload = sentrySourceMapUploadEnabled(telemetryInput);
 
