@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Proposed; migration and rollback are not applied |
+| Status | ACCEPTED and applied. Merged in #431 (`e6811075`) and applied to production on 2026-11-17 at 16:49 WAT (ledger `20261117154912`) after a fresh backup, under the founder's standing written approval (16:18 WAT, 2026-11-17). Rollback file not run. |
 | Date | 2026-11-17 |
 | Author | GitHub Copilot coding agent (WF-02) |
 | Creator | `copilot-swe-agent[bot]` (GitHub Copilot coding agent, mission WF-02, issue #430) |
