@@ -4,12 +4,10 @@ import { runWorkflowTick } from "@/lib/workflow/workflow-runtime";
 import type { WorkflowRuntimePort } from "@/lib/workflow/workflow-runtime";
 
 type WorkflowTickEnv = Record<string, string | undefined>;
+const BEARER_SCHEME = "Bearer";
 
 function isAuthorized(header: string | null, secret: string): boolean {
-  const expected = Buffer.concat([
-    Buffer.from([66, 101, 97, 114, 101, 114, 32]),
-    Buffer.from(secret, "utf8"),
-  ]);
+  const expected = Buffer.from(`${BEARER_SCHEME} ${secret}`);
   const received = Buffer.from(header ?? "", "utf8");
   return received.length === expected.length && timingSafeEqual(received, expected);
 }

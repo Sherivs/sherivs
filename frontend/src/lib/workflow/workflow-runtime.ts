@@ -103,6 +103,8 @@ export interface ClaimedWorkflowStep {
   timeoutSeconds: number;
   actionClass: WorkflowActionClass;
   autonomyLevel: WorkflowAutonomyLevel;
+  budgetUnits: number;
+  spentUnits: number;
 }
 
 export interface WorkflowRunRecord {
@@ -162,6 +164,7 @@ export interface WorkflowRuntimePort {
   executeIdempotentEffect(
     orgId: string,
     step: ClaimedWorkflowStep,
+    costUnits: number,
     action: () => Promise<void>,
   ): Promise<"executed" | "replayed">;
   persistTransition(transition: WorkflowTransition): Promise<void>;
@@ -190,6 +193,12 @@ export interface WorkflowTickOptions {
     idempotencyKey: string;
     signal: AbortSignal;
   }) => Promise<void>;
+  estimateActionCost?: (input: {
+    orgId: string;
+    step: ClaimedWorkflowStep;
+    planId: string;
+    idempotencyKey: string;
+  }) => number;
 }
 
 const tracer = trace.getTracer("sherivs-workflow-runtime");
@@ -313,6 +322,7 @@ export async function runWorkflowTick(
               clock,
               random: options.random,
               executeAction: options.executeAction,
+              estimateActionCost: options.estimateActionCost,
               timeoutMs: Math.max(
                 1,
                 budgetMs - (monotonicNow() - startedAt) - STOP_BEFORE_DEADLINE_MS,
@@ -322,15 +332,17 @@ export async function runWorkflowTick(
             span.setAttribute("workflow.status", transition.status);
             countResult(counts, transition.status);
           } catch (error) {
-            let dead = stepFailureStatus(step.attempt, step.maxAttempts) === "dead";
-            const failedRun = await port.loadRun(step.orgId, step.runId);
-            const failedVersion = failedRun
-              ? await port.loadVersion(failedRun.orgId, failedRun.versionId)
-              : null;
             const errorCode =
               error instanceof Error && "code" in error && typeof error.code === "string"
                 ? error.code
                 : "step.failed";
+            let dead =
+              errorCode === "budget.exhausted" ||
+              stepFailureStatus(step.attempt, step.maxAttempts) === "dead";
+            const failedRun = await port.loadRun(step.orgId, step.runId);
+            const failedVersion = failedRun
+              ? await port.loadVersion(failedRun.orgId, failedRun.versionId)
+              : null;
             let run = failedRun?.run ?? null;
             if (failedRun && failedVersion) {
               const definition = dead
@@ -384,7 +396,10 @@ export async function runWorkflowTick(
 async function advanceClaimedStep(
   port: WorkflowRuntimePort,
   step: ClaimedWorkflowStep,
-  options: Pick<WorkflowTickOptions, "clock" | "random" | "executeAction"> & { timeoutMs: number },
+  options: Pick<
+    WorkflowTickOptions,
+    "clock" | "random" | "executeAction" | "estimateActionCost"
+  > & { timeoutMs: number },
 ): Promise<WorkflowTransition> {
   const record = await port.loadRun(step.orgId, step.runId);
   const [version, steps] = record
@@ -415,10 +430,24 @@ async function advanceClaimedStep(
       throw Object.assign(new Error("action_not_authorized"), { code: planned.denyCode });
     }
     if (options.executeAction && step.autonomyLevel === "act_and_report") {
+      const costUnits =
+        options.estimateActionCost?.({
+          orgId: step.orgId,
+          step,
+          planId: planned.plan.planId,
+          idempotencyKey: step.idempotencyKey,
+        }) ?? 1;
+      if (
+        !Number.isInteger(costUnits) ||
+        costUnits < 0 ||
+        step.spentUnits + costUnits > step.budgetUnits
+      ) {
+        throw Object.assign(new Error("budget_exhausted"), { code: "budget.exhausted" });
+      }
       await withTimeout(
         Math.min(step.timeoutSeconds, Math.max(1, Math.floor(options.timeoutMs / 1000))),
         (signal) =>
-          port.executeIdempotentEffect(step.orgId, step, () =>
+          port.executeIdempotentEffect(step.orgId, step, costUnits, () =>
             options.executeAction!({
               orgId: step.orgId,
               step,
@@ -548,6 +577,7 @@ export class InMemoryWorkflowRuntimePort implements WorkflowRuntimePort {
   readonly completedEffects = new Set<string>();
   readonly transitions: WorkflowTransition[] = [];
   private readonly eventRuns = new Map<string, string>();
+  private readonly spentUnitsByStep = new Map<string, number>();
 
   get createdEventRunCount(): number {
     return this.eventRuns.size;
@@ -593,12 +623,22 @@ export class InMemoryWorkflowRuntimePort implements WorkflowRuntimePort {
   async executeIdempotentEffect(
     orgId: string,
     step: ClaimedWorkflowStep,
+    costUnits: number,
     action: () => Promise<void>,
   ): Promise<"executed" | "replayed"> {
     const key = `${orgId}:${step.idempotencyKey}`;
     if (this.completedEffects.has(key)) return "replayed";
+    const spentUnits = Math.max(step.spentUnits, this.spentUnitsByStep.get(key) ?? 0);
+    if (
+      !Number.isInteger(costUnits) ||
+      costUnits < 0 ||
+      spentUnits + costUnits > step.budgetUnits
+    ) {
+      throw Object.assign(new Error("budget_exhausted"), { code: "budget.exhausted" });
+    }
     await action();
     this.completedEffects.add(key);
+    this.spentUnitsByStep.set(key, spentUnits + costUnits);
     return "executed";
   }
 

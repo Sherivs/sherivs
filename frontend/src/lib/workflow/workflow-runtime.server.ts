@@ -139,6 +139,8 @@ function stepFromRow(row: Row): ClaimedWorkflowStep {
       typeof row.autonomy_level === "string"
         ? (row.autonomy_level as ClaimedWorkflowStep["autonomyLevel"])
         : "suggest",
+    budgetUnits: integer(row, "budget_units"),
+    spentUnits: integer(row, "spent_units"),
   };
 }
 
@@ -398,7 +400,9 @@ export function createWorkflowRuntimePort(): WorkflowRuntimePort {
       const row = await one(
         client
           .from("wf_run")
-          .select("id,org_id,version_id,started_by,agent_ref,status,step_count,max_steps,deadline_at")
+          .select(
+            "id,org_id,version_id,started_by,agent_ref,status,step_count,max_steps,deadline_at",
+          )
           .eq("org_id", orgId)
           .eq("id", runId)
           .limit(1),
@@ -487,7 +491,7 @@ export function createWorkflowRuntimePort(): WorkflowRuntimePort {
       }));
     },
 
-    async executeIdempotentEffect(orgId, step, action) {
+    async executeIdempotentEffect(orgId, step, costUnits, action) {
       const bound = bindCallerKey({
         callerKey: step.idempotencyKey,
         operationClass: "workflow.step",
@@ -516,6 +520,21 @@ export function createWorkflowRuntimePort(): WorkflowRuntimePort {
       await assertStepLease(client, step);
       await action();
       await assertStepLease(client, step);
+      const spent = await client
+        .from("wf_step_run")
+        .update({ spent_units: step.spentUnits + costUnits })
+        .eq("org_id", orgId)
+        .eq("id", step.id)
+        .eq("lease_owner", step.leaseOwner)
+        .eq("attempt", step.attempt)
+        .eq("spent_units", step.spentUnits)
+        .eq("budget_units", step.budgetUnits)
+        .select("id");
+      if (spent.error || !spent.data?.length) {
+        throw Object.assign(new Error("workflow_budget_persist_failed"), {
+          code: "budget.exhausted",
+        });
+      }
       const createdAt = timeAuthority.now().at;
       const inserted = await client.from("cg_idempotency_record").insert({
         tenant_id: orgId,

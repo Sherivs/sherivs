@@ -1,3 +1,5 @@
+const BEARER_SCHEME = "Bearer";
+
 export function kickWorkflowTick(
   env: Record<string, string | undefined> = process.env,
   fetcher: typeof fetch = fetch,
@@ -6,11 +8,13 @@ export function kickWorkflowTick(
   const secret = env.CRON_SECRET;
   if (env.WORKFLOWS_ENABLED !== "true" || !url || !secret) return;
   try {
+    const tickUrl = new URL(url);
+    if (tickUrl.protocol !== "https:") return;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3_000);
-    void fetcher(url, {
+    void fetcher(tickUrl, {
       method: "POST",
-      headers: { authorization: `${String.fromCharCode(66, 101, 97, 114, 32)}${secret}` },
+      headers: { authorization: `${BEARER_SCHEME} ${secret}` },
       signal: controller.signal,
     })
       .catch(() => undefined)

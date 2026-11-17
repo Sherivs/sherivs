@@ -23,12 +23,108 @@ const event: WorkflowEvent = {
   payload: {},
 };
 
+async function runBudgetScenario(budgetUnits: number, spentUnits: number, costUnits = 1) {
+  const orgId = "org-budget";
+  const actor: WorkflowActorScope = {
+    actorId: "agent-budget",
+    tenantRef: tenantId(orgId),
+    kind: "ai",
+    roleRef: null,
+    agentRef: "agent-budget",
+    revoked: false,
+  };
+  const definition: WorkflowDefinition = {
+    definitionId: "budget-workflow",
+    tenantRef: tenantId(orgId),
+    name: "Budget workflow",
+    version: "1",
+    trigger: { kind: "event", eventType: "workflow.requested" },
+    steps: [
+      {
+        stepId: "act",
+        kind: "action",
+        assignment: { kind: "ai", agentRef: "agent-budget" },
+        authorizedActions: ["internal.action"],
+        actionClass: "internal",
+      },
+    ],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  };
+  const started = startRun(definition, {
+    runId: "run-budget",
+    actor,
+    trigger: { kind: "event", eventType: "workflow.requested" },
+    now: "2026-11-17T00:00:00.000Z",
+  });
+  if (!started.ok) throw new Error("budget_workflow_start_failed");
+  const port = new InMemoryWorkflowRuntimePort();
+  port.runs.set("run-budget", {
+    orgId,
+    id: "run-budget",
+    versionId: "version-budget",
+    run: started.run,
+    actor,
+  });
+  port.versions.set("version-budget", {
+    orgId,
+    id: "version-budget",
+    definition,
+    maxLoopIterations: 5,
+  });
+  port.steps.set("run-budget", [{ id: "step-budget", stepKey: "act", iteration: 0, input: {} }]);
+  port.stepsToClaim.push({
+    id: "step-budget",
+    orgId,
+    leaseOwner: "worker-budget",
+    runId: "run-budget",
+    stepKey: "act",
+    iteration: 0,
+    status: "claimed",
+    attempt: 1,
+    maxAttempts: 2,
+    idempotencyKey: "wf-step-run-budget-act-0",
+    timeoutSeconds: 30,
+    actionClass: "internal",
+    autonomyLevel: "act_and_report",
+    budgetUnits,
+    spentUnits,
+  });
+  let actionCalls = 0;
+  const counts = await runWorkflowTick(port, {
+    worker: "worker-budget",
+    executeAction: async () => {
+      actionCalls += 1;
+    },
+    estimateActionCost: () => costUnits,
+  });
+  return { actionCalls, counts, transition: port.transitions[0] };
+}
+
 describe("workflow runtime reliability", () => {
   it("creates one run for duplicate organization event keys", async () => {
     const port = new InMemoryWorkflowRuntimePort();
     expect(await port.dispatchEvent(event)).toBe("succeeded");
     expect(await port.dispatchEvent(event)).toBe("skipped");
     expect(port.createdEventRunCount).toBe(1);
+  });
+
+  it("refuses an effect whose estimated cost exceeds the remaining budget", async () => {
+    for (const [budget, spent, cost] of [
+      [0, 0, 1],
+      [2, 1, 2],
+    ]) {
+      const result = await runBudgetScenario(budget, spent, cost);
+      expect(result.actionCalls).toBe(0);
+      expect(result.transition.status).toBe("dead");
+      expect(result.transition.errorCode).toBe("budget.exhausted");
+    }
+  });
+
+  it("executes an effect when its estimated cost fits the remaining budget", async () => {
+    const result = await runBudgetScenario(3, 1, 2);
+    expect(result.actionCalls).toBe(1);
+    expect(result.counts.dead).toBe(0);
   });
 
   it("does not repeat a completed effect after lease expiry and step re-claim", async () => {
@@ -48,14 +144,16 @@ describe("workflow runtime reliability", () => {
       timeoutSeconds: 30,
       actionClass: "internal",
       autonomyLevel: "act_and_report",
+      budgetUnits: 1,
+      spentUnits: 0,
     } as const;
-    await port.executeIdempotentEffect("org-1", step, async () => {
+    await port.executeIdempotentEffect("org-1", step, 1, async () => {
       effects += 1;
     });
     port.stepsToClaim.push({ ...step, status: "claimed", attempt: 2 });
     const [reclaimed] = await port.claimDueSteps("worker-2", 1, 60);
     expect(reclaimed.attempt).toBe(2);
-    await port.executeIdempotentEffect("org-1", reclaimed, async () => {
+    await port.executeIdempotentEffect("org-1", reclaimed, 1, async () => {
       effects += 1;
     });
     expect(effects).toBe(1);
@@ -129,6 +227,8 @@ describe("workflow runtime reliability", () => {
       timeoutSeconds: 30,
       actionClass: "unclassified",
       autonomyLevel: "suggest",
+      budgetUnits: 0,
+      spentUnits: 0,
     });
 
     const counts = await runWorkflowTick(port, { worker: "worker-1" });
@@ -204,6 +304,8 @@ describe("workflow runtime reliability", () => {
       timeoutSeconds: 30,
       actionClass: "internal",
       autonomyLevel: "act_and_report",
+      budgetUnits: 1,
+      spentUnits: 0,
     });
 
     await runWorkflowTick(port, {
