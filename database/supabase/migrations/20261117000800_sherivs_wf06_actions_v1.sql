@@ -26,10 +26,12 @@ BEGIN
     SELECT 1 FROM public.cg_tool_registry
      WHERE tool_id IN (
        'workflow.action.email', 'workflow.action.whatsapp', 'workflow.action.sms',
-       'workflow.action.in_app', 'workflow.action.webhook'
+       'workflow.action.in_app', 'workflow.action.task', 'workflow.action.wait',
+       'workflow.action.webhook'
      )
+       AND enabled
   ) THEN
-    RAISE EXCEPTION 'WF-06: a workflow action tool is already registered';
+    RAISE EXCEPTION 'WF-06: an action tool is already enabled before this migration';
   END IF;
 END
 $prereq$;
@@ -41,7 +43,40 @@ VALUES
   ('workflow.action.whatsapp', '1.0.0', 'Workflow WhatsApp action', 'whatsapp', 'write', 'customer_visible', 'T2', true, 100, false),
   ('workflow.action.sms', '1.0.0', 'Workflow SMS action', 'sms', 'write', 'customer_visible', 'T2', true, 100, false),
   ('workflow.action.in_app', '1.0.0', 'Workflow in-app action', 'in-app', 'write', 'internal_state', 'T1', true, 120, false),
-  ('workflow.action.webhook', '1.0.0', 'Workflow registered webhook action', 'http-webhook', 'write', 'customer_visible', 'T2', true, 60, false);
+  ('workflow.action.task', '1.0.0', 'Workflow task action', 'workflow-task', 'write', 'internal_state', 'T1', true, 120, false),
+  ('workflow.action.wait', '1.0.0', 'Workflow wait action', 'workflow-wait', 'write', 'internal_state', 'T1', true, 120, false),
+  ('workflow.action.webhook', '1.0.0', 'Workflow registered webhook action', 'http-webhook', 'write', 'customer_visible', 'T2', true, 60, false)
+ON CONFLICT (tool_id, version) DO UPDATE SET enabled = true;
+
+DO $tools$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+      FROM (VALUES
+        ('workflow.action.email', '1.0.0', 'Workflow email action', 'email', 'customer_visible', 'T2', 100),
+        ('workflow.action.whatsapp', '1.0.0', 'Workflow WhatsApp action', 'whatsapp', 'customer_visible', 'T2', 100),
+        ('workflow.action.sms', '1.0.0', 'Workflow SMS action', 'sms', 'customer_visible', 'T2', 100),
+        ('workflow.action.in_app', '1.0.0', 'Workflow in-app action', 'in-app', 'internal_state', 'T1', 120),
+        ('workflow.action.task', '1.0.0', 'Workflow task action', 'workflow-task', 'internal_state', 'T1', 120),
+        ('workflow.action.wait', '1.0.0', 'Workflow wait action', 'workflow-wait', 'internal_state', 'T1', 120),
+        ('workflow.action.webhook', '1.0.0', 'Workflow registered webhook action', 'http-webhook', 'customer_visible', 'T2', 60)
+      ) AS expected(tool_id, version, title, connector, effect, tier, max_calls_per_hour)
+      LEFT JOIN public.cg_tool_registry registry USING (tool_id, version)
+     WHERE registry.tool_id IS NULL
+        OR registry.title IS DISTINCT FROM expected.title
+        OR registry.connector IS DISTINCT FROM expected.connector
+        OR registry.direction IS DISTINCT FROM 'write'
+        OR registry.effect IS DISTINCT FROM expected.effect
+        OR registry.tier IS DISTINCT FROM expected.tier
+        OR registry.idempotent IS DISTINCT FROM true
+        OR registry.max_calls_per_hour IS DISTINCT FROM expected.max_calls_per_hour
+        OR registry.platform_only IS DISTINCT FROM false
+        OR registry.enabled IS DISTINCT FROM true
+  ) THEN
+    RAISE EXCEPTION 'WF-06: workflow action broker tool registry rows conflict with the expected catalogue';
+  END IF;
+END
+$tools$;
 
 CREATE TABLE public.wf_action_type (
   kind             text PRIMARY KEY CHECK (kind IN ('email', 'in_app', 'whatsapp', 'sms', 'task', 'wait', 'webhook')),
@@ -68,8 +103,8 @@ VALUES
   ('in_app', 'communication', 'workflow.action.in_app', '1.0.0', 'internal_state', 'act_and_report'),
   ('whatsapp', 'communication', 'workflow.action.whatsapp', '1.0.0', 'customer_visible', 'act_and_report'),
   ('sms', 'communication', 'workflow.action.sms', '1.0.0', 'customer_visible', 'act_and_report'),
-  ('task', 'internal', NULL, NULL, 'internal_state', 'act_and_report'),
-  ('wait', 'internal', NULL, NULL, 'none', 'act_and_report'),
+  ('task', 'internal', 'workflow.action.task', '1.0.0', 'internal_state', 'act_and_report'),
+  ('wait', 'internal', 'workflow.action.wait', '1.0.0', 'internal_state', 'act_and_report'),
   ('webhook', 'communication', 'workflow.action.webhook', '1.0.0', 'customer_visible', 'act_and_report');
 
 CREATE TABLE public.wf_action_template (
@@ -170,6 +205,9 @@ CREATE TABLE public.wf_action_draft (
   ),
   recipient_ids   uuid[] NOT NULL DEFAULT '{}'
     CHECK (cardinality(recipient_ids) <= 500 AND array_position(recipient_ids, NULL) IS NULL),
+  audience_selector text CHECK (
+    audience_selector IS NULL OR audience_selector IN ('whole_class', 'all_guardians', 'all_staff')
+  ),
   status          text NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft', 'approved', 'rejected', 'expired')),
   idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 8 AND 200),
@@ -209,6 +247,9 @@ CREATE TABLE public.wf_action_sandbox_outbox (
   ),
   recipient_ids   uuid[] NOT NULL DEFAULT '{}'
     CHECK (cardinality(recipient_ids) <= 500 AND array_position(recipient_ids, NULL) IS NULL),
+  audience_selector text CHECK (
+    audience_selector IS NULL OR audience_selector IN ('whole_class', 'all_guardians', 'all_staff')
+  ),
   broker_decision_id uuid NOT NULL REFERENCES public.cg_tool_call_ledger(id) ON DELETE RESTRICT,
   idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 8 AND 200),
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -228,9 +269,19 @@ CREATE TABLE public.wf_webhook_target (
   CONSTRAINT wf_webhook_target_org_url_uniq UNIQUE (org_id, target_url)
 );
 ALTER TABLE public.wf_action_draft
-  ADD COLUMN webhook_target_id uuid REFERENCES public.wf_webhook_target(id) ON DELETE RESTRICT;
+  ADD COLUMN   webhook_target_id uuid;
 ALTER TABLE public.wf_action_sandbox_outbox
-  ADD COLUMN webhook_target_id uuid REFERENCES public.wf_webhook_target(id) ON DELETE RESTRICT;
+  ADD COLUMN webhook_target_id uuid;
+ALTER TABLE public.wf_webhook_target
+  ADD CONSTRAINT wf_webhook_target_org_id_uniq UNIQUE (org_id, id);
+ALTER TABLE public.wf_action_draft
+  ADD CONSTRAINT wf_action_draft_webhook_org_fk
+  FOREIGN KEY (org_id, webhook_target_id)
+  REFERENCES public.wf_webhook_target (org_id, id) ON DELETE RESTRICT;
+ALTER TABLE public.wf_action_sandbox_outbox
+  ADD CONSTRAINT wf_action_sandbox_webhook_org_fk
+  FOREIGN KEY (org_id, webhook_target_id)
+  REFERENCES public.wf_webhook_target (org_id, id) ON DELETE RESTRICT;
 
 ALTER TABLE public.wf_action_type ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_action_type FORCE ROW LEVEL SECURITY;

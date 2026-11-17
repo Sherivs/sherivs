@@ -89,6 +89,10 @@ const WORKFLOW_ACTION_AUTONOMY_CEILINGS: Readonly<Record<string, WorkflowAutonom
   task: "act_and_report",
   wait: "act_and_report",
 };
+const hasOwnCategory = (
+  record: Readonly<Record<string, WorkflowAutonomyLevel>>,
+  category: string,
+) => Object.prototype.hasOwnProperty.call(record, category);
 
 const EFFECTFUL_WORKFLOW_ACTIONS = new Set<WorkflowActionKind>([
   "email",
@@ -107,10 +111,11 @@ export function effectiveWorkflowAutonomy(input: {
   const lowest = [input.template, input.tenant, input.agent].reduce((effective, level) =>
     AUTONOMY_RANK[level] < AUTONOMY_RANK[effective] ? level : effective,
   );
-  const categoryCap =
-    WORKFLOW_ACTION_CATEGORY_CAPS[input.actionClass as keyof typeof WORKFLOW_ACTION_CATEGORY_CAPS] ??
-    WORKFLOW_ACTION_AUTONOMY_CEILINGS[input.actionClass] ??
-    "draft";
+  const categoryCap = hasOwnCategory(WORKFLOW_ACTION_CATEGORY_CAPS, input.actionClass)
+    ? WORKFLOW_ACTION_CATEGORY_CAPS[input.actionClass as keyof typeof WORKFLOW_ACTION_CATEGORY_CAPS]
+    : hasOwnCategory(WORKFLOW_ACTION_AUTONOMY_CEILINGS, input.actionClass)
+      ? WORKFLOW_ACTION_AUTONOMY_CEILINGS[input.actionClass]!
+      : "draft";
   return AUTONOMY_RANK[lowest] > AUTONOMY_RANK[categoryCap] ? categoryCap : lowest;
 }
 

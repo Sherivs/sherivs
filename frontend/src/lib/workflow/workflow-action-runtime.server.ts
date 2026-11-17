@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { SystemClock, TimeAuthority } from "../kernel/time-authority";
 import { effectiveAutonomy } from "../twin-engine/autonomy-ladder";
 import { parseRolePack } from "../twin-engine/role-pack";
 import { createToolLedgerDb } from "../tool-broker/tool-ledger-db.server";
@@ -6,7 +7,7 @@ import { validateConnectorBinding } from "../tool-broker/connector-vault";
 import type { ConnectorBinding } from "../tool-broker/connector-vault";
 import type { ActingContext, BrokerState } from "../tool-broker/broker";
 import type { WorkflowTickOptions } from "./workflow-runtime";
-import type { WorkflowDeliveryEnvironment } from "./workflow-actions";
+import { parseWorkflowDeliveryMode, type WorkflowDeliveryEnvironment } from "./workflow-actions";
 import {
   dispatchWorkflowAction,
   type WorkflowActionDispatcherPorts,
@@ -14,6 +15,7 @@ import {
 } from "./workflow-action-dispatcher.server";
 
 type Row = Record<string, unknown>;
+const timeAuthority = new TimeAuthority(new SystemClock());
 
 interface DbError {
   code?: string;
@@ -50,7 +52,8 @@ function db(): WorkflowAdmin {
 
 async function rows(query: PromiseLike<DbResult<Row[]>>): Promise<Row[]> {
   const result = await query;
-  if (result.error) throw Object.assign(new Error("workflow_action_db_error"), { code: result.error.code });
+  if (result.error)
+    throw Object.assign(new Error("workflow_action_db_error"), { code: result.error.code });
   return result.data ?? [];
 }
 
@@ -75,9 +78,7 @@ function connectorBinding(row: Row | null): ConnectorBinding | null {
     secretRef: row.secret_ref,
     status: row.status,
   };
-  return validateConnectorBinding(candidate).length === 0
-    ? (candidate as ConnectorBinding)
-    : null;
+  return validateConnectorBinding(candidate).length === 0 ? (candidate as ConnectorBinding) : null;
 }
 
 function parseActionType(row: Row | null): WorkflowActionType | null {
@@ -102,9 +103,7 @@ function parseActionType(row: Row | null): WorkflowActionType | null {
   };
 }
 
-export function createWorkflowActionExecutor(
-  env: WorkflowDeliveryEnvironment = process.env,
-) {
+export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = process.env) {
   const client = db();
   const ledger = createToolLedgerDb(supabaseAdmin);
 
@@ -123,9 +122,7 @@ export function createWorkflowActionExecutor(
         .eq("status", "active")
         .limit(2),
     );
-    return contexts.length === 1 && typeof contexts[0]?.id === "string"
-      ? contexts[0].id
-      : null;
+    return contexts.length === 1 && typeof contexts[0]?.id === "string" ? contexts[0].id : null;
   };
 
   const brokerAuthority = {
@@ -218,7 +215,7 @@ export function createWorkflowActionExecutor(
           .eq("kind", "decision")
           .eq("twin_context_id", input.twinContextId)
           .eq("tool_id", input.tool.id)
-          .gte("created_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+          .gte("created_at", new Date(timeAuthority.now().atMs - 60 * 60 * 1000).toISOString())
           .limit(input.tool.maxCallsPerHour + 1),
       );
       const ctx: ActingContext = {
@@ -238,7 +235,9 @@ export function createWorkflowActionExecutor(
       return {
         ctx,
         state: {
-          killSwitch: false,
+          killSwitch:
+            env.WORKFLOWS_ENABLED !== "true" ||
+            parseWorkflowDeliveryMode(env.WORKFLOW_DELIVERY_MODE) === "off",
           disabledTools: registry.enabled ? new Set() : new Set([input.tool.id]),
           callsThisHour: recentCalls.length,
           binding: connectorBinding(bindingRow),
@@ -282,7 +281,8 @@ export function createWorkflowActionExecutor(
     actionType: async (kind) =>
       parseActionType(
         await one(
-          client.from("wf_action_type")
+          client
+            .from("wf_action_type")
             .select("kind,category,broker_tool_id,broker_version,effect,max_autonomy")
             .eq("kind", kind)
             .limit(1),
@@ -362,6 +362,7 @@ export function createWorkflowActionExecutor(
           template_ref: draft.templateRef,
           template_params: draft.templateParams,
           recipient_ids: draft.recipientIds,
+          audience_selector: draft.audienceSelector,
           webhook_target_id: draft.webhookTargetId,
           idempotency_key: draft.idempotencyKey,
         },
@@ -379,6 +380,7 @@ export function createWorkflowActionExecutor(
           template_ref: outbox.templateRef,
           template_params: outbox.templateParams,
           recipient_ids: outbox.recipientIds,
+          audience_selector: outbox.audienceSelector,
           webhook_target_id: outbox.webhookTargetId,
           idempotency_key: outbox.idempotencyKey,
           broker_decision_id: outbox.brokerDecisionId,

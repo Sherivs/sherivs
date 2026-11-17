@@ -6,9 +6,13 @@ import { dispatchWorkflowAction } from "@/lib/workflow/workflow-action-dispatche
 const orgId = "f0600000-0000-4000-8000-000000000001";
 const runId = "f0610000-0000-4000-8000-000000000001";
 const stepRunId = "f0620000-0000-4000-8000-000000000001";
-const levels = { template: "act_and_report", tenant: "act_and_report", agent: "act_and_report" } as const;
+const levels = {
+  template: "act_and_report",
+  tenant: "act_and_report",
+  agent: "act_and_report",
+} as const;
 
-function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}) {
+function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}, hasBinding = true) {
   const decisions = new Map<string, { id: string; decision: Decision; argsDigest: string }>();
   const outbox = new Map<string, unknown>();
   const drafts: unknown[] = [];
@@ -39,13 +43,15 @@ function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}) {
             killSwitch: false,
             disabledTools: new Set(),
             callsThisHour: 0,
-            binding: {
-              connector: tool.connector,
-              scope: "tenant",
-              tenantRef: orgId,
-              secretRef: "vault://in-app/actions#v1",
-              status: "active",
-            },
+            binding: hasBinding
+              ? {
+                  connector: tool.connector,
+                  scope: "tenant",
+                  tenantRef: orgId,
+                  secretRef: `vault://${tool.connector}/actions#v1`,
+                  status: "active",
+                }
+              : null,
           },
         }),
       },
@@ -69,8 +75,8 @@ function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}) {
     actionType: async (kind) => ({
       kind,
       category: "communication",
-      brokerToolId: kind === "task" || kind === "wait" ? null : `workflow.action.${kind}`,
-      brokerVersion: kind === "task" || kind === "wait" ? null : "1.0.0",
+      brokerToolId: `workflow.action.${kind}`,
+      brokerVersion: "1.0.0",
       effect: kind === "task" || kind === "wait" ? "internal_state" : "customer_visible",
       maxAutonomy: "act_and_report",
     }),
@@ -89,7 +95,10 @@ function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}) {
   return { ports, drafts, outbox, brokerCalls: () => brokerCalls };
 }
 
-function actionInput(action: unknown, patch: Partial<Parameters<typeof dispatchWorkflowAction>[1]> = {}) {
+function actionInput(
+  action: unknown,
+  patch: Partial<Parameters<typeof dispatchWorkflowAction>[1]> = {},
+) {
   return {
     orgId,
     runId,
@@ -108,8 +117,9 @@ function actionInput(action: unknown, patch: Partial<Parameters<typeof dispatchW
 describe("WF-06 action dispatcher", () => {
   it("writes capped mass communication as a draft without calling the broker", async () => {
     const state = dispatcher();
-    const recipients = Array.from({ length: 26 }, (_, index) =>
-      `f0600000-0000-4000-8000-${String(index + 2).padStart(12, "0")}`,
+    const recipients = Array.from(
+      { length: 26 },
+      (_, index) => `f0600000-0000-4000-8000-${String(index + 2).padStart(12, "0")}`,
     );
     const result = await dispatchWorkflowAction(
       state.ports,
@@ -126,6 +136,92 @@ describe("WF-06 action dispatcher", () => {
     expect(state.outbox.size).toBe(0);
   });
 
+  it("uses the registered action category when the workflow step understates its risk", async () => {
+    const state = dispatcher({
+      actionType: async (kind) => ({
+        kind,
+        category: "safeguarding",
+        brokerToolId: `workflow.action.${kind}`,
+        brokerVersion: "1.0.0",
+        effect: "customer_visible",
+        maxAutonomy: "act_and_report",
+      }),
+    });
+    const result = await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "sms",
+        templateRef: "attendance.notice",
+        recipientIds: ["f0600000-0000-4000-8000-000000000002"],
+      }),
+    );
+    expect(result).toEqual({ status: "draft" });
+    expect(state.drafts).toHaveLength(1);
+    expect(state.drafts[0]).toMatchObject({ category: "safeguarding" });
+    expect(state.brokerCalls()).toBe(0);
+  });
+
+  it("preserves audience-selector intent in a capped draft", async () => {
+    const state = dispatcher();
+    const result = await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "sms",
+        templateRef: "attendance.notice",
+        audienceSelector: "all_guardians",
+      }),
+    );
+    expect(result).toEqual({ status: "draft" });
+    expect(state.drafts[0]).toMatchObject({
+      category: "mass_message",
+      audienceSelector: "all_guardians",
+      recipientIds: [],
+    });
+    expect(state.brokerCalls()).toBe(0);
+  });
+
+  it("drafts registry entries with a money effect without invoking the broker", async () => {
+    const state = dispatcher({
+      actionType: async (kind) => ({
+        kind,
+        category: "communication",
+        brokerToolId: `workflow.action.${kind}`,
+        brokerVersion: "1.0.0",
+        effect: "money",
+        maxAutonomy: "act_and_report",
+      }),
+    });
+    const result = await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "sms",
+        templateRef: "attendance.notice",
+        recipientIds: [],
+      }),
+    );
+    expect(result).toEqual({ status: "draft" });
+    expect(state.drafts[0]).toMatchObject({ category: "money_movement" });
+    expect(state.brokerCalls()).toBe(0);
+  });
+
+  it("drafts unregistered webhook targets without calling the broker", async () => {
+    const state = dispatcher();
+    const result = await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "webhook",
+        targetUrl: "https://hooks.example.test/workflow",
+      }),
+    );
+    expect(result).toEqual({ status: "draft" });
+    expect(state.drafts[0]).toMatchObject({
+      category: "unregistered_webhook",
+      webhookTargetId: null,
+    });
+    expect(state.brokerCalls()).toBe(0);
+    expect(state.outbox.size).toBe(0);
+  });
+
   it("records sandbox actions through the broker and an idempotent outbox", async () => {
     const state = dispatcher();
     const input = actionInput({
@@ -138,6 +234,36 @@ describe("WF-06 action dispatcher", () => {
     expect(await dispatchWorkflowAction(state.ports, input)).toEqual({ status: "executed" });
     expect(state.brokerCalls()).toBe(1);
     expect(state.outbox.size).toBe(1);
+  });
+
+  it("keeps sandbox actions as drafts when the broker has no active connector binding", async () => {
+    const state = dispatcher({}, false);
+    const result = await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "in_app",
+        templateRef: "attendance.notice",
+        recipientIds: [],
+      }),
+    );
+    expect(result).toEqual({ status: "draft" });
+    expect(state.drafts).toHaveLength(1);
+    expect(state.outbox.size).toBe(0);
+    expect(state.brokerCalls()).toBe(1);
+  });
+
+  it("routes task and wait actions through broker decisions in sandbox mode", async () => {
+    const state = dispatcher();
+    for (const kind of ["task", "wait"] as const) {
+      const result = await dispatchWorkflowAction(
+        state.ports,
+        actionInput({ kind }, { idempotencyKey: `wf-step-run:${kind}` }),
+      );
+      expect(result).toEqual({ status: "executed" });
+    }
+    expect(state.brokerCalls()).toBe(2);
+    expect(state.outbox.size).toBe(2);
+    expect(state.drafts).toHaveLength(0);
   });
 
   it("refuses live mode outside production before the broker or adapter is called", async () => {
@@ -158,6 +284,28 @@ describe("WF-06 action dispatcher", () => {
         }),
       ),
     ).rejects.toThrow("workflow_delivery_refused");
+    expect(state.brokerCalls()).toBe(0);
+    expect(state.outbox.size).toBe(0);
+  });
+
+  it("refuses production live mode before ledgering when no broker adapter is available", async () => {
+    const state = dispatcher({
+      env: {
+        WORKFLOW_DELIVERY_MODE: "live",
+        WORKFLOWS_ENABLED: "true",
+        APP_ENV: "production",
+      },
+    });
+    await expect(
+      dispatchWorkflowAction(
+        state.ports,
+        actionInput({
+          kind: "in_app",
+          templateRef: "attendance.notice",
+          recipientIds: [],
+        }),
+      ),
+    ).rejects.toThrow("workflow_live_adapter_unavailable");
     expect(state.brokerCalls()).toBe(0);
     expect(state.outbox.size).toBe(0);
   });

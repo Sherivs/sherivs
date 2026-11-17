@@ -22,7 +22,8 @@ UPDATE public.cg_tool_registry
    SET enabled = false
  WHERE tool_id IN (
    'workflow.action.email', 'workflow.action.whatsapp', 'workflow.action.sms',
-   'workflow.action.in_app', 'workflow.action.webhook'
+   'workflow.action.in_app', 'workflow.action.task', 'workflow.action.wait',
+   'workflow.action.webhook'
  );
 
 CREATE OR REPLACE FUNCTION public.wf_autonomy_guard()

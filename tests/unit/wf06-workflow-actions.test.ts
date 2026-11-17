@@ -44,6 +44,16 @@ describe("WF-06 action policy", () => {
     );
   });
 
+  it("does not hardcode the broker kill switch as disengaged", () => {
+    const source = readFileSync(
+      "frontend/src/lib/workflow/workflow-action-runtime.server.ts",
+      "utf8",
+    );
+    expect(source).not.toMatch(/killSwitch:\s*false/);
+    expect(source).toMatch(/parseWorkflowDeliveryMode\(env\.WORKFLOW_DELIVERY_MODE\)/);
+    expect(source).toMatch(/env\.WORKFLOWS_ENABLED !== "true"/);
+  });
+
   it("never raises a capped category above draft for any autonomy combination", () => {
     for (const actionClass of Object.keys(WORKFLOW_ACTION_CATEGORY_CAPS)) {
       for (const [template, tenant, agent] of combinations()) {
@@ -75,6 +85,16 @@ describe("WF-06 action policy", () => {
       expect(WORKFLOW_AUTONOMY_LEVELS.indexOf(effective)).toBeLessThanOrEqual(
         WORKFLOW_AUTONOMY_LEVELS.indexOf("draft"),
       );
+    }
+    for (const actionClass of ["toString", "constructor", "hasOwnProperty"]) {
+      expect(
+        effectiveWorkflowAutonomy({
+          template: "act_and_report",
+          tenant: "act_and_report",
+          agent: "act_and_report",
+          actionClass,
+        }),
+      ).toBe("draft");
     }
   });
 

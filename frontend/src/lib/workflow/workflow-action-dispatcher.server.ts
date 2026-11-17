@@ -5,10 +5,7 @@ import {
   type LedgerPort,
 } from "../tool-broker/broker-service.server";
 import { toolById } from "../tool-broker/platform-tools";
-import {
-  executeCleared,
-  type GatePorts,
-} from "../connector-adapters/execution-gate.server";
+import { executeCleared, type GatePorts } from "../connector-adapters/execution-gate.server";
 import type { EffectiveAutonomy } from "../twin-engine/autonomy-ladder";
 import {
   effectiveWorkflowAutonomy,
@@ -17,6 +14,7 @@ import {
   workflowActionCategory,
   workflowDeliveryGate,
   workflowActionDefinitionSchema,
+  WORKFLOW_ACTION_CATEGORY_CAPS,
   type WorkflowAutonomyLevel,
   type WorkflowDeliveryEnvironment,
 } from "./workflow-actions";
@@ -58,6 +56,7 @@ export interface WorkflowActionDraftInput {
   templateRef: string | null;
   templateParams: Record<string, string | number | boolean>;
   recipientIds: readonly string[];
+  audienceSelector: "whole_class" | "all_guardians" | "all_staff" | null;
   webhookTargetId: string | null;
 }
 
@@ -110,7 +109,9 @@ export async function dispatchWorkflowAction(
   ports: WorkflowActionDispatcherPorts,
   input: WorkflowActionDispatchInput,
 ): Promise<{ status: "draft" | "executed" }> {
-  const parsedIds = [input.orgId, input.runId, input.stepRunId].every((id) => uuid.safeParse(id).success);
+  const parsedIds = [input.orgId, input.runId, input.stepRunId].every(
+    (id) => uuid.safeParse(id).success,
+  );
   if (!parsedIds || input.idempotencyKey.trim().length < 8) {
     throw new Error("workflow_action_scope_invalid");
   }
@@ -122,12 +123,10 @@ export async function dispatchWorkflowAction(
   }
 
   const actionType = await ports.actionType(action.kind);
-  if (!actionType || actionType.kind !== action.kind) throw new Error("workflow_action_unregistered");
+  if (!actionType || actionType.kind !== action.kind)
+    throw new Error("workflow_action_unregistered");
   const toolId = actionType.brokerToolId ?? action.kind;
-  if (
-    !input.authorizedActions.includes(action.kind) &&
-    !input.authorizedActions.includes(toolId)
-  ) {
+  if (!input.authorizedActions.includes(action.kind) && !input.authorizedActions.includes(toolId)) {
     throw new Error("workflow_action_not_authorized");
   }
   const recipients = await ports.resolveRecipients(input.orgId, action.recipientIds);
@@ -143,10 +142,14 @@ export async function dispatchWorkflowAction(
   let webhookRegistered = false;
   if (action.kind === "webhook" && action.targetUrl) {
     const target = await ports.registeredWebhook(input.orgId, action.targetUrl);
-    if (target && target.id && isWorkflowWebhookTargetAllowed({
-      targetUrl: action.targetUrl,
-      registeredTargetUrl: target.targetUrl,
-    })) {
+    if (
+      target &&
+      target.id &&
+      isWorkflowWebhookTargetAllowed({
+        targetUrl: action.targetUrl,
+        registeredTargetUrl: target.targetUrl,
+      })
+    ) {
       webhookTargetId = target.id;
       webhookRegistered = true;
     }
@@ -166,7 +169,12 @@ export async function dispatchWorkflowAction(
   }
 
   let category = workflowActionCategory({
-    actionClass: input.actionClass,
+    actionClass: Object.prototype.hasOwnProperty.call(
+      WORKFLOW_ACTION_CATEGORY_CAPS,
+      input.actionClass,
+    )
+      ? input.actionClass
+      : actionType.category,
     recipientCount: recipients.length,
     hasAudienceSelector: action.audienceSelector !== undefined,
     ...(action.dataClass ? { dataClass: action.dataClass } : {}),
@@ -190,6 +198,7 @@ export async function dispatchWorkflowAction(
     templateRef: action.templateRef ?? null,
     templateParams: action.templateParams,
     recipientIds: recipients,
+    audienceSelector: action.audienceSelector ?? null,
     webhookTargetId,
   };
   if (
@@ -215,6 +224,14 @@ export async function dispatchWorkflowAction(
   if (!tool || tool.version !== actionType.brokerVersion) {
     throw new Error("workflow_broker_tool_unavailable");
   }
+  if (
+    delivery.mode === "live" &&
+    (!ports.gate.adapters?.[tool.connector] ||
+      ports.gate.adapters[tool.connector]?.connector !== tool.connector ||
+      !ports.gate.adapters[tool.connector]?.tools.includes(tool.id))
+  ) {
+    throw new Error("workflow_live_adapter_unavailable");
+  }
   const args = {
     kind: action.kind,
     templateRef: action.templateRef ?? null,
@@ -231,12 +248,12 @@ export async function dispatchWorkflowAction(
         const effective =
           authority.ctx.effective === "shadow" ||
           ceiling === "shadow" ||
-          (authority.ctx.effective === "propose_only" || ceiling === "propose_only")
+          authority.ctx.effective === "propose_only" ||
+          ceiling === "propose_only"
             ? authority.ctx.effective === "shadow" || ceiling === "shadow"
               ? "shadow"
               : "propose_only"
-            : authority.ctx.effective === "act_with_approval" ||
-                ceiling === "act_with_approval"
+            : authority.ctx.effective === "act_with_approval" || ceiling === "act_with_approval"
               ? "act_with_approval"
               : "act_autonomously";
         return { ...authority, ctx: { ...authority.ctx, effective } };

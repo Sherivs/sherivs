@@ -92,12 +92,13 @@ SELECT wf06t.expect_true('action catalog and templates are readable only by auth
   AND NOT has_table_privilege('authenticated', 'public.wf_webhook_target', 'SELECT'));
 SELECT wf06t.expect_true('catalog seeds exactly the seven v1 action kinds and binds effects',
   (SELECT count(*) = 7 FROM public.wf_action_type)
-  AND (SELECT count(*) = 5 FROM public.wf_action_type WHERE broker_tool_id IS NOT NULL)
-  AND (SELECT count(*) = 2 FROM public.wf_action_type WHERE broker_tool_id IS NULL));
+  AND (SELECT count(*) = 7 FROM public.wf_action_type WHERE broker_tool_id IS NOT NULL)
+  AND (SELECT count(*) = 7 FROM public.cg_tool_registry
+        WHERE tool_id LIKE 'workflow.action.%' AND enabled));
 SELECT wf06t.expect_error('SQL catalog cannot raise a protected category above draft',
-  $q$INSERT INTO public.wf_action_type
-       (kind,category,broker_tool_id,broker_version,effect,max_autonomy)
-     VALUES ('task','mass_message',NULL,NULL,'internal_state','act_and_report')$q$, '23514');
+  $q$UPDATE public.wf_action_type
+        SET category = 'mass_message', max_autonomy = 'act_and_report'
+      WHERE kind = 'task'$q$, '23514');
 
 INSERT INTO auth.users (id) VALUES
   ('f0600000-0000-4000-8000-000000000001'),
@@ -196,10 +197,22 @@ SELECT wf06t.expect_true('SQL autonomy trigger holds all six caps and fails clos
   AND (SELECT autonomy_level = 'act_and_report' FROM public.wf_step_run WHERE id = 'f0640000-0000-4000-8000-000000000009'));
 
 INSERT INTO public.wf_action_draft
-  (org_id,run_id,step_run_id,kind,category,template_ref,recipient_ids,idempotency_key)
+  (org_id,run_id,step_run_id,kind,category,template_ref,recipient_ids,audience_selector,idempotency_key)
 VALUES
-  ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1','f0640000-0000-4000-8000-000000000010','sms','mass_message','attendance.notice',ARRAY['f0600000-0000-4000-8000-000000000003'::uuid],'wf06-draft-a'),
-  ('f0600000-0000-4000-8000-0000000000b2','f0630000-0000-4000-8000-0000000000b2','f0640000-0000-4000-8000-000000000011','sms','mass_message','attendance.notice',ARRAY['f0600000-0000-4000-8000-000000000002'::uuid],'wf06-draft-b');
+  ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1','f0640000-0000-4000-8000-000000000010','sms','mass_message','attendance.notice',ARRAY['f0600000-0000-4000-8000-000000000003'::uuid],'all_guardians','wf06-draft-a'),
+  ('f0600000-0000-4000-8000-0000000000b2','f0630000-0000-4000-8000-0000000000b2','f0640000-0000-4000-8000-000000000011','sms','mass_message','attendance.notice',ARRAY['f0600000-0000-4000-8000-000000000002'::uuid],NULL,'wf06-draft-b');
+SELECT wf06t.expect_true('mass-action audience selector is retained in the draft',
+  (SELECT audience_selector = 'all_guardians' FROM public.wf_action_draft
+    WHERE idempotency_key = 'wf06-draft-a'));
+INSERT INTO public.wf_webhook_target (id,org_id,target_url)
+VALUES ('f0680000-0000-4000-8000-0000000000a1',
+  'f0600000-0000-4000-8000-0000000000a1','https://hooks.example.test/org-a');
+SELECT wf06t.expect_error('webhook targets cannot cross organization boundaries',
+  $q$INSERT INTO public.wf_action_draft
+       (org_id,run_id,step_run_id,kind,category,webhook_target_id,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000b2','f0630000-0000-4000-8000-0000000000b2',
+       'f0640000-0000-4000-8000-000000000011','webhook','communication',
+       'f0680000-0000-4000-8000-0000000000a1','wf06-cross-org-webhook')$q$, '23503');
 SELECT wf06t.expect_error('protected category draft cannot be approved',
   $q$UPDATE public.wf_action_draft SET status = 'approved'
       WHERE idempotency_key = 'wf06-draft-a'$q$, '23514');
@@ -230,7 +243,7 @@ DO $summary$
 DECLARE v_count integer;
 BEGIN
   SELECT count(*) INTO v_count FROM wf06t.passed;
-  IF v_count < 9 THEN RAISE EXCEPTION 'WF06 FAIL: expected at least 9 checks, got %', v_count; END IF;
+  IF v_count < 11 THEN RAISE EXCEPTION 'WF06 FAIL: expected at least 11 checks, got %', v_count; END IF;
   RAISE NOTICE 'WF06 ALL PASS: % checks', v_count;
 END $summary$;
 ROLLBACK;
