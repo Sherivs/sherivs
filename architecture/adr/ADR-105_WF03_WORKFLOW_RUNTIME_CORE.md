@@ -1,14 +1,14 @@
 # ADR-105: Workflow Runtime Core (WF-03)
 
-| Field          | Value                                                                                                                               |
-| -------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Status         | PROPOSED; staging only; production requires Muhammad's written approval                                                             |
-| Date           | 2026-11-17                                                                                                                          |
-| Creator        | Copilot-SWE-Agent[bot]                                                                                                              |
-| Version target | V1 organizational workflows                                                                                                         |
-| Depends on     | [ADR-103](ADR-103_WF01_POSTGRES_WORKFLOW_ENGINE_AND_RUNTIME_PORT.md), [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md) |
-| Migration      | `database/supabase/migrations/20261117000600_sherivs_wf03_runtime_core.sql`                                                         |
-| Rollback       | `database/supabase/rollbacks/20261117000600_sherivs_wf03_runtime_core.sql`                                                          |
+| Field          | Value                                                                                                                                                                                                                                                                                              |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status         | ACCEPTED and applied. Merged in #442 (`d14e2d0c`) and applied to production on 2026-11-17 at 19:11 WAT (ledger `20261117181149`) after a fresh backup, under the founder's standing written approval (16:18 WAT, 2026-11-17). `WORKFLOWS_ENABLED` is not set in production. Rollback file not run. |
+| Date           | 2026-11-17                                                                                                                                                                                                                                                                                         |
+| Creator        | Copilot-SWE-Agent[bot]                                                                                                                                                                                                                                                                             |
+| Version target | V1 organizational workflows                                                                                                                                                                                                                                                                        |
+| Depends on     | [ADR-103](ADR-103_WF01_POSTGRES_WORKFLOW_ENGINE_AND_RUNTIME_PORT.md), [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md)                                                                                                                                                                |
+| Migration      | `database/supabase/migrations/20261117000600_sherivs_wf03_runtime_core.sql`                                                                                                                                                                                                                        |
+| Rollback       | `database/supabase/rollbacks/20261117000600_sherivs_wf03_runtime_core.sql`                                                                                                                                                                                                                         |
 
 ## Context
 
