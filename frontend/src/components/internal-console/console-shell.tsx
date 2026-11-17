@@ -718,9 +718,9 @@ function ConsoleChrome({ children }: { children: ReactNode }) {
                   <ul>
                     {consoleVisualFixtureActive() ? (
                       <li>
-                        Local V1 role simulation for{" "}
-                        {overview?.viewer.presentationLabel ?? "staff"}. This is not a production
-                        identity. Persistent workspace storage is not connected.
+                        Local V1 role simulation for {overview?.viewer.presentationLabel ?? "staff"}
+                        . This is not a production identity. Persistent workspace storage is not
+                        connected.
                       </li>
                     ) : null}
                     {overview?.workspaceStore === "derived-fallback" ? (
