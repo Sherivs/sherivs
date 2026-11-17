@@ -9,15 +9,15 @@ import {
   type WorkflowEvidenceRecord,
 } from "./workflow-engine";
 import type { WorkflowDefinition, WorkflowRun } from "./workflow-contract";
+import {
+  effectiveWorkflowAutonomy,
+  WORKFLOW_ACTION_CATEGORY_CAPS,
+  WORKFLOW_AUTONOMY_LEVELS,
+} from "./workflow-actions";
+import type { WorkflowAutonomyLevel } from "./workflow-actions";
 
-export const WORKFLOW_AUTONOMY_LEVELS = [
-  "suggest",
-  "draft",
-  "act_with_approval",
-  "act_and_report",
-] as const;
-
-export type WorkflowAutonomyLevel = (typeof WORKFLOW_AUTONOMY_LEVELS)[number];
+export { effectiveWorkflowAutonomy, WORKFLOW_ACTION_CATEGORY_CAPS, WORKFLOW_AUTONOMY_LEVELS };
+export type { WorkflowAutonomyLevel };
 export type WorkflowActionClass =
   | "money_movement"
   | "safeguarding"
@@ -26,37 +26,6 @@ export type WorkflowActionClass =
   | "mass_message"
   | "external_authority_share"
   | (string & {});
-
-const AUTONOMY_RANK: Readonly<Record<WorkflowAutonomyLevel, number>> = {
-  suggest: 0,
-  draft: 1,
-  act_with_approval: 2,
-  act_and_report: 3,
-};
-
-const DRAFT_ONLY_ACTIONS = new Set<string>([
-  "money_movement",
-  "safeguarding",
-  "credential_change",
-  "public_publish",
-  "mass_message",
-  "external_authority_share",
-]);
-
-export function effectiveWorkflowAutonomy(input: {
-  template: WorkflowAutonomyLevel;
-  tenant: WorkflowAutonomyLevel;
-  agent: WorkflowAutonomyLevel;
-  actionClass: WorkflowActionClass;
-}): WorkflowAutonomyLevel {
-  const lowest = [input.template, input.tenant, input.agent].reduce((effective, level) =>
-    AUTONOMY_RANK[level] < AUTONOMY_RANK[effective] ? level : effective,
-  );
-  return (DRAFT_ONLY_ACTIONS.has(input.actionClass) || input.actionClass !== "internal") &&
-    AUTONOMY_RANK[lowest] > 1
-    ? "draft"
-    : lowest;
-}
 
 export function retryDelaySeconds(
   attempt: number,
