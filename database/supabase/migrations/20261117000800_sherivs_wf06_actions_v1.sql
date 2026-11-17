@@ -16,6 +16,7 @@ BEGIN
     RAISE EXCEPTION 'WF-06: WF-01 through WF-05 or ENGINE-03 prerequisites are missing';
   END IF;
   IF to_regclass('public.wf_action_type') IS NOT NULL
+     OR to_regclass('public.wf_action_template') IS NOT NULL
      OR to_regclass('public.wf_action_draft') IS NOT NULL
      OR to_regclass('public.wf_action_sandbox_outbox') IS NOT NULL
      OR to_regclass('public.wf_webhook_target') IS NOT NULL THEN
@@ -39,7 +40,7 @@ VALUES
   ('workflow.action.email', '1.0.0', 'Workflow email action', 'email', 'write', 'customer_visible', 'T2', true, 100, false),
   ('workflow.action.whatsapp', '1.0.0', 'Workflow WhatsApp action', 'whatsapp', 'write', 'customer_visible', 'T2', true, 100, false),
   ('workflow.action.sms', '1.0.0', 'Workflow SMS action', 'sms', 'write', 'customer_visible', 'T2', true, 100, false),
-  ('workflow.action.in_app', '1.0.0', 'Workflow in-app action', 'in_app', 'write', 'internal_state', 'T1', true, 120, false),
+  ('workflow.action.in_app', '1.0.0', 'Workflow in-app action', 'in-app', 'write', 'internal_state', 'T1', true, 120, false),
   ('workflow.action.webhook', '1.0.0', 'Workflow registered webhook action', 'http-webhook', 'write', 'customer_visible', 'T2', true, 60, false);
 
 CREATE TABLE public.wf_action_type (
@@ -70,6 +71,20 @@ VALUES
   ('task', 'internal', NULL, NULL, 'internal_state', 'act_and_report'),
   ('wait', 'internal', NULL, NULL, 'none', 'act_and_report'),
   ('webhook', 'communication', 'workflow.action.webhook', '1.0.0', 'customer_visible', 'act_and_report');
+
+CREATE TABLE public.wf_action_template (
+  org_id          uuid NOT NULL REFERENCES public.wf_org_settings(org_id) ON DELETE RESTRICT,
+  kind            text NOT NULL CHECK (kind = 'in_app'),
+  template_ref    text NOT NULL CHECK (template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'),
+  body_template   text NOT NULL CHECK (length(body_template) BETWEEN 1 AND 4000),
+  parameter_keys  text[] NOT NULL DEFAULT '{}'
+    CHECK (cardinality(parameter_keys) <= 32 AND array_position(parameter_keys, '') IS NULL),
+  status          text NOT NULL DEFAULT 'draft'
+    CHECK (status IN ('draft', 'approved', 'retired')),
+  created_at      timestamptz NOT NULL DEFAULT now(),
+  updated_at      timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (org_id, kind, template_ref)
+);
 
 CREATE OR REPLACE FUNCTION public.wf_autonomy_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
@@ -145,7 +160,9 @@ CREATE TABLE public.wf_action_draft (
   step_run_id     uuid NOT NULL,
   kind            text NOT NULL REFERENCES public.wf_action_type(kind) ON DELETE RESTRICT,
   category        text NOT NULL CHECK (category ~ '^[a-z][a-z0-9_]{1,63}$'),
-  template_ref    text NOT NULL CHECK (template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'),
+  template_ref    text CHECK (
+    template_ref IS NULL OR template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'
+  ),
   template_params jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (
     jsonb_typeof(template_params) = 'object'
     AND pg_column_size(template_params) <= 4096
@@ -167,8 +184,11 @@ CREATE TABLE public.wf_action_draft (
   CONSTRAINT wf_action_draft_cap_check CHECK (
     category NOT IN (
       'money_movement', 'safeguarding', 'credential_change', 'public_publish',
-      'mass_message', 'external_authority_share'
+      'mass_message', 'external_authority_share', 'unregistered_webhook'
     ) OR status <> 'approved'
+  ),
+  CONSTRAINT wf_action_draft_template_check CHECK (
+    kind IN ('webhook', 'task', 'wait') OR template_ref IS NOT NULL
   )
 );
 CREATE INDEX wf_action_draft_run_idx ON public.wf_action_draft (org_id, run_id, created_at DESC);
@@ -179,7 +199,9 @@ CREATE TABLE public.wf_action_sandbox_outbox (
   run_id          uuid NOT NULL,
   step_run_id     uuid NOT NULL,
   kind            text NOT NULL REFERENCES public.wf_action_type(kind) ON DELETE RESTRICT,
-  template_ref    text NOT NULL CHECK (template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'),
+  template_ref    text CHECK (
+    template_ref IS NULL OR template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'
+  ),
   template_params jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (
     jsonb_typeof(template_params) = 'object'
     AND pg_column_size(template_params) <= 4096
@@ -187,6 +209,7 @@ CREATE TABLE public.wf_action_sandbox_outbox (
   ),
   recipient_ids   uuid[] NOT NULL DEFAULT '{}'
     CHECK (cardinality(recipient_ids) <= 500 AND array_position(recipient_ids, NULL) IS NULL),
+  broker_decision_id uuid NOT NULL REFERENCES public.cg_tool_call_ledger(id) ON DELETE RESTRICT,
   idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 8 AND 200),
   created_at      timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT wf_action_sandbox_run_fk FOREIGN KEY (org_id, run_id)
@@ -204,9 +227,15 @@ CREATE TABLE public.wf_webhook_target (
   created_at  timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT wf_webhook_target_org_url_uniq UNIQUE (org_id, target_url)
 );
+ALTER TABLE public.wf_action_draft
+  ADD COLUMN webhook_target_id uuid REFERENCES public.wf_webhook_target(id) ON DELETE RESTRICT;
+ALTER TABLE public.wf_action_sandbox_outbox
+  ADD COLUMN webhook_target_id uuid REFERENCES public.wf_webhook_target(id) ON DELETE RESTRICT;
 
 ALTER TABLE public.wf_action_type ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_action_type FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.wf_action_template ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wf_action_template FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_action_draft ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_action_draft FORCE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_action_sandbox_outbox ENABLE ROW LEVEL SECURITY;
@@ -218,6 +247,10 @@ CREATE POLICY wf_action_type_authenticated_read ON public.wf_action_type
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY wf_action_type_service_read ON public.wf_action_type
   FOR SELECT TO service_role USING (true);
+CREATE POLICY wf_action_template_member_read ON public.wf_action_template
+  FOR SELECT TO authenticated USING (public.wf_can(org_id, 'workflows.view'));
+CREATE POLICY wf_action_template_service ON public.wf_action_template
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 CREATE POLICY wf_action_draft_member_read ON public.wf_action_draft
   FOR SELECT TO authenticated USING (public.wf_can(org_id, 'workflows.view'));
 CREATE POLICY wf_action_draft_service ON public.wf_action_draft
@@ -227,17 +260,21 @@ CREATE POLICY wf_action_sandbox_service ON public.wf_action_sandbox_outbox
 CREATE POLICY wf_webhook_target_service ON public.wf_webhook_target
   FOR ALL TO service_role USING (true) WITH CHECK (true);
 
-REVOKE ALL ON TABLE public.wf_action_type, public.wf_action_draft,
+REVOKE ALL ON TABLE public.wf_action_type, public.wf_action_template, public.wf_action_draft,
   public.wf_action_sandbox_outbox, public.wf_webhook_target
   FROM PUBLIC, anon, authenticated, service_role;
 GRANT SELECT ON TABLE public.wf_action_type TO authenticated, service_role;
+GRANT SELECT ON TABLE public.wf_action_template TO authenticated, service_role;
 GRANT SELECT ON TABLE public.wf_action_draft TO authenticated, service_role;
 GRANT INSERT, SELECT, UPDATE ON TABLE public.wf_action_draft TO service_role;
+GRANT INSERT, UPDATE ON TABLE public.wf_action_template TO service_role;
 GRANT INSERT, SELECT ON TABLE public.wf_action_sandbox_outbox TO service_role;
 GRANT INSERT, SELECT, UPDATE ON TABLE public.wf_webhook_target TO service_role;
 
 COMMENT ON TABLE public.wf_action_type IS
   'WF-06 / ADR-116: versioned workflow action kinds, broker tool bindings and maximum autonomy.';
+COMMENT ON TABLE public.wf_action_template IS
+  'WF-06 / ADR-116: service-managed in-app templates; only approved references may be used by actions.';
 COMMENT ON TABLE public.wf_action_draft IS
   'WF-06 / ADR-116: tenant-scoped approval drafts. Contains template references and parameters, never rendered message text or recipient addresses.';
 COMMENT ON TABLE public.wf_action_sandbox_outbox IS

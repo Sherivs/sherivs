@@ -140,6 +140,13 @@ describe("WF-06 action policy", () => {
         recipientAddresses: ["ada@example.test"],
       }),
     ).toBe(false);
+    expect(
+      workflowActionDefinitionIsValid({
+        kind: "email",
+        templateRef: "attendance.notice",
+        templateParams: { message: "untrusted free text" },
+      }),
+    ).toBe(false);
   });
 
   it("defaults unset and invalid delivery modes to off", () => {

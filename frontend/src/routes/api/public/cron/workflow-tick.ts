@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "node:crypto";
 import { runWorkflowTick } from "@/lib/workflow/workflow-runtime";
-import type { WorkflowRuntimePort } from "@/lib/workflow/workflow-runtime";
+import type { WorkflowRuntimePort, WorkflowTickOptions } from "@/lib/workflow/workflow-runtime";
 
 type WorkflowTickEnv = Record<string, string | undefined>;
 const BEARER_SCHEME = "Bearer";
@@ -15,6 +15,11 @@ function isAuthorized(header: string | null, secret: string): boolean {
 export function createWorkflowTickHandler(dependencies: {
   env?: WorkflowTickEnv;
   createPort?: () => WorkflowRuntimePort | Promise<WorkflowRuntimePort>;
+  createActionExecutor?: (
+    env: WorkflowTickEnv,
+  ) =>
+    | NonNullable<WorkflowTickOptions["executeAction"]>
+    | Promise<NonNullable<WorkflowTickOptions["executeAction"]>>;
 }) {
   const env = dependencies.env ?? process.env;
   return async (request: Request): Promise<Response> => {
@@ -31,11 +36,19 @@ export function createWorkflowTickHandler(dependencies: {
       const createPort =
         dependencies.createPort ??
         (await import("@/lib/workflow/workflow-runtime.server")).createWorkflowRuntimePort;
-      const counts = await runWorkflowTick(await createPort(), {
+      const port = await createPort();
+      const executeAction = dependencies.createActionExecutor
+        ? await dependencies.createActionExecutor(env)
+        : dependencies.createPort
+          ? undefined
+          : (await import("@/lib/workflow/workflow-action-runtime.server"))
+              .createWorkflowActionExecutor(env);
+      const counts = await runWorkflowTick(port, {
         worker: "workflow-tick",
         limit: 50,
         leaseSeconds: 60,
         budgetMs: 45_000,
+        ...(executeAction ? { executeAction } : {}),
       });
       return Response.json({ ok: true, ...counts });
     } catch {

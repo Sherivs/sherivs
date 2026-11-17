@@ -160,6 +160,7 @@ export interface WorkflowTickOptions {
     orgId: string;
     step: ClaimedWorkflowStep;
     action?: WorkflowActionDefinition;
+    authorizedActions: readonly string[];
     planId: string;
     idempotencyKey: string;
     signal: AbortSignal;
@@ -447,6 +448,7 @@ async function advanceClaimedStep(
               orgId: step.orgId,
               step,
               ...(currentStep.action ? { action: currentStep.action } : {}),
+              authorizedActions: currentStep.authorizedActions,
               planId: planned.plan.planId,
               idempotencyKey: step.idempotencyKey,
               signal,

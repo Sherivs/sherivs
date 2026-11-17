@@ -3,6 +3,7 @@ BEGIN;
 DO $prereq$
 BEGIN
   IF to_regclass('public.wf_action_type') IS NULL
+     OR to_regclass('public.wf_action_template') IS NULL
      OR to_regclass('public.wf_action_draft') IS NULL
      OR to_regclass('public.wf_action_sandbox_outbox') IS NULL
      OR to_regclass('public.wf_webhook_target') IS NULL THEN
@@ -14,6 +15,7 @@ $prereq$;
 DROP TABLE public.wf_action_sandbox_outbox;
 DROP TABLE public.wf_action_draft;
 DROP TABLE public.wf_webhook_target;
+DROP TABLE public.wf_action_template;
 DROP TABLE public.wf_action_type;
 
 UPDATE public.cg_tool_registry

@@ -141,7 +141,7 @@ const ROWS: readonly Row[] = [
   [
     "workflow.action.in_app",
     "Workflow in-app action",
-    "in_app",
+    "in-app",
     "write",
     "internal_state",
     "T1",

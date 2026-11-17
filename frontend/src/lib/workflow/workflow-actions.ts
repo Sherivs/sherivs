@@ -26,7 +26,11 @@ export const workflowActionDefinitionSchema = z
         z.union([z.string().max(512), z.number().finite(), z.boolean()]),
       )
       .default({}),
-    recipientIds: z.array(z.string().uuid()).max(500).default([]),
+    recipientIds: z
+      .array(z.string().uuid())
+      .max(500)
+      .refine((ids) => new Set(ids).size === ids.length)
+      .default([]),
     audienceSelector: z.enum(["whole_class", "all_guardians", "all_staff"]).optional(),
     dataClass: z.string().max(64).optional(),
     targetUrl: z.string().url().max(2048).optional(),
@@ -35,7 +39,15 @@ export const workflowActionDefinitionSchema = z
     (action) =>
       !["email", "whatsapp", "sms", "in_app"].includes(action.kind) || !!action.templateRef,
   )
-  .refine((action) => action.kind !== "webhook" || !!action.targetUrl);
+  .refine((action) => action.kind !== "webhook" || !!action.targetUrl)
+  .refine(
+    (action) =>
+      !Object.keys(action.templateParams).some((key) =>
+        ["body", "message", "text", "html", "subject", "to", "email", "phone", "url"].includes(
+          key.toLowerCase(),
+        ),
+      ),
+  );
 
 export type WorkflowActionDefinition = z.infer<typeof workflowActionDefinitionSchema>;
 
@@ -71,6 +83,12 @@ const AUTONOMY_RANK: Readonly<Record<WorkflowAutonomyLevel, number>> = {
   act_with_approval: 2,
   act_and_report: 3,
 };
+const WORKFLOW_ACTION_AUTONOMY_CEILINGS: Readonly<Record<string, WorkflowAutonomyLevel>> = {
+  internal: "act_and_report",
+  communication: "act_and_report",
+  task: "act_and_report",
+  wait: "act_and_report",
+};
 
 const EFFECTFUL_WORKFLOW_ACTIONS = new Set<WorkflowActionKind>([
   "email",
@@ -90,9 +108,10 @@ export function effectiveWorkflowAutonomy(input: {
     AUTONOMY_RANK[level] < AUTONOMY_RANK[effective] ? level : effective,
   );
   const categoryCap =
-    WORKFLOW_ACTION_CATEGORY_CAPS[input.actionClass as keyof typeof WORKFLOW_ACTION_CATEGORY_CAPS];
-  const cap = categoryCap ?? (input.actionClass === "internal" ? "act_and_report" : "draft");
-  return AUTONOMY_RANK[lowest] > AUTONOMY_RANK[cap] ? cap : lowest;
+    WORKFLOW_ACTION_CATEGORY_CAPS[input.actionClass as keyof typeof WORKFLOW_ACTION_CATEGORY_CAPS] ??
+    WORKFLOW_ACTION_AUTONOMY_CEILINGS[input.actionClass] ??
+    "draft";
+  return AUTONOMY_RANK[lowest] > AUTONOMY_RANK[categoryCap] ? categoryCap : lowest;
 }
 
 export function isWorkflowMassCommunication(input: {
