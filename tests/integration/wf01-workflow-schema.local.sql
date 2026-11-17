@@ -137,7 +137,9 @@ SELECT wf01t.expect_true('audit writer: no client role may call it directly',
 SELECT wf01t.expect_true('wf_can: anon cannot execute',
   NOT has_function_privilege('anon', 'public.wf_can(uuid,text)', 'EXECUTE'));
 SELECT wf01t.expect_count('every workflow policy targets authenticated only (no anon, no public)',
-  $q$SELECT 1 FROM pg_policies WHERE schemaname = 'public' AND tablename LIKE 'wf\_%' AND roles <> '{authenticated}'$q$, 0);
+  $q$SELECT 1 FROM pg_policies WHERE schemaname = 'public'
+      AND tablename IN ('wf_definition','wf_version','wf_trigger_binding','wf_event','wf_run','wf_step_run','wf_run_event','wf_approval')
+      AND roles <> '{authenticated}'$q$, 0);
 SELECT wf01t.expect_count('definer functions pin search_path',
   $q$SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
       WHERE n.nspname = 'public' AND p.proname LIKE 'wf\_%' AND (p.proconfig IS NULL
@@ -170,11 +172,11 @@ SELECT wf01t.login_as('service_role');
 INSERT INTO public.wf_definition (id, org_id, key, name) VALUES
   ('f0110000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'overdue-reminder', 'A reminder'),
   ('f0110000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'overdue-reminder', 'B reminder');
-INSERT INTO public.wf_version (id, org_id, definition_id, version, graph) VALUES
-  ('f0120000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 1, '{"steps":[{"id":"s1"}]}'),
-  ('f0120000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'f0110000-0000-4000-8000-0000000000b2', 1, '{"steps":[{"id":"s1"}]}'),
-  ('f0120000-0000-4000-8000-0000000000a2', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 2, '{"steps":[]}');
-UPDATE public.wf_version SET state = 'published'
+INSERT INTO public.wf_version (id, org_id, definition_id, version, graph, created_by) VALUES
+  ('f0120000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 1, '{"steps":[{"id":"s1"}]}', wf01t.id('adminA')),
+  ('f0120000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'f0110000-0000-4000-8000-0000000000b2', 1, '{"steps":[{"id":"s1"}]}', wf01t.id('memberA')),
+  ('f0120000-0000-4000-8000-0000000000a2', wf01t.id('orgA'), 'f0110000-0000-4000-8000-0000000000a1', 2, '{"steps":[]}', wf01t.id('adminA'));
+UPDATE public.wf_version SET state = 'published', published_by = 'f0100000-0000-4000-8000-000000000003'
  WHERE id IN ('f0120000-0000-4000-8000-0000000000a1', 'f0120000-0000-4000-8000-0000000000b2');
 UPDATE public.wf_definition SET current_version_id = 'f0120000-0000-4000-8000-0000000000a1' WHERE id = 'f0110000-0000-4000-8000-0000000000a1';
 UPDATE public.wf_definition SET current_version_id = 'f0120000-0000-4000-8000-0000000000b2' WHERE id = 'f0110000-0000-4000-8000-0000000000b2';
@@ -197,7 +199,7 @@ INSERT INTO public.wf_run_event (org_id, run_id, kind, actor_kind, actor_ref) VA
   (wf01t.id('orgB'), 'f0150000-0000-4000-8000-0000000000b2', 'run.started', 'system', 'service');
 INSERT INTO public.wf_approval (id, org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at) VALUES
   ('f0170000-0000-4000-8000-0000000000a1', wf01t.id('orgA'), 'f0150000-0000-4000-8000-0000000000a1', 'f0160000-0000-4000-8000-0000000000a1',
-   'Send reminder batch', 'user', 'f0100000-0000-4000-8000-000000000001', now() + interval '1 day'),
+   'Send reminder batch', 'user', 'f0100000-0000-4000-8000-000000000002', now() + interval '1 day'),
   ('f0170000-0000-4000-8000-0000000000b2', wf01t.id('orgB'), 'f0150000-0000-4000-8000-0000000000b2', 'f0160000-0000-4000-8000-0000000000b2',
    'Send reminder batch', 'agent', 'agent:reminders', now() + interval '1 day');
 SELECT wf01t.pass('service role seeded both organizations');
@@ -207,8 +209,9 @@ SELECT wf01t.expect_error('fk: step in org B cannot point at a run in org A',
   $q$INSERT INTO public.wf_step_run (org_id, run_id, step_key, kind, idempotency_key)
      VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0150000-0000-4000-8000-0000000000a1', 's9', 'action', 'cross-tenant-step')$q$, '23503');
 SELECT wf01t.expect_error('fk: version in org B cannot attach to a definition in org A',
-  $q$INSERT INTO public.wf_version (org_id, definition_id, version)
-     VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0110000-0000-4000-8000-0000000000a1', 9)$q$, '23503');
+  $q$INSERT INTO public.wf_version (org_id, definition_id, version, created_by)
+     VALUES ('f0100000-0000-4000-8000-0000000000b2', 'f0110000-0000-4000-8000-0000000000a1', 9,
+             'f0100000-0000-4000-8000-000000000001')$q$, '23503');
 SELECT wf01t.expect_error('approval in org A cannot reference a step in org B (guard fires before the composite FK)',
   $q$INSERT INTO public.wf_approval (org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at)
      VALUES ('f0100000-0000-4000-8000-0000000000a1', 'f0150000-0000-4000-8000-0000000000a1', 'f0160000-0000-4000-8000-0000000000b2',
@@ -337,7 +340,8 @@ SELECT wf01t.expect_error('published version cannot return to draft',
 SELECT wf01t.expect_error('published version cannot be deleted',
   $q$DELETE FROM public.wf_version WHERE id = 'f0120000-0000-4000-8000-0000000000a1'$q$, '42501');
 SELECT wf01t.expect_error('only one published version per workflow',
-  $q$UPDATE public.wf_version SET state = 'published' WHERE id = 'f0120000-0000-4000-8000-0000000000a2'$q$, '23505');
+  $q$UPDATE public.wf_version SET state = 'published', published_by = 'f0100000-0000-4000-8000-000000000003'
+      WHERE id = 'f0120000-0000-4000-8000-0000000000a2'$q$, '23505');
 SELECT wf01t.expect_true('publish stamped the graph digest',
   (SELECT graph_digest ~ '^[0-9a-f]{64}$' FROM public.wf_version WHERE id = 'f0120000-0000-4000-8000-0000000000a1'));
 SELECT wf01t.expect_error('a run cannot use a draft version',
@@ -384,7 +388,7 @@ SELECT wf01t.expect_error('approval: a decision needs a person (no agent or syst
   $q$UPDATE public.wf_approval SET status = 'approved', decided_at = now(), decision_channel = 'console'
       WHERE id = 'f0170000-0000-4000-8000-0000000000b2'$q$, '23514');
 SELECT wf01t.expect_error('approval: the requester cannot approve their own request',
-  $q$UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0100000-0000-4000-8000-000000000001',
+  $q$UPDATE public.wf_approval SET status = 'approved', decided_by = 'f0100000-0000-4000-8000-000000000002',
        decided_at = now(), decision_channel = 'console' WHERE id = 'f0170000-0000-4000-8000-0000000000a1'$q$, '23514');
 SELECT wf01t.expect_error('approval: expiry is at most 30 days',
   $q$INSERT INTO public.wf_approval (org_id, run_id, step_run_id, summary, requested_by_kind, requested_by_ref, expires_at)

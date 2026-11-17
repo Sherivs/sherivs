@@ -68,9 +68,18 @@ try {
     admin,
     `
     WITH d AS (INSERT INTO public.wf_definition (id, org_id, key, name) VALUES ('${DEF}', '${ORG}', 'conc', 'Concurrency') RETURNING id)
-    INSERT INTO public.wf_version (id, org_id, definition_id, version) SELECT '${VER}', '${ORG}', id, 1 FROM d`,
+    INSERT INTO public.wf_version (id, org_id, definition_id, version, created_by, updated_by)
+    SELECT '${VER}', '${ORG}', id, 1,
+           'f0200000-0000-4000-8000-000000000001',
+           'f0200000-0000-4000-8000-000000000002'
+      FROM d`,
   );
-  await asService(admin, `UPDATE public.wf_version SET state = 'published' WHERE id = '${VER}'`);
+  await asService(
+    admin,
+    `UPDATE public.wf_version
+        SET state = 'published', published_by = 'f0200000-0000-4000-8000-000000000003'
+      WHERE id = '${VER}'`,
+  );
   await asService(
     admin,
     `
