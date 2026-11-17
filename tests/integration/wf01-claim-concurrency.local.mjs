@@ -46,6 +46,7 @@ async function cleanup() {
     SET LOCAL session_replication_role = replica;
     DELETE FROM public.wf_step_run WHERE org_id = '${ORG}';
     DELETE FROM public.wf_run WHERE org_id = '${ORG}';
+    DELETE FROM public.wf_org_settings WHERE org_id = '${ORG}';
     UPDATE public.wf_definition SET current_version_id = NULL WHERE org_id = '${ORG}';
     DELETE FROM public.wf_version WHERE org_id = '${ORG}';
     DELETE FROM public.wf_definition WHERE org_id = '${ORG}';
@@ -66,11 +67,24 @@ try {
   await cleanup();
   await asService(
     admin,
+    `INSERT INTO public.wf_org_settings (org_id, workflows_enabled) VALUES ('${ORG}', true)`,
+  );
+  await asService(
+    admin,
     `
     WITH d AS (INSERT INTO public.wf_definition (id, org_id, key, name) VALUES ('${DEF}', '${ORG}', 'conc', 'Concurrency') RETURNING id)
-    INSERT INTO public.wf_version (id, org_id, definition_id, version) SELECT '${VER}', '${ORG}', id, 1 FROM d`,
+    INSERT INTO public.wf_version (id, org_id, definition_id, version, created_by, updated_by)
+    SELECT '${VER}', '${ORG}', id, 1,
+           'f0200000-0000-4000-8000-000000000001',
+           'f0200000-0000-4000-8000-000000000002'
+      FROM d`,
   );
-  await asService(admin, `UPDATE public.wf_version SET state = 'published' WHERE id = '${VER}'`);
+  await asService(
+    admin,
+    `UPDATE public.wf_version
+        SET state = 'published', published_by = 'f0200000-0000-4000-8000-000000000003'
+      WHERE id = '${VER}'`,
+  );
   await asService(
     admin,
     `
