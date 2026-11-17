@@ -46,6 +46,7 @@ async function cleanup() {
     SET LOCAL session_replication_role = replica;
     DELETE FROM public.wf_step_run WHERE org_id = '${ORG}';
     DELETE FROM public.wf_run WHERE org_id = '${ORG}';
+    DELETE FROM public.wf_org_settings WHERE org_id = '${ORG}';
     UPDATE public.wf_definition SET current_version_id = NULL WHERE org_id = '${ORG}';
     DELETE FROM public.wf_version WHERE org_id = '${ORG}';
     DELETE FROM public.wf_definition WHERE org_id = '${ORG}';
@@ -64,6 +65,10 @@ async function asService(client, sql, params) {
 
 try {
   await cleanup();
+  await asService(
+    admin,
+    `INSERT INTO public.wf_org_settings (org_id, workflows_enabled) VALUES ('${ORG}', true)`,
+  );
   await asService(
     admin,
     `

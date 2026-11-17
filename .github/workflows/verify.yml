@@ -251,6 +251,13 @@ jobs:
             -f tests/integration/wf02-workflow-permissions.local.sql 2>&1 | tee /tmp/wf02.out
           ! grep -Fq 'WF02 FAIL' /tmp/wf02.out
           grep -Fq 'WF02 ALL PASS' /tmp/wf02.out
+      - name: WF-03 workflow runtime core and autonomy boundaries (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf03-workflow-runtime.local.sql 2>&1 | tee /tmp/wf03.out
+          ! grep -Fq 'WF03 FAIL' /tmp/wf03.out
+          grep -Fq 'WF03 ALL PASS' /tmp/wf03.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
