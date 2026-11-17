@@ -2,11 +2,11 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "database/supabase/migrations/20261116000500_sherivs_m10_ropa_dpia_register.sql",
+  "database/supabase/migrations/20261117002300_sherivs_m10_ropa_dpia_register.sql",
   "utf8",
 );
 const rollback = readFileSync(
-  "database/supabase/rollbacks/20261116000500_sherivs_m10_ropa_dpia_register.sql",
+  "database/supabase/rollbacks/20261117002300_sherivs_m10_ropa_dpia_register.sql",
   "utf8",
 );
 const harness = readFileSync("tests/integration/m10-ropa-dpia-register.local.sql", "utf8");

@@ -1,4 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval; applied from merged master only.
+-- Renumbered from 20261116000500 to 20261117002300 on 2026-11-17: after the latest version applied in production.
 -- Renumbered from 20261104012000 on 2026-11-17 so that file order matches apply order.
 -- M10: tenant-scoped processing activity and DPIA registers.
 DO $guard$

@@ -1,4 +1,4 @@
--- Rollback for 20261116000500_sherivs_m10_ropa_dpia_register.sql.
+-- Rollback for 20261117002300_sherivs_m10_ropa_dpia_register.sql.
 -- Immutable register audit evidence is retained and left inaccessible to API roles.
 BEGIN;
 
