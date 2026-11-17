@@ -12,6 +12,12 @@
       "sqlPath": "ops/2026-11-15-apply-engine20-engine22/apply.sql",
       "rollbackPath": "ops/2026-11-15-apply-engine20-engine22/rollback.sql",
       "reason": "Same as ENGINE-20: applied together from the same reviewed file."
+    },
+    {
+      "ledgerName": "20261117000300_sherivs_sec_m0_privilege_consolidation",
+      "sqlPath": "database/proposals/SEC-M0_privilege_consolidation.sql",
+      "rollbackPath": "database/proposals/SEC-M0_privilege_consolidation.rollback.sql",
+      "reason": "Applied from the reviewed proposal file as written (ADR-101). It stays in proposals because it names organization tables the domain-neutrality guard forbids in the migrations folder; the guard baseline is shrink-only."
     }
   ]
 }

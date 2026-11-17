@@ -1,4 +1,4 @@
--- Disposable proof for 20261117000100_sherivs_m0b_policy_helper_search_path.sql.
+-- Disposable proof for 20261117002000_sherivs_m0b_policy_helper_search_path.sql.
 -- Builds the helpers as production has them (search_path = public), records what they return for
 -- several callers, applies the migration, and shows the answers are identical, the search path is
 -- empty, and a look-alike table placed ahead on a caller's search path changes nothing.
@@ -61,7 +61,7 @@ SELECT pg_temp.expect('before: an inactive person and a stranger get nothing',
   (:'before_answers' LIKE '%0c|-|-|f]%' AND :'before_answers' LIKE '%ff|-|-|f]%')::text, 'true');
 
 \echo == apply the migration ==
-\i database/supabase/migrations/20261117000100_sherivs_m0b_policy_helper_search_path.sql
+\i database/supabase/migrations/20261117002000_sherivs_m0b_policy_helper_search_path.sql
 
 SELECT pg_temp.expect('answers are identical for every caller', pg_temp.answers(), :'before_answers');
 SELECT pg_temp.expect('all three have an empty search path',
@@ -85,7 +85,7 @@ SELECT pg_temp.expect('a decoy table on the search path changes nothing', pg_tem
 RESET search_path;
 
 \echo == rollback restores the previous setting ==
-\i database/supabase/rollbacks/20261117000100_sherivs_m0b_policy_helper_search_path.sql
+\i database/supabase/rollbacks/20261117002000_sherivs_m0b_policy_helper_search_path.sql
 SELECT pg_temp.expect('after rollback the setting is public again',
   (SELECT proconfig::text FROM pg_proc WHERE oid = 'public.get_my_school_id()'::regprocedure), '{search_path=public}');
 SELECT pg_temp.expect('after rollback answers are still identical', pg_temp.answers(), :'before_answers');

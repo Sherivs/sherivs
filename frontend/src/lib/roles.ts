@@ -1,4 +1,9 @@
 /**
+ * NOTICE (ADR-102, mission M1): role and permission logic has one canonical owner, the database
+ * permission functions and the role engine that ADR-102 names. Do not add new role logic here;
+ * mission M2 folds this module into the canonical owner.
+ */
+/**
  * Sherivs — legacy identity-store membership kinds (P02/P08 domain boundary).
  *
  * This file is NOT UI. It only declares the identity-store `AppRole` union

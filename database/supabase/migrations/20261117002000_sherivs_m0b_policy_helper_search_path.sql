@@ -1,4 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
+-- Renumbered from 20261117000100 to 20261117002000 on 2026-11-17: after the latest version applied in production.
 -- M0B: pin an empty search_path on the three policy helper functions.
 -- Origin: Claude Code agent, mission E-003 (M0 follow-up 2 of the 17 Nov 2026 engineering prompt).
 -- Today they run with search_path = public (read-only query on production, 2026-11-17). Row-level
