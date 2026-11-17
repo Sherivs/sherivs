@@ -149,8 +149,8 @@ ALTER TABLE public.wf_webhook_target FORCE ROW LEVEL SECURITY;
 
 CREATE POLICY wf_action_type_authenticated_read ON public.wf_action_type
   FOR SELECT TO authenticated USING (true);
-CREATE POLICY wf_action_type_service ON public.wf_action_type
-  FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY wf_action_type_service_read ON public.wf_action_type
+  FOR SELECT TO service_role USING (true);
 CREATE POLICY wf_action_draft_member_read ON public.wf_action_draft
   FOR SELECT TO authenticated USING (public.wf_can(org_id, 'workflows.view'));
 CREATE POLICY wf_action_draft_service ON public.wf_action_draft
@@ -165,7 +165,6 @@ REVOKE ALL ON TABLE public.wf_action_type, public.wf_action_draft,
   FROM PUBLIC, anon, authenticated, service_role;
 GRANT SELECT ON TABLE public.wf_action_type TO authenticated, service_role;
 GRANT SELECT ON TABLE public.wf_action_draft TO authenticated, service_role;
-GRANT INSERT, UPDATE ON TABLE public.wf_action_type TO service_role;
 GRANT INSERT, SELECT, UPDATE ON TABLE public.wf_action_draft TO service_role;
 GRANT INSERT, SELECT ON TABLE public.wf_action_sandbox_outbox TO service_role;
 GRANT INSERT, SELECT, UPDATE ON TABLE public.wf_webhook_target TO service_role;

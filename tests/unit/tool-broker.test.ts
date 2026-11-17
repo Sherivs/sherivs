@@ -347,6 +347,17 @@ describe("ENGINE-03 ledger redaction", () => {
     expect(out.a!.length).toBeLessThanOrEqual(201);
   });
 
+  it("withholds recipient identifiers and template parameters from the ledger", () => {
+    const out = redactArgs({
+      recipientIds: ["b8e4ba26-34e0-4ddd-b227-5d1d1276cfe1"],
+      templateParams: { student_name: "Example", message: "private" },
+      templateRef: "attendance.notice",
+    }) as Record<string, unknown>;
+    expect(out.recipientIds).toBe("[withheld]");
+    expect(out.templateParams).toBe("[withheld]");
+    expect(out.templateRef).toBe("attendance.notice");
+  });
+
   it("digest is stable under key order and sensitive to change", () => {
     expect(argsDigest({ a: 1, b: 2 })).toBe(argsDigest({ b: 2, a: 1 }));
     expect(argsDigest({ a: 1 })).not.toBe(argsDigest({ a: 2 }));
