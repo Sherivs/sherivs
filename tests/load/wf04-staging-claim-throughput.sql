@@ -57,9 +57,11 @@ BEGIN
   INSERT INTO public.wf_step_run
     (org_id, run_id, step_key, iteration, kind, idempotency_key, next_attempt_at)
   SELECT v_org, v_run, 'work-' || lpad(g::text, 3, '0'), 0, 'action',
-         'wf04-staging-step-' || lpad(g::text, 3, '0'), clock_timestamp()
+         'wf04-staging-step-' || lpad(g::text, 3, '0'), now() - interval '1 second'
     FROM generate_series(1, v_steps) AS g;
 
+  -- wf_claim_due_steps compares next_attempt_at with now(), which is the transaction start time,
+  -- so fixture steps are back-dated to be due inside this single transaction.
   LOOP
     v_batch := 0;
     FOR v_step IN SELECT * FROM public.wf_claim_due_steps('wf04-staging-probe', 50, 60)
