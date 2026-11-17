@@ -33,7 +33,7 @@ import {
   type EvolutionGate,
   type EvolutionGateRun,
   type PermissionScopeImpact,
-} from "../../frontend/src/lib/evolution-engine/contracts";
+} from "../../frontend/src/lib/_quarantine/evolution-engine/contracts";
 
 const NOW = "2026-10-03T00:00:00.000Z";
 

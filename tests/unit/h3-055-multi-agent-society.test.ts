@@ -2,7 +2,7 @@
  * Sherivs — H3-055 phase-35 multi-agent society contract tests
  * (Squad G mission G-055, Contract Architect).
  *
- * Proves the fail-closed surface of `frontend/src/lib/multi-agent-society/
+ * Proves the fail-closed surface of `frontend/src/lib/_quarantine/multi-agent-society/
  * contracts.ts`: societies parse fail-closed, activate only on explicit
  * approval, hold exactly the intersection of their members' grants (authority
  * may shrink, never widen), coordinate only between attributable usable
@@ -35,7 +35,7 @@ import {
   type SocietyDefinition,
   type SocietyMember,
   type SocietyLifecycleState,
-} from "../../frontend/src/lib/multi-agent-society/contracts";
+} from "../../frontend/src/lib/_quarantine/multi-agent-society/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (neutral vocabulary only)

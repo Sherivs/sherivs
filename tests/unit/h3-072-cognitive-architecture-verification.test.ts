@@ -2,7 +2,7 @@
  * Sherivs — H3-072 phase-34 cognitive-architecture ADVERSARIAL VERIFICATION
  * suite (mission G-072, Verifier role, Squad G; H3-WAVE-CAMPAIGN.md).
  *
- * Target: frontend/src/lib/cognitive-architecture/contracts.ts (landed by
+ * Target: frontend/src/lib/_quarantine/cognitive-architecture/contracts.ts (landed by
  * H3-054). Imported READ-ONLY — this mission never modifies the module. The
  * architect's own suite (tests/unit/h3-054-cognitive-architecture.test.ts)
  * proves the happy paths; this suite DEEPENS, never duplicates: every test
@@ -70,7 +70,7 @@ import {
   type Confidence,
   type EvidenceCitation,
   type WorldModel,
-} from "../../frontend/src/lib/cognitive-architecture/contracts";
+} from "../../frontend/src/lib/_quarantine/cognitive-architecture/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (valid, schema-conformant baselines)

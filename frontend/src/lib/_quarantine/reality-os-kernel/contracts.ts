@@ -56,8 +56,8 @@ import {
   type KernelObjectEnvelope,
   type KernelObjectEnvelopeInput,
   type RelationshipDraftInput,
-} from "../kernel/reality";
-import { canonicalKernelObjectTypes } from "../kernel/object-type-registry";
+} from "../../kernel/reality";
+import { canonicalKernelObjectTypes } from "../../kernel/object-type-registry";
 
 /* ─────────────────────────────────────────────────────────────
  * Version, bounds and boundary statement

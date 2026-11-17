@@ -44,7 +44,7 @@
  */
 
 import { z } from "zod";
-import { PHASE_38_EVOLUTION_ENGINE } from "../kernel/phase-contracts/phase-38-evolution-engine";
+import { PHASE_38_EVOLUTION_ENGINE } from "../../kernel/phase-contracts/phase-38-evolution-engine";
 
 /* ─────────────────────────────────────────────────────────────
  * Kernel binding (read-only composition, no second engine)

@@ -32,7 +32,7 @@ import {
   type CognitiveOutput,
   type Confidence,
   type ReasoningTrace,
-} from "../../frontend/src/lib/cognitive-architecture/contracts";
+} from "../../frontend/src/lib/_quarantine/cognitive-architecture/contracts";
 
 const RECORDED_AT = "2026-10-03T00:00:00.000Z";
 const DIGEST = "a".repeat(64);

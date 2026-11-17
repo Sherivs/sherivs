@@ -8,7 +8,7 @@
  * everyone can access it."
  *
  * Modules exercised (imported READ-ONLY, never modified):
- * - frontend/src/lib/twin-civilization/contracts.ts (phase 46 federation
+ * - frontend/src/lib/_quarantine/twin-civilization/contracts.ts (phase 46 federation
  *   substrate: the typed no-grant boundary)
  * - frontend/src/lib/twin-governance.ts (phase 16 security CL-CQ,
  *   subscriptions, simulation, overrides, export)
@@ -62,7 +62,7 @@ import {
   parseSharedStateEnvelope,
   type FederationAgreement,
   type FederationGateResult,
-} from "../../frontend/src/lib/twin-civilization/contracts";
+} from "../../frontend/src/lib/_quarantine/twin-civilization/contracts";
 
 const TENANT_A: TenantId = tenantId("tenant_a");
 const TENANT_B: TenantId = tenantId("tenant_b");

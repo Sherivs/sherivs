@@ -36,7 +36,7 @@ import {
   type DerivedObservation,
   type EconomicProposal,
   type SettlementInstruction,
-} from "../../frontend/src/lib/autonomous-economy/contracts";
+} from "../../frontend/src/lib/_quarantine/autonomous-economy/contracts";
 
 const DECLARED_AT = "2026-10-03T00:00:00.000Z";
 const ACTION_AT = "2026-10-03T01:00:00.000Z";

@@ -3,7 +3,7 @@
  * mission G-075, Verifier — phase 37 simulation-engine).
  *
  * Adversarial verification against the COMPLETED contract module
- * `frontend/src/lib/simulation-engine/contracts.ts` (landed by H3-057).
+ * `frontend/src/lib/_quarantine/simulation-engine/contracts.ts` (landed by H3-057).
  * The module is imported READ-ONLY and is never modified by this suite;
  * H3-057's own suite is deepened here, not duplicated: every probe below
  * is an ATTACK an untrusted caller could mount, and the expected verdict
@@ -40,7 +40,7 @@ import {
   type SimulationRunBundle,
   type SimulatedOutcome,
   type WritebackApproval,
-} from "../../frontend/src/lib/simulation-engine/contracts";
+} from "../../frontend/src/lib/_quarantine/simulation-engine/contracts";
 
 const NOW_MS = 1_767_225_600_000; // 2026-01-01T00:00:00.000Z — injected, never the wall clock
 const NAN_CLOCK = Number.NaN; // degenerate clock an attacker may inject

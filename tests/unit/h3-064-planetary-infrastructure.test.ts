@@ -30,7 +30,7 @@ import {
   type AdmissionPolicy,
   type AdmissionRequest,
   type RegionTopology,
-} from "../../frontend/src/lib/planetary-infrastructure/contracts";
+} from "../../frontend/src/lib/_quarantine/planetary-infrastructure/contracts";
 
 const DECLARED_AT = "2026-10-03T00:00:00.000Z";
 const REQUESTED_AT = "2026-10-03T01:00:00.000Z";

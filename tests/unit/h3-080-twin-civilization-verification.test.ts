@@ -2,7 +2,7 @@
  * Sherivs — H3-080 phase-46 twin-civilization ADVERSARIAL VERIFICATION
  * (mission G-080, Squad G verifier role). Read-only adversarial suite
  * against the completed contract module
- * `frontend/src/lib/twin-civilization/contracts.ts` (landed by G-066).
+ * `frontend/src/lib/_quarantine/twin-civilization/contracts.ts` (landed by G-066).
  * This suite does NOT duplicate H3-066's contract tests: it attacks the
  * module the way an adversary would — grant escalation, authority forgery,
  * agreement replay across field-path renames, revocation resurrection,
@@ -27,7 +27,7 @@ import {
   parseTwinRelationship,
   type FederationAgreement,
   type FederationState,
-} from "../../frontend/src/lib/twin-civilization/contracts";
+} from "../../frontend/src/lib/_quarantine/twin-civilization/contracts";
 
 const NOW = "2026-10-03T00:00:00.000Z";
 const LATER = "2027-10-03T00:00:00.000Z";
@@ -203,7 +203,7 @@ describe("G-080: accessGrant escalation attempts", () => {
   });
 
   it("exposes no grant-issuing function on the module surface", async () => {
-    const mod = await import("../../frontend/src/lib/twin-civilization/contracts");
+    const mod = await import("../../frontend/src/lib/_quarantine/twin-civilization/contracts");
     const fns = Object.entries(mod)
       .filter(([, value]) => typeof value === "function")
       .map(([name]) => name)

@@ -29,7 +29,7 @@ import {
   sharedStateEnvelopeSchema,
   type FederationAgreement,
   type FederatedTwinRef,
-} from "../../frontend/src/lib/twin-civilization/contracts";
+} from "../../frontend/src/lib/_quarantine/twin-civilization/contracts";
 
 const NOW = "2026-10-03T00:00:00.000Z";
 const LATER = "2027-10-03T00:00:00.000Z";

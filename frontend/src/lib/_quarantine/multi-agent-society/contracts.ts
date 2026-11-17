@@ -60,7 +60,7 @@
  */
 
 import { z } from "zod";
-import { isIdentityUsable, type IdentityLifecycleState } from "../identity";
+import { isIdentityUsable, type IdentityLifecycleState } from "../../identity";
 
 /* ─────────────────────────────────────────────────────────────
  * Vocabulary

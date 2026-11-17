@@ -56,7 +56,7 @@
  */
 
 import { z } from "zod";
-import type { AuthorizationDecision } from "../identity";
+import type { AuthorizationDecision } from "../../identity";
 
 /* ─────────────────────────────────────────────────────────────
  * Version and bounds (no unbounded artifacts)

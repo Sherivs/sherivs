@@ -23,7 +23,7 @@ import {
   resolveComposedEntry,
   type ComposedKernelUnit,
   type CompositionDeclaration,
-} from "../../frontend/src/lib/reality-os-kernel/contracts";
+} from "../../frontend/src/lib/_quarantine/reality-os-kernel/contracts";
 
 const NOW = "2026-10-03T00:00:00.000Z";
 const TENANT = "tenant_alpha";

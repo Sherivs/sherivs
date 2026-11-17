@@ -3,7 +3,7 @@
  * (mission G-079, Verifier, phase 44, Squad G).
  *
  * Adversarial verification against the COMPLETED contract module
- * `frontend/src/lib/planetary-infrastructure/contracts.ts` (landed by H3-064).
+ * `frontend/src/lib/_quarantine/planetary-infrastructure/contracts.ts` (landed by H3-064).
  * This suite is READ-ONLY on that module: it deepens, and never duplicates,
  * the H3-064 contract suite. Attack vectors under verification:
  *
@@ -48,7 +48,7 @@ import {
   type AdmissionRequest,
   type NodeLifecycleState,
   type RegionTopology,
-} from "../../frontend/src/lib/planetary-infrastructure/contracts";
+} from "../../frontend/src/lib/_quarantine/planetary-infrastructure/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (typed; parsed through the module's own fail-closed gates)

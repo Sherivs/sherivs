@@ -3,7 +3,7 @@
  * (Squad G mission G-073, Verifier).
  *
  * Adversarial suite against the COMPLETED contract module
- * `frontend/src/lib/multi-agent-society/contracts.ts` (landed by H3-055;
+ * `frontend/src/lib/_quarantine/multi-agent-society/contracts.ts` (landed by H3-055;
  * imported READ-ONLY — this suite never modifies it and deepens, never
  * duplicates, the H3-055 suite `tests/unit/h3-055-multi-agent-society.test.ts`).
  *
@@ -84,7 +84,7 @@ import {
   type SocietyDefinition,
   type SocietyLifecycleState,
   type SocietyMember,
-} from "../../frontend/src/lib/multi-agent-society/contracts";
+} from "../../frontend/src/lib/_quarantine/multi-agent-society/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (neutral vocabulary; distinct from the H3-055 suite)

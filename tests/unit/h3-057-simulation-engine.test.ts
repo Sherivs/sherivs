@@ -24,7 +24,7 @@ import {
   validateSimulationRunBundle,
   type SimulationRunBundle,
   type SimulatedOutcome,
-} from "../../frontend/src/lib/simulation-engine/contracts";
+} from "../../frontend/src/lib/_quarantine/simulation-engine/contracts";
 
 const NOW_MS = 1_767_225_600_000; // 2026-01-01T00:00:00.000Z — injected, never the wall clock
 
@@ -498,7 +498,7 @@ describe("module hygiene", () => {
   it("is pure: the contract module imports no vendors, no I/O, no environment reads", async () => {
     const source = await import("node:fs").then((fs) =>
       fs.promises.readFile(
-        new URL("../../frontend/src/lib/simulation-engine/contracts.ts", import.meta.url),
+        new URL("../../frontend/src/lib/_quarantine/simulation-engine/contracts.ts", import.meta.url),
         "utf8",
       ),
     );
