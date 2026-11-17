@@ -1,8 +1,9 @@
 -- NOT APPLIED. Needs the founder's written approval; applied from merged master only.
+-- Renumbered from 20261116000600 to 20261117002400 on 2026-11-17: after the latest version applied in production.
 -- Renumbered from 20261104016000 on 2026-11-17 so that file order matches apply order.
 -- SV1-SCHED S1: neutral, tenant-scoped scheduling inputs and versioned plans.
 -- Status: authored, NOT APPLIED. No production database changes are made here.
--- Rollback: database/supabase/rollbacks/20261116000600_sv1_sched_data_model.sql
+-- Rollback: database/supabase/rollbacks/20261117002400_sv1_sched_data_model.sql
 
 DO $guard$
 BEGIN

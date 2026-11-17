@@ -1,4 +1,4 @@
--- Rollback of 20261116000600_sv1_sched_data_model.sql.
+-- Rollback of 20261117002400_sv1_sched_data_model.sql.
 -- Apply only to a disposable database or under an approved rollback plan.
 
 DROP TABLE IF EXISTS public.cg_schedule_placement;

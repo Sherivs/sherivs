@@ -93,7 +93,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}", cache: npm }
       - run: npm ci --no-audit --fund=false
-      - run: npm audit --omit=dev --audit-level=high
+      # npm audit --omit=dev at high/critical; dated, approved exceptions live in config/npm-audit-exceptions.json
+      - run: node scripts/verify-npm-audit.mjs
       - run: npm run verify:registry && npm run verify:drift && npm run verify:neutrality && npm run verify:secrets
       - run: npm run verify:home-bundle:build
 
@@ -155,6 +156,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version: "${{ env.NODE_VERSION }}" }
+      - run: npm ci --no-audit --fund=false
       - uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         with:
           path: tools/sim-lab/bin
@@ -243,6 +245,32 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/sec02-privilege-hardening.local.sql 2>&1 | tee /tmp/sec02.out
           grep -q 'SEC02 ALL PASS' /tmp/sec02.out
+      - name: WF-01 workflow schema isolation, immutability, limits and audit (real Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf01-workflow-schema.local.sql 2>&1 | tee /tmp/wf01.out
+          ! grep -Fq 'WF01 FAIL' /tmp/wf01.out
+          grep -Fq 'WF01 ALL PASS' /tmp/wf01.out
+      - name: WF-02 workflow permissions, templates and separation of duties (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf02-workflow-permissions.local.sql 2>&1 | tee /tmp/wf02.out
+          ! grep -Fq 'WF02 FAIL' /tmp/wf02.out
+          grep -Fq 'WF02 ALL PASS' /tmp/wf02.out
+      - name: WF-03 workflow runtime core and autonomy boundaries (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf03-workflow-runtime.local.sql 2>&1 | tee /tmp/wf03.out
+          ! grep -Fq 'WF03 FAIL' /tmp/wf03.out
+          grep -Fq 'WF03 ALL PASS' /tmp/wf03.out
+      - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
+        working-directory: tools/sim-lab
+        run: |
+          node ../../tests/integration/wf01-claim-concurrency.local.mjs 2>&1 | tee /tmp/wf01-conc.out
+          grep -q 'WF01-CONC RESULT: pass=4 fail=0' /tmp/wf01-conc.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
@@ -260,11 +288,15 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/db12-flags-pk-and-index.local.sql 2>&1 | tee /tmp/db12.out
           grep -q 'DB12 ALL PASS' /tmp/db12.out
-      - name: k6 smoke (50 VUs, key flows)
+      - name: WF-04 workflow load and k6 smoke
         working-directory: tools/sim-lab
         run: |
+          set -euo pipefail
           node load/tokens.mjs
           (bin/postgrest load/postgrest.conf > postgrest.log 2>&1 &) ; sleep 3
+          WF04_N=8 WF04_WORKERS=2 node load/workflow-tick-load.mjs 2>&1 | tee /tmp/wf04-load.out
+          grep -Eq 'WF04-LOAD RESULT: .* dup=0$' /tmp/wf04-load.out
+          grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -273,6 +305,7 @@ jobs:
           path: |
             tools/sim-lab/sim/scenario-results.json
             tools/sim-lab/security-audit.json
+            tools/sim-lab/results/wf04-workflow-tick-*.json
           if-no-files-found: ignore
           retention-days: 7
 

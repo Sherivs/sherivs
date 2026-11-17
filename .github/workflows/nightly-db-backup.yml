@@ -9,13 +9,22 @@
 #     * a pre-flight psql session issues SET default_transaction_read_only=on
 #       itself, confirms it took effect, and proves a write is refused.
 # - Encrypted with gpg (AES256, symmetric) using BACKUP_PASSPHRASE before it
-#   leaves the runner; only ciphertext is uploaded (artifact, 90-day retention).
+#   leaves the runner; only ciphertext is uploaded:
+#     * Cloudflare R2 (EU jurisdiction bucket sherivs-db-backups), object
+#       lifecycle expires after 90 days;
+#     * GitHub Actions artifact, 7-day retention (the repository is public;
+#       the 90-day copy lives in R2, not in the public artifact store).
 # - Verified: the decrypted temp copy must be non-empty and pg_restore -l must
-#   list its tables; the plaintext is deleted in every outcome.
+#   list its tables; the plaintext is deleted in every outcome. After upload,
+#   the R2 object size must match the local ciphertext. A manual restore_test
+#   input downloads the latest R2 object, decrypts it, and runs pg_restore
+#   --list; it never restores into a database.
 #
 # Secrets: PROD_DB_URL_BACKUP (use the Supabase SESSION POOLER URI,
 # *.pooler.supabase.com:5432 — the direct db.<ref>.supabase.co host is IPv6
-# only on the Free plan and GitHub runners have no IPv6), BACKUP_PASSPHRASE.
+# only on the Free plan and GitHub runners have no IPv6), BACKUP_PASSPHRASE,
+# R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (token scoped to
+# sherivs-db-backups, Object Read & Write).
 # Restore: gpg --decrypt file.dump.gpg > file.dump && pg_restore -l file.dump
 name: Nightly encrypted DB backup
 
@@ -23,6 +32,11 @@ on:
   schedule:
     - cron: "7 1 * * *"
   workflow_dispatch:
+    inputs:
+      restore_test:
+        description: "After the backup, download the latest R2 object, decrypt it, and run pg_restore --list. Does not restore into any database."
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -33,7 +47,7 @@ concurrency:
 
 jobs:
   backup:
-    name: pg_dump (read-only) + gpg + artifact
+    name: pg_dump (read-only) + gpg + R2 + artifact
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -41,9 +55,15 @@ jobs:
         env:
           DB_URL: ${{ secrets.PROD_DB_URL_BACKUP }}
           PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
         run: |
           [ -n "$DB_URL" ] || { echo "::error::PROD_DB_URL_BACKUP secret is not set"; exit 1; }
           [ -n "$PASSPHRASE" ] || { echo "::error::BACKUP_PASSPHRASE secret is not set"; exit 1; }
+          [ -n "$R2_ACCOUNT_ID" ] || { echo "::error::R2_ACCOUNT_ID secret is not set"; exit 1; }
+          [ -n "$R2_ACCESS_KEY_ID" ] || { echo "::error::R2_ACCESS_KEY_ID secret is not set"; exit 1; }
+          [ -n "$R2_SECRET_ACCESS_KEY" ] || { echo "::error::R2_SECRET_ACCESS_KEY secret is not set"; exit 1; }
 
       - name: Install pg_dump 17 (PGDG)
         run: |
@@ -112,12 +132,126 @@ jobs:
           } | tee -a "$GITHUB_STEP_SUMMARY"
           echo "STAMP=$STAMP" >> "$GITHUB_ENV"
 
-      # Production database backups stay at 90 days (INFRA-01 does not shorten them).
-      - name: Upload encrypted backup (90 days)
+      # Off-site copy: ciphertext only (encrypted above), Cloudflare R2, EU jurisdiction.
+      - name: Upload encrypted backup to Cloudflare R2 (EU)
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: "true"
+          # AWS CLI v2 default checksums are not accepted by R2.
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: |
+          set -euo pipefail
+          for v in R2_ACCOUNT_ID AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY STAMP; do
+            [ -n "${!v}" ] || { echo "::error::$v is not set"; exit 1; }
+          done
+          ENDPOINT="https://${R2_ACCOUNT_ID}.eu.r2.cloudflarestorage.com"
+          f="$(ls backup-out/*.dump.gpg)"
+          [ "$(echo "$f" | wc -l)" -eq 1 ] || { echo "::error::expected exactly one encrypted file"; exit 1; }
+          case "$f" in
+            *.dump.gpg) ;;
+            *) echo "::error::refusing to upload a file that is not ciphertext"; exit 1 ;;
+          esac
+          key="prod/${STAMP:0:4}/${STAMP:4:2}/${STAMP:6:2}/$(basename "$f")"
+          aws s3 cp "$f" "s3://sherivs-db-backups/$key" --endpoint-url "$ENDPOINT" --only-show-errors
+          # Confirm the object landed with the expected size.
+          remote="$(aws s3api head-object --bucket sherivs-db-backups --key "$key" --endpoint-url "$ENDPOINT" --query ContentLength --output text)"
+          [ "$remote" = "$(stat -c %s "$f")" ] || { echo "::error::R2 object size mismatch"; exit 1; }
+          echo "- R2 (EU): $key ($remote bytes)" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # GitHub artifact is a short-lived second copy. The 90-day copy is in R2
+      # because this repository is public and artifacts are downloadable.
+      - name: Upload encrypted backup to GitHub (7 days)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: sherivs-prod-db-${{ env.STAMP }}
           path: backup-out/*.dump.gpg
-          retention-days: 90
+          retention-days: 7
           if-no-files-found: error
           compression-level: 0
+
+  restore_test:
+    name: R2 restore test (pg_restore --list only)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.restore_test }}
+    needs: backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check secrets are configured
+        env:
+          PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+        run: |
+          [ -n "$PASSPHRASE" ] || { echo "::error::BACKUP_PASSPHRASE secret is not set"; exit 1; }
+          [ -n "$R2_ACCOUNT_ID" ] || { echo "::error::R2_ACCOUNT_ID secret is not set"; exit 1; }
+          [ -n "$R2_ACCESS_KEY_ID" ] || { echo "::error::R2_ACCESS_KEY_ID secret is not set"; exit 1; }
+          [ -n "$R2_SECRET_ACCESS_KEY" ] || { echo "::error::R2_SECRET_ACCESS_KEY secret is not set"; exit 1; }
+
+      - name: Install pg_restore 17 (PGDG)
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17 gnupg
+          /usr/lib/postgresql/17/bin/pg_restore --version
+
+      - name: Download latest R2 object, decrypt, pg_restore --list
+        env:
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_EC2_METADATA_DISABLED: "true"
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+        run: |
+          set -euo pipefail
+          umask 077
+          BIN=/usr/lib/postgresql/17/bin
+          ENDPOINT="https://${R2_ACCOUNT_ID}.eu.r2.cloudflarestorage.com"
+          WORK="$(mktemp -d)"
+          cleanup() { rm -rf "$WORK"; }
+          trap cleanup EXIT
+
+          key="$(aws s3api list-objects-v2 \
+            --bucket sherivs-db-backups \
+            --prefix prod/ \
+            --endpoint-url "$ENDPOINT" \
+            --query 'reverse(sort_by(Contents || `[]`, &LastModified))[0].Key' \
+            --output text)"
+          [ -n "$key" ] && [ "$key" != "None" ] && [ "$key" != "null" ] \
+            || { echo "::error::no objects under prod/ in sherivs-db-backups"; exit 1; }
+          case "$key" in
+            *.dump.gpg) ;;
+            *) echo "::error::latest object is not an encrypted dump"; exit 1 ;;
+          esac
+
+          aws s3 cp "s3://sherivs-db-backups/$key" "$WORK/backup.dump.gpg" --endpoint-url "$ENDPOINT" --only-show-errors
+          enc_size="$(stat -c %s "$WORK/backup.dump.gpg")"
+          [ "$enc_size" -gt 0 ] || { echo "::error::downloaded object is empty"; exit 1; }
+
+          gpg --batch --quiet --pinentry-mode loopback --passphrase-fd 3 \
+            --decrypt --output "$WORK/verify.dump" "$WORK/backup.dump.gpg" 3<<<"$BACKUP_PASSPHRASE"
+          size="$(stat -c %s "$WORK/verify.dump")"
+          [ "$size" -gt 0 ] || { echo "::error::decrypted dump is empty"; exit 1; }
+
+          "$BIN/pg_restore" --list "$WORK/verify.dump" > "$WORK/toc.txt"
+          tables="$(awk '$4 == "TABLE" && $5 != "DATA"' "$WORK/toc.txt" | wc -l)"
+          data="$(awk '$4 == "TABLE" && $5 == "DATA"' "$WORK/toc.txt" | wc -l)"
+          rm -f "$WORK/verify.dump" "$WORK/backup.dump.gpg"
+          [ "$tables" -gt 0 ] || { echo "::error::no tables in dump"; exit 1; }
+
+          {
+            echo "### R2 restore test (list only, no database)"
+            echo "- object: $key ($enc_size bytes)"
+            echo "- decrypted size (deleted): $size bytes"
+            echo "- tables: $tables (with data entries: $data)"
+            echo "- pg_restore --list: ok"
+          } | tee -a "$GITHUB_STEP_SUMMARY"

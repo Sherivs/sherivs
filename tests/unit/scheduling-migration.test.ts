@@ -5,11 +5,11 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const MIGRATION = readFileSync(
-  join(ROOT, "database/supabase/migrations/20261116000600_sv1_sched_data_model.sql"),
+  join(ROOT, "database/supabase/migrations/20261117002400_sv1_sched_data_model.sql"),
   "utf8",
 );
 const ROLLBACK = readFileSync(
-  join(ROOT, "database/supabase/rollbacks/20261116000600_sv1_sched_data_model.sql"),
+  join(ROOT, "database/supabase/rollbacks/20261117002400_sv1_sched_data_model.sql"),
   "utf8",
 );
 const ISOLATION_TEST = readFileSync(

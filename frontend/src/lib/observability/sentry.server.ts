@@ -1,6 +1,7 @@
 /** Server (Vercel function) Sentry init. Staging-only; fail closed otherwise. */
 import * as Sentry from "@sentry/tanstackstart-react";
 import { sentryOptions, type SentryEnv } from "./sentry-config";
+import { SENTRY_SWITCH_ENV } from "./vendor-switches";
 
 export function readServerSentryEnv(env: NodeJS.ProcessEnv = process.env): SentryEnv {
   return {
@@ -11,6 +12,7 @@ export function readServerSentryEnv(env: NodeJS.ProcessEnv = process.env): Sentr
     viteAppEnv: env.VITE_APP_ENV,
     vercelEnv: env.VERCEL_ENV,
     release: env.VERCEL_GIT_COMMIT_SHA,
+    switchValue: env[SENTRY_SWITCH_ENV],
   };
 }
 
