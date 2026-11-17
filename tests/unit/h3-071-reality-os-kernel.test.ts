@@ -32,7 +32,10 @@ const OTHER_TENANT = "tenant_omega";
 /** The composition-level allowlist used in happy-path tests. */
 const ALLOWLIST = ["composition_unit", "core.entity", "core.relationship", "core.event"];
 
-function envelope(objectType: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function envelope(
+  objectType: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     objectType,
     schemaVersion: "1.0",
@@ -48,7 +51,10 @@ function envelope(objectType: string, overrides: Record<string, unknown> = {}): 
   };
 }
 
-function objectMember(key: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function objectMember(
+  key: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     kind: "object",
     key,
@@ -75,11 +81,18 @@ function relationshipMember(
   };
 }
 
-function eventMember(key: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+function eventMember(
+  key: string,
+  overrides: Record<string, unknown> = {},
+): Record<string, unknown> {
   return {
     kind: "event",
     key,
-    draft: { eventType: "composition.recorded", aggregateType: "composition", aggregateId: "composition:1" },
+    draft: {
+      eventType: "composition.recorded",
+      aggregateType: "composition",
+      aggregateId: "composition:1",
+    },
     envelope: envelope("core.event"),
     ...overrides,
   };
@@ -104,9 +117,11 @@ function declaration(overrides: Record<string, unknown> = {}): Record<string, un
 
 function composedUnit(): ComposedKernelUnit {
   const parsed = parseCompositionDeclaration(declaration());
-  if (!parsed.ok) throw new Error(`fixture declaration must parse: ${JSON.stringify(parsed.issues)}`);
+  if (!parsed.ok)
+    throw new Error(`fixture declaration must parse: ${JSON.stringify(parsed.issues)}`);
   const composed = composeKernelUnit(parsed.value, NOW, ALLOWLIST);
-  if (!composed.ok) throw new Error(`fixture composition must compose: ${JSON.stringify(composed.issues)}`);
+  if (!composed.ok)
+    throw new Error(`fixture composition must compose: ${JSON.stringify(composed.issues)}`);
   return composed.value;
 }
 
@@ -197,10 +212,7 @@ describe("H3-071 parseCompositionDeclaration", () => {
 
   it("rejects relationship endpoints that dangle, bind to non-objects, or self-reference", () => {
     const dangling = declaration({
-      members: [
-        objectMember("obj:root"),
-        relationshipMember("rel:1", "obj:root", "obj:missing"),
-      ],
+      members: [objectMember("obj:root"), relationshipMember("rel:1", "obj:root", "obj:missing")],
     });
     const parsedDangling = parseCompositionDeclaration(dangling);
     expect(parsedDangling.ok).toBe(false);
@@ -382,7 +394,9 @@ describe("H3-071 composeKernelUnit", () => {
       declaration({
         members: [
           objectMember("obj:root"),
-          eventMember("evt:1", { draft: { eventType: "", aggregateType: "composition", aggregateId: "x" } }),
+          eventMember("evt:1", {
+            draft: { eventType: "", aggregateType: "composition", aggregateId: "x" },
+          }),
         ],
       }),
     );
@@ -477,8 +491,14 @@ describe("H3-071 evaluateCompositionInvariants", () => {
   it("flags an anonymous member draft stripped of its envelope", () => {
     const unit = composedUnit();
     const first = unit.objects[0];
-    const { object_type: _t, schema_version: _s, trace_id: _tr, correlation_id: _c, created_by: _cb, ...bare } =
-      first.draft;
+    const {
+      object_type: _t,
+      schema_version: _s,
+      trace_id: _tr,
+      correlation_id: _c,
+      created_by: _cb,
+      ...bare
+    } = first.draft;
     const tampered: ComposedKernelUnit = {
       ...unit,
       objects: unit.objects.map((object) =>
@@ -519,12 +539,15 @@ describe("H3-071 evaluateCompositionInvariants", () => {
     const danglingReport = evaluateCompositionInvariants(dangling);
     expect(danglingReport.satisfied).toBe(false);
     expect(
-      danglingReport.checks.find((check) => check.id === "relationship_endpoints_resolved")?.satisfied,
+      danglingReport.checks.find((check) => check.id === "relationship_endpoints_resolved")
+        ?.satisfied,
     ).toBe(false);
 
     const entryless: ComposedKernelUnit = { ...unit, entryKey: "obj:missing" };
     const entryReport = evaluateCompositionInvariants(entryless);
     expect(entryReport.satisfied).toBe(false);
-    expect(entryReport.checks.find((check) => check.id === "entry_resolvable")?.satisfied).toBe(false);
+    expect(entryReport.checks.find((check) => check.id === "entry_resolvable")?.satisfied).toBe(
+      false,
+    );
   });
 });

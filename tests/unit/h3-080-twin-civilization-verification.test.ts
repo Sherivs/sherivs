@@ -128,7 +128,19 @@ function activeAgreement(): FederationAgreement {
  * ────────────────────────────────────────────────────────────*/
 describe("G-080: accessGrant escalation attempts", () => {
   it("refuses every forged grant value with a typed shape failure", () => {
-    for (const forged of ["full", "read", "write", "admin", "none ", "None", "NONE", true, 1, null, ["none"]]) {
+    for (const forged of [
+      "full",
+      "read",
+      "write",
+      "admin",
+      "none ",
+      "None",
+      "NONE",
+      true,
+      1,
+      null,
+      ["none"],
+    ]) {
       const parsed = parseFederationAgreement(agreementFixture({ accessGrant: forged }));
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
@@ -195,7 +207,14 @@ describe("G-080: accessGrant escalation attempts", () => {
 
   it("denies forged or case-mangled gate actions — the gate speaks only its vocabulary", () => {
     const active = activeAgreement();
-    for (const action of ["grant_access", "issue_grant", "promote_envelope", "EXCHANGE_STATE", "exchange_state ", " exchange_state"]) {
+    for (const action of [
+      "grant_access",
+      "issue_grant",
+      "promote_envelope",
+      "EXCHANGE_STATE",
+      "exchange_state ",
+      " exchange_state",
+    ]) {
       const denied = federationGate({ action, agreement: active, now: NOW });
       expect(denied.decision).toBe("DENY");
       if (denied.decision === "DENY") expect(denied.reason).toMatch(/unknown federation action/i);
@@ -217,7 +236,9 @@ describe("G-080: accessGrant escalation attempts", () => {
       "parseSharedStateEnvelope",
       "parseTwinRelationship",
     ]);
-    expect(fns.filter((name) => /grant/i.test(name) && name !== "evaluateTwinDataAccessRequest")).toEqual([]);
+    expect(
+      fns.filter((name) => /grant/i.test(name) && name !== "evaluateTwinDataAccessRequest"),
+    ).toEqual([]);
   });
 });
 
@@ -226,7 +247,17 @@ describe("G-080: accessGrant escalation attempts", () => {
  * ────────────────────────────────────────────────────────────*/
 describe("G-080: authority-mirror forgery attempts", () => {
   it("refuses every forged authority value with a typed shape failure", () => {
-    for (const forged of ["grant", "owner", "write", "act", "Mirror", "MIRROR", "mirror ", true, 0]) {
+    for (const forged of [
+      "grant",
+      "owner",
+      "write",
+      "act",
+      "Mirror",
+      "MIRROR",
+      "mirror ",
+      true,
+      0,
+    ]) {
       const parsed = parseSharedStateEnvelope(envelopeFixture({ authority: forged }));
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
@@ -268,7 +299,10 @@ describe("G-080: authority-mirror forgery attempts", () => {
       expect(reparsed.ok).toBe(false);
       if (!reparsed.ok) expect(reparsed.reason).toBe("invalid_shape");
     }
-    const verdict = evaluateTwinDataAccessRequest({ twinId: "twin:tenant_a-1", requestedAction: "act_on_mirror" });
+    const verdict = evaluateTwinDataAccessRequest({
+      twinId: "twin:tenant_a-1",
+      requestedAction: "act_on_mirror",
+    });
     expect(verdict.granted).toBe(false);
     const grants: readonly [] = TWIN_PRESENCE_GRANTS;
     expect(grants).toHaveLength(0);
@@ -348,7 +382,9 @@ describe("G-080: agreement replay across field-path renames", () => {
   });
 
   it("FINDING F1a: two agreements sharing one agreementId with divergent scopes both parse — the surface performs no cross-artifact replay binding", () => {
-    const original = parseFederationAgreement(agreementFixture({ state: "ACTIVE", approvalRef: "approval:fed-1" }));
+    const original = parseFederationAgreement(
+      agreementFixture({ state: "ACTIVE", approvalRef: "approval:fed-1" }),
+    );
     const replayed = parseFederationAgreement(
       agreementFixture({
         state: "ACTIVE",
@@ -362,10 +398,20 @@ describe("G-080: agreement replay across field-path renames", () => {
       // Containment that still holds: each gate evaluation honors only its
       // own artifact's scope — the renamed path never bleeds into the original.
       expect(
-        federationGate({ action: "exchange_state", agreement: original.value, fieldPath: "state.metrics.load_renamed", now: NOW }).decision,
+        federationGate({
+          action: "exchange_state",
+          agreement: original.value,
+          fieldPath: "state.metrics.load_renamed",
+          now: NOW,
+        }).decision,
       ).toBe("DENY");
       expect(
-        federationGate({ action: "exchange_state", agreement: replayed.value, fieldPath: DECLARED_PATH, now: NOW }).decision,
+        federationGate({
+          action: "exchange_state",
+          agreement: replayed.value,
+          fieldPath: DECLARED_PATH,
+          now: NOW,
+        }).decision,
       ).toBe("DENY");
     }
   });
@@ -447,7 +493,9 @@ describe("G-080: terminal-revocation resurrection attempts", () => {
 describe("G-080: cross-tenant pairing and transfer smuggling", () => {
   it("refuses a same-tenant pairing — including the swap attack", () => {
     const parsed = parseFederationAgreement(
-      agreementFixture({ counterparty: twinRef({ twinId: "twin:tenant_b-1", homeTenantId: "tenant_a" }, "tenant_a") }),
+      agreementFixture({
+        counterparty: twinRef({ twinId: "twin:tenant_b-1", homeTenantId: "tenant_a" }, "tenant_a"),
+      }),
     );
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) {
@@ -483,10 +531,20 @@ describe("G-080: cross-tenant pairing and transfer smuggling", () => {
     // smuggled envelope still cannot widen the agreement's own scope.
     const active = activeAgreement();
     expect(
-      federationGate({ action: "exchange_state", agreement: active, fieldPath: DECLARED_PATH, now: NOW }).decision,
+      federationGate({
+        action: "exchange_state",
+        agreement: active,
+        fieldPath: DECLARED_PATH,
+        now: NOW,
+      }).decision,
     ).toBe("ALLOW");
     expect(
-      federationGate({ action: "exchange_state", agreement: active, fieldPath: "tenant_x.secrets.raw", now: NOW }).decision,
+      federationGate({
+        action: "exchange_state",
+        agreement: active,
+        fieldPath: "tenant_x.secrets.raw",
+        now: NOW,
+      }).decision,
     ).toBe("DENY");
   });
 
@@ -516,9 +574,7 @@ describe("G-080: restricted-data-without-redaction attempts", () => {
 
   it("refuses case-mangled classification re-spellings — no near-miss evades the redaction rule", () => {
     for (const classification of ["Restricted", "RESTRICTED", "restrict ed", "restricted "]) {
-      const parsed = parseSharedStateEnvelope(
-        envelopeFixture({ classification, redacted: false }),
-      );
+      const parsed = parseSharedStateEnvelope(envelopeFixture({ classification, redacted: false }));
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
     }
@@ -548,7 +604,16 @@ describe("G-080: payload leakage attempts (digest-only law)", () => {
   const PAYLOAD = JSON.stringify({ secretField: "the mirrored content itself" });
 
   it("refuses payloads inlined under every candidate value key — the strict surface has no side doors", () => {
-    for (const key of ["payload", "data", "content", "value", "body", "state", "blob", "contentBytes"]) {
+    for (const key of [
+      "payload",
+      "data",
+      "content",
+      "value",
+      "body",
+      "state",
+      "blob",
+      "contentBytes",
+    ]) {
       const parsed = parseSharedStateEnvelope(envelopeFixture({ [key]: PAYLOAD }));
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
@@ -556,7 +621,13 @@ describe("G-080: payload leakage attempts (digest-only law)", () => {
   });
 
   it("refuses payload-shaped digests — uppercase hex, short hex, JSON, objects", () => {
-    for (const forgedDigest of ["A".repeat(64), "a".repeat(63), JSON.stringify({ payload: 1 }), { digest: DIGEST }, `${DIGEST}${DIGEST}`]) {
+    for (const forgedDigest of [
+      "A".repeat(64),
+      "a".repeat(63),
+      JSON.stringify({ payload: 1 }),
+      { digest: DIGEST },
+      `${DIGEST}${DIGEST}`,
+    ]) {
       const parsed = parseSharedStateEnvelope(envelopeFixture({ payloadDigest: forgedDigest }));
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");

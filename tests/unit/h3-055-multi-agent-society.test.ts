@@ -160,10 +160,7 @@ describe("society definition parsing", () => {
   it("denies unknown fields on a member (strict shape, no smuggled authority)", () => {
     const smuggled = {
       ...society(),
-      members: [
-        { ...member(), tenantRef: "tenant_other" },
-        member({ memberRef: "actor_2" }),
-      ],
+      members: [{ ...member(), tenantRef: "tenant_other" }, member({ memberRef: "actor_2" })],
     };
     expect(parseSocietyDefinition(smuggled).ok).toBe(false);
   });
@@ -201,7 +198,10 @@ describe("society lifecycle", () => {
     const withoutApproval = transitionSociety("suspended", "active", null);
     expect(withoutApproval).toMatchObject({ ok: false, code: "approval_required" });
     expectOk(
-      transitionSociety("suspended", "active", { approvalRef: "approval_2", approvedBy: "human_owner" }),
+      transitionSociety("suspended", "active", {
+        approvalRef: "approval_2",
+        approvedBy: "human_owner",
+      }),
     );
   });
 
@@ -211,12 +211,17 @@ describe("society lifecycle", () => {
       code: "approval_required",
     });
     expectOk(
-      transitionSociety("active", "dissolved", { approvalRef: "approval_3", approvedBy: "human_owner" }),
+      transitionSociety("active", "dissolved", {
+        approvalRef: "approval_3",
+        approvedBy: "human_owner",
+      }),
     );
-    expect(transitionSociety("dissolved", "active", {
-      approvalRef: "approval_4",
-      approvedBy: "human_owner",
-    })).toMatchObject({ ok: false, code: "transition_not_listed" });
+    expect(
+      transitionSociety("dissolved", "active", {
+        approvalRef: "approval_4",
+        approvedBy: "human_owner",
+      }),
+    ).toMatchObject({ ok: false, code: "transition_not_listed" });
   });
 
   it("denies unlisted transitions", () => {
@@ -278,12 +283,18 @@ describe("collective authority (intersection of grants)", () => {
     const suspendedMember = society({
       members: [
         member({ memberRef: "actor_1", grants: ["act.read", "act.admin"] as ActionRef[] }),
-        member({ memberRef: "actor_2", grants: ["act.read"] as ActionRef[], identityLifecycle: "suspended" }),
+        member({
+          memberRef: "actor_2",
+          grants: ["act.read"] as ActionRef[],
+          identityLifecycle: "suspended",
+        }),
       ],
     });
     expect(effectiveMemberGrants(suspendedMember.members[1] as SocietyMember)).toEqual([]);
     expect(societyAuthorityIntersection(suspendedMember.members)).toEqual([]);
-    expect(evaluateCollectiveAction(suspendedMember, ACTIVE, "act.read" as ActionRef)).toMatchObject({
+    expect(
+      evaluateCollectiveAction(suspendedMember, ACTIVE, "act.read" as ActionRef),
+    ).toMatchObject({
       ok: false,
       code: "action_not_in_intersection",
     });
@@ -315,14 +326,18 @@ describe("coordination evaluation", () => {
   });
 
   it("denies an unknown sender", () => {
-    expect(evaluateCoordination(society(), ACTIVE, message({ fromRef: "actor_ghost" }))).toMatchObject({
+    expect(
+      evaluateCoordination(society(), ACTIVE, message({ fromRef: "actor_ghost" })),
+    ).toMatchObject({
       ok: false,
       code: "unknown_sender",
     });
   });
 
   it("denies an unknown recipient — coordination outside declared membership fails closed", () => {
-    expect(evaluateCoordination(society(), ACTIVE, message({ toRef: "actor_ghost" }))).toMatchObject({
+    expect(
+      evaluateCoordination(society(), ACTIVE, message({ toRef: "actor_ghost" })),
+    ).toMatchObject({
       ok: false,
       code: "unknown_recipient",
     });
@@ -339,7 +354,9 @@ describe("coordination evaluation", () => {
       ok: false,
       code: "sender_not_participating",
     });
-    expect(evaluateCoordination(mixed, ACTIVE, message({ fromRef: "actor_2", toRef: "actor_1" }))).toMatchObject({
+    expect(
+      evaluateCoordination(mixed, ACTIVE, message({ fromRef: "actor_2", toRef: "actor_1" })),
+    ).toMatchObject({
       ok: false,
       code: "recipient_not_participating",
     });
@@ -353,7 +370,9 @@ describe("coordination evaluation", () => {
   });
 
   it("denies a message aimed at a different society", () => {
-    expect(evaluateCoordination(society(), ACTIVE, message({ societyRef: "society_other" }))).toMatchObject({
+    expect(
+      evaluateCoordination(society(), ACTIVE, message({ societyRef: "society_other" })),
+    ).toMatchObject({
       ok: false,
       code: "society_mismatch",
     });
@@ -519,7 +538,9 @@ describe("collective decision resolution", () => {
       resolveCollectiveDecision(
         withObserver,
         ACTIVE,
-        decision({ ballot: [{ voterRef: "actor_watcher", choice: "affirm", rationale: "watching" }] }),
+        decision({
+          ballot: [{ voterRef: "actor_watcher", choice: "affirm", rationale: "watching" }],
+        }),
       ),
     ).toMatchObject({ ok: false, code: "unknown_voter" });
   });
@@ -699,7 +720,10 @@ describe("suspension semantics", () => {
 
 describe("society audit trail", () => {
   it("parses a fully attributed trail", () => {
-    const parsed = parseSocietyAuditTrail([entry(), entry({ entryId: "entry_2", kind: "formation" })]);
+    const parsed = parseSocietyAuditTrail([
+      entry(),
+      entry({ entryId: "entry_2", kind: "formation" }),
+    ]);
     expectOk(parsed);
     if (parsed.ok) expect(parsed.entries).toHaveLength(2);
   });
@@ -716,12 +740,21 @@ describe("society audit trail", () => {
 
   it("denies malformed entries and oversized trails", () => {
     expect(parseSocietyAuditTrail([entry({ summary: "" })]).ok).toBe(false);
-    const oversized = Array.from({ length: 65_537 }, (_, index) => entry({ entryId: `e_${index}` }));
+    const oversized = Array.from({ length: 65_537 }, (_, index) =>
+      entry({ entryId: `e_${index}` }),
+    );
     expect(parseSocietyAuditTrail(oversized).ok).toBe(false);
   });
 
   it("covers every society surface in the audit kind vocabulary", () => {
-    const kinds = ["formation", "coordination", "decision", "suspension", "output_validation", "dissolution"] as const;
+    const kinds = [
+      "formation",
+      "coordination",
+      "decision",
+      "suspension",
+      "output_validation",
+      "dissolution",
+    ] as const;
     for (const kind of kinds) {
       expect(parseSocietyAuditTrail([entry({ kind })]).ok).toBe(true);
     }

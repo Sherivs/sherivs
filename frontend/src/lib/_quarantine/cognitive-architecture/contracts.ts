@@ -372,9 +372,7 @@ export const reasoningTraceSchema = z.strictObject({
 export type ReasoningTrace = z.infer<typeof reasoningTraceSchema>;
 
 export type CognitiveParseFailureReason =
-  | "invalid_shape"
-  | "chain_of_thought_exposure"
-  | "cross_record_invariant";
+  "invalid_shape" | "chain_of_thought_exposure" | "cross_record_invariant";
 
 export interface CognitiveParseIssue {
   readonly path: string;
@@ -580,7 +578,8 @@ export function verifyCognitiveOutput(
     return {
       status: "unsupported",
       outputId: output.outputId,
-      reason: "no evidence citations — uncited output is flagged as hallucination risk and fails verification",
+      reason:
+        "no evidence citations — uncited output is flagged as hallucination risk and fails verification",
     };
   }
   return { status: "verified", outputId: output.outputId, citationCount: output.citations.length };
@@ -620,9 +619,7 @@ export type ConsensusVerdict =
  * it never resolves to a majority-branded consensus silently, and a
  * single-response ensemble fails closed (no corroboration exists).
  */
-export function consensusVerdict(
-  responses: readonly EnsembleResponse[],
-): ConsensusVerdict {
+export function consensusVerdict(responses: readonly EnsembleResponse[]): ConsensusVerdict {
   if (responses.length < 2) {
     return {
       status: "disagreement",
@@ -843,15 +840,13 @@ export type BeliefRevisionVerdict =
  *   confidence — contradiction is contested cognition (phase doc §AV), it
  *   escalates rather than overwrites.
  */
-export function reviseBelief(
-  worldModel: WorldModel,
-  incoming: Belief,
-): BeliefRevisionVerdict {
+export function reviseBelief(worldModel: WorldModel, incoming: Belief): BeliefRevisionVerdict {
   if (incoming.derivation !== COGNITIVE_OUTPUT_DERIVED_LABEL) {
     return {
       accepted: false,
       beliefId: incoming.beliefId,
-      reason: "only derived beliefs may enter a world model — canonical-labelled values are not cognition",
+      reason:
+        "only derived beliefs may enter a world model — canonical-labelled values are not cognition",
     };
   }
   if (incoming.provenance.tenantId !== worldModel.tenantId) {
@@ -870,7 +865,8 @@ export function reviseBelief(
     return {
       accepted: false,
       beliefId: incoming.beliefId,
-      reason: "agent revision lowers confidence on an existing belief — contested cognition must escalate, not overwrite",
+      reason:
+        "agent revision lowers confidence on an existing belief — contested cognition must escalate, not overwrite",
     };
   }
   return { accepted: true, beliefId: incoming.beliefId };

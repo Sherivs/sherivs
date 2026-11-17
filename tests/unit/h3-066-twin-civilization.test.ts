@@ -44,7 +44,10 @@ const PROVENANCE = {
   recordedAt: NOW,
 };
 
-function twinRef(overrides: Record<string, unknown> = {}, tenantId = "tenant_a"): Record<string, unknown> {
+function twinRef(
+  overrides: Record<string, unknown> = {},
+  tenantId = "tenant_a",
+): Record<string, unknown> {
   return {
     twinId: `twin:${tenantId}-1`,
     twinKind: "entity",
@@ -174,7 +177,9 @@ describe("federation agreement (kernel federation:agree)", () => {
   });
 
   it("accepts an approved state when authorization evidence is present", () => {
-    const parsed = parseFederationAgreement(agreement({ state: "APPROVED", approvalRef: "approval:fed-1" }));
+    const parsed = parseFederationAgreement(
+      agreement({ state: "APPROVED", approvalRef: "approval:fed-1" }),
+    );
     expect(parsed.ok).toBe(true);
   });
 
@@ -205,7 +210,9 @@ describe("federation agreement (kernel federation:agree)", () => {
 
   it("bounds the shared scope to the declared ceiling", () => {
     const paths = Array.from({ length: MAX_SHARED_FIELD_PATHS + 1 }, (_, i) => `state.field${i}`);
-    expect(federationAgreementSchema.safeParse(agreement({ sharedFieldPaths: paths })).success).toBe(false);
+    expect(
+      federationAgreementSchema.safeParse(agreement({ sharedFieldPaths: paths })).success,
+    ).toBe(false);
   });
 });
 
@@ -254,13 +261,17 @@ describe("shared-state envelope (kernel federation:share-state)", () => {
   });
 
   it("refuses an unredacted restricted envelope — redaction fails closed", () => {
-    const parsed = parseSharedStateEnvelope(envelope({ classification: "restricted", redacted: false }));
+    const parsed = parseSharedStateEnvelope(
+      envelope({ classification: "restricted", redacted: false }),
+    );
     expect(parsed.ok).toBe(false);
     if (!parsed.ok) {
       expect(parsed.reason).toBe("redaction_violation");
       expect(parsed.issues[0].path).toBe("redacted");
     }
-    const redacted = parseSharedStateEnvelope(envelope({ classification: "restricted", redacted: true }));
+    const redacted = parseSharedStateEnvelope(
+      envelope({ classification: "restricted", redacted: true }),
+    );
     expect(redacted.ok).toBe(true);
   });
 
@@ -308,7 +319,11 @@ describe("cross-twin relationships (Constitution §11)", () => {
     kind: "federates_with",
     fromTenantId: "tenant_a",
     toTenantId: "tenant_b",
-    confidence: { value: 0.8, derivedFrom: ["evidence_quality"], method: "policy-weighted aggregation" },
+    confidence: {
+      value: 0.8,
+      derivedFrom: ["evidence_quality"],
+      method: "policy-weighted aggregation",
+    },
     provenance: PROVENANCE,
     mappedAt: NOW,
   });
@@ -330,9 +345,7 @@ describe("cross-twin relationships (Constitution §11)", () => {
   });
 
   it("refuses unexplained confidence — a bare number is not confidence", () => {
-    expect(
-      parseTwinRelationship({ ...relationship(), confidence: { value: 0.9 } }).ok,
-    ).toBe(false);
+    expect(parseTwinRelationship({ ...relationship(), confidence: { value: 0.9 } }).ok).toBe(false);
   });
 
   it("refuses kinds outside the neutral vocabulary", () => {
@@ -356,7 +369,11 @@ describe("federation gate (§16 vocabulary; kernel requiresApprovalFor)", () => 
   });
 
   it("requires authorization to record an agreement — fail closed", () => {
-    const unapproved = federationGate({ action: "record_agreement", agreement: proposed, now: NOW });
+    const unapproved = federationGate({
+      action: "record_agreement",
+      agreement: proposed,
+      now: NOW,
+    });
     expect(unapproved.decision).toBe("REQUIRE_APPROVAL");
     const approved = federationGate({
       action: "record_agreement",
@@ -368,9 +385,14 @@ describe("federation gate (§16 vocabulary; kernel requiresApprovalFor)", () => 
   });
 
   it("names cross-jurisdiction federation in the refusal", () => {
-    const refused = federationGate({ action: "record_agreement", agreement: crossJurisdiction, now: NOW });
+    const refused = federationGate({
+      action: "record_agreement",
+      agreement: crossJurisdiction,
+      now: NOW,
+    });
     expect(refused.decision).toBe("REQUIRE_APPROVAL");
-    if (refused.decision === "REQUIRE_APPROVAL") expect(refused.reason).toMatch(/cross-jurisdiction/i);
+    if (refused.decision === "REQUIRE_APPROVAL")
+      expect(refused.reason).toMatch(/cross-jurisdiction/i);
   });
 
   it("denies state exchange outside an ACTIVE agreement", () => {
@@ -473,7 +495,9 @@ describe("the twin is not a permission bypass (Constitution §10, typed)", () =>
     const parsed = parseSharedStateEnvelope(envelope());
     if (!parsed.ok) throw new Error("fixture refused");
     expect(parsed.value.authority).toBe("mirror");
-    const active = parseFederationAgreement(agreement({ state: "ACTIVE", approvalRef: "approval:fed-1" }));
+    const active = parseFederationAgreement(
+      agreement({ state: "ACTIVE", approvalRef: "approval:fed-1" }),
+    );
     if (!active.ok) throw new Error("fixture refused");
     expect(active.value.accessGrant).toBe("none");
   });

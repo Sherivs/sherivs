@@ -176,9 +176,7 @@ export type EvolutionAutonomyDecision =
       readonly changeScope: ChangeScope;
       readonly permissionScopeImpact: PermissionScopeImpact;
       readonly reason:
-        | "security_boundary_scope"
-        | "access_widening"
-        | "security_boundary_and_access_widening";
+        "security_boundary_scope" | "access_widening" | "security_boundary_and_access_widening";
       readonly detail: string;
     };
 

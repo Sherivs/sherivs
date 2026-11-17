@@ -273,10 +273,10 @@ describe("attack 2 — writeback bypass (forged / absent / expired approvals)", 
 
   it("denies absolute-path target subjects at shape — the bridge cannot target filesystem/canonical paths", () => {
     for (const target of ["/canonical/records/1", "/etc/passwd"]) {
-      const decision = decideSimulatedWriteback(
-        proposal({ targetSubjectRef: target }),
-        { nowMs: NOW_MS, approval: forgedApproval(approval()) },
-      );
+      const decision = decideSimulatedWriteback(proposal({ targetSubjectRef: target }), {
+        nowMs: NOW_MS,
+        approval: forgedApproval(approval()),
+      });
       expect(decision).toEqual({ decision: "DENY", reason: "invalid_input" });
     }
   });
@@ -285,10 +285,10 @@ describe("attack 2 — writeback bypass (forged / absent / expired approvals)", 
     // "./relative/ref" passes SubjectRefSchema's leading-slash refine and
     // reaches the approval gate; it is still contained there with a typed
     // denial (see Known Risks in the H3-075 report for the refine gap).
-    const decision = decideSimulatedWriteback(
-      proposal({ targetSubjectRef: "./relative/ref" }),
-      { nowMs: NOW_MS, approval: forgedApproval(approval()) },
-    );
+    const decision = decideSimulatedWriteback(proposal({ targetSubjectRef: "./relative/ref" }), {
+      nowMs: NOW_MS,
+      approval: forgedApproval(approval()),
+    });
     expect(decision).toEqual({ decision: "DENY", reason: "approval_mismatch_subject" });
   });
 
@@ -411,9 +411,9 @@ describe("attack 2 — writeback bypass (forged / absent / expired approvals)", 
       expiresAtMs: NOW_MS + 60_000,
       tenantRef: TENANT_A,
     });
-    expect(() =>
-      decideSimulatedWriteback(proposal(), { nowMs: NOW_MS, approval: forged }),
-    ).toThrow(TypeError);
+    expect(() => decideSimulatedWriteback(proposal(), { nowMs: NOW_MS, approval: forged })).toThrow(
+      TypeError,
+    );
   });
 
   it("FINDING H3-075/F-4 — an expired or validity-inverted embedded outcome is granted ALLOW at the bridge: outcome freshness is never re-checked", () => {
@@ -422,7 +422,9 @@ describe("attack 2 — writeback bypass (forged / absent / expired approvals)", 
     // surface. Observed: the gate checks approval/subject/policy/audit but
     // never the outcome's validity window.
     const expiredOutcome = decideSimulatedWriteback(
-      proposal({ outcome: outcome({ generatedAtMs: NOW_MS - 20_000, validUntilMs: NOW_MS - 10_000 }) }),
+      proposal({
+        outcome: outcome({ generatedAtMs: NOW_MS - 20_000, validUntilMs: NOW_MS - 10_000 }),
+      }),
       { nowMs: NOW_MS, approval: forgedApproval(approval()) },
     );
     expect(expiredOutcome).toEqual({ decision: "ALLOW" });
@@ -454,10 +456,9 @@ describe("attack 2 — writeback bypass (forged / absent / expired approvals)", 
 
 describe("attack 3 — tenant smuggling across scenario / run / outcome", () => {
   it("denies run-only tenant mismatch", () => {
-    const result = validateSimulationRunBundle(
-      bundle({ run: run({ tenantRef: TENANT_B }) }),
-      { nowMs: NOW_MS },
-    );
+    const result = validateSimulationRunBundle(bundle({ run: run({ tenantRef: TENANT_B }) }), {
+      nowMs: NOW_MS,
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(issueCodes(result)).toEqual(["tenant_mismatch"]);
   });
@@ -487,10 +488,9 @@ describe("attack 3 — tenant smuggling across scenario / run / outcome", () => 
 
   it("denies case-variant and whitespace-padded tenant smuggling — no normalization collapses tenant identities", () => {
     for (const smuggled of ["Tenant-alpha", " tenant-alpha", `${TENANT_A}\u0000`]) {
-      const asRun = validateSimulationRunBundle(
-        bundle({ run: run({ tenantRef: smuggled }) }),
-        { nowMs: NOW_MS },
-      );
+      const asRun = validateSimulationRunBundle(bundle({ run: run({ tenantRef: smuggled }) }), {
+        nowMs: NOW_MS,
+      });
       expect(asRun.ok, `smuggled tenant ${JSON.stringify(smuggled)} (run) must be denied`).toBe(
         false,
       );
@@ -500,9 +500,10 @@ describe("attack 3 — tenant smuggling across scenario / run / outcome", () => 
         bundle({ outcomes: [outcome({ tenantRef: smuggled })] }),
         { nowMs: NOW_MS },
       );
-      expect(asOutcome.ok, `smuggled tenant ${JSON.stringify(smuggled)} (outcome) must be denied`).toBe(
-        false,
-      );
+      expect(
+        asOutcome.ok,
+        `smuggled tenant ${JSON.stringify(smuggled)} (outcome) must be denied`,
+      ).toBe(false);
       if (!asOutcome.ok) expect(issueCodes(asOutcome)).toContain("tenant_mismatch");
     }
   });
@@ -566,7 +567,9 @@ describe("attack 4 — expiry evasion via clock manipulation", () => {
     expect(expiredApprovalAllowed).toEqual({ decision: "ALLOW" });
 
     const expiredOutcomeValid = validateSimulationRunBundle(
-      bundle({ outcomes: [outcome({ generatedAtMs: NOW_MS - 20_000, validUntilMs: NOW_MS - 10_000 })] }),
+      bundle({
+        outcomes: [outcome({ generatedAtMs: NOW_MS - 20_000, validUntilMs: NOW_MS - 10_000 })],
+      }),
       { nowMs: NAN_CLOCK },
     );
     expect(expiredOutcomeValid.ok).toBe(true);
@@ -590,7 +593,11 @@ describe("attack 4 — expiry evasion via clock manipulation", () => {
           outcome({
             generatedAtMs: NOW_MS + 86_400_000,
             validUntilMs: NOW_MS + 86_400_000 * 2,
-            provenance: { declaredBy: "principal:attacker", authority: "forged", recordedAtMs: NOW_MS + 86_400_000 },
+            provenance: {
+              declaredBy: "principal:attacker",
+              authority: "forged",
+              recordedAtMs: NOW_MS + 86_400_000,
+            },
           }),
         ],
       }),
@@ -609,19 +616,19 @@ describe("attack 5 — unbounded cardinality attacks", () => {
     const params = (n: number): RawRecord[] =>
       Array.from({ length: n }, (_, i) => ({ key: `param-${i}`, value: i, unit: "per-step" }));
 
-    expect(
-      ScenarioDefinitionSchema.safeParse(scenario({ parameters: params(64) })).success,
-    ).toBe(true);
-    expect(
-      ScenarioDefinitionSchema.safeParse(scenario({ parameters: params(65) })).success,
-    ).toBe(false);
+    expect(ScenarioDefinitionSchema.safeParse(scenario({ parameters: params(64) })).success).toBe(
+      true,
+    );
+    expect(ScenarioDefinitionSchema.safeParse(scenario({ parameters: params(65) })).success).toBe(
+      false,
+    );
   });
 
   it("honours the opt-in runaway guard when the caller supplies maxHorizonSteps", () => {
-    const result = validateSimulationRunBundle(
-      bundle({ run: run({ horizonSteps: 11 }) }),
-      { nowMs: NOW_MS, maxHorizonSteps: 5 },
-    );
+    const result = validateSimulationRunBundle(bundle({ run: run({ horizonSteps: 11 }) }), {
+      nowMs: NOW_MS,
+      maxHorizonSteps: 5,
+    });
     expect(result.ok).toBe(false);
     if (!result.ok) {
       const codes = issueCodes(result);

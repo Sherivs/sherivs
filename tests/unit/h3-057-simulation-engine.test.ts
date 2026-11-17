@@ -122,9 +122,7 @@ describe("scenario definition schema", () => {
   });
 
   it("rejects a scenario with an empty assumptions array", () => {
-    expect(
-      ScenarioDefinitionSchema.safeParse(scenario({ assumptions: [] })).success,
-    ).toBe(false);
+    expect(ScenarioDefinitionSchema.safeParse(scenario({ assumptions: [] })).success).toBe(false);
   });
 
   it("rejects anonymous scenarios — provenance is mandatory (AGENTS §12)", () => {
@@ -134,9 +132,9 @@ describe("scenario definition schema", () => {
   });
 
   it("fails closed on canonical writeback: the literal admits only `false` (AGENTS §9)", () => {
-    expect(
-      ScenarioDefinitionSchema.safeParse(scenario({ canonicalWriteback: true })).success,
-    ).toBe(false);
+    expect(ScenarioDefinitionSchema.safeParse(scenario({ canonicalWriteback: true })).success).toBe(
+      false,
+    );
     expect(
       ScenarioDefinitionSchema.safeParse(scenario({ canonicalWriteback: "approved" })).success,
     ).toBe(false);
@@ -148,35 +146,28 @@ describe("scenario definition schema", () => {
   });
 
   it("rejects a scenario that names no subjects — a scenario reads something specific", () => {
-    expect(
-      ScenarioDefinitionSchema.safeParse(scenario({ subjectRefs: [] })).success,
-    ).toBe(false);
+    expect(ScenarioDefinitionSchema.safeParse(scenario({ subjectRefs: [] })).success).toBe(false);
   });
 });
 
 describe("run request schema", () => {
   it("rejects an unisolated execution — only `isolated` parses (fail-closed literal)", () => {
     expect(
-      SimulationRunBundleSchema.safeParse(
-        bundle({ run: run({ executionIsolation: "shared" }) }),
-      ).success,
+      SimulationRunBundleSchema.safeParse(bundle({ run: run({ executionIsolation: "shared" }) }))
+        .success,
     ).toBe(false);
   });
 
   it("rejects an unseeded run — reproducibility is mandatory", () => {
     const raw = run();
     delete (raw as Record<string, unknown>).seed;
-    expect(
-      SimulationRunBundleSchema.safeParse(bundle({ run: raw })).success,
-    ).toBe(false);
+    expect(SimulationRunBundleSchema.safeParse(bundle({ run: raw })).success).toBe(false);
   });
 
   it("rejects a run without a declared purpose (purpose limitation, AGENTS §16)", () => {
     const raw = run();
     delete (raw as Record<string, unknown>).purpose;
-    expect(
-      SimulationRunBundleSchema.safeParse(bundle({ run: raw })).success,
-    ).toBe(false);
+    expect(SimulationRunBundleSchema.safeParse(bundle({ run: raw })).success).toBe(false);
   });
 });
 
@@ -190,15 +181,9 @@ describe("simulated outcome schema", () => {
   });
 
   it("fails closed on origin forgery — simulated output can never self-label as observed or canonical", () => {
-    expect(
-      SimulatedOutcomeSchema.safeParse(outcome({ origin: "observed" })).success,
-    ).toBe(false);
-    expect(
-      SimulatedOutcomeSchema.safeParse(outcome({ origin: "canonical" })).success,
-    ).toBe(false);
-    expect(
-      SimulatedOutcomeSchema.safeParse(outcome({ origin: undefined })).success,
-    ).toBe(false);
+    expect(SimulatedOutcomeSchema.safeParse(outcome({ origin: "observed" })).success).toBe(false);
+    expect(SimulatedOutcomeSchema.safeParse(outcome({ origin: "canonical" })).success).toBe(false);
+    expect(SimulatedOutcomeSchema.safeParse(outcome({ origin: undefined })).success).toBe(false);
   });
 
   it("rejects confidence outside [0, 1]", () => {
@@ -247,10 +232,9 @@ describe("bundle cross-field validation (fail closed, typed issues)", () => {
   });
 
   it("denies a run whose horizon exceeds the scenario bound and any governed maximum", () => {
-    const exceeded = validateSimulationRunBundle(
-      bundle({ run: run({ horizonSteps: 11 }) }),
-      { nowMs: NOW_MS },
-    );
+    const exceeded = validateSimulationRunBundle(bundle({ run: run({ horizonSteps: 11 }) }), {
+      nowMs: NOW_MS,
+    });
     expect(exceeded.ok).toBe(false);
     if (!exceeded.ok) expect(exceeded.issues.map((i) => i.code)).toContain("horizon_exceeded");
 
@@ -264,10 +248,9 @@ describe("bundle cross-field validation (fail closed, typed issues)", () => {
 
   it("denies runs of a draft or retired scenario — only approved scenarios may run", () => {
     for (const status of ["draft", "retired"]) {
-      const result = validateSimulationRunBundle(
-        bundle({ scenario: scenario({ status }) }),
-        { nowMs: NOW_MS },
-      );
+      const result = validateSimulationRunBundle(bundle({ scenario: scenario({ status }) }), {
+        nowMs: NOW_MS,
+      });
       expect(result.ok).toBe(false);
       if (!result.ok) {
         expect(result.issues.map((i) => i.code)).toContain("scenario_not_approved");
@@ -307,7 +290,9 @@ describe("bundle cross-field validation (fail closed, typed issues)", () => {
 
   it("denies inverted validity lifetimes and expired derived intelligence (clock injected)", () => {
     const inverted = validateSimulationRunBundle(
-      bundle({ outcomes: [outcome({ validUntilMs: NOW_MS - 20_000, generatedAtMs: NOW_MS - 10_000 })] }),
+      bundle({
+        outcomes: [outcome({ validUntilMs: NOW_MS - 20_000, generatedAtMs: NOW_MS - 10_000 })],
+      }),
       {},
     );
     expect(inverted.ok).toBe(false);
@@ -498,7 +483,10 @@ describe("module hygiene", () => {
   it("is pure: the contract module imports no vendors, no I/O, no environment reads", async () => {
     const source = await import("node:fs").then((fs) =>
       fs.promises.readFile(
-        new URL("../../frontend/src/lib/_quarantine/simulation-engine/contracts.ts", import.meta.url),
+        new URL(
+          "../../frontend/src/lib/_quarantine/simulation-engine/contracts.ts",
+          import.meta.url,
+        ),
         "utf8",
       ),
     );
@@ -511,9 +499,7 @@ describe("module hygiene", () => {
   it("never claims canonical authority: no schema admits origin other than derived", () => {
     const forgeries = ["observed", "canonical", "measured", "recorded", "derived-by-writeback"];
     for (const forgery of forgeries) {
-      expect(
-        SimulatedOutcomeSchema.safeParse(outcome({ origin: forgery })).success,
-      ).toBe(false);
+      expect(SimulatedOutcomeSchema.safeParse(outcome({ origin: forgery })).success).toBe(false);
     }
   });
 });

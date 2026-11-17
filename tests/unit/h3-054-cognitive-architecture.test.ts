@@ -83,7 +83,14 @@ function trace(overrides: Record<string, unknown> = {}): Record<string, unknown>
     strategy: "abductive",
     inputsDigest: DIGEST,
     citations: [CITATION],
-    steps: [{ stepIndex: 0, summary: "ranked candidate explanations by evidence fit", consumes: ["evidence:obs-1"], produces: ["hyp:h1"] }],
+    steps: [
+      {
+        stepIndex: 0,
+        summary: "ranked candidate explanations by evidence fit",
+        consumes: ["evidence:obs-1"],
+        produces: ["hyp:h1"],
+      },
+    ],
     assumptions: [],
     alternatives: ["hyp:h2"],
     conclusion: "the supported explanation is hypothesis h1",
@@ -130,8 +137,12 @@ describe("explained confidence (phase doc §T)", () => {
   });
 
   it("rejects an unexplained confidence number", () => {
-    expect(confidenceSchema.safeParse({ value: 0.9, derivedFrom: [], method: "x" }).success).toBe(false);
-    expect(confidenceSchema.safeParse({ value: 0.9, derivedFrom: ["agreement"], method: "" }).success).toBe(false);
+    expect(confidenceSchema.safeParse({ value: 0.9, derivedFrom: [], method: "x" }).success).toBe(
+      false,
+    );
+    expect(
+      confidenceSchema.safeParse({ value: 0.9, derivedFrom: ["agreement"], method: "" }).success,
+    ).toBe(false);
     expect(confidenceSchema.safeParse({ value: 0.9 }).success).toBe(false);
   });
 
@@ -160,17 +171,29 @@ describe("cognitive operation schema (phase doc §F, §G)", () => {
   });
 
   it("rejects values outside the declared vocabularies", () => {
-    expect(cognitiveOperationSchema.safeParse(operation({ state: "DAYDREAMING" })).success).toBe(false);
-    expect(cognitiveOperationSchema.safeParse(operation({ strategy: "vibes" })).success).toBe(false);
-    expect(cognitiveOperationSchema.safeParse(operation({ operationType: "ransack" })).success).toBe(false);
+    expect(cognitiveOperationSchema.safeParse(operation({ state: "DAYDREAMING" })).success).toBe(
+      false,
+    );
+    expect(cognitiveOperationSchema.safeParse(operation({ strategy: "vibes" })).success).toBe(
+      false,
+    );
+    expect(
+      cognitiveOperationSchema.safeParse(operation({ operationType: "ransack" })).success,
+    ).toBe(false);
     expect(COGNITIVE_STATES).toContain("BLOCKED");
   });
 
   it("enforces the lifecycle invariant: closed states carry an end time, running states do not", () => {
     expect(parseCognitiveOperation(operation({ state: "BLOCKED", endedAt: null })).ok).toBe(false);
-    expect(parseCognitiveOperation(operation({ state: "REASONING", endedAt: RECORDED_AT })).ok).toBe(false);
-    expect(parseCognitiveOperation(operation({ state: "BLOCKED", endedAt: RECORDED_AT })).ok).toBe(true);
-    expect(parseCognitiveOperation(operation({ state: "DECIDING", endedAt: RECORDED_AT })).ok).toBe(true);
+    expect(
+      parseCognitiveOperation(operation({ state: "REASONING", endedAt: RECORDED_AT })).ok,
+    ).toBe(false);
+    expect(parseCognitiveOperation(operation({ state: "BLOCKED", endedAt: RECORDED_AT })).ok).toBe(
+      true,
+    );
+    expect(parseCognitiveOperation(operation({ state: "DECIDING", endedAt: RECORDED_AT })).ok).toBe(
+      true,
+    );
     expect(parseCognitiveOperation(operation()).ok).toBe(true);
   });
 });
@@ -188,8 +211,26 @@ describe("reasoning trace and chain-of-thought guard (phase doc §CC)", () => {
   });
 
   it("fails closed with a typed reason when chain-of-thought keys appear anywhere in the input", () => {
-    for (const key of ["chainOfThought", "chain_of_thought", "scratchpad", "internal_monologue", "rawThought"]) {
-      const parsed = parseReasoningTrace(trace({ steps: [{ stepIndex: 0, summary: "s", consumes: [], produces: [], [key]: "private reasoning text" }] }));
+    for (const key of [
+      "chainOfThought",
+      "chain_of_thought",
+      "scratchpad",
+      "internal_monologue",
+      "rawThought",
+    ]) {
+      const parsed = parseReasoningTrace(
+        trace({
+          steps: [
+            {
+              stepIndex: 0,
+              summary: "s",
+              consumes: [],
+              produces: [],
+              [key]: "private reasoning text",
+            },
+          ],
+        }),
+      );
       expect(parsed.ok).toBe(false);
       if (!parsed.ok) expect(parsed.reason).toBe("chain_of_thought_exposure");
     }
@@ -219,7 +260,9 @@ describe("derived labelling and verification (AGENTS §9; phase doc §CD)", () =
     const unlabelled = output() as unknown as Record<string, unknown>;
     delete unlabelled.derivation;
     expect(cognitiveOutputSchema.safeParse(unlabelled).success).toBe(false);
-    expect(cognitiveOutputSchema.safeParse({ ...unlabelled, derivation: "canonical" }).success).toBe(false);
+    expect(
+      cognitiveOutputSchema.safeParse({ ...unlabelled, derivation: "canonical" }).success,
+    ).toBe(false);
   });
 
   it("flags uncited outputs as unsupported hallucination risk — never silently accepted", () => {
@@ -328,7 +371,10 @@ describe("risk-based cognition gate (phase doc §DD; §16 vocabulary)", () => {
   });
 
   it("requires multi-model verification for high-impact cognition", () => {
-    const one = cognitionGate("high", { validationRef: "validation:v1", verifiedModels: ["model:a"] });
+    const one = cognitionGate("high", {
+      validationRef: "validation:v1",
+      verifiedModels: ["model:a"],
+    });
     expect(one.decision).toBe("ESCALATE");
     const two = cognitionGate("high", {
       validationRef: "validation:v1",
@@ -377,7 +423,11 @@ describe("supervised learning deployment (phase doc §BV)", () => {
   });
 
   it("blocks deployment with missing gates named — never silently permitted", () => {
-    const blocked = evaluateLearningDeployment({ ...candidate, approvalRef: undefined, monitored: false });
+    const blocked = evaluateLearningDeployment({
+      ...candidate,
+      approvalRef: undefined,
+      monitored: false,
+    });
     expect(blocked.deployable).toBe(false);
     if (!blocked.deployable) {
       expect(blocked.missing).toEqual(["approval", "monitoring"]);

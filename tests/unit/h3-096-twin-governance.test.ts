@@ -51,7 +51,11 @@ import {
   type TwinEvent,
 } from "../../frontend/src/lib/twin-governance";
 import { addRelationship, type TwinRelationship } from "../../frontend/src/lib/twin-graph";
-import { mergeTwins, resolveIdentity, type MatchingSignals } from "../../frontend/src/lib/twin-core";
+import {
+  mergeTwins,
+  resolveIdentity,
+  type MatchingSignals,
+} from "../../frontend/src/lib/twin-core";
 import { recordObservation, synchronizeObservation } from "../../frontend/src/lib/twin-state";
 import {
   FEDERATION_TRANSITIONS,
@@ -194,9 +198,7 @@ describe("§10 boundary: twin data presence is not an authorization decision", (
   });
 
   it("cannot express a federation agreement that grants access", () => {
-    const forged = parseFederationAgreement(
-      agreementFixture({ accessGrant: "read:all" }),
-    );
+    const forged = parseFederationAgreement(agreementFixture({ accessGrant: "read:all" }));
     expect(forged.ok).toBe(false);
   });
 
@@ -410,7 +412,9 @@ describe("§10 boundary: overriding a twin is governed, attributed and expiring"
     expect(isOverrideExpired(result.override, NOW)).toBe(false);
     expect(isOverrideExpired(result.override, LATER)).toBe(false);
     expect(isOverrideExpired(result.override, AFTER)).toBe(true);
-    expect(reconcileAfterOverride(result.override, { authoritative: false, timestamp: AFTER }, AFTER)).toBe("expire");
+    expect(
+      reconcileAfterOverride(result.override, { authoritative: false, timestamp: AFTER }, AFTER),
+    ).toBe("expire");
   });
 
   it("rejects an override whose expiry precedes its timestamp (EQ)", () => {
