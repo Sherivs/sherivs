@@ -1,0 +1,118 @@
+{
+  "admissions": {
+    "enabledByDefault": true,
+    "mode": "catchment_allocation"
+  },
+  "authorityLinkCandidates": [
+    {
+      "authority": "lgea",
+      "relation": "supervised_by",
+      "scope": "kano",
+      "status": "unverified"
+    },
+    {
+      "authority": "subeb",
+      "relation": "supervised_by",
+      "scope": "kano",
+      "status": "unverified"
+    }
+  ],
+  "calendarModel": "three_term",
+  "curricula": ["nigerian_national"],
+  "flags": [
+    "founder_confirm:admissions_availability",
+    "placeholder:role_pack",
+    "placeholder:website_template"
+  ],
+  "gradingSystem": "continuous_assessment_and_exam",
+  "institutionProfile": {
+    "attributes": {
+      "boarding": false,
+      "census_returns": true,
+      "governing_authority": "subeb",
+      "levies": "pta_levies_only",
+      "lgea_name": "Example LGEA",
+      "multi_shift": true,
+      "population_band": "from_1000_to_5000",
+      "sections": ["nursery", "primary"],
+      "state": "kano",
+      "workforce_controlled_by": "subeb"
+    },
+    "calendar_model": "three_term",
+    "curricula": ["nigerian_national"],
+    "grading_system": "continuous_assessment_and_exam",
+    "institution_type": "public_primary",
+    "languages": ["en", "ha"],
+    "ownership": "state",
+    "regulators": []
+  },
+  "modules": [
+    {
+      "code": "admissions",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "assessment_results",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "attendance",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "billing",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "communications",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "people_records",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "returns",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "timetable",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "website",
+      "enabled": true,
+      "gate": null
+    }
+  ],
+  "orgUnits": [
+    {
+      "key": "org",
+      "kind": "organization",
+      "parentKey": null
+    },
+    {
+      "key": "section_nursery",
+      "kind": "section",
+      "parentKey": "org"
+    },
+    {
+      "key": "section_primary",
+      "kind": "section",
+      "parentKey": "org"
+    }
+  ],
+  "rolePack": {
+    "code": "ng.public_primary",
+    "version": "0.1.0"
+  },
+  "websiteTemplate": "basic_public"
+}

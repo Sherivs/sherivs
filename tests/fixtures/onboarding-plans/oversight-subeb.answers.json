@@ -1,0 +1,17 @@
+{
+  "entry.org.institution_type": "subeb",
+  "entry.location.state": "kaduna",
+  "oversight.mandate.instrument": "State Universal Basic Education Board law (reference as supplied by the body)",
+  "oversight.mandate.link": "https://example.invalid/gazette",
+  "oversight.jurisdiction.institution_count": 4200,
+  "oversight.jurisdiction.institution_kinds": ["nursery_primary", "junior_secondary"],
+  "oversight.jurisdiction.lga_count": 23,
+  "oversight.structure.directorates": [
+    "schools",
+    "planning_research_statistics",
+    "inspectorate_quality_assurance"
+  ],
+  "oversight.returns.calendar": "annual_census",
+  "oversight.inspection.cycle": "termly",
+  "oversight.profile.languages": ["en", "ha"]
+}
