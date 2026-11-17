@@ -9,6 +9,12 @@ import { type AppRole } from "@/lib/roles";
 import { runtimeWorkspaceHome } from "@/lib/runtime/nav-registry";
 import { customTenantColors } from "@/lib/brand/tenant-colors";
 import {
+  DARK_THEME_SURFACE,
+  LIGHT_THEME_SURFACE,
+  fitTextOn,
+  tenantForegrounds,
+} from "@/lib/brand/tenant-contrast";
+import {
   GOOGLE_UNINVITED_ERROR,
   persistOAuthError,
   shouldRejectUninvitedGooglePrincipal,
@@ -94,10 +100,25 @@ function applyBrandColors(school: SchoolRow | null) {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
   const colors = customTenantColors(school?.primary_color, school?.secondary_color);
+  const text = tenantForegrounds(colors.primary, colors.secondary);
   if (colors.primary) root.style.setProperty("--tenant-primary", colors.primary);
   else root.style.removeProperty("--tenant-primary");
   if (colors.secondary) root.style.setProperty("--tenant-secondary", colors.secondary);
   else root.style.removeProperty("--tenant-secondary");
+  // Text on the school's colours: the best-reading of white or navy, or the default when none was chosen.
+  if (text.primaryForeground)
+    root.style.setProperty("--primary-foreground", text.primaryForeground);
+  else root.style.removeProperty("--primary-foreground");
+  if (text.secondaryForeground)
+    root.style.setProperty("--secondary-foreground", text.secondaryForeground);
+  else root.style.removeProperty("--secondary-foreground");
+  // The school's colour as text: fitted per theme so it reads on navy and on paper alike.
+  const onDark = fitTextOn(colors.primary, DARK_THEME_SURFACE);
+  const onLight = fitTextOn(colors.primary, LIGHT_THEME_SURFACE);
+  if (onDark) root.style.setProperty("--tenant-primary-text-dark", onDark);
+  else root.style.removeProperty("--tenant-primary-text-dark");
+  if (onLight) root.style.setProperty("--tenant-primary-text-light", onLight);
+  else root.style.removeProperty("--tenant-primary-text-light");
 }
 
 async function clearClientOfflineData(scope?: { tenantId: string; userId: string; role: string }) {

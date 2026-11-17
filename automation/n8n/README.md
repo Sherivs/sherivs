@@ -13,7 +13,10 @@ The n8n host must exactly match `N8N_WHATSAPP_ALLOWED_HOSTS`.
 - Allow the Code nodes' built-in crypto module with
   `NODE_FUNCTION_ALLOW_BUILTIN=crypto`.
 - Set `N8N_BLOCK_ENV_ACCESS_IN_NODE=false` so the Code nodes can read the
-  signing secret from the n8n process environment. This lets workflow code read
+  signing secret through `$env` (Code nodes run in the n8n 2.x JS task runner,
+  where `process` is not defined; with external runners the setting applies to
+  the main n8n process, and `NODE_FUNCTION_ALLOW_BUILTIN=crypto` must be set on
+  the runner). This lets workflow code read
   configured environment values; restrict workflow editing and execution access
   to trusted operators.
 - Create an n8n Header Auth credential named `Sherivs CRON Authorization` for

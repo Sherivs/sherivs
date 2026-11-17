@@ -13,7 +13,7 @@ export const getRouter = () => {
     defaultPreloadStaleTime: 0,
   });
 
-  // Browser only; a no-op without VITE_SENTRY_DSN.
+  // Browser only; a no-op unless VITE_APP_ENV is exactly "staging" and a DSN is set.
   initClientSentry(router);
 
   return router;

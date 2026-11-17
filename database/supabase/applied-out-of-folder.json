@@ -1,0 +1,17 @@
+{
+  "note": "Migrations recorded in the production ledger whose SQL is deliberately kept outside database/supabase/migrations. Each entry needs a reason and the path of the exact SQL that ran. Adding an entry is a reviewed change.",
+  "entries": [
+    {
+      "ledgerName": "20261110000400_sherivs_engine20_org_agent_addons_events_reports",
+      "sqlPath": "ops/2026-11-15-apply-engine20-engine22/apply.sql",
+      "rollbackPath": "ops/2026-11-15-apply-engine20-engine22/rollback.sql",
+      "reason": "Uses organization-role vocabulary that the domain-neutrality guard forbids in the migrations folder; the guard baseline is shrink-only and an addition needs its own ADR."
+    },
+    {
+      "ledgerName": "20261110000500_sherivs_engine22_org_agent_role_holders",
+      "sqlPath": "ops/2026-11-15-apply-engine20-engine22/apply.sql",
+      "rollbackPath": "ops/2026-11-15-apply-engine20-engine22/rollback.sql",
+      "reason": "Same as ENGINE-20: applied together from the same reviewed file."
+    }
+  ]
+}
