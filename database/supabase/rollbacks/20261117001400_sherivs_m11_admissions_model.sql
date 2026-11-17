@@ -1,4 +1,4 @@
--- Rollback for 20261117001400_sherivs_m11_admissions_model.sql (M11 part A, ADR-111).
+-- Rollback for 20261117001400_sherivs_m11_admissions_model.sql (M11 part A, ADR-115).
 -- NOT APPLIED. Run only with the founder's written approval, after the migration was applied.
 --
 -- Leaves admission_applications as it was before the migration:

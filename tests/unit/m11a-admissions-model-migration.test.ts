@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-// Pins the safety statements of the M11 part A migration (ADR-111). Behaviour is proved by
+// Pins the safety statements of the M11 part A migration (ADR-115). Behaviour is proved by
 // tests/sql/m11-admissions-model.sql on a disposable Postgres; this test keeps the text honest.
 const ROOT = join(__dirname, "..", "..");
 const NAME = "20261117001400_sherivs_m11_admissions_model.sql";

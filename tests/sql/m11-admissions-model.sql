@@ -1,4 +1,4 @@
--- Disposable proof for 20261117001400_sherivs_m11_admissions_model.sql (M11 part A, ADR-111).
+-- Disposable proof for 20261117001400_sherivs_m11_admissions_model.sql (M11 part A, ADR-115).
 -- A small production-shaped fixture (admission_applications with its production columns,
 -- grants and policies as read on 2026-11-17; helper functions shaped like production), then
 -- positive, negative and cross-organization cases, a second run and the rollback.

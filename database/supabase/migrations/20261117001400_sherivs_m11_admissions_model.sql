@@ -1,6 +1,6 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
 -- =============================================================================
--- M11 part A (mission E-014, ADR-111): the admissions data model and its rules.
+-- M11 part A (mission E-014, ADR-115): the admissions data model and its rules.
 --
 -- Extends public.admission_applications; it does not replace it. Adds nine tables
 -- (settings, cycles, programmes, forms, question bank, screenings, scores, offers,
