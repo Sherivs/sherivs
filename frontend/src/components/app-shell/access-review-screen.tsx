@@ -16,16 +16,18 @@ import {
 } from "@/lib/role-builder/access-delegation.functions";
 import { ErrorAlert, FieldShell, StatusBadge, TARGET, inputClass } from "./role-builder-ui";
 
-export function AccessReviewScreen() {
-  const [campaigns, setCampaigns] = useState<ReviewCampaign[]>([]);
-  const [me, setMe] = useState("");
+export function AccessReviewScreen({
+  initial,
+}: { initial?: { campaigns: ReviewCampaign[]; me: string } } = {}) {
+  const [campaigns, setCampaigns] = useState<ReviewCampaign[]>(initial?.campaigns ?? []);
+  const [me, setMe] = useState(initial?.me ?? "");
   const [title, setTitle] = useState("");
   const [due, setDue] = useState("");
   const [formError, setFormError] = useState("");
   const [error, setError] = useState<unknown>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initial);
 
   const reload = useCallback(async () => {
     try {
@@ -39,8 +41,8 @@ export function AccessReviewScreen() {
     }
   }, []);
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    if (!initial) void reload();
+  }, [reload, initial]);
 
   async function act(label: string, fn: () => Promise<unknown>) {
     setBusy(true);

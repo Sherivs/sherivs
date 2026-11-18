@@ -23,12 +23,16 @@ const defaultLoad = () => getMyActingContext();
 export function ActingContextBanner({
   load = defaultLoad,
   refreshKey,
+  initialRows,
 }: {
   load?: () => Promise<ActingContextRow[]>;
   refreshKey?: string;
+  /** Seeds the banner (server render, tests) and skips the lookup. */
+  initialRows?: ActingContextRow[];
 }) {
-  const [rows, setRows] = useState<ActingContextRow[]>([]);
+  const [rows, setRows] = useState<ActingContextRow[]>(initialRows ?? []);
   useEffect(() => {
+    if (initialRows) return;
     let live = true;
     load()
       .then((result) => {
@@ -40,7 +44,7 @@ export function ActingContextBanner({
     return () => {
       live = false;
     };
-  }, [load, refreshKey]);
+  }, [load, refreshKey, initialRows]);
   if (rows.length === 0) return null;
   return (
     <div

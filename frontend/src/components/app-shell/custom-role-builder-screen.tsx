@@ -97,19 +97,31 @@ function draftFromVersion(version: CustomRoleVersion): Draft {
   };
 }
 
-export function CustomRoleBuilderScreen() {
-  const [catalogue, setCatalogue] = useState<BuilderCatalogue | null>(null);
-  const [versions, setVersions] = useState<CustomRoleVersion[]>([]);
-  const [me, setMe] = useState("");
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
-  const [touched, setTouched] = useState(false);
-  const [preview, setPreview] = useState<RiskPreview | null>(null);
-  const [simulation, setSimulation] = useState<SimulationResult | null>(null);
+export interface CustomRoleBuilderInitial {
+  catalogue: BuilderCatalogue;
+  versions: CustomRoleVersion[];
+  me: string;
+  draft?: Draft;
+  preview?: RiskPreview;
+  simulation?: SimulationResult;
+}
+
+/** `initial` seeds the screen (server render, tests); the shell opens it without props. */
+export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuilderInitial } = {}) {
+  const [catalogue, setCatalogue] = useState<BuilderCatalogue | null>(initial?.catalogue ?? null);
+  const [versions, setVersions] = useState<CustomRoleVersion[]>(initial?.versions ?? []);
+  const [me, setMe] = useState(initial?.me ?? "");
+  const [draft, setDraft] = useState<Draft>(initial?.draft ?? EMPTY_DRAFT);
+  const [touched, setTouched] = useState(Boolean(initial?.draft));
+  const [preview, setPreview] = useState<RiskPreview | null>(initial?.preview ?? null);
+  const [simulation, setSimulation] = useState<SimulationResult | null>(
+    initial?.simulation ?? null,
+  );
   const [history, setHistory] = useState<{ code: string; audit: AuditEntry[] } | null>(null);
   const [error, setError] = useState<unknown>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initial);
 
   const reload = useCallback(async () => {
     try {
@@ -125,8 +137,8 @@ export function CustomRoleBuilderScreen() {
     }
   }, []);
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    if (!initial) void reload();
+  }, [reload, initial]);
 
   const template = catalogue?.templates.find((t) => t.code === draft.baseTemplate) ?? null;
   const permissionByCode = useMemo(

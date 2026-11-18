@@ -24,12 +24,20 @@ function toInputValue(iso: string | null): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-export function DelegationScreen() {
-  const [assignments, setAssignments] = useState<AssignmentRow[]>([]);
-  const [delegations, setDelegations] = useState<DelegationRow[]>([]);
-  const [members, setMembers] = useState<{ id: string; name: string }[]>([]);
-  const [me, setMe] = useState("");
-  const [assignmentId, setAssignmentId] = useState("");
+export interface DelegationInitial {
+  assignments: AssignmentRow[];
+  delegations: DelegationRow[];
+  members: { id: string; name: string }[];
+  me: string;
+  assignmentId?: string;
+}
+
+export function DelegationScreen({ initial }: { initial?: DelegationInitial } = {}) {
+  const [assignments, setAssignments] = useState<AssignmentRow[]>(initial?.assignments ?? []);
+  const [delegations, setDelegations] = useState<DelegationRow[]>(initial?.delegations ?? []);
+  const [members, setMembers] = useState<{ id: string; name: string }[]>(initial?.members ?? []);
+  const [me, setMe] = useState(initial?.me ?? "");
+  const [assignmentId, setAssignmentId] = useState(initial?.assignmentId ?? "");
   const [delegateId, setDelegateId] = useState("");
   const [from, setFrom] = useState("");
   const [until, setUntil] = useState("");
@@ -37,7 +45,7 @@ export function DelegationScreen() {
   const [error, setError] = useState<unknown>(null);
   const [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initial);
 
   const reload = useCallback(async () => {
     try {
@@ -53,8 +61,8 @@ export function DelegationScreen() {
     }
   }, []);
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    if (!initial) void reload();
+  }, [reload, initial]);
 
   const source = assignments.find((a) => a.id === assignmentId) ?? null;
 
