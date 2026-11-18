@@ -38,6 +38,18 @@ vi.mock("@/components/app-shell/student-mobility-screen", () => ({
 vi.mock("@/components/app-shell/asc-export-screen", () => ({
   AscExportScreen: marker("AscExportScreen"),
 }));
+vi.mock("@/components/app-shell/teaching/today-classes-screen", () => ({
+  TodayClassesScreen: marker("TodayClassesScreen"),
+}));
+vi.mock("@/components/app-shell/teaching/attendance-screen", () => ({
+  AttendanceScreen: marker("AttendanceScreen"),
+}));
+vi.mock("@/components/app-shell/teaching/gradebook-screen", () => ({
+  GradebookScreen: marker("GradebookScreen"),
+}));
+vi.mock("@/components/app-shell/teaching/lesson-notes-screen", () => ({
+  LessonNotesScreen: marker("LessonNotesScreen"),
+}));
 
 const shell = {
   nav: [] as { key: string; label: string; icon: string }[],
@@ -76,6 +88,19 @@ const LIVE_SCREENS: Record<string, string> = {
   students: "StudentMobilityScreen",
   "nav.students": "StudentMobilityScreen",
   "nav.reports": "AscExportScreen",
+  // M7 (ADR-118) teaching screens.
+  "w.today_classes": "TodayClassesScreen",
+  "nav.my_classes": "TodayClassesScreen",
+  "nav.attendance": "AttendanceScreen",
+  "a.take_attendance": "AttendanceScreen",
+  "w.attendance_todo": "AttendanceScreen",
+  "nav.gradebook": "GradebookScreen",
+  "a.enter_scores": "GradebookScreen",
+  "w.grading_queue": "GradebookScreen",
+  "nav.lesson_notes": "LessonNotesScreen",
+  "a.submit_note": "LessonNotesScreen",
+  "w.lesson_note_status": "LessonNotesScreen",
+  "w.lesson_note_approvals": "LessonNotesScreen",
 };
 
 beforeEach(() => {
@@ -112,10 +137,11 @@ describe("card registry dispatch", () => {
   });
 
   it("uses the catalogue label and the card kind in the planned sentence", () => {
-    const html = renderToStaticMarkup(<AppSectionScreen sectionKey="a.take_attendance" />);
+    // M7 made a.take_attendance live; a.new_cbt is still a planned action.
+    const html = renderToStaticMarkup(<AppSectionScreen sectionKey="a.new_cbt" />);
     expect(html).toContain("<h1");
-    expect(html).toContain("Take attendance");
-    expect(html).toContain("Take attendance will let you do this task from here.");
+    expect(html).toContain("New CBT test");
+    expect(html).toContain("New CBT test will let you do this task from here.");
     expect(html).toContain("Planned, not built yet");
   });
 

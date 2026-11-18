@@ -47,11 +47,11 @@ function initialClass(): string {
   return new URLSearchParams(window.location.search).get("class") ?? "";
 }
 
-export function AttendanceScreen() {
+export function AttendanceScreen({ initialClassId }: { initialClassId?: string } = {}) {
   const online = useOnline();
   const scope = useOfflineScope();
   const today = localIsoDate(teachingClock.now().atMs);
-  const [classId, setClassId] = useState(initialClass);
+  const [classId, setClassId] = useState(() => initialClassId ?? initialClass());
   const [date, setDate] = useState(today);
   const [sheet, setSheet] = useState<Sheet>({});
   const [message, setMessage] = useState<string | null>(null);
