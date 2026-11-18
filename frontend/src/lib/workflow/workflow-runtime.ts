@@ -1,4 +1,4 @@
-import { trace, SpanStatusCode } from "@opentelemetry/api";
+import { metrics, trace, SpanStatusCode } from "@opentelemetry/api";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import {
   advance,
@@ -202,6 +202,9 @@ export interface WorkflowTickOptions {
 }
 
 const tracer = trace.getTracer("sherivs-workflow-runtime");
+const tickFailureCounter = metrics
+  .getMeter("sherivs-workflow-runtime")
+  .createCounter("workflow.tick.failures");
 const timeAuthority = new TimeAuthority(new SystemClock());
 const MAX_TICK_BUDGET_MS = 45_000;
 const STOP_BEFORE_DEADLINE_MS = 2_000;
@@ -249,6 +252,7 @@ export async function runWorkflowTick(
     dead: 0,
     skipped: 0,
   };
+  let tickFailed = false;
 
   await tracer.startActiveSpan("workflow.tick", async (tickSpan) => {
     try {
@@ -264,6 +268,7 @@ export async function runWorkflowTick(
         counts.claimed += events.length;
         eventSpan.setAttribute("workflow.claimed.count", events.length);
       } catch {
+        tickFailed = true;
         eventSpan.setStatus({ code: SpanStatusCode.ERROR });
         tickSpan.setAttribute("workflow.error_code", "event_claim_failed");
       } finally {
@@ -278,8 +283,10 @@ export async function runWorkflowTick(
         try {
           const result = await port.dispatchEvent(event);
           countResult(counts, result);
+          if (result === "retried" || result === "dead") tickFailed = true;
           span.setAttribute("workflow.status", result);
         } catch {
+          tickFailed = true;
           counts.retried += 1;
           span.setAttribute("workflow.status", "retried");
           span.setAttribute("workflow.error_code", "event_dispatch_failed");
@@ -300,6 +307,7 @@ export async function runWorkflowTick(
           counts.claimed += steps.length;
           claimSpan.setAttribute("workflow.claimed.count", steps.length);
         } catch {
+          tickFailed = true;
           claimSpan.setStatus({ code: SpanStatusCode.ERROR });
           tickSpan.setAttribute("workflow.error_code", "step_claim_failed");
         } finally {
@@ -331,7 +339,11 @@ export async function runWorkflowTick(
             await port.persistTransition(transition);
             span.setAttribute("workflow.status", transition.status);
             countResult(counts, transition.status);
+            if (transition.status === "retried" || transition.status === "dead") {
+              tickFailed = true;
+            }
           } catch (error) {
+            tickFailed = true;
             const errorCode =
               error instanceof Error && "code" in error && typeof error.code === "string"
                 ? error.code
@@ -386,7 +398,14 @@ export async function runWorkflowTick(
       tickSpan.setAttribute("workflow.retried.count", counts.retried);
       tickSpan.setAttribute("workflow.dead.count", counts.dead);
       tickSpan.setAttribute("workflow.skipped.count", counts.skipped);
+    } catch (error) {
+      tickFailed = true;
+      throw error;
     } finally {
+      if (tickFailed) {
+        tickSpan.setStatus({ code: SpanStatusCode.ERROR });
+        tickFailureCounter.add(1);
+      }
       tickSpan.end();
     }
   });
