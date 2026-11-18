@@ -24,7 +24,7 @@ import { CATALOG } from "../../frontend/src/lib/sherivs-ws/engine";
 interface Snapshot {
   capturedOn: string;
   rowCount: number;
-  md5OfKeyKindRouteRows: string;
+  md5OfCatalogRouteRows: string;
   items: { key: string; kind: string; route: string }[];
 }
 
@@ -53,7 +53,7 @@ describe("workspace item catalogue snapshot", () => {
     expect(snapshot.items).toHaveLength(snapshot.rowCount);
     expect(snapshot.rowCount).toBe(107);
     const rows = snapshot.items.map((i) => `${i.key}|${i.kind}|${i.route}`).join("\n");
-    expect(createHash("md5").update(rows).digest("hex")).toBe(snapshot.md5OfKeyKindRouteRows);
+    expect(createHash("md5").update(rows).digest("hex")).toBe(snapshot.md5OfCatalogRouteRows);
     expect(new Set(catalogueKeys).size).toBe(catalogueKeys.length);
   });
 
