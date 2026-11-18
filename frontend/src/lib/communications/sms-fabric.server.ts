@@ -44,6 +44,14 @@ import {
 } from "./bulksms-nigeria.server";
 import type { SmsGatewaySelection, SmsSendResult } from "./sms-gateway-contract";
 import { selectSmsGateway } from "./sms-gateway.server";
+import {
+  attemptEvidenceRecord,
+  deliveryEvidenceSinkFromEnv,
+  recordDeliveryEvidence,
+  redactPhoneRecipient,
+  type DeliveryEvidenceSink,
+} from "./delivery-evidence.server";
+import { checkSendTimeConsent } from "./send-time-consent.server";
 
 /** J-023: time enters only via the kernel time-authority. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -101,14 +109,46 @@ export interface DispatchSmsDependencies {
   db: SmsFabricDatabase;
   selection: SmsGatewaySelection;
   now?: () => string;
+  /** Delivery-evidence sink (M22): one `cg_delivery_evidence` row per provider attempt or refusal. */
+  evidence?: DeliveryEvidenceSink | null;
+}
+
+/** One evidence row for this message (non-fatal; a null sink records nothing). */
+function smsEvidence(
+  deps: DispatchSmsDependencies,
+  row: QueuedRow,
+  adapter: string,
+  attempt: Parameters<typeof attemptEvidenceRecord>[1],
+): Promise<void> {
+  return recordDeliveryEvidence(
+    deps.evidence,
+    attemptEvidenceRecord(
+      {
+        tenantId: row.org_id,
+        channel: "sms",
+        adapter,
+        notificationRef: row.id,
+        recipientRedacted: redactPhoneRecipient(row.to_address),
+        triggerSource: `sms.dispatch:${adapter}`,
+        triggeredBy: "sms-fabric-dispatcher",
+      },
+      attempt,
+    ),
+  );
 }
 
 const digitsOf = (value: string): string => value.replace(/\D/g, "");
 
-type Recipient = { ok: true; recipient: string } | { ok: false; reason: string };
+type Recipient =
+  | { ok: true; recipient: string }
+  | { ok: false; reason: string; defer?: boolean };
 
 /** Re-resolve and re-authorise the recipient server-side. Never trusts the queued address alone. */
-async function resolveRecipient(db: SmsFabricDatabase, row: QueuedRow): Promise<Recipient> {
+async function resolveRecipient(
+  db: SmsFabricDatabase,
+  row: QueuedRow,
+  nowMs: number,
+): Promise<Recipient> {
   if (row.org_id !== row.school_id) return { ok: false, reason: "organization mismatch" };
   if (!row.recipient_user_id) return { ok: false, reason: "no resolved recipient" };
 
@@ -174,21 +214,20 @@ async function resolveRecipient(db: SmsFabricDatabase, row: QueuedRow): Promise<
       `+${recipient}`,
     ]),
   ];
-  const optins = await db
-    .from("comms_optins")
-    .select("phone,status")
-    .eq("org_id", row.org_id)
-    .eq("channel", "sms")
-    .in("phone", forms);
-  if (optins.error || !Array.isArray(optins.data)) {
-    return { ok: false, reason: "consent could not be verified" };
-  }
-  const statuses = optins.data.map((entry) => (entry as { status?: unknown }).status);
-  const optedOut = statuses.includes("opted_out");
-  const optedIn = statuses.includes("opted_in");
-  // Mirrors comms_send: safety messages bypass opt-out; marketing needs an explicit opt-in.
-  if (row.priority !== "safety" && (optedOut || (row.category === "marketing" && !optedIn))) {
-    return { ok: false, reason: "blocked by consent: recipient has not opted in to this message" };
+  // Send-time consent, opt-out and quiet hours (M22): one shared gate for SMS and WhatsApp, mirroring comms_send.
+  const consent = await checkSendTimeConsent(db, {
+    orgId: row.org_id,
+    recipientUserId: row.recipient_user_id,
+    channel: "sms",
+    phoneForms: forms,
+    priority: row.priority,
+    category: row.category,
+    nowMs,
+  });
+  if (!consent.ok) {
+    return consent.defer
+      ? { ok: false, defer: true, reason: consent.reason }
+      : { ok: false, reason: consent.reason };
   }
   return { ok: true, recipient };
 }
@@ -327,7 +366,12 @@ export async function dispatchQueuedSms(
     if (!parsedRow.success || parsedRow.data.org_id !== orgId) continue;
     const row = parsedRow.data;
 
-    const recipient = await resolveRecipient(deps.db, row);
+    const recipient = await resolveRecipient(deps.db, row, Date.parse((deps.now ?? isoNow)()));
+    if (!recipient.ok && recipient.defer) {
+      // Quiet hours: not claimed, not charged again, not refunded; a later run sends it.
+      outcomes.push({ id: row.id, outcome: "skipped", reason: recipient.reason });
+      continue;
+    }
     if (!recipient.ok) {
       // Never sent, so the charge taken at queue time goes back with the close (one transaction).
       const closed = await settleRow(deps, row, null, {
@@ -335,6 +379,13 @@ export async function dispatchQueuedSms(
         error: recipient.reason.slice(0, 200),
         refundReason: "rejected_before_submission",
       });
+      if (closed) {
+        await smsEvidence(deps, row, gateway.providerId, {
+          outcome: "undeliverable",
+          code: "refused_before_send",
+          reason: recipient.reason,
+        });
+      }
       outcomes.push(
         closed
           ? { id: row.id, outcome: "rejected", reason: recipient.reason }
@@ -361,6 +412,14 @@ export async function dispatchQueuedSms(
       recipient: recipient.recipient,
       body: row.body,
     });
+    await smsEvidence(
+      deps,
+      row,
+      gateway.providerId,
+      result.outcome === "sent"
+        ? { outcome: "delivered", providerMessageId: result.providerMessageId }
+        : { outcome: result.outcome, code: result.code, reason: result.reason },
+    );
 
     if (result.outcome === "sent") {
       await settleRow(deps, row, claim, {
@@ -526,6 +585,8 @@ export interface SmsDispatchCronDependencies {
   db: SmsFabricDatabase;
   fetchImpl?: typeof fetch;
   now?: () => string;
+  /** Override the env-derived evidence sink (tests). Undefined = from env; null = none. */
+  evidence?: DeliveryEvidenceSink | null;
 }
 
 function cronAuthorized(header: string | null, secret: string): boolean {
@@ -558,6 +619,8 @@ export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) 
 
     const now = (deps.now ?? isoNow)();
     const selection = selectSmsGateway(deps.env, deps.fetchImpl);
+    const evidence =
+      deps.evidence === undefined ? deliveryEvidenceSinkFromEnv(deps.env) : deps.evidence;
     const staleCutoff = new Date(Date.parse(now) - SMS_STALE_CLAIM_AGE_MS).toISOString();
     const stale = await deps.db
       .from("outbound_messages")
@@ -625,7 +688,7 @@ export function createSmsDispatchCronHandler(deps: SmsDispatchCronDependencies) 
       orgsVisited += 1;
       try {
         const run = await dispatchQueuedSms(
-          { db: deps.db, selection, now: deps.now },
+          { db: deps.db, selection, now: deps.now, evidence },
           orgId,
           remaining,
         );

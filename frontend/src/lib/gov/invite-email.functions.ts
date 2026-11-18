@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { createResendEmailAdapter, createResendEmailProviderRegistry, resendEmailConfigFromEnv } from "@/lib/communications/resend-email.server";
+import { deliveryEvidenceSinkFromEnv } from "@/lib/communications/delivery-evidence.server";
 import { buildInviteEmail, inviteLink, mapEmailOutcome, safeOrigin, type InviteMailContext } from "@/lib/gov/invite-email";
 
 export const sendGovInviteEmail = createServerFn({ method: "POST" })
@@ -23,7 +24,8 @@ export const sendGovInviteEmail = createServerFn({ method: "POST" })
     const c = ctx as InviteMailContext;
     const mail = buildInviteEmail(c, inviteLink(origin, data.token));
     const env = process.env as Record<string, string | undefined>;
-    const adapter = createResendEmailAdapter(resendEmailConfigFromEnv(env));
+    // M22: every email attempt records delivery evidence when the substrate is configured.
+    const adapter = createResendEmailAdapter(resendEmailConfigFromEnv(env), deliveryEvidenceSinkFromEnv(env));
     const result = await adapter.send({
       notification: { id: c.invite_id, tenantRef: "gov", recipientRef: c.invite_id, audienceKind: "user", category: "system",
         subject: mail.subject, body: mail.body, actionRef: "/gov-invite", state: "queued", createdAt: c.now },

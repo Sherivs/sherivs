@@ -228,7 +228,7 @@ export function createBulkSmsNigeriaGateway(
         to: command.recipient,
         body: command.body,
         ...(hasNonAscii(command.body) ? { unicode: true } : {}),
-        ...(config.webhook
+        ...(config.webhook && command.deliveryReport !== false
           ? { callback_url: bulkSmsCallbackUrl(config.webhook, command.messageId) }
           : {}),
       });

@@ -23,6 +23,11 @@ export interface SmsSendCommand {
   recipient: string;
   /** Message body, already template-rendered by the database fabric. */
   body: string;
+  /**
+   * False when the message has no `outbound_messages` row to correlate a delivery report with
+   * (platform owner alerts, M22). The adapter then asks the provider for no callback. Default true.
+   */
+  deliveryReport?: boolean;
 }
 
 export type SmsFailureCode =

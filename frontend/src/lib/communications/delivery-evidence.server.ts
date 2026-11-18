@@ -66,14 +66,17 @@ export const DELIVERY_EVIDENCE_MAX = {
   triggeredBy: 160,
 } as const;
 
+/** Channels the substrate accepts (sms/whatsapp need migration 20261117003400, ADR-120). */
+export type DeliveryEvidenceChannel = "email" | "voice" | "sms" | "whatsapp";
+
 /** One outbound delivery attempt — the unit of evidence. */
 export interface DeliveryEvidenceRecord {
   /** Evidence row id (uuid v4, generated at record time). */
   id: string;
   /** Tenant the attempted communication belongs to (resolved server-side). */
   tenantId: string;
-  /** Communication channel the attempt ran on. */
-  channel: "email" | "voice";
+  /** Communication channel the attempt ran on (sms and whatsapp added by M22, ADR-120). */
+  channel: DeliveryEvidenceChannel;
   /** The adapter that performed the attempt (registry provider id). */
   adapter: string;
   /** Correlation to the originating notification, when one exists. */
@@ -146,7 +149,7 @@ function truncateReason(reason: string): string {
 
 export interface DeliveryEvidenceAttemptFacts {
   tenantId: string;
-  channel: "email" | "voice";
+  channel: DeliveryEvidenceChannel;
   adapter: string;
   notificationRef: string | null;
   recipientRedacted: string;
@@ -231,6 +234,47 @@ export function telephonyEvidenceRecord(
   return isTelephonyCallReceipt(result)
     ? deliveredRecord(facts, result.callId)
     : failureRecord(facts, result);
+}
+
+/**
+ * Generic attempt → evidence record for the SMS and WhatsApp send paths (M22). `providerMessageId`
+ * non-null means the provider confirmed acceptance; otherwise the failure code and reason are kept.
+ * The recipient must already be redacted by the caller with `redactPhoneRecipient`.
+ */
+export function attemptEvidenceRecord(
+  facts: DeliveryEvidenceAttemptFacts,
+  attempt:
+    | { outcome: "delivered"; providerMessageId: string }
+    | { outcome: "failed" | "undeliverable"; code: string; reason: string },
+): DeliveryEvidenceRecord {
+  return attempt.outcome === "delivered"
+    ? deliveredRecord(facts, attempt.providerMessageId)
+    : failureRecord(facts, attempt);
+}
+
+/**
+ * Append one evidence row, non-fatally (same posture as the email/telephony wrappers): a sink
+ * failure is logged as `evidence_write_failed` and never changes the send result. A null sink
+ * (substrate not configured) records nothing.
+ */
+export async function recordDeliveryEvidence(
+  sink: DeliveryEvidenceSink | null | undefined,
+  record: DeliveryEvidenceRecord,
+): Promise<void> {
+  if (!sink) return;
+  try {
+    await sink.record(record);
+  } catch (err) {
+    logStructured({
+      level: "warn",
+      msg: "evidence_write_failed: delivery attempt completed but its evidence row could not be recorded",
+      component: DELIVERY_EVIDENCE_COMPONENT,
+      tenant_id: record.tenantId,
+      err,
+      notification_ref: record.notificationRef,
+      evidence_outcome: record.outcome === "delivered" ? "delivered" : "not_delivered",
+    });
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
