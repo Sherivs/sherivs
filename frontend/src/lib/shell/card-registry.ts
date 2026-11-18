@@ -198,6 +198,90 @@ const ascExport: LiveSpec = {
   offline: false,
 };
 
+/* M7 academic core (ADR-118): teaching screens. Each is its own lazy chunk. */
+const TEACHING = `${APP_SHELL}/teaching`;
+
+const todayClasses: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/teaching/today-classes-screen").then((m) => ({
+      default: m.TodayClassesScreen,
+    })),
+  screenModule: `${TEACHING}/today-classes-screen`,
+  serverFns: ["fn:getMyPeriods", "fn:getMyClasses", "rpc:m7_my_periods", "rpc:m7_my_classes"],
+  tables: ["timetables", "timetable_slots", "classes"],
+  auditEvents: [],
+  offline: true,
+};
+
+const attendance: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/teaching/attendance-screen").then((m) => ({
+      default: m.AttendanceScreen,
+    })),
+  screenModule: `${TEACHING}/attendance-screen`,
+  serverFns: [
+    "fn:getMyClasses",
+    "fn:getClassRoster",
+    "fn:getClassAttendance",
+    "fn:syncClassAttendance",
+    "fn:correctAttendance",
+    "rpc:m7_my_classes",
+    "rpc:m7_class_roster",
+    "rpc:offline_attendance_capture_sync_m05",
+    "rpc:m7_correct_attendance",
+  ],
+  tables: [
+    "class_attendance_marks",
+    "class_attendance_sync_items",
+    "class_attendance_sync_conflicts",
+    "m7_attendance_corrections",
+  ],
+  auditEvents: [
+    "scholar.class_attendance_marks.insert",
+    "scholar.class_attendance_marks.update",
+    "scholar.m7_attendance_corrections.insert",
+  ],
+  offline: true,
+};
+
+const gradebook: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/teaching/gradebook-screen").then((m) => ({
+      default: m.GradebookScreen,
+    })),
+  screenModule: `${TEACHING}/gradebook-screen`,
+  serverFns: [
+    "fn:getMyClasses",
+    "fn:getGradebook",
+    "fn:enterResultScores",
+    "rpc:m7_class_gradebook",
+    "rpc:m06_enter_result_scores",
+  ],
+  tables: ["grades", "m06_result_weight_profiles", "m06_result_component_scores"],
+  auditEvents: [],
+  offline: true,
+};
+
+const lessonNotes: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/teaching/lesson-notes-screen").then((m) => ({
+      default: m.LessonNotesScreen,
+    })),
+  screenModule: `${TEACHING}/lesson-notes-screen`,
+  serverFns: [
+    "fn:getMyLessonNotes",
+    "fn:saveLessonNote",
+    "fn:submitLessonNote",
+    "fn:getPendingLessonNoteReviews",
+    "fn:reviewLessonNote",
+    "rpc:lesson_note_submit",
+    "rpc:lesson_note_review",
+  ],
+  tables: ["lesson_plans", "lesson_note_reviews"],
+  auditEvents: ["scholar.lesson_note_reviews.insert", "scholar.lesson_note_reviews.update"],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -209,6 +293,18 @@ const LIVE: Record<string, LiveSpec> = {
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },
   "nav.students": mobility,
   "nav.reports": ascExport,
+  "w.today_classes": todayClasses,
+  "nav.my_classes": todayClasses,
+  "nav.attendance": attendance,
+  "a.take_attendance": attendance,
+  "w.attendance_todo": attendance,
+  "nav.gradebook": gradebook,
+  "a.enter_scores": gradebook,
+  "w.grading_queue": gradebook,
+  "nav.lesson_notes": lessonNotes,
+  "a.submit_note": lessonNotes,
+  "w.lesson_note_status": lessonNotes,
+  "w.lesson_note_approvals": lessonNotes,
 };
 
 /**
@@ -221,7 +317,6 @@ export const PLANNED_CATALOGUE_KEYS = [
   "a.assign_role",
   "a.broadcast",
   "a.enrol_student",
-  "a.enter_scores",
   "a.gov_inspect",
   "a.issue_book",
   "a.issue_receipt",
@@ -238,8 +333,6 @@ export const PLANNED_CATALOGUE_KEYS = [
   "a.schedule_exam",
   "a.sign_in_visitor",
   "a.start_trip",
-  "a.submit_note",
-  "a.take_attendance",
   "a.topup_wallet",
   "i.alerts",
   "i.approvals",
@@ -248,20 +341,16 @@ export const PLANNED_CATALOGUE_KEYS = [
   "i.safeguarding",
   "nav.admissions",
   "nav.ai_tutor",
-  "nav.attendance",
   "nav.cbt",
   "nav.children",
   "nav.exams",
   "nav.fees",
   "nav.gov",
-  "nav.gradebook",
   "nav.health",
   "nav.home",
   "nav.hostel",
-  "nav.lesson_notes",
   "nav.library",
   "nav.messages",
-  "nav.my_classes",
   "nav.my_pay",
   "nav.my_results",
   "nav.payroll",
@@ -277,7 +366,6 @@ export const PLANNED_CATALOGUE_KEYS = [
   "w.ai_tutor",
   "w.announcements",
   "w.at_risk",
-  "w.attendance_todo",
   "w.bus_live",
   "w.campus_overview",
   "w.cashflow",
@@ -296,14 +384,11 @@ export const PLANNED_CATALOGUE_KEYS = [
   "w.gov_compliance",
   "w.gov_overview",
   "w.governance",
-  "w.grading_queue",
   "w.hostel_beds",
   "w.hostel_roll",
   "w.house_overview",
   "w.incidents",
   "w.leave_requests",
-  "w.lesson_note_approvals",
-  "w.lesson_note_status",
   "w.level_overview",
   "w.library_loans",
   "w.malpractice",
@@ -319,7 +404,6 @@ export const PLANNED_CATALOGUE_KEYS = [
   "w.shift_overview",
   "w.sick_bay",
   "w.staff_attendance",
-  "w.today_classes",
   "w.wallet_balance",
 ] as const;
 
@@ -371,8 +455,15 @@ export function plannedEntry(key: string): CardContract {
   };
 }
 
+/**
+ * Planned shell sections outside the catalogue. `assignments` (M7, ADR-118): no assignments
+ * table or permission exists yet, so it is registered as planned and claims nothing.
+ */
+export const PLANNED_SECTION_KEYS = ["assignments"] as const;
+
 export const CARD_REGISTRY: Readonly<Record<string, CardContract>> = Object.freeze({
   ...Object.fromEntries(PLANNED_CATALOGUE_KEYS.map((key) => [key, plannedEntry(key)])),
+  ...Object.fromEntries(PLANNED_SECTION_KEYS.map((key) => [key, plannedEntry(key)])),
   ...Object.fromEntries(Object.entries(LIVE).map(([key, spec]) => [key, liveEntry(key, spec)])),
 });
 

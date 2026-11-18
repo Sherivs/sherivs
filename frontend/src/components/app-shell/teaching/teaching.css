@@ -1,0 +1,123 @@
+/* M7 teaching screens (ADR-118). Every control is at least 44 px tall and wide (touch target). */
+.teaching-screen {
+  display: grid;
+  gap: 1rem;
+  max-width: 64rem;
+}
+.teaching-screen h1 {
+  font-size: 1.375rem;
+  font-weight: 600;
+}
+.teaching-screen h2 {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+.teaching-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+.teaching-field {
+  display: grid;
+  gap: 0.25rem;
+}
+.teaching-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.teaching-field input,
+.teaching-field select,
+.teaching-field textarea,
+.teaching-button,
+.teaching-status button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border, #cbd5e1);
+  border-radius: 0.5rem;
+  background: var(--background, #fff);
+  color: inherit;
+  font: inherit;
+}
+.teaching-button {
+  cursor: pointer;
+  font-weight: 500;
+}
+.teaching-button[data-variant="primary"] {
+  background: var(--primary, #1d4ed8);
+  border-color: var(--primary, #1d4ed8);
+  color: var(--primary-foreground, #fff);
+}
+.teaching-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.teaching-button:focus-visible,
+.teaching-field input:focus-visible,
+.teaching-field select:focus-visible,
+.teaching-field textarea:focus-visible,
+.teaching-status button:focus-visible {
+  outline: 3px solid var(--ring, #2563eb);
+  outline-offset: 2px;
+}
+.teaching-notice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--muted, #f1f5f9);
+}
+.teaching-list {
+  display: grid;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.teaching-list > li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 0.5rem;
+}
+.teaching-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.teaching-status button[aria-pressed="true"] {
+  background: var(--primary, #1d4ed8);
+  border-color: var(--primary, #1d4ed8);
+  color: var(--primary-foreground, #fff);
+}
+.teaching-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.teaching-table th,
+.teaching-table td {
+  padding: 0.375rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  text-align: left;
+  vertical-align: middle;
+}
+.teaching-table input {
+  width: 5rem;
+}
+.teaching-scroll {
+  overflow-x: auto;
+}
+.teaching-muted {
+  color: var(--muted-foreground, #475569);
+  font-size: 0.875rem;
+}
+.teaching-error {
+  color: var(--destructive, #b91c1c);
+}
