@@ -198,6 +198,30 @@ const ascExport: LiveSpec = {
   offline: false,
 };
 
+const cashierDesk: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/cashier-desk-screen").then((m) => ({
+      default: m.CashierDeskScreen,
+    })),
+  screenModule: `${APP_SHELL}/cashier-desk-screen`,
+  serverFns: [
+    "fn:getCashierDesk",
+    "fn:recordCashierPayment",
+    "fn:closeCashierDay",
+    "rpc:cg_fee_record_payment",
+    "rpc:cg_fee_close_cash_day",
+  ],
+  tables: [
+    "cg_fee_invoice_balances",
+    "cg_fee_invoice",
+    "cg_fee_payment",
+    "cg_fee_receipt",
+    "cg_fee_cash_day_close",
+  ],
+  auditEvents: ["cash.recorded", "day.closed"],
+  offline: true,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -209,6 +233,7 @@ const LIVE: Record<string, LiveSpec> = {
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },
   "nav.students": mobility,
   "nav.reports": ascExport,
+  "a.record_cash": cashierDesk,
 };
 
 /**
@@ -231,7 +256,6 @@ export const PLANNED_CATALOGUE_KEYS = [
   "a.pay_fees",
   "a.prepare_payroll",
   "a.publish_results",
-  "a.record_cash",
   "a.report_incident",
   "a.request_leave",
   "a.roll_call",

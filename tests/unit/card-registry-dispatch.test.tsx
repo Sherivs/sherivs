@@ -38,6 +38,9 @@ vi.mock("@/components/app-shell/student-mobility-screen", () => ({
 vi.mock("@/components/app-shell/asc-export-screen", () => ({
   AscExportScreen: marker("AscExportScreen"),
 }));
+vi.mock("@/components/app-shell/cashier-desk-screen", () => ({
+  CashierDeskScreen: marker("CashierDeskScreen"),
+}));
 
 const shell = {
   nav: [] as { key: string; label: string; icon: string }[],
@@ -76,6 +79,7 @@ const LIVE_SCREENS: Record<string, string> = {
   students: "StudentMobilityScreen",
   "nav.students": "StudentMobilityScreen",
   "nav.reports": "AscExportScreen",
+  "a.record_cash": "CashierDeskScreen",
 };
 
 beforeEach(() => {
