@@ -425,6 +425,9 @@ export function RoleManagementScreen() {
         <Link to={appShellSectionPath("role-packets") as never}>Role packets</Link>
         <Link to={appShellSectionPath("workspace-policies") as never}>Workspace policies</Link>
         <Link to={appShellSectionPath("agents") as never}>Agents</Link>
+        <Link to={appShellSectionPath("role-builder") as never}>Custom roles</Link>
+        <Link to={appShellSectionPath("access-reviews") as never}>Access reviews</Link>
+        <Link to={appShellSectionPath("delegations") as never}>Delegations</Link>
       </nav>
       <div>
         <p className="app-shell-org">HR / Administration · {app.school?.name}</p>

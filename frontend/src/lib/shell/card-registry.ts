@@ -198,12 +198,104 @@ const ascExport: LiveSpec = {
   offline: false,
 };
 
+const roleBuilder: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/custom-role-builder-screen").then((m) => ({
+      default: m.CustomRoleBuilderScreen,
+    })),
+  screenModule: `${APP_SHELL}/custom-role-builder-screen`,
+  serverFns: [
+    "fn:loadRoleBuilder",
+    "fn:previewCustomRole",
+    "fn:simulateCustomRole",
+    "fn:saveCustomRoleDraft",
+    "fn:submitCustomRole",
+    "fn:withdrawCustomRole",
+    "fn:approveCustomRole",
+    "fn:activateCustomRole",
+    "fn:customRoleHistory",
+    "fn:defineCustomResponsibility",
+    "rpc:custom_role_save_draft",
+    "rpc:custom_role_submit",
+    "rpc:custom_role_withdraw",
+    "rpc:custom_role_approve",
+    "rpc:custom_role_activate",
+    "rpc:workspace_responsibility_define",
+  ],
+  tables: [
+    "org_custom_roles",
+    "permission_catalog",
+    "role_templates",
+    "role_template_permissions",
+    "sod_permission_rules",
+    "role_catalog",
+    "institution_profile",
+    "workspace_responsibility_catalog",
+    "workspace_responsibility_permissions",
+    "audit_logs",
+  ],
+  permissions: { any: ["roles.configure", "roles.custom_create"] },
+  auditEvents: [
+    "scholar.org_custom_roles.insert",
+    "scholar.org_custom_roles.update",
+    "role_assignment_audit_events",
+  ],
+  offline: false,
+};
+
+const accessReviews: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/access-review-screen").then((m) => ({
+      default: m.AccessReviewScreen,
+    })),
+  screenModule: `${APP_SHELL}/access-review-screen`,
+  serverFns: [
+    "fn:listAccessReviews",
+    "fn:startAccessReview",
+    "fn:decideAccessReviewItem",
+    "rpc:workspace_access_review_campaign_create",
+    "rpc:workspace_access_review_decide",
+  ],
+  tables: [
+    "role_access_review_campaigns",
+    "role_access_review_items",
+    "role_access_review_audit_events",
+    "users",
+    "role_catalog",
+  ],
+  permissions: { any: ["roles.assign"] },
+  auditEvents: ["campaign_created", "assignment_retained", "assignment_revoked", "campaign_completed"],
+  offline: false,
+};
+
+const delegations: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/delegation-screen").then((m) => ({
+      default: m.DelegationScreen,
+    })),
+  screenModule: `${APP_SHELL}/delegation-screen`,
+  serverFns: [
+    "fn:listDelegations",
+    "fn:grantDelegation",
+    "fn:revokeDelegation",
+    "rpc:workspace_role_delegate",
+    "rpc:workspace_role_delegation_revoke",
+  ],
+  tables: ["user_role_assignments", "role_assignment_delegations", "users", "role_catalog"],
+  permissions: { any: ["roles.assign"] },
+  auditEvents: ["role_assignment_audit_events"],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
   agents: { ...orgAgents, kind: "section" },
   "role-packets": { ...rolePackets, kind: "section" },
   "workspace-policies": { ...workspacePolicies, kind: "section" },
+  "role-builder": { ...roleBuilder, kind: "section" },
+  "access-reviews": { ...accessReviews, kind: "section" },
+  delegations: { ...delegations, kind: "section" },
   school_setup: { ...institutionInterview, kind: "section" },
   communications: { ...communicationInbox, kind: "section" },
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },
