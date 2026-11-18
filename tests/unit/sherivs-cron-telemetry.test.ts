@@ -33,9 +33,11 @@ async function runScheduled(env: Record<string, unknown>, fetchImpl: ReturnType<
 }
 
 describe("sherivs-cron Datadog telemetry", () => {
-  it("ships with export off in production and staging, EU only", () => {
-    expect(workerConfig.match(/"OBSERVABILITY_DATADOG_ENABLED": "false"/g)).toHaveLength(2);
-    expect(workerConfig).not.toContain('"OBSERVABILITY_DATADOG_ENABLED": "true"');
+  it("enables export in production only, keeps staging off, EU only", () => {
+    const [production, staging] = workerConfig.split('"env": {');
+    expect(production).toContain('"OBSERVABILITY_DATADOG_ENABLED": "true"');
+    expect(staging).toContain('"OBSERVABILITY_DATADOG_ENABLED": "false"');
+    expect(staging).not.toContain('"OBSERVABILITY_DATADOG_ENABLED": "true"');
     expect(workerConfig.match(/"DD_SITE": "datadoghq.eu"/g)).toHaveLength(2);
     expect(workerConfig).not.toMatch(/"DD_API_KEY"\s*:/);
   });

@@ -18,9 +18,9 @@
     "ROUTE_JARVIS_TICK": "false",
     "ROUTE_INTEGRATIONS_SYNC": "false",
     "ROUTE_ORG_WEEKLY_REPORTS": "false",
-    // Datadog EU export (traces + logs over OTLP). Off unless exactly "true"; needs the DD_API_KEY
-    // Worker secret. Turning it on in production is an operator decision, not part of a deploy.
-    "OBSERVABILITY_DATADOG_ENABLED": "false",
+    // Datadog EU export (traces + logs over OTLP). On in production only (approved by Muhammad,
+    // 18 Nov 2026). Needs the DD_API_KEY Worker secret; without it export stays off. Rollback: "false".
+    "OBSERVABILITY_DATADOG_ENABLED": "true",
     "DD_SITE": "datadoghq.eu",
     "DEPLOYMENT_ENVIRONMENT": "production",
   },
