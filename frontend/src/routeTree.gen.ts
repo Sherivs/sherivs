@@ -58,6 +58,7 @@ import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activ
 import { Route as ConsoleAlertsRouteImport } from './routes/console/alerts'
 import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
+import { Route as ConsoleOnboardingRouteRouteImport } from './routes/console/onboarding/route'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
 import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
 import { Route as ConsoleSettingsRouteImport } from './routes/console/settings'
@@ -110,6 +111,8 @@ import { Route as ConsoleActivityLogsRouteImport } from './routes/console/activi
 import { Route as ConsoleActivityMetricsRouteImport } from './routes/console/activity/metrics'
 import { Route as ConsoleActivitySecurityRouteImport } from './routes/console/activity/security'
 import { Route as ConsoleActivityTicketsRouteImport } from './routes/console/activity/tickets'
+import { Route as ConsoleOnboardingIndexRouteImport } from './routes/console/onboarding/index'
+import { Route as ConsoleOnboardingRequestIdRouteImport } from './routes/console/onboarding/$requestId'
 import { Route as ConsoleOrganizationsIndexRouteImport } from './routes/console/organizations/index'
 import { Route as ConsoleOrganizationsOrganizationIdRouteImport } from './routes/console/organizations/$organizationId'
 import { Route as ConsoleOrganizationsNewRouteImport } from './routes/console/organizations/new'
@@ -390,6 +393,11 @@ const ConsoleHelpRoute = ConsoleHelpRouteImport.update({
   path: '/help',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
+const ConsoleOnboardingRouteRoute = ConsoleOnboardingRouteRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
 const ConsoleOrganizationsRouteRoute =
   ConsoleOrganizationsRouteRouteImport.update({
     id: '/organizations',
@@ -653,6 +661,17 @@ const ConsoleActivityTicketsRoute = ConsoleActivityTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
+const ConsoleOnboardingIndexRoute = ConsoleOnboardingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleOnboardingRouteRoute,
+} as any)
+const ConsoleOnboardingRequestIdRoute =
+  ConsoleOnboardingRequestIdRouteImport.update({
+    id: '/$requestId',
+    path: '/$requestId',
+    getParentRoute: () => ConsoleOnboardingRouteRoute,
+  } as any)
 const ConsoleOrganizationsIndexRoute =
   ConsoleOrganizationsIndexRouteImport.update({
     id: '/',
@@ -855,6 +874,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/onboarding': typeof ConsoleOnboardingRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
@@ -933,6 +953,7 @@ export interface FileRoutesByFullPath {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -949,6 +970,7 @@ export interface FileRoutesByFullPath {
   '/security/': typeof siteSecurityIndexRoute
   '/solutions/': typeof siteSolutionsIndexRoute
   '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/onboarding/': typeof ConsoleOnboardingIndexRoute
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
@@ -1055,6 +1077,7 @@ export interface FileRoutesByTo {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -1071,6 +1094,7 @@ export interface FileRoutesByTo {
   '/security': typeof siteSecurityIndexRoute
   '/solutions': typeof siteSolutionsIndexRoute
   '/console/activity': typeof ConsoleActivityIndexRoute
+  '/console/onboarding': typeof ConsoleOnboardingIndexRoute
   '/console/organizations': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes': typeof ConsoleRuntimesIndexRoute
   '/console/team': typeof ConsoleTeamIndexRoute
@@ -1114,6 +1138,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/onboarding': typeof ConsoleOnboardingRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
@@ -1192,6 +1217,7 @@ export interface FileRoutesById {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -1208,6 +1234,7 @@ export interface FileRoutesById {
   '/(site)/security/': typeof siteSecurityIndexRoute
   '/(site)/solutions/': typeof siteSolutionsIndexRoute
   '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/onboarding/': typeof ConsoleOnboardingIndexRoute
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
@@ -1251,6 +1278,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/workspace-preview'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1329,6 +1357,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1345,6 +1374,7 @@ export interface FileRouteTypes {
     | '/security/'
     | '/solutions/'
     | '/console/activity/'
+    | '/console/onboarding/'
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
@@ -1451,6 +1481,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1467,6 +1498,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/solutions'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1509,6 +1541,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/workspace-preview'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1587,6 +1620,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1603,6 +1637,7 @@ export interface FileRouteTypes {
     | '/(site)/security/'
     | '/(site)/solutions/'
     | '/console/activity/'
+    | '/console/onboarding/'
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
@@ -2014,6 +2049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleHelpRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
+    '/console/onboarding': {
+      id: '/console/onboarding'
+      path: '/onboarding'
+      fullPath: '/console/onboarding'
+      preLoaderRoute: typeof ConsoleOnboardingRouteRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
     '/console/organizations': {
       id: '/console/organizations'
       path: '/organizations'
@@ -2377,6 +2419,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/console/activity/tickets'
       preLoaderRoute: typeof ConsoleActivityTicketsRouteImport
       parentRoute: typeof ConsoleActivityRouteRoute
+    }
+    '/console/onboarding/': {
+      id: '/console/onboarding/'
+      path: '/'
+      fullPath: '/console/onboarding/'
+      preLoaderRoute: typeof ConsoleOnboardingIndexRouteImport
+      parentRoute: typeof ConsoleOnboardingRouteRoute
+    }
+    '/console/onboarding/$requestId': {
+      id: '/console/onboarding/$requestId'
+      path: '/$requestId'
+      fullPath: '/console/onboarding/$requestId'
+      preLoaderRoute: typeof ConsoleOnboardingRequestIdRouteImport
+      parentRoute: typeof ConsoleOnboardingRouteRoute
     }
     '/console/organizations/': {
       id: '/console/organizations/'
@@ -2802,6 +2858,22 @@ const ConsoleActivityRouteRouteChildren: ConsoleActivityRouteRouteChildren = {
 const ConsoleActivityRouteRouteWithChildren =
   ConsoleActivityRouteRoute._addFileChildren(ConsoleActivityRouteRouteChildren)
 
+interface ConsoleOnboardingRouteRouteChildren {
+  ConsoleOnboardingRequestIdRoute: typeof ConsoleOnboardingRequestIdRoute
+  ConsoleOnboardingIndexRoute: typeof ConsoleOnboardingIndexRoute
+}
+
+const ConsoleOnboardingRouteRouteChildren: ConsoleOnboardingRouteRouteChildren =
+  {
+    ConsoleOnboardingRequestIdRoute: ConsoleOnboardingRequestIdRoute,
+    ConsoleOnboardingIndexRoute: ConsoleOnboardingIndexRoute,
+  }
+
+const ConsoleOnboardingRouteRouteWithChildren =
+  ConsoleOnboardingRouteRoute._addFileChildren(
+    ConsoleOnboardingRouteRouteChildren,
+  )
+
 interface ConsoleOrganizationsRouteRouteChildren {
   ConsoleOrganizationsOrganizationIdRoute: typeof ConsoleOrganizationsOrganizationIdRoute
   ConsoleOrganizationsNewRoute: typeof ConsoleOrganizationsNewRoute
@@ -2889,6 +2961,7 @@ const ConsoleWorkspacesRouteRouteWithChildren =
 
 interface ConsoleRouteRouteChildren {
   ConsoleActivityRouteRoute: typeof ConsoleActivityRouteRouteWithChildren
+  ConsoleOnboardingRouteRoute: typeof ConsoleOnboardingRouteRouteWithChildren
   ConsoleOrganizationsRouteRoute: typeof ConsoleOrganizationsRouteRouteWithChildren
   ConsoleRuntimesRouteRoute: typeof ConsoleRuntimesRouteRouteWithChildren
   ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
@@ -2904,6 +2977,7 @@ interface ConsoleRouteRouteChildren {
 
 const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleActivityRouteRoute: ConsoleActivityRouteRouteWithChildren,
+  ConsoleOnboardingRouteRoute: ConsoleOnboardingRouteRouteWithChildren,
   ConsoleOrganizationsRouteRoute: ConsoleOrganizationsRouteRouteWithChildren,
   ConsoleRuntimesRouteRoute: ConsoleRuntimesRouteRouteWithChildren,
   ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
