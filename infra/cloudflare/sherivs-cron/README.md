@@ -67,8 +67,7 @@ does not accept a URL and returns only `{route, status, ms}`. An invalid bearer 
 `src/telemetry.js` sends one span and one log per route call to Datadog EU over OTLP when
 `OBSERVABILITY_DATADOG_ENABLED` is exactly `"true"` and the `DD_API_KEY` Worker secret is set
 (`npx wrangler secret put DD_API_KEY`, never in a file or argument). `DD_SITE` must be
-`datadoghq.eu`. Both environments ship with the switch `"false"`; turning it on in production is a
-separate, explicit decision. Export failures never affect a route. See
+`datadoghq.eu`. Production ships with the switch `"true"` (approved 18 Nov 2026); staging stays `"false"`. Export failures never affect a route. See
 `docs/runbooks/observability.md` sections 8–10 and `service.datadog.yaml` in this directory.
 
 ## Local checks
