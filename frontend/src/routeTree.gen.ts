@@ -132,6 +132,7 @@ import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public
 import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronSmsDispatchRouteImport } from './routes/api/public/cron/sms-dispatch'
+import { Route as ApiPublicCronWhatsappDispatchRouteImport } from './routes/api/public/cron/whatsapp-dispatch'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicCronWorkflowTickRouteImport } from './routes/api/public/cron/workflow-tick'
@@ -775,6 +776,12 @@ const ApiPublicCronSmsDispatchRoute =
     path: '/api/public/cron/sms-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWhatsappDispatchRoute =
+  ApiPublicCronWhatsappDispatchRouteImport.update({
+    id: '/api/public/cron/whatsapp-dispatch',
+    path: '/api/public/cron/whatsapp-dispatch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
@@ -975,6 +982,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
@@ -1099,6 +1107,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
@@ -1238,6 +1247,7 @@ export interface FileRoutesById {
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
@@ -1377,6 +1387,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/sms-dispatch'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
@@ -1501,6 +1512,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/sms-dispatch'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
@@ -1639,6 +1651,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/sms-dispatch'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
@@ -1683,6 +1696,7 @@ export interface RootRouteChildren {
   ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronSmsDispatchRoute: typeof ApiPublicCronSmsDispatchRoute
+  ApiPublicCronWhatsappDispatchRoute: typeof ApiPublicCronWhatsappDispatchRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicCronWorkflowTickRoute: typeof ApiPublicCronWorkflowTickRoute
@@ -2560,6 +2574,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronSmsDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/whatsapp-dispatch': {
+      id: '/api/public/cron/whatsapp-dispatch'
+      path: '/api/public/cron/whatsapp-dispatch'
+      fullPath: '/api/public/cron/whatsapp-dispatch'
+      preLoaderRoute: typeof ApiPublicCronWhatsappDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
@@ -3021,6 +3042,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
   ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
   ApiPublicCronSmsDispatchRoute: ApiPublicCronSmsDispatchRoute,
+  ApiPublicCronWhatsappDispatchRoute: ApiPublicCronWhatsappDispatchRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
