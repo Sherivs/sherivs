@@ -471,7 +471,8 @@ defineFamilySuite({
       method: "GET",
       input: "none",
       gate: "rls-scoped",
-      gateMarker: /loadCashierDesk\(\s*context\.supabase as unknown as FinanceDb,\s*context\.userId/,
+      gateMarker:
+        /loadCashierDesk\(\s*context\.supabase as unknown as FinanceDb,\s*context\.userId/,
       audit: "pure-read",
       note: "open invoices and the caller's own drawer totals, read under the M07 RLS read rule",
     },
