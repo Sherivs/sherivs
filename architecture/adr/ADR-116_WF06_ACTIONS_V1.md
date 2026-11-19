@@ -31,6 +31,14 @@ its own autonomy. Delivery must be independently disabled by default and isolate
 - Require the same protected-category cap in SQL. Drafts preserve tenant/run/step scope,
   template parameters, recipient IDs, and audience selector; service role alone writes them.
   Sandbox outbox rows are service-only and cannot be dispatched to a provider.
+- The executed (sandbox outbox) record is itself bounded in SQL: never a capped category, at most
+  `WORKFLOW_MASS_RECIPIENT_THRESHOLD` = 25 recipients, no audience selector, a `public` or
+  `internal` data class only, and a link to an `execute` broker decision of the same tenant, tool
+  and idempotency key. Drafts that are mass or confidential must carry a capped category.
+- Data classes are an explicit set (`public`, `internal`, `confidential`, `minor_sensitive`).
+  Unknown values, and missing values on person-facing kinds, are treated as `confidential`.
+- When an effect is replayed, the runtime looks up what the original dispatch produced (draft,
+  sandbox outbox or succeeded live outcome) and keeps the step waiting unless it executed.
 - `WORKFLOW_DELIVERY_MODE` defaults to `off`, including invalid values. `sandbox` records broker
   decisions and outbox rows only. `live` additionally requires the global workflow flag, a
   production app environment, the organization flag, valid broker authority, a tenant binding,
