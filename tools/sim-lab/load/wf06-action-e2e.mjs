@@ -240,12 +240,18 @@ async function seedOrganization(client, n, { action, recipients }) {
     );
     for (const memberId of memberIds) {
       await client.query("INSERT INTO auth.users (id) VALUES ($1)", [memberId]);
+    }
+    // SHERIVS-006 refuses direct membership writes from non-service roles. The e2e seeds
+    // fixtures as the superuser, so skip triggers for this insert only (as sim gen.mjs does).
+    await client.query("SET LOCAL session_replication_role = replica");
+    for (const memberId of memberIds) {
       await client.query(
         `INSERT INTO public.organization_memberships (user_id, school_id, role, is_active)
          VALUES ($1, $2, 'parent', true)`,
         [memberId, orgId],
       );
     }
+    await client.query("SET LOCAL session_replication_role = origin");
     await client.query("COMMIT");
   } catch (error) {
     await client.query("ROLLBACK");
