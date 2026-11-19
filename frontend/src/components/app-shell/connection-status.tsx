@@ -191,7 +191,7 @@ export function ConnectionStatus() {
         <span>{label}</span>
         <span className="app-shell-connection-pending">
           {state.pendingItems === null
-            ? "Pending count unavailable"
+            ? "Sync queue status unavailable"
             : `${state.pendingItems} pending`}
           {state.conflictItems > 0 ? ` · ${state.conflictItems} need review` : ""}
         </span>
