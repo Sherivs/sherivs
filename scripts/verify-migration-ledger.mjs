@@ -153,6 +153,8 @@ async function main() {
       `ledger=${report.counts.ledger} files=${report.counts.files} matched=${report.counts.matched} ` +
         `out-of-folder=${report.registeredOutOfFolder.length} legacy-unnamed=${report.legacyUnnamed.length}`,
     );
+    for (const name of report.duplicateLedgerNames)
+      console.log(`WARN duplicate ledger name: ${name}`);
     for (const x of report.ledgerWithoutFile)
       console.log(`FAIL applied, no file or register entry: ${x}`);
     for (const x of report.filesNotInLedger) console.log(`FAIL file not recorded as applied: ${x}`);
