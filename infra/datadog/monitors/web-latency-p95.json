@@ -1,0 +1,25 @@
+{
+  "name": "[sherivs-web] p95 latency high (production)",
+  "type": "query alert",
+  "query": "percentile(last_15m):p95:trace.http.server.request{service:sherivs-web,env:production} > 3",
+  "message": "{{#is_alert}}sherivs-web production p95 latency is above 3 s over 15 minutes.{{/is_alert}}{{#is_warning}}sherivs-web production p95 latency is above 1.5 s.{{/is_warning}} Check slow routes in APM and Supabase query performance.\n\nRunbook: https://github.com/Sherivs/sherivs/blob/master/docs/runbooks/observability.md\n\n@hello@sherivs.com",
+  "tags": [
+    "team:sherivs",
+    "managed-by:sherivs-repo",
+    "sherivs-monitor-id:web-latency-p95",
+    "service:sherivs-web",
+    "env:production"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 3,
+      "warning": 1.5
+    },
+    "notify_audit": false,
+    "include_tags": false,
+    "renotify_interval": 0,
+    "require_full_window": false,
+    "notify_no_data": false,
+    "evaluation_delay": 60
+  }
+}

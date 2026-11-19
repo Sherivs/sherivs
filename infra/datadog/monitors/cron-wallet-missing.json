@@ -1,0 +1,26 @@
+{
+  "name": "[sherivs-cron] wallet-topup-reconcile not running",
+  "type": "log alert",
+  "query": "logs(\"service:sherivs-cron env:production @cron.route:wallet-topup-reconcile\").index(\"*\").rollup(\"count\").last(\"30m\") < 1",
+  "message": "{{#is_alert}}No wallet-topup-reconcile run reached Datadog in 30 minutes (expected every 10 minutes). The Worker trigger, the route switch, or the Datadog export switch may be off.{{/is_alert}} This monitor is only meaningful while OBSERVABILITY_DATADOG_ENABLED is \"true\" on the Worker.\n\nRunbook: https://github.com/Sherivs/sherivs/blob/master/docs/runbooks/observability.md\n\n@hello@sherivs.com",
+  "tags": [
+    "team:sherivs",
+    "managed-by:sherivs-repo",
+    "sherivs-monitor-id:cron-wallet-missing",
+    "service:sherivs-cron",
+    "env:production",
+    "requires:worker-telemetry"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 1
+    },
+    "notify_audit": false,
+    "include_tags": false,
+    "renotify_interval": 0,
+    "require_full_window": false,
+    "notify_no_data": true,
+    "evaluation_delay": 60,
+    "no_data_timeframe": 30
+  }
+}
