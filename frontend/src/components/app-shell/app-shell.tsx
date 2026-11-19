@@ -1,11 +1,16 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bell, LogOut, Menu, Settings2, Sparkles } from "lucide-react";
+import { Bell, ClipboardCheck, LogOut, Menu, Settings2, Sparkles } from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { refreshPushTokenIfGranted, registerOfflineServiceWorker } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
 import { shellIcon } from "@/lib/shell/icon-registry";
-import { APP_SHELL_HOME, APP_SHELL_NOTIFICATIONS, APP_SHELL_PROFILE } from "@/lib/shell/paths";
+import {
+  APP_SHELL_APPROVALS,
+  APP_SHELL_HOME,
+  APP_SHELL_NOTIFICATIONS,
+  APP_SHELL_PROFILE,
+} from "@/lib/shell/paths";
 import {
   affiliationForOrganization,
   organizationOptions,
@@ -332,6 +337,19 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 );
               })}
             </div>
+            {app.profile ? (
+              <button
+                type="button"
+                className={`app-shell-drawer-item${path === APP_SHELL_APPROVALS ? " is-active" : ""}`}
+                onClick={() => go(APP_SHELL_APPROVALS, "approvals")}
+                data-testid="approval-inbox-link"
+              >
+                <ShellGlassIcon active={path === APP_SHELL_APPROVALS}>
+                  <ClipboardCheck />
+                </ShellGlassIcon>
+                Approvals
+              </button>
+            ) : null}
             {app.profile ? (
               <button
                 type="button"

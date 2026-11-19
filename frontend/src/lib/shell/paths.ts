@@ -14,6 +14,7 @@ export const APP_SHELL_SECURITY = "/home/security";
 export const APP_SHELL_HELP = "/home/help";
 export const APP_SHELL_NOTIFICATIONS = "/home/notifications";
 export const APP_SHELL_COMMUNICATIONS = "/home/s/communications";
+export const APP_SHELL_APPROVALS = "/home/s/approvals";
 
 export function appShellSectionPath(key: string): string {
   return `${APP_SHELL_HOME}/s/${encodeURIComponent(key)}`;

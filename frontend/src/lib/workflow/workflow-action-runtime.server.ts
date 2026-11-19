@@ -16,15 +16,24 @@ import {
 } from "./workflow-actions";
 import {
   dispatchWorkflowAction,
-  type WorkflowActionDispatcherPorts,
   type WorkflowActionType,
 } from "./workflow-action-dispatcher.server";
+import {
+  dispatchApprovedWorkflowDraft,
+  type ApprovedDraftPorts,
+  type ApprovedWorkflowDraft,
+} from "./workflow-approved-draft.server";
+import {
+  runWorkflowApprovalSweep,
+  type ApprovalSweepCounts,
+} from "./workflow-approval-sweep.server";
 
 type Row = Record<string, unknown>;
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 interface DbError {
   code?: string;
+  message?: string;
 }
 
 interface DbResult<T> {
@@ -50,6 +59,7 @@ interface Query<T> extends PromiseLike<DbResult<T[]>> {
 
 interface WorkflowAdmin {
   from(table: string): Query<Row>;
+  rpc(fn: string, args?: Record<string, unknown>): PromiseLike<DbResult<unknown>>;
 }
 
 function db(): WorkflowAdmin {
@@ -109,6 +119,53 @@ function parseActionType(row: Row | null): WorkflowActionType | null {
   };
 }
 
+const DRAFT_AUDIENCES = new Set(["whole_class", "all_guardians", "all_staff"]);
+const DRAFT_DATA_CLASSES = new Set(["public", "internal", "confidential", "minor_sensitive"]);
+
+function parseApprovedDraft(row: Row): ApprovedWorkflowDraft | null {
+  const params = row.template_params;
+  if (
+    typeof row.id !== "string" ||
+    typeof row.org_id !== "string" ||
+    typeof row.run_id !== "string" ||
+    typeof row.step_run_id !== "string" ||
+    typeof row.kind !== "string" ||
+    typeof row.category !== "string" ||
+    typeof row.idempotency_key !== "string" ||
+    typeof row.approval_id !== "string" ||
+    typeof row.data_class !== "string" ||
+    !DRAFT_DATA_CLASSES.has(row.data_class) ||
+    !Array.isArray(row.recipient_ids) ||
+    !row.recipient_ids.every((id) => typeof id === "string") ||
+    typeof params !== "object" ||
+    params === null ||
+    Array.isArray(params) ||
+    !Object.values(params).every((v) => ["string", "number", "boolean"].includes(typeof v)) ||
+    (row.audience_selector !== null &&
+      !(typeof row.audience_selector === "string" && DRAFT_AUDIENCES.has(row.audience_selector))) ||
+    (row.template_ref !== null && typeof row.template_ref !== "string") ||
+    (row.webhook_target_id !== null && typeof row.webhook_target_id !== "string")
+  ) {
+    return null;
+  }
+  return {
+    draftId: row.id,
+    approvalId: row.approval_id,
+    orgId: row.org_id,
+    runId: row.run_id,
+    stepRunId: row.step_run_id,
+    idempotencyKey: row.idempotency_key,
+    kind: row.kind,
+    category: row.category,
+    templateRef: row.template_ref,
+    templateParams: params as Record<string, string | number | boolean>,
+    recipientIds: row.recipient_ids as string[],
+    audienceSelector: row.audience_selector as ApprovedWorkflowDraft["audienceSelector"],
+    dataClass: row.data_class as ApprovedWorkflowDraft["dataClass"],
+    webhookTargetId: row.webhook_target_id,
+  };
+}
+
 export interface WorkflowActionRuntimeDependencies {
   /**
    * Outbound provider adapters for `live` delivery, keyed by connector. None are bound in v1, so
@@ -131,15 +188,8 @@ export function createWorkflowActionRuntime(
   const executeAction = createWorkflowActionExecutor(env, dependencies);
   const client = db();
   const actionOutcome: ActionOutcome = async ({ orgId, step }) => {
-    const draft = await one(
-      client
-        .from("wf_action_draft")
-        .select("id")
-        .eq("org_id", orgId)
-        .eq("idempotency_key", step.idempotencyKey)
-        .limit(1),
-    );
-    if (draft) return "draft";
+    // The executed record comes first: an approved draft keeps its draft row (status approved) and
+    // gains an outbox row once dispatched. A replayed step must then continue, not wait again.
     const sandbox = await one(
       client
         .from("wf_action_sandbox_outbox")
@@ -149,6 +199,15 @@ export function createWorkflowActionRuntime(
         .limit(1),
     );
     if (sandbox) return "executed";
+    const draft = await one(
+      client
+        .from("wf_action_draft")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("idempotency_key", step.idempotencyKey)
+        .limit(1),
+    );
+    if (draft) return "draft";
     const decisions = await rows(
       client
         .from("cg_tool_call_ledger")
@@ -178,10 +237,15 @@ export function createWorkflowActionRuntime(
   return { executeAction, actionOutcome };
 }
 
-export function createWorkflowActionExecutor(
+/**
+ * The dispatcher ports over the real stores. Shared by the executor (first dispatch of an action)
+ * and the approval sweep (dispatch of a draft after approval), so both apply the same broker
+ * authority, the same recipient/template/webhook checks and the same kill switch.
+ */
+export function createWorkflowActionPorts(
   env: WorkflowDeliveryEnvironment = process.env,
   dependencies: WorkflowActionRuntimeDependencies = {},
-): ExecuteAction {
+): ApprovedDraftPorts {
   const client = db();
   const ledger = createToolLedgerDb(supabaseAdmin);
 
@@ -324,7 +388,7 @@ export function createWorkflowActionExecutor(
     },
   };
 
-  const ports: WorkflowActionDispatcherPorts = {
+  const ports: ApprovedDraftPorts = {
     env,
     broker: { authority: brokerAuthority, ledger },
     gate: {
@@ -448,10 +512,29 @@ export function createWorkflowActionExecutor(
         { onConflict: "org_id,idempotency_key", ignoreDuplicates: true },
       );
       if (error) throw new Error("workflow_action_draft_write_failed");
+      // WF-07: every draft gets an approval in the tenant inbox. The call is idempotent. If it
+      // fails the draft is still safe (it cannot be approved without one) and the approval sweep
+      // requests it on its next pass, so a failure here must not fail the step.
+      const stored = await one(
+        client
+          .from("wf_action_draft")
+          .select("id")
+          .eq("org_id", draft.orgId)
+          .eq("idempotency_key", draft.idempotencyKey)
+          .limit(1),
+      );
+      if (typeof stored?.id === "string") {
+        try {
+          await client.rpc("wf_request_draft_approval", { p_org: draft.orgId, p_draft: stored.id });
+        } catch {
+          /* picked up by wf_request_missing_draft_approvals */
+        }
+      }
     },
     createSandboxOutbox: async (outbox) => {
       const { error } = await client.from("wf_action_sandbox_outbox").upsert(
         {
+          ...(outbox.draftId ? { draft_id: outbox.draftId } : {}),
           org_id: outbox.orgId,
           run_id: outbox.runId,
           step_run_id: outbox.stepRunId,
@@ -470,7 +553,50 @@ export function createWorkflowActionExecutor(
       );
       if (error) throw new Error("workflow_action_sandbox_write_failed");
     },
+    approvedDraft: async (orgId, draftId) => {
+      const draft = await one(
+        client
+          .from("wf_action_draft")
+          .select(
+            "id,org_id,run_id,step_run_id,kind,category,template_ref,template_params,recipient_ids,audience_selector,data_class,webhook_target_id,idempotency_key,approval_id,status",
+          )
+          .eq("org_id", orgId)
+          .eq("id", draftId)
+          .eq("status", "approved")
+          .limit(1),
+      );
+      if (!draft || typeof draft.approval_id !== "string") return null;
+      const approval = await one(
+        client
+          .from("wf_approval")
+          .select("id,status")
+          .eq("org_id", orgId)
+          .eq("id", draft.approval_id)
+          .eq("status", "approved")
+          .limit(1),
+      );
+      return approval ? parseApprovedDraft(draft) : null;
+    },
+    webhookTargetEnabled: async (orgId, targetId) =>
+      (await one(
+        client
+          .from("wf_webhook_target")
+          .select("id")
+          .eq("org_id", orgId)
+          .eq("id", targetId)
+          .eq("enabled", true)
+          .limit(1),
+      )) !== null,
   };
+
+  return ports;
+}
+
+export function createWorkflowActionExecutor(
+  env: WorkflowDeliveryEnvironment = process.env,
+  dependencies: WorkflowActionRuntimeDependencies = {},
+): ExecuteAction {
+  const ports = createWorkflowActionPorts(env, dependencies);
 
   return async (input: {
     orgId: string;
@@ -494,4 +620,20 @@ export function createWorkflowActionExecutor(
       action: input.action,
     });
   };
+}
+
+/** The production approval sweep: the same ports and guards as the executor, no extra authority. */
+export function createWorkflowApprovalSweepRuntime(
+  env: WorkflowDeliveryEnvironment = process.env,
+  dependencies: WorkflowActionRuntimeDependencies = {},
+): () => Promise<ApprovalSweepCounts> {
+  const ports = createWorkflowActionPorts(env, dependencies);
+  const client = db();
+  return () =>
+    runWorkflowApprovalSweep({
+      rpc: (fn, args) => client.rpc(fn, args),
+      dispatchApprovedDraft: async (orgId, draftId) => {
+        await dispatchApprovedWorkflowDraft(ports, { orgId, draftId });
+      },
+    });
 }

@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "node:crypto";
 import { runWorkflowTick } from "@/lib/workflow/workflow-runtime";
 import type { WorkflowRuntimePort, WorkflowTickOptions } from "@/lib/workflow/workflow-runtime";
+import type { ApprovalSweepCounts } from "@/lib/workflow/workflow-approval-sweep.server";
 
 type WorkflowTickEnv = Record<string, string | undefined>;
 const BEARER_SCHEME = "Bearer";
@@ -20,6 +21,12 @@ export function createWorkflowTickHandler(dependencies: {
   ) =>
     | NonNullable<WorkflowTickOptions["executeAction"]>
     | Promise<NonNullable<WorkflowTickOptions["executeAction"]>>;
+  /**
+   * WF-07 approval sweep (request missing approvals, expire, dispatch approved drafts). Runs before
+   * the tick so a draft approved since the last pass continues in the same cycle. Defaults to the
+   * production sweep only when no test doubles are injected, so the existing tests are unchanged.
+   */
+  createApprovalSweep?: (env: WorkflowTickEnv) => () => Promise<ApprovalSweepCounts>;
 }) {
   const env = dependencies.env ?? process.env;
   return async (request: Request): Promise<Response> => {
@@ -46,6 +53,21 @@ export function createWorkflowTickHandler(dependencies: {
             : (
                 await import("@/lib/workflow/workflow-action-runtime.server")
               ).createWorkflowActionRuntime(env);
+      const production = !dependencies.createActionExecutor && !dependencies.createPort;
+      let approvals: ApprovalSweepCounts | { failed: 1 } | undefined;
+      if (dependencies.createApprovalSweep || production) {
+        try {
+          const sweep = dependencies.createApprovalSweep
+            ? dependencies.createApprovalSweep(env)
+            : (
+                await import("@/lib/workflow/workflow-action-runtime.server")
+              ).createWorkflowApprovalSweepRuntime(env);
+          approvals = await sweep();
+        } catch {
+          // A sweep failure must not stop the tick; the next pass retries.
+          approvals = { failed: 1 };
+        }
+      }
       const counts = await runWorkflowTick(port, {
         worker: "workflow-tick",
         limit: 50,
@@ -53,7 +75,7 @@ export function createWorkflowTickHandler(dependencies: {
         budgetMs: 45_000,
         ...actionRuntime,
       });
-      return Response.json({ ok: true, ...counts });
+      return Response.json({ ok: true, ...counts, ...(approvals ? { approvals } : {}) });
     } catch {
       return Response.json({ ok: false, error: "workflow_tick_failed" }, { status: 500 });
     }

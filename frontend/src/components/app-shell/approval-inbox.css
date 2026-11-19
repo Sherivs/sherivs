@@ -1,0 +1,305 @@
+.wf-inbox {
+  display: grid;
+  gap: 1rem;
+  width: 100%;
+}
+
+.wf-inbox-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 0.5rem;
+}
+
+.wf-inbox-heading h1,
+.wf-inbox-detail h2,
+.wf-inbox-detail h3 {
+  margin: 0;
+  color: #10182b;
+}
+
+.wf-inbox-heading h1 {
+  font-size: clamp(1.8rem, 5vw, 2.6rem);
+  letter-spacing: -0.04em;
+}
+
+.wf-inbox-detail h3 {
+  font-size: 0.95rem;
+}
+
+.wf-inbox-eyebrow {
+  margin: 0 0 0.3rem;
+  color: #1848fd;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.wf-inbox-subtitle,
+.wf-inbox-meta,
+.wf-inbox-summary {
+  margin: 0.35rem 0 0;
+  color: #5c6783;
+}
+
+.wf-inbox-button,
+.wf-inbox-tabs button,
+.wf-inbox-row {
+  min-height: 44px;
+  border: 1px solid rgba(16, 24, 43, 0.12);
+  border-radius: 0.8rem;
+  background: rgba(255, 255, 255, 0.86);
+  color: #10182b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wf-inbox-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 44px;
+  padding: 0 1rem;
+  font-weight: 700;
+}
+
+.wf-inbox-button.is-primary {
+  border-color: #1848fd;
+  background: #1848fd;
+  color: #ffffff;
+}
+
+.wf-inbox-button.is-danger {
+  border-color: #b42318;
+  background: #b42318;
+  color: #ffffff;
+}
+
+.wf-inbox-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.wf-inbox-button:focus-visible,
+.wf-inbox-tabs button:focus-visible,
+.wf-inbox-row:focus-visible,
+.wf-inbox-note textarea:focus-visible {
+  outline: 3px solid rgba(24, 72, 253, 0.45);
+  outline-offset: 2px;
+}
+
+.wf-inbox-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.wf-inbox-tabs button {
+  padding: 0 1rem;
+  font-weight: 700;
+}
+
+.wf-inbox-tabs button.is-active {
+  border-color: #1848fd;
+  background: rgba(24, 72, 253, 0.1);
+  color: #1848fd;
+}
+
+.wf-inbox-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+}
+
+@media (min-width: 900px) {
+  .wf-inbox-layout {
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.wf-inbox-list {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wf-inbox-row {
+  display: grid;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  text-align: left;
+}
+
+.wf-inbox-row.is-selected {
+  border-color: #1848fd;
+  box-shadow: 0 0 0 2px rgba(24, 72, 253, 0.18);
+}
+
+.wf-inbox-row-title {
+  font-weight: 800;
+}
+
+.wf-inbox-row-meta {
+  color: #5c6783;
+  font-size: 0.85rem;
+}
+
+.wf-inbox-row-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.wf-inbox-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: rgba(16, 24, 43, 0.07);
+  color: #3b4563;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.wf-inbox-tag.is-high {
+  background: rgba(180, 35, 24, 0.12);
+  color: #8a1c13;
+}
+
+.wf-inbox-tag.is-mine {
+  background: rgba(24, 72, 253, 0.12);
+  color: #1236b8;
+}
+
+.wf-inbox-detail {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid rgba(16, 24, 43, 0.1);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.wf-inbox-section {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.wf-inbox-preview {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-left: 4px solid #1848fd;
+  background: rgba(24, 72, 253, 0.06);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.wf-inbox-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+
+.wf-inbox-facts dt {
+  color: #5c6783;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.wf-inbox-facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wf-inbox-digest,
+.wf-inbox-digest-full {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.6rem;
+  background: rgba(16, 24, 43, 0.06);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.wf-inbox-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  background: rgba(24, 72, 253, 0.08);
+  color: #1236b8;
+}
+
+.wf-inbox-banner.is-high {
+  background: rgba(180, 35, 24, 0.09);
+  color: #8a1c13;
+}
+
+.wf-inbox-banner.is-blocked {
+  background: rgba(16, 24, 43, 0.07);
+  color: #3b4563;
+}
+
+.wf-inbox-votes {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.wf-inbox-note {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.wf-inbox-note textarea {
+  min-height: 44px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(16, 24, 43, 0.16);
+  border-radius: 0.7rem;
+  font: inherit;
+}
+
+.wf-inbox-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.wf-inbox-empty {
+  margin: 0;
+  padding: 0.75rem 0;
+  color: #5c6783;
+  list-style: none;
+}
+
+.wf-inbox-live {
+  min-height: 0;
+}
+
+.wf-inbox-notice {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  background: rgba(12, 122, 67, 0.1);
+  color: #0a5c33;
+}
+
+.wf-inbox-error {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.8rem;
+  background: rgba(180, 35, 24, 0.1);
+  color: #8a1c13;
+}
