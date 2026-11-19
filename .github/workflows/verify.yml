@@ -281,6 +281,13 @@ jobs:
             -f tests/integration/wf07-approval-inbox.local.sql 2>&1 | tee /tmp/wf07-approvals.out
           ! grep -Fq 'WF07 FAIL' /tmp/wf07-approvals.out
           grep -Eq 'WF07 ALL PASS: [0-9]+ checks' /tmp/wf07-approvals.out
+      - name: WF-08 run history, redaction, retry and cancel (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf08-run-history.local.sql 2>&1 | tee /tmp/wf08-run-history.out
+          ! grep -Fq 'WF08 FAIL' /tmp/wf08-run-history.out
+          grep -Eq 'WF08 ALL PASS: [0-9]+ checks' /tmp/wf08-run-history.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -318,6 +325,8 @@ jobs:
           grep -Eq 'WF06-E2E RESULT: in_app_sandbox=1 drafts=1 refused_live=1 sent_live=0 dup=0$' /tmp/wf06-e2e.out
           node load/wf07-approval-e2e.mjs 2>&1 | tee /tmp/wf07-e2e.out
           grep -Eq 'WF07-E2E RESULT: approved_dispatched=1 single_approval_dispatched=0 rejected_dispatched=0 expired_dispatched=0 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf07-e2e.out
+          node load/wf08-run-history-e2e.mjs 2>&1 | tee /tmp/wf08-e2e.out
+          grep -Eq 'WF08-E2E RESULT: cancelled_dispatched=0 retried_dispatched=1 retry_runs=1 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf08-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

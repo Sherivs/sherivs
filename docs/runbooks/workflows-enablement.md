@@ -133,6 +133,44 @@ After that record exists, the authorized operator must:
 4. Start with one published, reviewed template and one allow-listed event type. Reconfirm autonomy,
    approval, tenant isolation, payload minimization, and audit evidence before expanding scope.
 
+## Run history, retry and cancel (WF-08)
+
+Origin: `database/supabase/migrations/20261117000950_sherivs_wf08_run_history.sql` and
+`architecture/adr/ADR-123_WF08_RUN_HISTORY_REDACTION_RETRY_CANCEL.md`. Not applied to any hosted
+database by the mission that wrote it; the lead applies it to staging. The migration number
+`20261117000950` replaces the reserved `20261117001000`, which another branch already uses.
+
+People with `workflows.view` open **Workflow runs** (`/home/s/workflow-runs`) in the workspace menu. The
+list and detail come from SQL functions that redact by allow-list: statuses, counts, codes and times are
+shown; recipient addresses, phone numbers, message text, parameters, payloads and approval notes never
+are. A draft shows how many recipients it has, not who.
+
+- **Cancel** needs `workflows.run` or `workflows.manage`, works on a queued, running or waiting run, asks
+  for a reason from a fixed list, stops waiting steps, approvals and undecided drafts, and also stops a
+  dispatch that was approved but not yet made (the outbox refuses an executed record for a run that is not
+  active). Cancelling twice is harmless.
+- **Retry** needs `workflows.run` and is offered only on a step that failed for good. It starts a NEW run
+  at that step; the original run is never edited. A second retry of the same step returns the same new run.
+  The person who retries cannot approve what the new run drafts. A chain stops at three retries.
+- Retry is refused, with a plain reason on the screen, when the step already drafted or took its action,
+  when the run was cancelled, when workflows are disabled for the organization, when the workflow is paused
+  or was republished, when it is an approval step, and when it would give the step more autonomy than it
+  had. Capped actions still stop at a draft and an approval; live delivery stays off.
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
+
+1. As a person with `workflows.view` only, open a failed run: no Cancel or Retry button is shown.
+2. As a person with `workflows.run`, retry the failed step. A new run appears with "Retry 1 of 3" and
+   the original stays failed. Repeating the retry opens the same new run.
+3. Cancel a run that has an approved draft waiting for the sweep. After the next cron pass
+   `wf_action_sandbox_outbox` has no row for it.
+4. Look in the audit chain for `workflow.run.cancel_requested` and `workflow.run.retry_requested`, one
+   each per action, with the person's id.
+
+If a retry misbehaves, the existing kill switch applies unchanged. For schema rollback use the paired WF-08
+rollback after the kill switch; it refuses to run while any retry run exists (cancel or leave them, they
+are history) and must be applied before the WF-07 rollback.
+
 ## Kill switch and rollback
 
 To stop new emission and processing, set `WORKFLOW_DELIVERY_MODE=off` first, then set the pilot

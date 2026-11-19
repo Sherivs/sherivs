@@ -18,6 +18,8 @@ import { InstitutionInterviewScreen } from "./institution-interview-screen";
 // WF-07: the approval inbox loads on demand (it brings the passkey client and the server-function
 // stubs), so the /home bundle stays inside its budget.
 const ApprovalInboxScreen = lazy(() => import("./approval-inbox-screen"));
+// WF-08: run history loads on demand for the same reason.
+const RunHistoryScreen = lazy(() => import("./run-history-screen"));
 
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
@@ -32,6 +34,13 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
     return (
       <Suspense fallback={<p className="app-shell-empty">Loading approvals…</p>}>
         <ApprovalInboxScreen />
+      </Suspense>
+    );
+  }
+  if (sectionKey === "workflow-runs") {
+    return (
+      <Suspense fallback={<p className="app-shell-empty">Loading run history…</p>}>
+        <RunHistoryScreen />
       </Suspense>
     );
   }

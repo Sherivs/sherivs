@@ -84,6 +84,8 @@ const DOCUMENTED_EXEMPT: Readonly<Record<string, string>> = {
     "delivery is self-limited by users RLS on user clients (push_token read only for visible rows); sendTestPush targets the caller; fanout reach across recipients requires DB re-verify",
   "workflow-approvals.functions.ts":
     "permission-based, not role-name-based (WF-07, ADR-122): every call passes the verified session user to SECURITY DEFINER functions that check workflows.approve, requester and author separation, one vote each and the content digest; there is no school-admin role check and none is wanted",
+  "workflow-run-history.functions.ts":
+    "permission-based, not role-name-based (WF-08, ADR-123): every call passes the verified session user to SECURITY DEFINER functions that check workflows.view, workflows.run or workflows.manage for that person's own organisation, redact by allow-list, and make retry and cancel idempotent and audited; there is no school-admin role check and none is wanted",
 };
 
 /** Inline pure school-admin gate detectors (both dialects in use). */
