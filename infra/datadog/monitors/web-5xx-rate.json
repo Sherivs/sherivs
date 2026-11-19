@@ -1,0 +1,25 @@
+{
+  "name": "[sherivs-web] High 5xx rate (production)",
+  "type": "query alert",
+  "query": "sum(last_15m):sum:trace.http.server.request.errors{service:sherivs-web,env:production}.as_count() / clamp_min(sum:trace.http.server.request.hits{service:sherivs-web,env:production}.as_count(), 20) > 0.1",
+  "message": "{{#is_alert}}More than 10% of sherivs-web production requests returned 5xx in the last 15 minutes.{{/is_alert}}{{#is_warning}}More than 5% of sherivs-web production requests returned 5xx.{{/is_warning}} Check APM > sherivs-web > Errors and the latest Vercel deployment.\n\nRunbook: https://github.com/Sherivs/sherivs/blob/master/docs/runbooks/observability.md\n\n@hello@sherivs.com",
+  "tags": [
+    "team:sherivs",
+    "managed-by:sherivs-repo",
+    "sherivs-monitor-id:web-5xx-rate",
+    "service:sherivs-web",
+    "env:production"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 0.1,
+      "warning": 0.05
+    },
+    "notify_audit": false,
+    "include_tags": false,
+    "renotify_interval": 0,
+    "require_full_window": false,
+    "notify_no_data": false,
+    "evaluation_delay": 60
+  }
+}
