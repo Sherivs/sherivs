@@ -1,3 +1,5 @@
+import { createRecorder } from "./telemetry.js";
+
 const ROUTES = [
   {
     name: "wallet-topup-reconcile",
@@ -88,7 +90,7 @@ function targetUrl(env, route) {
   return new URL(route.path, base);
 }
 
-async function callRoute(route, env, fetchImpl = fetch) {
+async function callRoute(route, env, fetchImpl = fetch, recorder = undefined) {
   const started = Date.now();
   let status = 0;
   let bytes = 0;
@@ -102,15 +104,23 @@ async function callRoute(route, env, fetchImpl = fetch) {
     status = response.status;
     bytes = (await response.arrayBuffer()).byteLength;
   } finally {
-    console.log(
-      `cron route=${route.name} http=${status} ms=${Date.now() - started} bytes=${bytes}`,
-    );
+    const ms = Date.now() - started;
+    console.log(`cron route=${route.name} http=${status} ms=${ms} bytes=${bytes}`);
+    recorder?.record({
+      route: route.name,
+      path: route.path,
+      status,
+      ms,
+      bytes,
+      startedAt: started,
+    });
   }
   return { route: route.name, status, ms: Date.now() - started };
 }
 
 const worker = {
   async scheduled(controller, env, ctx) {
+    const recorder = createRecorder(env, "scheduled");
     const tasks = ROUTES.map(async (route) => {
       if (!isDue(route, controller.scheduledTime)) {
         console.log(`cron skipped route=${route.name} reason=not_due`);
@@ -121,15 +131,16 @@ const worker = {
         return;
       }
       try {
-        await callRoute(route, env);
+        await callRoute(route, env, fetch, recorder);
       } catch {
         // A failed endpoint must not prevent the remaining scheduled routes from running.
       }
     });
-    ctx.waitUntil(Promise.allSettled(tasks));
+    // Telemetry export is off unless OBSERVABILITY_DATADOG_ENABLED is exactly "true".
+    ctx.waitUntil(Promise.allSettled(tasks).then(() => recorder.flush()));
   },
 
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const secret = env.CRON_SECRET;
     const authorization = request.headers.get("authorization") ?? "";
     if (!secret || !(await constantTimeEqual(authorization, "Bearer " + secret))) {
@@ -141,11 +152,16 @@ const worker = {
     if (!route) return Response.json({ error: "unknown_route" }, { status: 404 });
     if (!isEnabled(route, env)) return Response.json({ error: "route_disabled" }, { status: 409 });
 
+    const recorder = createRecorder(env, "manual");
     try {
-      const result = await callRoute(route, env);
+      const result = await callRoute(route, env, fetch, recorder);
       return Response.json(result);
     } catch {
       return Response.json({ route: route.name, status: 0, ms: 0 }, { status: 502 });
+    } finally {
+      const flushed = recorder.flush();
+      if (ctx?.waitUntil) ctx.waitUntil(flushed);
+      else await flushed;
     }
   },
 };

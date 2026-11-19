@@ -48,6 +48,7 @@
     "verify:secrets": "node scripts/verification/secret-scan.mjs",
     "types:generate": "node scripts/generate-database-types.mjs",
     "verify:env": "vitest run tests/unit/env.test.ts",
+    "datadog:plan": "node scripts/datadog/apply.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint .",
     "format": "prettier --write ."
