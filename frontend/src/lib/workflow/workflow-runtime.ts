@@ -165,6 +165,15 @@ export interface WorkflowTickOptions {
     idempotencyKey: string;
     signal: AbortSignal;
   }) => Promise<void | { status: "draft" | "executed" }>;
+  /**
+   * Looks up what an earlier dispatch of this step's action produced. Called only when the
+   * idempotent effect is replayed (the action callback is not run again). `null` means the
+   * outcome is unknown; the runtime then fails closed and leaves the step waiting.
+   */
+  actionOutcome?: (input: {
+    orgId: string;
+    step: ClaimedWorkflowStep;
+  }) => Promise<"draft" | "executed" | null>;
   estimateActionCost?: (input: {
     orgId: string;
     step: ClaimedWorkflowStep;
@@ -302,6 +311,7 @@ export async function runWorkflowTick(
               clock,
               random: options.random,
               executeAction: options.executeAction,
+              actionOutcome: options.actionOutcome,
               estimateActionCost: options.estimateActionCost,
               timeoutMs: Math.max(
                 1,
@@ -389,7 +399,7 @@ async function advanceClaimedStep(
   step: ClaimedWorkflowStep,
   options: Pick<
     WorkflowTickOptions,
-    "clock" | "random" | "executeAction" | "estimateActionCost"
+    "clock" | "random" | "executeAction" | "actionOutcome" | "estimateActionCost"
   > & { timeoutMs: number },
 ): Promise<WorkflowTransition> {
   const record = await port.loadRun(step.orgId, step.runId);
@@ -457,11 +467,23 @@ async function advanceClaimedStep(
           return status;
         },
       );
-      if (
-        actionResult.value?.status === "draft" ||
-        (effectStatus === "replayed" && step.autonomyLevel === "draft")
-      ) {
+      if (actionResult.value?.status === "draft") {
         return { step, run: record.run, status: "waiting" };
+      }
+      if (effectStatus === "replayed") {
+        // The callback did not run, so its result is unknown here. A replay must not advance
+        // the run as if the action executed when the original dispatch produced a draft.
+        const replayedOutcome =
+          currentStep.action !== undefined
+            ? options.actionOutcome
+              ? await options.actionOutcome({ orgId: step.orgId, step })
+              : null
+            : step.autonomyLevel === "draft"
+              ? "draft"
+              : "executed";
+        if (replayedOutcome !== "executed") {
+          return { step, run: record.run, status: "waiting" };
+        }
       }
     }
   }

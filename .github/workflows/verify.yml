@@ -307,7 +307,8 @@ jobs:
           grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
           node load/wf05-event-e2e.mjs 2>&1 | tee /tmp/wf05-e2e.out
           grep -Eq 'WF05-E2E RESULT: .* dup=0$' /tmp/wf05-e2e.out
-          grep -Eq 'WF06-E2E RESULT: .* sent_live=0 dup=0$' /tmp/wf05-e2e.out
+          node load/wf06-action-e2e.mjs 2>&1 | tee /tmp/wf06-e2e.out
+          grep -Eq 'WF06-E2E RESULT: in_app_sandbox=1 drafts=1 refused_live=1 sent_live=0 dup=0$' /tmp/wf06-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

@@ -50,16 +50,10 @@ async function seed(client) {
     templateId,
     steps: [
       {
-        stepId: "notify",
-        kind: "action",
+        stepId: "record",
+        kind: "task",
         assignment: { kind: "unassigned" },
-        authorizedActions: ["workflow.action.in_app"],
-        action: {
-          kind: "in_app",
-          templateRef: "attendance.notice",
-          templateParams: { status: "absent" },
-          recipientIds: [],
-        },
+        authorizedActions: [],
       },
     ],
     onFailure: { kind: "halt" },
@@ -83,21 +77,13 @@ async function seed(client) {
     orgId = school.rows[0].id;
 
     await client.query(
-      `INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
-       VALUES ($1, true, 'act_and_report')`,
+      "INSERT INTO public.wf_org_settings (org_id, workflows_enabled) VALUES ($1, true)",
       [orgId],
     );
     await client.query(
-      `INSERT INTO public.wf_template
-         (id, template_key, version, name, description, graph, agent_ref, autonomy_max)
-       VALUES ($1, $2, 1, 'WF05 synthetic top-up template',
-         'Local WF05 event dispatch fixture.', $3::jsonb, 'wf06.e2e.agent', 'act_and_report')`,
+      `INSERT INTO public.wf_template (id, template_key, version, name, description, graph)
+       VALUES ($1, $2, 1, 'WF05 synthetic top-up template', 'Local WF05 event dispatch fixture.', $3::jsonb)`,
       [templateId, `wf05-e2e-${runTag}`, JSON.stringify(graph)],
-    );
-    await client.query(
-      `INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
-       VALUES ($1, 'wf06.e2e.agent', 'act_and_report')`,
-      [orgId],
     );
     await client.query(
       "INSERT INTO public.wf_definition (id, org_id, key, name) VALUES ($1, $2, $3, 'WF05 synthetic workflow')",
@@ -157,113 +143,9 @@ async function workflowPort(vite, token) {
   const serverRuntime = await vite.ssrLoadModule(
     "/frontend/src/lib/workflow/workflow-runtime.server.ts",
   );
-  const actionDispatcher = await vite.ssrLoadModule(
-    "/frontend/src/lib/workflow/workflow-action-dispatcher.server.ts",
-  );
   return {
     runWorkflowTick: runtime.runWorkflowTick,
     port: serverRuntime.createWorkflowRuntimePort(),
-    dispatchWorkflowAction: actionDispatcher.dispatchWorkflowAction,
-  };
-}
-
-function actionPorts(dispatchWorkflowAction, orgId, overrides = {}) {
-  const decisions = new Map();
-  const outbox = new Map();
-  const drafts = [];
-  let brokerCalls = 0;
-  const ports = {
-    env: {
-      WORKFLOW_DELIVERY_MODE: "sandbox",
-      WORKFLOWS_ENABLED: "true",
-      APP_ENV: "staging",
-    },
-    broker: {
-      authority: {
-        async resolve({ tool }) {
-          return {
-            ctx: {
-              kind: "tenant_membership",
-              tenantRef: orgId,
-              status: "active",
-              permissions: new Set(["workflows.run"]),
-              capability: {
-                id: "workflow-delivery",
-                tier: tool.tier,
-                requiresPermission: "workflows.run",
-                connector: tool.connector,
-              },
-              effective: "act_autonomously",
-            },
-            state: {
-              killSwitch: false,
-              disabledTools: new Set(),
-              callsThisHour: 0,
-              binding: {
-                connector: tool.connector,
-                scope: "tenant",
-                tenantRef: orgId,
-                secretRef: "vault://in-app/actions#v1",
-                status: "active",
-              },
-            },
-          };
-        },
-      },
-      ledger: {
-        async findDecision({ twinContextId, toolId, idempotencyKey }) {
-          return decisions.get(`${twinContextId}:${toolId}:${idempotencyKey}`) ?? null;
-        },
-        async appendDecision(input) {
-          const id = `wf06-decision-${brokerCalls + 1}`;
-          brokerCalls += 1;
-          decisions.set(`${input.twinContextId}:${input.tool.id}:${input.idempotencyKey}`, {
-            id,
-            decision: input.decision,
-            argsDigest: input.argsDigest,
-          });
-          return { id };
-        },
-      },
-    },
-    gate: {},
-    orgWorkflowsEnabled: async () => true,
-    actionType: async (kind) => ({
-      kind,
-      category: "communication",
-      brokerToolId: `workflow.action.${kind}`,
-      brokerVersion: "1.0.0",
-      effect: kind === "in_app" ? "internal_state" : "customer_visible",
-      maxAutonomy: "act_and_report",
-    }),
-    approvedTemplate: async () => true,
-    resolveRecipients: async (_org, recipientIds) => recipientIds,
-    registeredWebhook: async () => null,
-    brokerContext: async () => "wf06-e2e-context",
-    createDraft: async (draft) => drafts.push(draft),
-    createSandboxOutbox: async (row) => outbox.set(`${row.orgId}:${row.idempotencyKey}`, row),
-    ...overrides,
-  };
-  return {
-    ports,
-    brokerCalls: () => brokerCalls,
-    outbox,
-    drafts,
-    execute: async ({ orgId: actionOrgId, step, action, authorizedActions, idempotencyKey }) =>
-      dispatchWorkflowAction(ports, {
-        orgId: actionOrgId,
-        runId: step.runId,
-        stepRunId: step.id,
-        idempotencyKey,
-        actionClass: step.actionClass,
-        authorizedActions,
-        autonomy: {
-          template: step.autonomyLevel,
-          tenant: step.autonomyLevel,
-          agent: step.autonomyLevel,
-        },
-        action,
-      }),
   };
 }
 
@@ -313,13 +195,12 @@ async function main() {
 
     const jwtSecret = fs.readFileSync(path.join(simDir, "load", ".jwt-secret"), "utf8").trim();
     const runtime = await workflowPort(vite, serviceRoleToken(jwtSecret));
-    const actionState = actionPorts(runtime.dispatchWorkflowAction, orgId);
     const counts = await runtime.runWorkflowTick(runtime.port, {
       worker: `wf05-${runTag}`,
       limit: 10,
       leaseSeconds: 60,
       budgetMs: 45_000,
-      executeAction: actionState.execute,
+      executeAction: async () => {},
     });
     const result = await client.query(
       `SELECT e.status,
@@ -342,109 +223,17 @@ async function main() {
       [orgId, emitted.rows[0].id],
     );
     const duplicates = duplicateRuns.rows[0].count;
-    const actionStep = await client.query(
-      `SELECT r.id AS run_id, s.id AS step_run_id, s.idempotency_key
-         FROM public.wf_run r
-         JOIN public.wf_step_run s ON s.org_id = r.org_id AND s.run_id = r.id
-        WHERE r.org_id = $1 AND r.event_id = $2 AND s.step_key = 'notify'`,
-      [orgId, emitted.rows[0].id],
-    );
-    if (actionStep.rowCount !== 1) throw new Error("WF06 action step did not run exactly once");
-    const action = {
-      kind: "in_app",
-      templateRef: "attendance.notice",
-      templateParams: { status: "absent" },
-      recipientIds: [],
-    };
-    const step = actionStep.rows[0];
-    await runtime.dispatchWorkflowAction(actionState.ports, {
-      orgId,
-      runId: step.run_id,
-      stepRunId: step.step_run_id,
-      idempotencyKey: step.idempotency_key,
-      actionClass: "communication",
-      authorizedActions: ["workflow.action.in_app"],
-      autonomy: {
-        template: "act_and_report",
-        tenant: "act_and_report",
-        agent: "act_and_report",
-      },
-      action,
-    });
-    const massRecipients = Array.from(
-      { length: 26 },
-      (_, index) => `f0600000-0000-4000-8000-${String(index + 1000).padStart(12, "0")}`,
-    );
-    const massResult = await runtime.dispatchWorkflowAction(actionState.ports, {
-      orgId,
-      runId: step.run_id,
-      stepRunId: step.step_run_id,
-      idempotencyKey: `wf06-mass-${runTag}`,
-      actionClass: "communication",
-      authorizedActions: ["workflow.action.sms"],
-      autonomy: {
-        template: "act_and_report",
-        tenant: "act_and_report",
-        agent: "act_and_report",
-      },
-      action: {
-        kind: "sms",
-        templateRef: "attendance.notice",
-        recipientIds: massRecipients,
-      },
-    });
-    if (massResult.status !== "draft" || actionState.drafts.length !== 1) {
-      throw new Error("WF06 mass SMS did not remain a draft");
-    }
-    const brokerCallsBeforeLive = actionState.brokerCalls();
-    let stagingLiveRefused = false;
-    try {
-      await runtime.dispatchWorkflowAction(
-        {
-          ...actionState.ports,
-          env: {
-            WORKFLOW_DELIVERY_MODE: "live",
-            WORKFLOWS_ENABLED: "true",
-            APP_ENV: "staging",
-          },
-        },
-        {
-          orgId,
-          runId: step.run_id,
-          stepRunId: step.step_run_id,
-          idempotencyKey: `wf06-live-${runTag}`,
-          actionClass: "communication",
-          authorizedActions: ["workflow.action.in_app"],
-          autonomy: {
-            template: "act_and_report",
-            tenant: "act_and_report",
-            agent: "act_and_report",
-          },
-          action,
-        },
-      );
-    } catch (error) {
-      stagingLiveRefused = error.message === "workflow_delivery_refused";
-    }
-    const dup = actionState.outbox.size === 1 && actionState.brokerCalls() === 1 ? 0 : 1;
     console.log(
       `WF05-E2E RESULT: event=${emitted.rowCount} status=${row?.status ?? "missing"} runs=${row?.runs ?? 0} audits=${row?.audits ?? 0} dispatched=${counts.succeeded} dup=${duplicates}`,
-    );
-    console.log(
-      `WF06-E2E RESULT: event=${emitted.rowCount} run=${row?.runs ?? 0} action=${actionStep.rowCount} sandbox_ledger=${actionState.brokerCalls()} drafts=${actionState.drafts.length} live_refused=${Number(stagingLiveRefused)} sent_live=0 dup=${dup}`,
     );
     if (
       row?.status !== "dispatched" ||
       row.runs !== 1 ||
       row.audits < 1 ||
       counts.succeeded < 1 ||
-      duplicates !== 0 ||
-      actionState.outbox.size !== 1 ||
-      actionState.brokerCalls() !== brokerCallsBeforeLive ||
-      !stagingLiveRefused ||
-      dup !== 0
+      duplicates !== 0
     ) {
-      throw new Error("WF05/WF06 event, action, broker or delivery assertion failed");
+      throw new Error("WF05 event dispatch, published workflow run or audit assertion failed");
     }
   } finally {
     globalThis.fetch = originalFetch;

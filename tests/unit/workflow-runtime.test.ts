@@ -30,6 +30,7 @@ async function runBudgetScenario(
   costUnits = 1,
   autonomyLevel: "suggest" | "draft" | "act_with_approval" | "act_and_report" = "act_and_report",
   action?: WorkflowActionDefinition,
+  firstStatus?: "draft" | "executed",
 ) {
   const orgId = "org-budget";
   const actor: WorkflowActorScope = {
@@ -81,7 +82,7 @@ async function runBudgetScenario(
     maxLoopIterations: 5,
   });
   port.steps.set("run-budget", [{ id: "step-budget", stepKey: "act", iteration: 0, input: {} }]);
-  port.stepsToClaim.push({
+  const claimable = {
     id: "step-budget",
     orgId,
     leaseOwner: "worker-budget",
@@ -97,17 +98,45 @@ async function runBudgetScenario(
     autonomyLevel,
     budgetUnits,
     spentUnits,
-  });
+  } as const;
+  port.stepsToClaim.push(claimable);
   let actionCalls = 0;
   const counts = await runWorkflowTick(port, {
     worker: "worker-budget",
     executeAction: async () => {
       actionCalls += 1;
-      return autonomyLevel === "draft" ? { status: "draft" as const } : undefined;
+      return firstStatus === undefined
+        ? autonomyLevel === "draft"
+          ? { status: "draft" as const }
+          : undefined
+        : { status: firstStatus };
     },
     estimateActionCost: () => costUnits,
   });
-  return { actionCalls, counts, transition: port.transitions[0] };
+  /** Re-claims the same step (same idempotency key) as after a lease expiry or crash. */
+  const replay = async (actionOutcome?: () => Promise<"draft" | "executed" | null>) => {
+    port.stepsToClaim.push({ ...claimable, attempt: 2 });
+    const before = port.transitions.length;
+    let outcomeCalls = 0;
+    await runWorkflowTick(port, {
+      worker: "worker-budget-2",
+      executeAction: async () => {
+        actionCalls += 1;
+        return { status: "executed" as const };
+      },
+      ...(actionOutcome
+        ? {
+            actionOutcome: async () => {
+              outcomeCalls += 1;
+              return actionOutcome();
+            },
+          }
+        : {}),
+      estimateActionCost: () => costUnits,
+    });
+    return { transition: port.transitions[before], outcomeCalls };
+  };
+  return { actionCalls: () => actionCalls, counts, transition: port.transitions[0], replay };
 }
 
 describe("workflow runtime reliability", () => {
@@ -124,7 +153,7 @@ describe("workflow runtime reliability", () => {
       [2, 1, 2],
     ]) {
       const result = await runBudgetScenario(budget, spent, cost);
-      expect(result.actionCalls).toBe(0);
+      expect(result.actionCalls()).toBe(0);
       expect(result.transition.status).toBe("dead");
       expect(result.transition.errorCode).toBe("budget.exhausted");
     }
@@ -137,14 +166,46 @@ describe("workflow runtime reliability", () => {
       templateParams: {},
       recipientIds: [],
     });
-    expect(result.actionCalls).toBe(1);
+    expect(result.actionCalls()).toBe(1);
     expect(result.transition.status).toBe("waiting");
   });
 
   it("executes an effect when its estimated cost fits the remaining budget", async () => {
     const result = await runBudgetScenario(3, 1, 2);
-    expect(result.actionCalls).toBe(1);
+    expect(result.actionCalls()).toBe(1);
     expect(result.counts.dead).toBe(0);
+  });
+
+  it("does not advance a replayed action whose original dispatch produced a draft", async () => {
+    const action: WorkflowActionDefinition = {
+      kind: "sms",
+      templateRef: "attendance.notice",
+      templateParams: {},
+      recipientIds: [],
+      dataClass: "internal",
+    };
+    // The step is act_and_report, but the dispatcher drafted (e.g. mass or confidential).
+    const draftedOnce = await runBudgetScenario(5, 0, 0, "act_and_report", action, "draft");
+    expect(draftedOnce.transition.status).toBe("waiting");
+    const draftReplay = await draftedOnce.replay(async () => "draft");
+    expect(draftReplay.outcomeCalls).toBe(1);
+    expect(draftReplay.transition.status).toBe("waiting");
+    expect(draftedOnce.actionCalls()).toBe(1);
+
+    // Unknown outcome (or no lookup wired) fails closed: the run waits, never advances.
+    const unknown = await runBudgetScenario(5, 0, 0, "act_and_report", action, "draft");
+    expect((await unknown.replay(async () => null)).transition.status).toBe("waiting");
+    const unwired = await runBudgetScenario(5, 0, 0, "act_and_report", action, "draft");
+    expect((await unwired.replay()).transition.status).toBe("waiting");
+    expect(unwired.actionCalls()).toBe(1);
+
+    // A replay of an action that really executed may advance, without re-running the effect.
+    const executedOnce = await runBudgetScenario(5, 0, 0, "act_and_report", action, "executed");
+    expect(executedOnce.transition.status).not.toBe("waiting");
+    const executedReplay = await executedOnce.replay(async () => "executed");
+    expect(executedReplay.outcomeCalls).toBe(1);
+    expect(executedReplay.transition.status).not.toBe("waiting");
+    expect(executedOnce.actionCalls()).toBe(1);
   });
 
   it("does not repeat a completed effect after lease expiry and step re-claim", async () => {

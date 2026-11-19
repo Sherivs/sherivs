@@ -29,6 +29,8 @@ import {
 type Row = Record<string, unknown>;
 
 const timeAuthority = new TimeAuthority(new SystemClock());
+/** How long a drafted action waits for human review (same as the WF-03 approval expiry). */
+const DRAFT_REVIEW_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 interface DbError {
   code?: string;
@@ -593,6 +595,22 @@ export function createWorkflowRuntimePort(): WorkflowRuntimePort {
     },
 
     async persistTransition(transition: WorkflowTransition): Promise<void> {
+      if (transition.status === "waiting") {
+        // wf_step_run_wait_fields: a waiting non-approval step needs resume_at. An action step
+        // waits here when its dispatch produced a draft for human review (WF-06); the review
+        // window matches the approval expiry. Set while the lease is still ours, so the same
+        // RPC below can move it to waiting. The claimer never resumes waiting steps by itself.
+        const marked = await client
+          .from("wf_step_run")
+          .update({
+            resume_at: new Date(timeAuthority.now().atMs + DRAFT_REVIEW_WINDOW_MS).toISOString(),
+          })
+          .eq("id", transition.step.id)
+          .eq("org_id", transition.step.orgId)
+          .eq("lease_owner", transition.step.leaseOwner)
+          .eq("attempt", transition.step.attempt);
+        if (marked.error) throw new Error("workflow_transition_persist_failed");
+      }
       const result = await client.rpc("wf_persist_step_transition", {
         p_step: transition.step.id,
         p_lease_owner: transition.step.leaseOwner,

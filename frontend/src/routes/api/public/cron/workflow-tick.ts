@@ -37,19 +37,21 @@ export function createWorkflowTickHandler(dependencies: {
         dependencies.createPort ??
         (await import("@/lib/workflow/workflow-runtime.server")).createWorkflowRuntimePort;
       const port = await createPort();
-      const executeAction = dependencies.createActionExecutor
-        ? await dependencies.createActionExecutor(env)
-        : dependencies.createPort
-          ? undefined
-          : (
-              await import("@/lib/workflow/workflow-action-runtime.server")
-            ).createWorkflowActionExecutor(env);
+      // Injected executors get no replay outcome lookup: a replayed action step then waits.
+      const actionRuntime: Pick<WorkflowTickOptions, "executeAction" | "actionOutcome"> =
+        dependencies.createActionExecutor
+          ? { executeAction: await dependencies.createActionExecutor(env) }
+          : dependencies.createPort
+            ? {}
+            : (
+                await import("@/lib/workflow/workflow-action-runtime.server")
+              ).createWorkflowActionRuntime(env);
       const counts = await runWorkflowTick(port, {
         worker: "workflow-tick",
         limit: 50,
         leaseSeconds: 60,
         budgetMs: 45_000,
-        ...(executeAction ? { executeAction } : {}),
+        ...actionRuntime,
       });
       return Response.json({ ok: true, ...counts });
     } catch {

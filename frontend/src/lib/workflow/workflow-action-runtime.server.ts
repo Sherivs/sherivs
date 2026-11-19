@@ -7,8 +7,13 @@ import { validateConnectorBinding } from "../tool-broker/connector-vault";
 import type { ConnectorBinding } from "../tool-broker/connector-vault";
 import type { ActingContext, BrokerState } from "../tool-broker/broker";
 import type { ToolDefinition } from "../tool-broker/tool-contract";
+import type { ConnectorAdapter, HttpPort } from "../connector-adapters/adapter-contract";
 import type { WorkflowTickOptions } from "./workflow-runtime";
-import { parseWorkflowDeliveryMode, type WorkflowDeliveryEnvironment } from "./workflow-actions";
+import {
+  parseWorkflowDeliveryMode,
+  WORKFLOW_ACTION_KINDS,
+  type WorkflowDeliveryEnvironment,
+} from "./workflow-actions";
 import {
   dispatchWorkflowAction,
   type WorkflowActionDispatcherPorts,
@@ -104,7 +109,79 @@ function parseActionType(row: Row | null): WorkflowActionType | null {
   };
 }
 
-export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = process.env) {
+export interface WorkflowActionRuntimeDependencies {
+  /**
+   * Outbound provider adapters for `live` delivery, keyed by connector. None are bound in v1, so
+   * live delivery is refused with `workflow_live_adapter_unavailable`. Tests inject counting stubs.
+   */
+  readonly adapters?: Readonly<Record<string, ConnectorAdapter>>;
+  readonly http?: HttpPort;
+}
+
+type ExecuteAction = NonNullable<WorkflowTickOptions["executeAction"]>;
+type ActionOutcome = NonNullable<WorkflowTickOptions["actionOutcome"]>;
+
+const WORKFLOW_ACTION_TOOL_IDS = WORKFLOW_ACTION_KINDS.map((kind) => `workflow.action.${kind}`);
+
+/** The production executor plus the replay outcome lookup the tick needs (review note 1). */
+export function createWorkflowActionRuntime(
+  env: WorkflowDeliveryEnvironment = process.env,
+  dependencies: WorkflowActionRuntimeDependencies = {},
+): { executeAction: ExecuteAction; actionOutcome: ActionOutcome } {
+  const executeAction = createWorkflowActionExecutor(env, dependencies);
+  const client = db();
+  const actionOutcome: ActionOutcome = async ({ orgId, step }) => {
+    const draft = await one(
+      client
+        .from("wf_action_draft")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("idempotency_key", step.idempotencyKey)
+        .limit(1),
+    );
+    if (draft) return "draft";
+    const sandbox = await one(
+      client
+        .from("wf_action_sandbox_outbox")
+        .select("id")
+        .eq("org_id", orgId)
+        .eq("idempotency_key", step.idempotencyKey)
+        .limit(1),
+    );
+    if (sandbox) return "executed";
+    const decisions = await rows(
+      client
+        .from("cg_tool_call_ledger")
+        .select("id")
+        .eq("kind", "decision")
+        .eq("tenant_ref", orgId)
+        .eq("verdict", "execute")
+        .eq("idempotency_key", step.idempotencyKey)
+        .in("tool_id", WORKFLOW_ACTION_TOOL_IDS)
+        .limit(2),
+    );
+    const decisionIds = decisions
+      .map((row) => row.id)
+      .filter((id): id is string => typeof id === "string");
+    if (decisionIds.length !== 1) return null;
+    const succeeded = await one(
+      client
+        .from("cg_tool_call_ledger")
+        .select("id")
+        .eq("kind", "outcome")
+        .eq("parent_id", decisionIds[0])
+        .eq("outcome", "succeeded")
+        .limit(1),
+    );
+    return succeeded ? "executed" : null;
+  };
+  return { executeAction, actionOutcome };
+}
+
+export function createWorkflowActionExecutor(
+  env: WorkflowDeliveryEnvironment = process.env,
+  dependencies: WorkflowActionRuntimeDependencies = {},
+): ExecuteAction {
   const client = db();
   const ledger = createToolLedgerDb(supabaseAdmin);
 
@@ -252,7 +329,7 @@ export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = 
     broker: { authority: brokerAuthority, ledger },
     gate: {
       ledger,
-      adapters: {},
+      adapters: dependencies.adapters ?? {},
       secrets: { resolve: async () => null },
       bindings: async ({ connector, scope, tenantRef }) => {
         const row = await one(
@@ -267,7 +344,7 @@ export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = 
         );
         return connectorBinding(row);
       },
-      http: {
+      http: dependencies.http ?? {
         request: async () => {
           throw new Error("workflow_adapter_unavailable");
         },
