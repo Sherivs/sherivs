@@ -1774,3 +1774,20 @@ body:has(.workspace-preview) {
   clip: rect(0 0 0 0);
   white-space: nowrap;
 }
+
+/* Phones: the last-sync time stays available to screen readers but is not drawn,
+   so the header fits a 390px screen. The full sync state shows from 768px up. */
+@media (max-width: 767px) {
+  .app-shell-header-actions {
+    min-width: 0;
+  }
+
+  .app-shell-connection-last-sync {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+}
