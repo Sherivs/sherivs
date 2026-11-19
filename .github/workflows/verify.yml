@@ -267,6 +267,13 @@ jobs:
             -f tests/integration/wf05-event-sources.local.sql 2>&1 | tee /tmp/wf05-sources.out
           ! grep -Fq 'WF05 FAIL' /tmp/wf05-sources.out
           grep -Eq 'WF05 ALL PASS: [0-9]+ checks' /tmp/wf05-sources.out
+      - name: WF-06 action catalogue, caps and tenant isolation (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf06-actions.local.sql 2>&1 | tee /tmp/wf06-actions.out
+          ! grep -Fq 'WF06 FAIL' /tmp/wf06-actions.out
+          grep -Eq 'WF06 ALL PASS: [0-9]+ checks' /tmp/wf06-actions.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -300,6 +307,8 @@ jobs:
           grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
           node load/wf05-event-e2e.mjs 2>&1 | tee /tmp/wf05-e2e.out
           grep -Eq 'WF05-E2E RESULT: .* dup=0$' /tmp/wf05-e2e.out
+          node load/wf06-action-e2e.mjs 2>&1 | tee /tmp/wf06-e2e.out
+          grep -Eq 'WF06-E2E RESULT: in_app_sandbox=1 drafts=1 refused_live=1 sent_live=0 dup=0$' /tmp/wf06-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -320,7 +329,12 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm, cache-dependency-path: mobile/package-lock.json }
+        with:
+          {
+            node-version: "${{ env.NODE_VERSION }}",
+            cache: npm,
+            cache-dependency-path: mobile/package-lock.json,
+          }
       - run: npm ci --no-audit --fund=false
       - run: npm run typecheck
 
