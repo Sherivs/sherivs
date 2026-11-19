@@ -139,9 +139,7 @@ function smsEvidence(
 
 const digitsOf = (value: string): string => value.replace(/\D/g, "");
 
-type Recipient =
-  | { ok: true; recipient: string }
-  | { ok: false; reason: string; defer?: boolean };
+type Recipient = { ok: true; recipient: string } | { ok: false; reason: string; defer?: boolean };
 
 /** Re-resolve and re-authorise the recipient server-side. Never trusts the queued address alone. */
 async function resolveRecipient(

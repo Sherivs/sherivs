@@ -5,7 +5,10 @@
  */
 type Row = Record<string, unknown>;
 export type Tables = Record<string, Row[]>;
-export type RpcHandler = (args: Record<string, unknown>) => { data: unknown; error: { message: string } | null };
+export type RpcHandler = (args: Record<string, unknown>) => {
+  data: unknown;
+  error: { message: string } | null;
+};
 
 export function fakeDb(tables: Tables, rpcs: Record<string, RpcHandler>) {
   const calls: Array<{ name: string; args: Record<string, unknown> }> = [];
@@ -23,7 +26,11 @@ export function fakeDb(tables: Tables, rpcs: Record<string, RpcHandler>) {
       const run = () => {
         const rows = (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
         return {
-          data: single ? (rows[0] ? { ...rows[0] } : null) : rows.slice(0, cap).map((r) => ({ ...r })),
+          data: single
+            ? rows[0]
+              ? { ...rows[0] }
+              : null
+            : rows.slice(0, cap).map((r) => ({ ...r })),
           error: null,
         };
       };
@@ -34,10 +41,15 @@ export function fakeDb(tables: Tables, rpcs: Record<string, RpcHandler>) {
         in: (k: string, vs: unknown[]) => (filters.push((r) => vs.includes(r[k])), q),
         is: (k: string, v: null) => (filters.push((r) => (r[k] ?? null) === v), q),
         like: (k: string, p: string) => (
-          filters.push((r) => typeof r[k] === "string" && (r[k] as string).startsWith(p.replace(/%$/, ""))),
+          filters.push(
+            (r) => typeof r[k] === "string" && (r[k] as string).startsWith(p.replace(/%$/, "")),
+          ),
           q
         ),
-        lt: (k: string, v: string) => (filters.push((r) => typeof r[k] === "string" && (r[k] as string) < v), q),
+        lt: (k: string, v: string) => (
+          filters.push((r) => typeof r[k] === "string" && (r[k] as string) < v),
+          q
+        ),
         limit: (n: number) => ((cap = n), q),
         maybeSingle: () => ((single = true), Promise.resolve(run())),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -51,5 +63,8 @@ export function fakeDb(tables: Tables, rpcs: Record<string, RpcHandler>) {
 /** Records evidence rows in memory (the DeliveryEvidenceSink port). */
 export function memorySink() {
   const rows: Array<Record<string, unknown>> = [];
-  return { rows, sink: { kind: "memory", record: async (r: Record<string, unknown>) => void rows.push(r) } };
+  return {
+    rows,
+    sink: { kind: "memory", record: async (r: Record<string, unknown>) => void rows.push(r) },
+  };
 }

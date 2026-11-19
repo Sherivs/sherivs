@@ -44,7 +44,10 @@ describe("SMS provider selection (one port, two adapters)", () => {
       code: "unsupported_provider",
     });
     const { SMS_PROVIDER: _unset, ...noProvider } = COM_ENV;
-    expect(selectSmsGateway(noProvider)).toMatchObject({ ok: false, code: "provider_not_selected" });
+    expect(selectSmsGateway(noProvider)).toMatchObject({
+      ok: false,
+      code: "provider_not_selected",
+    });
   });
 });
 
@@ -73,18 +76,27 @@ describe("BulkSMS.com adapter", () => {
     [503, "provider_error", true],
     [500, "provider_error", false],
     [400, "provider_rejected", false],
-  ])("classifies HTTP %i as %s (retryable=%s) and never echoes secrets", async (status, code, retryable) => {
-    const f = vi.fn(async () => json({ detail: "x" }, status));
-    const r = await createBulkSmsComGateway(bulkSmsComConfigFromEnv(COM_ENV), f as never).send(CMD);
-    expect(r).toMatchObject({ outcome: "failed", code, retryable });
-    expect(JSON.stringify(r)).not.toContain(SECRET);
-    expect(JSON.stringify(r)).not.toContain(ID);
-  });
+  ])(
+    "classifies HTTP %i as %s (retryable=%s) and never echoes secrets",
+    async (status, code, retryable) => {
+      const f = vi.fn(async () => json({ detail: "x" }, status));
+      const r = await createBulkSmsComGateway(bulkSmsComConfigFromEnv(COM_ENV), f as never).send(
+        CMD,
+      );
+      expect(r).toMatchObject({ outcome: "failed", code, retryable });
+      expect(JSON.stringify(r)).not.toContain(SECRET);
+      expect(JSON.stringify(r)).not.toContain(ID);
+    },
+  );
 
   it("does not assert a send when the provider answers without an id", async () => {
     const f = vi.fn(async () => json({ ok: true }));
     const r = await createBulkSmsComGateway(bulkSmsComConfigFromEnv(COM_ENV), f as never).send(CMD);
-    expect(r).toMatchObject({ outcome: "failed", code: "provider_response_invalid", retryable: false });
+    expect(r).toMatchObject({
+      outcome: "failed",
+      code: "provider_response_invalid",
+      retryable: false,
+    });
   });
 
   it("treats a timeout after the request left as ambiguous (not retryable)", async () => {
@@ -109,8 +121,14 @@ describe("BulkSMS Nigeria: a message without an outbound row asks for no deliver
     const s = selectSmsGateway(env, f as never);
     if (!s.ok) throw new Error("selection failed");
     await s.gateway.send({ ...CMD, recipient: "2348031234567", deliveryReport: false });
-    await s.gateway.send({ ...CMD, recipient: "2348031234567", messageId: "00000000-0000-4000-8000-000000000001" });
-    const bodies = f.mock.calls.map((c) => JSON.parse(String((c as unknown as [string, RequestInit])[1].body)));
+    await s.gateway.send({
+      ...CMD,
+      recipient: "2348031234567",
+      messageId: "00000000-0000-4000-8000-000000000001",
+    });
+    const bodies = f.mock.calls.map((c) =>
+      JSON.parse(String((c as unknown as [string, RequestInit])[1].body)),
+    );
     expect(bodies[0].callback_url).toBeUndefined();
     expect(bodies[1].callback_url).toContain("sig=");
   });

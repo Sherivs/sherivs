@@ -27,7 +27,10 @@ import {
 } from "./bulksms-nigeria.server";
 import { SMS_PROVIDER_ENV, type SmsGatewaySelection } from "./sms-gateway-contract";
 
-export const SUPPORTED_SMS_PROVIDERS = [BULKSMS_NIGERIA_PROVIDER_ID, BULKSMS_COM_PROVIDER_ID] as const;
+export const SUPPORTED_SMS_PROVIDERS = [
+  BULKSMS_NIGERIA_PROVIDER_ID,
+  BULKSMS_COM_PROVIDER_ID,
+] as const;
 
 function notConfigured(label: string, missing: readonly string[]): SmsGatewaySelection {
   return {

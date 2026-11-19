@@ -157,7 +157,10 @@ export interface DeliveryEvidenceAttemptFacts {
   triggeredBy?: string;
 }
 
-function deliveredRecord(facts: DeliveryEvidenceAttemptFacts, providerMessageId: string | null): DeliveryEvidenceRecord {
+function deliveredRecord(
+  facts: DeliveryEvidenceAttemptFacts,
+  providerMessageId: string | null,
+): DeliveryEvidenceRecord {
   return {
     id: crypto.randomUUID(),
     tenantId: facts.tenantId,
@@ -289,7 +292,10 @@ export async function recordDeliveryEvidence(
  * When no sink is configured (substrate absent), the adapter is returned
  * unchanged — the send result stays exactly as typed.
  */
-export function withEmailDeliveryEvidence(adapter: EmailAdapter, sink: DeliveryEvidenceSink | null): EmailAdapter {
+export function withEmailDeliveryEvidence(
+  adapter: EmailAdapter,
+  sink: DeliveryEvidenceSink | null,
+): EmailAdapter {
   if (sink === null) return adapter;
   return {
     providerId: adapter.providerId,
@@ -305,7 +311,8 @@ export function withEmailDeliveryEvidence(adapter: EmailAdapter, sink: DeliveryE
           tenant_id: command.notification.tenantRef,
           err,
           notification_ref: command.notification.id,
-          evidence_outcome: "providerMessageId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
+          evidence_outcome:
+            "providerMessageId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
         });
       }
       return result;
@@ -338,7 +345,8 @@ export function withTelephonyDeliveryEvidence(
           tenant_id: command.tenantRef,
           err,
           notification_ref: command.triggerEvent,
-          evidence_outcome: "callId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
+          evidence_outcome:
+            "callId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
         });
       }
       return result;
@@ -384,7 +392,9 @@ export interface PostgrestDeliveryEvidenceConfig {
  * recording is UNAVAILABLE (attempts still surface their typed results; the
  * missing substrate is visible in structured logs at composition time).
  */
-export function deliveryEvidenceConfigFromEnv(env: ServerEnv): PostgrestDeliveryEvidenceConfig | null {
+export function deliveryEvidenceConfigFromEnv(
+  env: ServerEnv,
+): PostgrestDeliveryEvidenceConfig | null {
   const supabaseUrl = env[SUPABASE_URL_ENV];
   const serviceRoleKey = env[SUPABASE_SERVICE_ROLE_KEY_ENV];
   if (!supabaseUrl || supabaseUrl.trim().length === 0) return null;
@@ -399,23 +409,22 @@ export function deliveryEvidenceConfigFromEnv(env: ServerEnv): PostgrestDelivery
  * never logged. No vendor SDK import — the substrate is reached the same
  * adapter way the providers are (§25).
  */
-export function createPostgrestDeliveryEvidenceSink(config: PostgrestDeliveryEvidenceConfig): DeliveryEvidenceSink {
+export function createPostgrestDeliveryEvidenceSink(
+  config: PostgrestDeliveryEvidenceConfig,
+): DeliveryEvidenceSink {
   return {
     kind: "postgrest",
     async record(record: DeliveryEvidenceRecord): Promise<void> {
-      const response = await fetch(
-        `${config.supabaseUrl}/rest/v1/${DELIVERY_EVIDENCE_TABLE}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${config.serviceRoleKey}`,
-            apikey: config.serviceRoleKey,
-            "Content-Type": "application/json",
-            Prefer: "return=minimal",
-          },
-          body: JSON.stringify(toDeliveryEvidenceRow(record)),
+      const response = await fetch(`${config.supabaseUrl}/rest/v1/${DELIVERY_EVIDENCE_TABLE}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+          apikey: config.serviceRoleKey,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
         },
-      );
+        body: JSON.stringify(toDeliveryEvidenceRow(record)),
+      });
       if (!response.ok) {
         // The response body is untrusted and may echo tenant data; report
         // only the status. Secret values never enter this message (§30).

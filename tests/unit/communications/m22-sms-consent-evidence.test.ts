@@ -58,7 +58,8 @@ function rpcs(t: Tables, refunds: string[]) {
     flag_on: () => ({ data: true, error: null }),
     comms_sms_claim: (a: Record<string, unknown>) => {
       const r = row(a);
-      if (!r || r.status !== "queued" || r.provider_ref !== null) return { data: false, error: null };
+      if (!r || r.status !== "queued" || r.provider_ref !== null)
+        return { data: false, error: null };
       r.provider_ref = a.p_claim;
       return { data: true, error: null };
     },
@@ -67,7 +68,11 @@ function rpcs(t: Tables, refunds: string[]) {
       if (!r || r.status !== "queued" || (r.provider_ref ?? null) !== (a.p_expected_ref ?? null)) {
         return { data: false, error: null };
       }
-      Object.assign(r, { status: a.p_status, provider_ref: a.p_provider_ref ?? null, error: a.p_error });
+      Object.assign(r, {
+        status: a.p_status,
+        provider_ref: a.p_provider_ref ?? null,
+        error: a.p_error,
+      });
       if (a.p_refund_reason) refunds.push(String(a.p_refund_reason));
       return { data: true, error: null };
     },
@@ -78,8 +83,11 @@ function rpcs(t: Tables, refunds: string[]) {
 function setup(t = world(), nowMs = NOON) {
   const refunds: string[] = [];
   const db = fakeDb(t, rpcs(t, refunds));
-  const f = vi.fn(async () =>
-    new Response(JSON.stringify({ status: "success", data: { message_id: "bsng-9" } }), { status: 200 }),
+  const f = vi.fn(
+    async () =>
+      new Response(JSON.stringify({ status: "success", data: { message_id: "bsng-9" } }), {
+        status: 200,
+      }),
   );
   const ev = memorySink();
   const deps = {
@@ -101,48 +109,76 @@ describe("send-time consent gate", () => {
     nowMs: NOON,
   };
   it("SMS utility without a recorded choice is allowed; an opt-out blocks it", async () => {
-    expect(await checkSendTimeConsent(fakeDb(world(), {}), { ...base, channel: "sms" })).toEqual({ ok: true });
-    const out = world({ comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_out" }] });
+    expect(await checkSendTimeConsent(fakeDb(world(), {}), { ...base, channel: "sms" })).toEqual({
+      ok: true,
+    });
+    const out = world({
+      comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_out" }],
+    });
     expect(await checkSendTimeConsent(fakeDb(out, {}), { ...base, channel: "sms" })).toMatchObject({
       ok: false,
       code: "opted_out",
     });
   });
   it("WhatsApp and marketing need an explicit opt-in on that channel", async () => {
-    const smsOnly = world({ comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_in" }] });
-    expect(await checkSendTimeConsent(fakeDb(smsOnly, {}), { ...base, channel: "whatsapp" })).toMatchObject({
+    const smsOnly = world({
+      comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_in" }],
+    });
+    expect(
+      await checkSendTimeConsent(fakeDb(smsOnly, {}), { ...base, channel: "whatsapp" }),
+    ).toMatchObject({
       code: "opt_in_required",
     });
     expect(
-      await checkSendTimeConsent(fakeDb(world(), {}), { ...base, channel: "sms", category: "marketing" }),
+      await checkSendTimeConsent(fakeDb(world(), {}), {
+        ...base,
+        channel: "sms",
+        category: "marketing",
+      }),
     ).toMatchObject({ code: "opt_in_required" });
   });
   it("an opt-in in another organization does not count", async () => {
-    const elsewhere = world({ comms_optins: [{ org_id: OTHER, channel: "whatsapp", phone: PHONE, status: "opted_in" }] });
-    expect(await checkSendTimeConsent(fakeDb(elsewhere, {}), { ...base, channel: "whatsapp" })).toMatchObject({
+    const elsewhere = world({
+      comms_optins: [{ org_id: OTHER, channel: "whatsapp", phone: PHONE, status: "opted_in" }],
+    });
+    expect(
+      await checkSendTimeConsent(fakeDb(elsewhere, {}), { ...base, channel: "whatsapp" }),
+    ).toMatchObject({
       code: "opt_in_required",
     });
   });
   it("quiet hours defer (they never drop); safety bypasses opt-out and quiet hours", async () => {
     const quiet = world({
-      notification_preferences: [{ user_id: USER, school_id: ORG, quiet_hours_start: "12:00", quiet_hours_end: "14:00" }],
+      notification_preferences: [
+        { user_id: USER, school_id: ORG, quiet_hours_start: "12:00", quiet_hours_end: "14:00" },
+      ],
       comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_out" }],
     });
     const noOptOut = { ...quiet, comms_optins: [] };
-    expect(await checkSendTimeConsent(fakeDb(noOptOut, {}), { ...base, channel: "sms" })).toMatchObject({
+    expect(
+      await checkSendTimeConsent(fakeDb(noOptOut, {}), { ...base, channel: "sms" }),
+    ).toMatchObject({
       ok: false,
       code: "quiet_hours",
       defer: true,
     });
     expect(
-      await checkSendTimeConsent(fakeDb(quiet, {}), { ...base, channel: "sms", priority: "safety" }),
+      await checkSendTimeConsent(fakeDb(quiet, {}), {
+        ...base,
+        channel: "sms",
+        priority: "safety",
+      }),
     ).toEqual({ ok: true });
   });
   it("fails closed when consent cannot be read", async () => {
     const broken = {
       from: () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const q: any = { select: () => q, eq: () => q, in: () => Promise.resolve({ data: null, error: { message: "x" } }) };
+        const q: any = {
+          select: () => q,
+          eq: () => q,
+          in: () => Promise.resolve({ data: null, error: { message: "x" } }),
+        };
         return q;
       },
     };
@@ -155,7 +191,9 @@ describe("send-time consent gate", () => {
 
 describe("SMS dispatcher (M22 additions)", () => {
   it("an opt-out recorded after queueing refuses the send: no provider call, refund, evidence", async () => {
-    const s = setup(world({ comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_out" }] }));
+    const s = setup(
+      world({ comms_optins: [{ org_id: ORG, channel: "sms", phone: PHONE, status: "opted_out" }] }),
+    );
     const run = await dispatchQueuedSms(s.deps, ORG);
     expect(run.status === "ran" && run.outcomes[0].outcome).toBe("rejected");
     expect(s.f).not.toHaveBeenCalled();
@@ -167,7 +205,9 @@ describe("SMS dispatcher (M22 additions)", () => {
   it("quiet hours leave the row queued and unclaimed, with no provider call and no money movement", async () => {
     const s = setup(
       world({
-        notification_preferences: [{ user_id: USER, school_id: ORG, quiet_hours_start: "12:00", quiet_hours_end: "14:00" }],
+        notification_preferences: [
+          { user_id: USER, school_id: ORG, quiet_hours_start: "12:00", quiet_hours_end: "14:00" },
+        ],
       }),
     );
     const run = await dispatchQueuedSms(s.deps, ORG);
@@ -205,7 +245,10 @@ describe("SMS dispatcher (M22 additions)", () => {
   it("an evidence-sink failure never changes the send result", async () => {
     const s = setup();
     const run = await dispatchQueuedSms(
-      { ...s.deps, evidence: { kind: "broken", record: async () => Promise.reject(new Error("down")) } },
+      {
+        ...s.deps,
+        evidence: { kind: "broken", record: async () => Promise.reject(new Error("down")) },
+      },
       ORG,
     );
     expect(run.status === "ran" && run.outcomes[0].outcome).toBe("sent");

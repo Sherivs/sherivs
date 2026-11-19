@@ -124,8 +124,17 @@ type Resolution =
   | { ok: true; to: string; template: ReturnType<typeof tenantWhatsAppTemplate> }
   | { ok: false; code: string; reason: string; defer: boolean };
 
-async function resolve(db: WhatsAppFabricDatabase, row: QueuedRow, nowMs: number): Promise<Resolution> {
-  const refuse = (code: string, reason: string): Resolution => ({ ok: false, code, reason, defer: false });
+async function resolve(
+  db: WhatsAppFabricDatabase,
+  row: QueuedRow,
+  nowMs: number,
+): Promise<Resolution> {
+  const refuse = (code: string, reason: string): Resolution => ({
+    ok: false,
+    code,
+    reason,
+    defer: false,
+  });
   if (row.org_id !== row.school_id) return refuse("organization_mismatch", "organization mismatch");
   if (!row.recipient_user_id) return refuse("no_recipient", "no resolved recipient");
   const member = await db
@@ -136,8 +145,13 @@ async function resolve(db: WhatsAppFabricDatabase, row: QueuedRow, nowMs: number
     .eq("is_active", true)
     .limit(1)
     .maybeSingle();
-  if (member.error || !member.data) return refuse("not_member", "recipient is not an active organization member");
-  const user = await db.from("users").select("phone,is_active").eq("id", row.recipient_user_id).maybeSingle();
+  if (member.error || !member.data)
+    return refuse("not_member", "recipient is not an active organization member");
+  const user = await db
+    .from("users")
+    .select("phone,is_active")
+    .eq("id", row.recipient_user_id)
+    .maybeSingle();
   const u = z
     .object({ phone: z.string().nullable(), is_active: z.boolean().nullable().optional() })
     .safeParse(user.data);
@@ -149,7 +163,8 @@ async function resolve(db: WhatsAppFabricDatabase, row: QueuedRow, nowMs: number
   }
   const digits = digitsOf(row.to_address);
   const e164 = `+${/^0\d{10}$/.test(digits) ? `234${digits.slice(1)}` : digits}`;
-  if (!/^\+[1-9]\d{7,14}$/.test(e164)) return refuse("invalid_recipient", "recipient number is not valid");
+  if (!/^\+[1-9]\d{7,14}$/.test(e164))
+    return refuse("invalid_recipient", "recipient number is not valid");
 
   const consent = await checkSendTimeConsent(db, {
     orgId: row.org_id,
@@ -160,7 +175,8 @@ async function resolve(db: WhatsAppFabricDatabase, row: QueuedRow, nowMs: number
     category: row.category,
     nowMs,
   });
-  if (!consent.ok) return { ok: false, code: consent.code, reason: consent.reason, defer: consent.defer };
+  if (!consent.ok)
+    return { ok: false, code: consent.code, reason: consent.reason, defer: consent.defer };
 
   // Registry lookup: the organization's own approved template wins over the platform default.
   if (!row.template_code || !row.language) return refuse("template_not_registered", "no template");
@@ -171,13 +187,17 @@ async function resolve(db: WhatsAppFabricDatabase, row: QueuedRow, nowMs: number
     .eq("channel", "whatsapp")
     .eq("language", row.language);
   const rows = z.array(TemplateRowSchema).safeParse(found.data);
-  if (found.error || !rows.success) return refuse("template_not_registered", "template lookup failed");
+  if (found.error || !rows.success)
+    return refuse("template_not_registered", "template lookup failed");
   const candidates = rows.data.filter((t) => t.org_id === row.org_id || t.org_id === null);
   const chosen = candidates.find((t) => t.org_id === row.org_id) ?? candidates[0];
   const template = chosen ? tenantWhatsAppTemplate(chosen) : null;
   const checked = checkProactiveTemplate(template, row.template_parameters ?? []);
   if (!checked.ok || !template) {
-    return refuse(checked.ok ? "template_not_registered" : checked.code, "no approved registered template");
+    return refuse(
+      checked.ok ? "template_not_registered" : checked.code,
+      "no approved registered template",
+    );
   }
   return { ok: true, to: e164, template };
 }
@@ -200,8 +220,10 @@ export async function dispatchQueuedWhatsApp(
 ): Promise<WhatsAppDispatchRun> {
   if (!z.string().uuid().safeParse(orgId).success) throw new Error("organization id is required");
   const live = await deps.db.rpc("flag_on", { p_key: "whatsapp_live", p_org: orgId });
-  if (live.error || live.data !== true) return { status: "skipped", reason: "whatsapp_live_off", outcomes: [] };
-  if (!deps.adapter.live) return { status: "skipped", reason: "provider_not_configured", outcomes: [] };
+  if (live.error || live.data !== true)
+    return { status: "skipped", reason: "whatsapp_live_off", outcomes: [] };
+  if (!deps.adapter.live)
+    return { status: "skipped", reason: "provider_not_configured", outcomes: [] };
   const nowMs = deps.nowMs ?? (() => timeAuthority.now().atMs);
 
   const queued = await deps.db
@@ -313,7 +335,10 @@ export async function dispatchQueuedWhatsApp(
       break;
     }
     if (disposition.kind === "reject") {
-      const reason = "refusal" in sent || /^invalid /.test(sent.error) ? "rejected_before_submission" : "provider_rejected";
+      const reason =
+        "refusal" in sent || /^invalid /.test(sent.error)
+          ? "rejected_before_submission"
+          : "provider_rejected";
       await settle(row, claim, "failed", null, code, reason);
       outcomes.push({ id: row.id, outcome: "failed", code, retryable: false });
       continue;
@@ -359,11 +384,13 @@ export function createWhatsAppDispatchCronHandler(deps: WhatsAppDispatchCronDepe
       return new Response("Method not allowed", { status: 405 });
     }
     const cron = deps.env.CRON_SECRET;
-    if (!cron || cron.trim() === "") return new Response("WhatsApp dispatch not configured", { status: 503 });
+    if (!cron || cron.trim() === "")
+      return new Response("WhatsApp dispatch not configured", { status: 503 });
     if (!bearerOk(request.headers.get("authorization"), cron)) {
       return new Response("Unauthorized", { status: 401 });
     }
-    if (!deps.adapter.live) return Response.json({ ok: true, status: "skipped", reason: "provider_not_configured" });
+    if (!deps.adapter.live)
+      return Response.json({ ok: true, status: "skipped", reason: "provider_not_configured" });
     const pending = await deps.db
       .from("outbound_messages")
       .select("org_id")

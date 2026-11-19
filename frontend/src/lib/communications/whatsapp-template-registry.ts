@@ -52,7 +52,8 @@ export function checkProactiveTemplate(
 ): { ok: true; name: string; language: string } | { ok: false; code: TemplateRefusal } {
   if (!template) return { ok: false, code: "template_not_registered" };
   if (template.status !== "approved") return { ok: false, code: "template_not_approved" };
-  if (!template.name || !NAME.test(template.name)) return { ok: false, code: "template_name_invalid" };
+  if (!template.name || !NAME.test(template.name))
+    return { ok: false, code: "template_name_invalid" };
   if (!template.language || !LANGUAGE.test(template.language)) {
     return { ok: false, code: "template_language_missing" };
   }
@@ -142,7 +143,11 @@ export async function sendProactiveWhatsApp(
 ): Promise<ProactiveWhatsAppResult> {
   const checked = checkProactiveTemplate(message.template, message.parameters);
   if (!checked.ok) {
-    return { ok: false, error: "proactive WhatsApp refused: no approved template", refusal: checked.code };
+    return {
+      ok: false,
+      error: "proactive WhatsApp refused: no approved template",
+      refusal: checked.code,
+    };
   }
   if (!adapter.live) {
     return { ok: false, error: "whatsapp not configured", refusal: "provider_not_configured" };

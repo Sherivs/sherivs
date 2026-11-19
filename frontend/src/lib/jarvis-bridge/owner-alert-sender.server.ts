@@ -163,7 +163,11 @@ export function createOwnerAlertSender(
           request,
           result.ok
             ? { outcome: "delivered", providerMessageId: result.providerRef }
-            : { outcome: "failed", code: "refusal" in result ? result.refusal : "provider_error", reason: "owner alert WhatsApp not accepted" },
+            : {
+                outcome: "failed",
+                code: "refusal" in result ? result.refusal : "provider_error",
+                reason: "owner alert WhatsApp not accepted",
+              },
         );
         return result.ok
           ? { ok: true, providerRef: result.providerRef }
