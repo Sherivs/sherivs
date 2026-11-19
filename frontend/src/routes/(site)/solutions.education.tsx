@@ -18,7 +18,7 @@ export const Route = createFileRoute("/(site)/solutions/education")({
     publicHead({
       title: PRODUCT_NAME,
       description:
-        "Sherivs Scholar, the institutional operating environment for schools. Role-specific applications, campus screens, and AI assistants are in development.",
+        "Sherivs Scholar, the institutional operating environment for schools. Role-specific screens, campus management, and AI assistants are in development.",
       path: "/solutions/education",
     }),
 });
@@ -63,9 +63,10 @@ function EducationPage() {
               explanatory copy and is not connected to the AI gateway.
             </p>
             <p>
-              Payments through Paystack and messaging through configured providers are available
-              when those integrations are set up — they are not automatic for every organization.
-              Schools can publish a public website on their own host.
+              Online fee payments through Paystack are in test mode only, so no real money can be
+              paid yet. SMS, WhatsApp, and email messages are not switched on for schools yet. A
+              school website engine exists, but the tool for building a school&apos;s site is not
+              available yet.
             </p>
           </GlassPanel>
         </PageContainer>

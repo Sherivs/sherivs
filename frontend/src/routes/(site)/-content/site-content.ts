@@ -3,7 +3,9 @@
  *
  * Presentation-only copy for the (site) public route group. Every string here
  * is static marketing presentation: no backend call, no form, no fake state.
- * Capabilities are limited to implemented Scholar functionality.
+ * Capabilities are limited to implemented Scholar functionality. Each line
+ * says what is available now and what is still being built
+ * (truth audit: docs/public-site/TRUTH_AUDIT_2026-11-17.md).
  */
 
 export interface SiteCapability {
@@ -34,25 +36,25 @@ export const SITE_CAPABILITIES: readonly SiteCapability[] = [
     id: "school-administration",
     title: "School administration",
     description:
-      "Keep essential school records, organization settings, and administrative workflows organized in one place.",
+      "Set up your school with a guided setup interview, manage roles and responsibilities, and keep student records in one place. Other administration screens are still being built.",
   },
   {
     id: "academic-operations",
     title: "Academic operations",
     description:
-      "Manage classes, subjects, attendance, and assessment information as part of everyday school operations.",
+      "Screens for classes, subjects, attendance, and assessments are being built. They are not ready for daily use yet.",
   },
   {
     id: "teacher-student",
     title: "Teacher and student workflows",
     description:
-      "Teachers and students sign in to the same workspace. What they can open follows membership and role. There is no separate teacher or student application.",
+      "Teachers and students sign in to the same workspace. What they can open follows membership and role. There is no separate teacher or student application. Many workspace sections are still placeholders.",
   },
   {
     id: "parent-engagement",
     title: "Parent engagement",
     description:
-      "Parents and guardians can be invited into the organization. They use the same workspace shell. There is no separate parent application.",
+      "Parents and guardians can be invited into the organization. They use the same workspace shell. There is no separate parent application. Screens made for parents are still being built.",
   },
 ];
 
@@ -73,8 +75,7 @@ export const SECURITY_GUARANTEES: readonly GovernanceGuarantee[] = [
   {
     id: "authentication",
     title: "Authenticated accounts",
-    description:
-      "People sign in with authenticated accounts. Password recovery and optional passkeys are part of the sign-in experience.",
+    description: "People sign in with their own accounts. Password recovery is part of sign-in.",
   },
   {
     id: "invites",

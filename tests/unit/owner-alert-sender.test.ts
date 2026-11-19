@@ -69,12 +69,18 @@ describe("owner-alert sender is dormant until destination AND provider secrets e
       (["email", "whatsapp", "sms", "voice"] as const).map((c) => send(req(c))),
     );
     expect(results.every((r) => !r.ok)).toBe(true);
+    // M22 (ADR-120): SMS goes through the one SMS port, which first needs SMS_PROVIDER to be named.
     expect(results.map((r) => (r.ok ? "" : r.code))).toEqual([
       "provider_not_configured",
       "provider_not_configured",
-      "provider_not_configured",
+      "provider_not_selected",
       "provider_not_configured",
     ]);
+    const named = createOwnerAlertSender({
+      env: { ...env, SMS_PROVIDER: "bulksmscom" },
+      fetcher: fetcher as never,
+    });
+    expect(await named(req("sms"))).toEqual({ ok: false, code: "provider_not_configured" });
     expect(fetcher).not.toHaveBeenCalled();
     expect(JSON.stringify(results)).not.toContain(PHONE);
     expect(JSON.stringify(results)).not.toContain(MAIL);
@@ -100,6 +106,7 @@ describe("owner-alert sender when fully configured", () => {
     const fetcher = vi.fn(async () => json([{ id: "bs-0123", type: "SENT" }], 201));
     const send = createOwnerAlertSender({
       env: {
+        SMS_PROVIDER: "bulksmscom",
         OWNER_ALERT_PHONE: PHONE,
         BULKSMS_TOKEN_ID: "token-id-value",
         BULKSMS_TOKEN_SECRET: "token-secret-value",
@@ -199,6 +206,7 @@ describe("owner-alert sender when fully configured", () => {
     const fetcher = vi.fn(async () => json({ message: "bad number +2348012345678" }, 400));
     const send = createOwnerAlertSender({
       env: {
+        SMS_PROVIDER: "bulksmscom",
         OWNER_ALERT_PHONE: PHONE,
         BULKSMS_TOKEN_ID: "token-id-value",
         BULKSMS_TOKEN_SECRET: "token-secret-value",
@@ -206,7 +214,8 @@ describe("owner-alert sender when fully configured", () => {
       fetcher: fetcher as never,
     });
     const out = await send(req("sms"));
-    expect(out).toEqual({ ok: false, code: "provider_error" });
+    // M22: the shared SMS port classifies a 4xx refusal as provider_rejected (was provider_error).
+    expect(out).toEqual({ ok: false, code: "provider_rejected" });
     expect(JSON.stringify(out)).not.toContain(PHONE);
   });
 });

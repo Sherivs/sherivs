@@ -1,0 +1,129 @@
+{
+  "admissions": {
+    "enabledByDefault": true,
+    "mode": "cycle_with_entrance_exam"
+  },
+  "authorityLinkCandidates": [
+    {
+      "authority": "neco",
+      "relation": "candidate_centre_of",
+      "scope": null,
+      "status": "unverified"
+    },
+    {
+      "authority": "state_ministry_of_education",
+      "relation": "registered_with",
+      "scope": "lagos",
+      "status": "unverified"
+    },
+    {
+      "authority": "waec",
+      "relation": "candidate_centre_of",
+      "scope": null,
+      "status": "unverified"
+    }
+  ],
+  "calendarModel": "three_term",
+  "curricula": ["british", "nigerian_national"],
+  "flags": [
+    "founder_confirm:admissions_availability",
+    "placeholder:role_pack",
+    "placeholder:website_template"
+  ],
+  "gradingSystem": "continuous_assessment_and_exam",
+  "institutionProfile": {
+    "attributes": {
+      "billing_period": "termly",
+      "boarding": true,
+      "campus_count": 1,
+      "exam_centres": ["waec", "neco"],
+      "instalments": true,
+      "leadership_model": "head_led",
+      "multi_shift": false,
+      "population_band": "from_300_to_1000",
+      "sections": ["jss", "sss"],
+      "state": "lagos"
+    },
+    "calendar_model": "three_term",
+    "curricula": ["british", "nigerian_national"],
+    "grading_system": "continuous_assessment_and_exam",
+    "institution_type": "private_secondary",
+    "languages": ["en", "yo"],
+    "ownership": "private",
+    "regulators": []
+  },
+  "modules": [
+    {
+      "code": "admissions",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "assessment_results",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "attendance",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "billing",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "boarding_hostels",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "communications",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "exam_body_registrations",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "people_records",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "timetable",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "website",
+      "enabled": true,
+      "gate": null
+    }
+  ],
+  "orgUnits": [
+    {
+      "key": "org",
+      "kind": "organization",
+      "parentKey": null
+    },
+    {
+      "key": "section_jss",
+      "kind": "section",
+      "parentKey": "org"
+    },
+    {
+      "key": "section_sss",
+      "kind": "section",
+      "parentKey": "org"
+    }
+  ],
+  "rolePack": {
+    "code": "ng.private_secondary",
+    "version": "0.1.0"
+  },
+  "websiteTemplate": "basic_private"
+}

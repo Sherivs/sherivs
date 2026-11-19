@@ -58,6 +58,7 @@ import { Route as ConsoleActivityRouteRouteImport } from './routes/console/activ
 import { Route as ConsoleAlertsRouteImport } from './routes/console/alerts'
 import { Route as ConsoleCommunicationsRouteImport } from './routes/console/communications'
 import { Route as ConsoleHelpRouteImport } from './routes/console/help'
+import { Route as ConsoleOnboardingRouteRouteImport } from './routes/console/onboarding/route'
 import { Route as ConsoleOrganizationsRouteRouteImport } from './routes/console/organizations/route'
 import { Route as ConsoleRuntimesRouteRouteImport } from './routes/console/runtimes/route'
 import { Route as ConsoleSettingsRouteImport } from './routes/console/settings'
@@ -110,6 +111,8 @@ import { Route as ConsoleActivityLogsRouteImport } from './routes/console/activi
 import { Route as ConsoleActivityMetricsRouteImport } from './routes/console/activity/metrics'
 import { Route as ConsoleActivitySecurityRouteImport } from './routes/console/activity/security'
 import { Route as ConsoleActivityTicketsRouteImport } from './routes/console/activity/tickets'
+import { Route as ConsoleOnboardingIndexRouteImport } from './routes/console/onboarding/index'
+import { Route as ConsoleOnboardingRequestIdRouteImport } from './routes/console/onboarding/$requestId'
 import { Route as ConsoleOrganizationsIndexRouteImport } from './routes/console/organizations/index'
 import { Route as ConsoleOrganizationsOrganizationIdRouteImport } from './routes/console/organizations/$organizationId'
 import { Route as ConsoleOrganizationsNewRouteImport } from './routes/console/organizations/new'
@@ -131,10 +134,13 @@ import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/
 import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public/cron/jarvis-tick'
 import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
+import { Route as ApiPublicCronSmsDispatchRouteImport } from './routes/api/public/cron/sms-dispatch'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
+import { Route as ApiPublicCronWhatsappDispatchRouteImport } from './routes/api/public/cron/whatsapp-dispatch'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicCronWorkflowTickRouteImport } from './routes/api/public/cron/workflow-tick'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksBulksmsRouteImport } from './routes/api/public/webhooks/bulksms'
 import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
@@ -388,6 +394,11 @@ const ConsoleCommunicationsRoute = ConsoleCommunicationsRouteImport.update({
 const ConsoleHelpRoute = ConsoleHelpRouteImport.update({
   id: '/help',
   path: '/help',
+  getParentRoute: () => ConsoleRouteRoute,
+} as any)
+const ConsoleOnboardingRouteRoute = ConsoleOnboardingRouteRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => ConsoleRouteRoute,
 } as any)
 const ConsoleOrganizationsRouteRoute =
@@ -653,6 +664,17 @@ const ConsoleActivityTicketsRoute = ConsoleActivityTicketsRouteImport.update({
   path: '/tickets',
   getParentRoute: () => ConsoleActivityRouteRoute,
 } as any)
+const ConsoleOnboardingIndexRoute = ConsoleOnboardingIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ConsoleOnboardingRouteRoute,
+} as any)
+const ConsoleOnboardingRequestIdRoute =
+  ConsoleOnboardingRequestIdRouteImport.update({
+    id: '/$requestId',
+    path: '/$requestId',
+    getParentRoute: () => ConsoleOnboardingRouteRoute,
+  } as any)
 const ConsoleOrganizationsIndexRoute =
   ConsoleOrganizationsIndexRouteImport.update({
     id: '/',
@@ -767,10 +789,22 @@ const ApiPublicCronOrgWeeklyReportsRoute =
     path: '/api/public/cron/org-weekly-reports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronSmsDispatchRoute =
+  ApiPublicCronSmsDispatchRouteImport.update({
+    id: '/api/public/cron/sms-dispatch',
+    path: '/api/public/cron/sms-dispatch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
     path: '/api/public/cron/wallet-topup-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronWhatsappDispatchRoute =
+  ApiPublicCronWhatsappDispatchRouteImport.update({
+    id: '/api/public/cron/whatsapp-dispatch',
+    path: '/api/public/cron/whatsapp-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCronWhatsappN8nForwardRoute =
@@ -789,6 +823,12 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
   ApiPublicWebhooksAfricasTalkingVoiceRouteImport.update({
     id: '/api/public/webhooks/africas-talking-voice',
     path: '/api/public/webhooks/africas-talking-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksBulksmsRoute =
+  ApiPublicWebhooksBulksmsRouteImport.update({
+    id: '/api/public/webhooks/bulksms',
+    path: '/api/public/webhooks/bulksms',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWebhooksOwnerAlertVoiceRoute =
@@ -855,6 +895,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/onboarding': typeof ConsoleOnboardingRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
@@ -933,6 +974,7 @@ export interface FileRoutesByFullPath {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -949,6 +991,7 @@ export interface FileRoutesByFullPath {
   '/security/': typeof siteSecurityIndexRoute
   '/solutions/': typeof siteSolutionsIndexRoute
   '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/onboarding/': typeof ConsoleOnboardingIndexRoute
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
@@ -960,10 +1003,13 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1055,6 +1101,7 @@ export interface FileRoutesByTo {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -1071,6 +1118,7 @@ export interface FileRoutesByTo {
   '/security': typeof siteSecurityIndexRoute
   '/solutions': typeof siteSolutionsIndexRoute
   '/console/activity': typeof ConsoleActivityIndexRoute
+  '/console/onboarding': typeof ConsoleOnboardingIndexRoute
   '/console/organizations': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes': typeof ConsoleRuntimesIndexRoute
   '/console/team': typeof ConsoleTeamIndexRoute
@@ -1082,10 +1130,13 @@ export interface FileRoutesByTo {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1114,6 +1165,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/workspace-preview': typeof WorkspacePreviewRoute
   '/console/activity': typeof ConsoleActivityRouteRouteWithChildren
+  '/console/onboarding': typeof ConsoleOnboardingRouteRouteWithChildren
   '/console/organizations': typeof ConsoleOrganizationsRouteRouteWithChildren
   '/console/runtimes': typeof ConsoleRuntimesRouteRouteWithChildren
   '/console/team': typeof ConsoleTeamRouteRouteWithChildren
@@ -1192,6 +1244,7 @@ export interface FileRoutesById {
   '/console/activity/metrics': typeof ConsoleActivityMetricsRoute
   '/console/activity/security': typeof ConsoleActivitySecurityRoute
   '/console/activity/tickets': typeof ConsoleActivityTicketsRoute
+  '/console/onboarding/$requestId': typeof ConsoleOnboardingRequestIdRoute
   '/console/organizations/$organizationId': typeof ConsoleOrganizationsOrganizationIdRoute
   '/console/organizations/new': typeof ConsoleOrganizationsNewRoute
   '/console/runtimes/scholar': typeof ConsoleRuntimesScholarRoute
@@ -1208,6 +1261,7 @@ export interface FileRoutesById {
   '/(site)/security/': typeof siteSecurityIndexRoute
   '/(site)/solutions/': typeof siteSolutionsIndexRoute
   '/console/activity/': typeof ConsoleActivityIndexRoute
+  '/console/onboarding/': typeof ConsoleOnboardingIndexRoute
   '/console/organizations/': typeof ConsoleOrganizationsIndexRoute
   '/console/runtimes/': typeof ConsoleRuntimesIndexRoute
   '/console/team/': typeof ConsoleTeamIndexRoute
@@ -1219,10 +1273,13 @@ export interface FileRoutesById {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1251,6 +1308,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/workspace-preview'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1329,6 +1387,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1345,6 +1404,7 @@ export interface FileRouteTypes {
     | '/security/'
     | '/solutions/'
     | '/console/activity/'
+    | '/console/onboarding/'
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
@@ -1356,10 +1416,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1451,6 +1514,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1467,6 +1531,7 @@ export interface FileRouteTypes {
     | '/security'
     | '/solutions'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1478,10 +1543,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1509,6 +1577,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/workspace-preview'
     | '/console/activity'
+    | '/console/onboarding'
     | '/console/organizations'
     | '/console/runtimes'
     | '/console/team'
@@ -1587,6 +1656,7 @@ export interface FileRouteTypes {
     | '/console/activity/metrics'
     | '/console/activity/security'
     | '/console/activity/tickets'
+    | '/console/onboarding/$requestId'
     | '/console/organizations/$organizationId'
     | '/console/organizations/new'
     | '/console/runtimes/scholar'
@@ -1603,6 +1673,7 @@ export interface FileRouteTypes {
     | '/(site)/security/'
     | '/(site)/solutions/'
     | '/console/activity/'
+    | '/console/onboarding/'
     | '/console/organizations/'
     | '/console/runtimes/'
     | '/console/team/'
@@ -1614,10 +1685,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1656,10 +1730,13 @@ export interface RootRouteChildren {
   ApiPublicCronJarvisTickRoute: typeof ApiPublicCronJarvisTickRoute
   ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
+  ApiPublicCronSmsDispatchRoute: typeof ApiPublicCronSmsDispatchRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
+  ApiPublicCronWhatsappDispatchRoute: typeof ApiPublicCronWhatsappDispatchRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicCronWorkflowTickRoute: typeof ApiPublicCronWorkflowTickRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksBulksmsRoute: typeof ApiPublicWebhooksBulksmsRoute
   ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
@@ -2012,6 +2089,13 @@ declare module '@tanstack/react-router' {
       path: '/help'
       fullPath: '/console/help'
       preLoaderRoute: typeof ConsoleHelpRouteImport
+      parentRoute: typeof ConsoleRouteRoute
+    }
+    '/console/onboarding': {
+      id: '/console/onboarding'
+      path: '/onboarding'
+      fullPath: '/console/onboarding'
+      preLoaderRoute: typeof ConsoleOnboardingRouteRouteImport
       parentRoute: typeof ConsoleRouteRoute
     }
     '/console/organizations': {
@@ -2378,6 +2462,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsoleActivityTicketsRouteImport
       parentRoute: typeof ConsoleActivityRouteRoute
     }
+    '/console/onboarding/': {
+      id: '/console/onboarding/'
+      path: '/'
+      fullPath: '/console/onboarding/'
+      preLoaderRoute: typeof ConsoleOnboardingIndexRouteImport
+      parentRoute: typeof ConsoleOnboardingRouteRoute
+    }
+    '/console/onboarding/$requestId': {
+      id: '/console/onboarding/$requestId'
+      path: '/$requestId'
+      fullPath: '/console/onboarding/$requestId'
+      preLoaderRoute: typeof ConsoleOnboardingRequestIdRouteImport
+      parentRoute: typeof ConsoleOnboardingRouteRoute
+    }
     '/console/organizations/': {
       id: '/console/organizations/'
       path: '/'
@@ -2525,11 +2623,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOrgWeeklyReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/sms-dispatch': {
+      id: '/api/public/cron/sms-dispatch'
+      path: '/api/public/cron/sms-dispatch'
+      fullPath: '/api/public/cron/sms-dispatch'
+      preLoaderRoute: typeof ApiPublicCronSmsDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
       fullPath: '/api/public/cron/wallet-topup-reconcile'
       preLoaderRoute: typeof ApiPublicCronWalletTopupReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/whatsapp-dispatch': {
+      id: '/api/public/cron/whatsapp-dispatch'
+      path: '/api/public/cron/whatsapp-dispatch'
+      fullPath: '/api/public/cron/whatsapp-dispatch'
+      preLoaderRoute: typeof ApiPublicCronWhatsappDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/whatsapp-n8n-forward': {
@@ -2551,6 +2663,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/africas-talking-voice'
       fullPath: '/api/public/webhooks/africas-talking-voice'
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/bulksms': {
+      id: '/api/public/webhooks/bulksms'
+      path: '/api/public/webhooks/bulksms'
+      fullPath: '/api/public/webhooks/bulksms'
+      preLoaderRoute: typeof ApiPublicWebhooksBulksmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/owner-alert-voice': {
@@ -2802,6 +2921,22 @@ const ConsoleActivityRouteRouteChildren: ConsoleActivityRouteRouteChildren = {
 const ConsoleActivityRouteRouteWithChildren =
   ConsoleActivityRouteRoute._addFileChildren(ConsoleActivityRouteRouteChildren)
 
+interface ConsoleOnboardingRouteRouteChildren {
+  ConsoleOnboardingRequestIdRoute: typeof ConsoleOnboardingRequestIdRoute
+  ConsoleOnboardingIndexRoute: typeof ConsoleOnboardingIndexRoute
+}
+
+const ConsoleOnboardingRouteRouteChildren: ConsoleOnboardingRouteRouteChildren =
+  {
+    ConsoleOnboardingRequestIdRoute: ConsoleOnboardingRequestIdRoute,
+    ConsoleOnboardingIndexRoute: ConsoleOnboardingIndexRoute,
+  }
+
+const ConsoleOnboardingRouteRouteWithChildren =
+  ConsoleOnboardingRouteRoute._addFileChildren(
+    ConsoleOnboardingRouteRouteChildren,
+  )
+
 interface ConsoleOrganizationsRouteRouteChildren {
   ConsoleOrganizationsOrganizationIdRoute: typeof ConsoleOrganizationsOrganizationIdRoute
   ConsoleOrganizationsNewRoute: typeof ConsoleOrganizationsNewRoute
@@ -2889,6 +3024,7 @@ const ConsoleWorkspacesRouteRouteWithChildren =
 
 interface ConsoleRouteRouteChildren {
   ConsoleActivityRouteRoute: typeof ConsoleActivityRouteRouteWithChildren
+  ConsoleOnboardingRouteRoute: typeof ConsoleOnboardingRouteRouteWithChildren
   ConsoleOrganizationsRouteRoute: typeof ConsoleOrganizationsRouteRouteWithChildren
   ConsoleRuntimesRouteRoute: typeof ConsoleRuntimesRouteRouteWithChildren
   ConsoleTeamRouteRoute: typeof ConsoleTeamRouteRouteWithChildren
@@ -2904,6 +3040,7 @@ interface ConsoleRouteRouteChildren {
 
 const ConsoleRouteRouteChildren: ConsoleRouteRouteChildren = {
   ConsoleActivityRouteRoute: ConsoleActivityRouteRouteWithChildren,
+  ConsoleOnboardingRouteRoute: ConsoleOnboardingRouteRouteWithChildren,
   ConsoleOrganizationsRouteRoute: ConsoleOrganizationsRouteRouteWithChildren,
   ConsoleRuntimesRouteRoute: ConsoleRuntimesRouteRouteWithChildren,
   ConsoleTeamRouteRoute: ConsoleTeamRouteRouteWithChildren,
@@ -2978,12 +3115,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronJarvisTickRoute: ApiPublicCronJarvisTickRoute,
   ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
   ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
+  ApiPublicCronSmsDispatchRoute: ApiPublicCronSmsDispatchRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
+  ApiPublicCronWhatsappDispatchRoute: ApiPublicCronWhatsappDispatchRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicCronWorkflowTickRoute: ApiPublicCronWorkflowTickRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksBulksmsRoute: ApiPublicWebhooksBulksmsRoute,
   ApiPublicWebhooksOwnerAlertVoiceRoute: ApiPublicWebhooksOwnerAlertVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,

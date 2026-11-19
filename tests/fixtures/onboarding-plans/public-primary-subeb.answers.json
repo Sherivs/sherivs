@@ -1,0 +1,15 @@
+{
+  "entry.org.institution_type": "public_primary",
+  "entry.location.state": "kano",
+  "public_basic.authority.governing_body": "subeb",
+  "public_basic.authority.lgea_name": "Example LGEA",
+  "public_basic.structure.ube_sections": ["nursery", "primary"],
+  "public_basic.finance.levies": "pta_levies_only",
+  "public_basic.returns.census": true,
+  "public_basic.workforce.controlled_by": "subeb",
+  "public_basic.structure.boarding": false,
+  "public_basic.layout.shifts": true,
+  "public_basic.intake.mode": "catchment_allocation",
+  "public_basic.size.population_band": "from_1000_to_5000",
+  "public_basic.profile.languages": ["en", "ha"]
+}

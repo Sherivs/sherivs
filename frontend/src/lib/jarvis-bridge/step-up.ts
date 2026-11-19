@@ -9,6 +9,11 @@
  * Replaying an assertion made for approval A against approval B, or approve against deny,
  * produces a different digest and is refused.
  *
+ * M6 (ADR-117) extends the binding with an optional subject digest: the onboarding console binds
+ * an approval to ONE request AND the sha-256 of ONE plan, so an assertion made while reviewing one
+ * plan cannot approve an edited plan. Bindings without a digest produce exactly the same challenge
+ * as before, so existing JARVIS approvals are unchanged.
+ *
  * Pure and dependency-free so the binding can be tested without a database or an authenticator.
  */
 import { createHash, randomBytes } from "node:crypto";
@@ -23,10 +28,13 @@ export interface StepUpBinding {
   readonly decision: StepUpDecision;
   /** Server-issued, base64url, 16 random bytes. */
   readonly nonce: string;
+  /** Optional lowercase hex sha-256 of the exact subject approved (for example a plan hash). */
+  readonly subjectDigest?: string;
 }
 
 const SAFE_ID = /^[A-Za-z0-9._:-]{1,128}$/;
 const NONCE = /^[A-Za-z0-9_-]{22}$/;
+const DIGEST = /^[0-9a-f]{64}$/;
 
 export function newStepUpNonce(): string {
   return randomBytes(16).toString("base64url");
@@ -37,14 +45,17 @@ export function isValidStepUpBinding(b: StepUpBinding): boolean {
     SAFE_ID.test(b.userId) &&
     SAFE_ID.test(b.approvalId) &&
     (b.decision === "approve" || b.decision === "deny") &&
-    NONCE.test(b.nonce)
+    NONCE.test(b.nonce) &&
+    (b.subjectDigest === undefined || DIGEST.test(b.subjectDigest))
   );
 }
 
 /** The WebAuthn challenge (base64url) for a binding. Throws on a malformed binding. */
 export function stepUpChallenge(b: StepUpBinding): string {
   if (!isValidStepUpBinding(b)) throw new Error("invalid_step_up_binding");
-  const canonical = [STEP_UP_CONTEXT, b.userId, b.approvalId, b.decision, b.nonce].join("|");
+  const parts = [STEP_UP_CONTEXT, b.userId, b.approvalId, b.decision, b.nonce];
+  if (b.subjectDigest !== undefined) parts.push(`subject:${b.subjectDigest}`);
+  const canonical = parts.join("|");
   return createHash("sha256").update(canonical, "utf8").digest("base64url");
 }
 

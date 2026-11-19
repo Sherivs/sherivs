@@ -3,7 +3,8 @@
 /* Cache only the public root shell. Authenticated route documents can contain
  * tenant or user data and must never be persisted in the shared Cache Storage.
  * User-scoped offline reads belong in the app's tenant-scoped IndexedDB store. */
-const APP_SHELL_CACHE = "sherivs-app-shell-v1";
+const APP_SHELL_CACHE_PREFIX = "sherivs-app-shell-";
+const APP_SHELL_CACHE = `${APP_SHELL_CACHE_PREFIX}v1`;
 // Former cache names (CoreGrid was the former platform name), removed on activate.
 const LEGACY_CACHE_PREFIXES = ["coregrid-app-shell-"];
 const APP_SHELL_URL = "/";
@@ -29,7 +30,12 @@ self.addEventListener("activate", (event) => {
       .then((keys) =>
         Promise.all(
           keys
-            .filter((key) => LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)))
+            .filter(
+              (key) =>
+                LEGACY_CACHE_PREFIXES.some((prefix) => key.startsWith(prefix)) ||
+                // Versioned shell cache: drop every older version on activate (ADR-109).
+                (key.startsWith(APP_SHELL_CACHE_PREFIX) && key !== APP_SHELL_CACHE),
+            )
             .map((key) => caches.delete(key)),
         ),
       )

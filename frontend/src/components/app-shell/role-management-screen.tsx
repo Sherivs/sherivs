@@ -421,10 +421,17 @@ export function RoleManagementScreen() {
       <Link to={APP_SHELL_HOME as never} className="app-shell-back">
         ← Home
       </Link>
-      <nav aria-label="Role tools" data-testid="role-tools" className="flex gap-4 text-sm">
+      <nav
+        aria-label="Role tools"
+        data-testid="role-tools"
+        className="flex flex-wrap gap-x-4 gap-y-2 text-sm"
+      >
         <Link to={appShellSectionPath("role-packets") as never}>Role packets</Link>
         <Link to={appShellSectionPath("workspace-policies") as never}>Workspace policies</Link>
         <Link to={appShellSectionPath("agents") as never}>Agents</Link>
+        <Link to={appShellSectionPath("role-builder") as never}>Custom roles</Link>
+        <Link to={appShellSectionPath("access-reviews") as never}>Access reviews</Link>
+        <Link to={appShellSectionPath("delegations") as never}>Delegations</Link>
       </nav>
       <div>
         <p className="app-shell-org">HR / Administration · {app.school?.name}</p>

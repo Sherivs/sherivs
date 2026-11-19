@@ -36,7 +36,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Sherivs Scholar",
     question: "Who can use Sherivs Scholar?",
     answer:
-      "The platform is designed for the wider school community, including administrators, teachers, students, parents and guardians, and operational staff. Access and available functionality depend on each person's role and the capabilities enabled for the institution.",
+      "The platform is designed for the wider school community, including administrators, teachers, students, parents and guardians, and operational staff. Access and available functionality depend on each person's role and the capabilities enabled for the institution. Many screens made for specific roles are still being built.",
     related: [{ href: "/#community", label: "The school community" }],
   },
   {
@@ -44,7 +44,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Sherivs Scholar",
     question: "Can Sherivs Scholar support multiple campuses?",
     answer:
-      "Sherivs Scholar aims to represent institutional structures such as school groups, campuses, and different operational environments where supported by the platform's configuration.",
+      "Not yet. Campus and section records exist in the data model, but there are no screens for managing several campuses. This is being built.",
     related: [{ href: "/#flexibility", label: "Organizational flexibility" }],
   },
   {
@@ -52,7 +52,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Sherivs Scholar",
     question: "Does every user receive an AI assistant?",
     answer:
-      "The Sherivs Scholar approach is to provide assistance relevant to each person's role and responsibilities. The available assistance depends on the capabilities implemented and enabled for the institution.",
+      "Not today. No AI assistant is switched on for users yet. The plan is for each person to get help that fits their role and responsibilities.",
     related: [{ href: "/#intelligence", label: "Role-aware intelligence" }],
   },
   {
@@ -60,7 +60,7 @@ export const FAQ_ITEMS: readonly FaqItem[] = [
     category: "Sherivs Scholar",
     question: "How does AI assistance work?",
     answer:
-      "AI assistance can help users understand relevant information, prepare work, receive recommendations, and complete supported tasks. Available actions remain subject to the applicable permissions, policies, and review requirements.",
+      "AI assistance is not switched on yet. When it is, it will help people understand information and prepare work. It will only suggest actions, and a person will have to approve them, within the permissions of their role.",
     related: [{ href: "/#coordinated-work", label: "Work, coordinated" }],
   },
   {

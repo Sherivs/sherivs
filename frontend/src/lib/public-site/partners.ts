@@ -55,7 +55,7 @@ export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
     kind: "technology_integration",
     href: "https://paystack.com",
     summary:
-      "Fee payments in Sherivs Scholar can settle through Paystack when an organization configures it. This is a supported integration path, not a published commercial partnership.",
+      "Code for fee payments through Paystack exists, but it runs in test mode only. Schools cannot take real payments through Sherivs yet. This is an integration, not a commercial partnership.",
     published: true,
     notes: "Code: frontend/src/lib paystack functions and public webhook.",
   },
@@ -64,7 +64,7 @@ export const PUBLIC_PARTNERS: readonly PublicPartner[] = [
     name: "WhatsApp",
     kind: "technology_integration",
     summary:
-      "WhatsApp Cloud webhooks exist in the product when Meta credentials are configured. Delivery is not claimed as always-on.",
+      "Code for WhatsApp messages exists, but WhatsApp sending is not switched on for customers yet. This is an integration, not a commercial partnership.",
     published: true,
     notes: "Code: api/public/webhooks/whatsapp.ts.",
   },

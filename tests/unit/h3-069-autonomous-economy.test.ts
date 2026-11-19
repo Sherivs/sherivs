@@ -36,7 +36,7 @@ import {
   type DerivedObservation,
   type EconomicProposal,
   type SettlementInstruction,
-} from "../../frontend/src/lib/autonomous-economy/contracts";
+} from "../../frontend/src/lib/_quarantine/autonomous-economy/contracts";
 
 const DECLARED_AT = "2026-10-03T00:00:00.000Z";
 const ACTION_AT = "2026-10-03T01:00:00.000Z";
@@ -51,8 +51,7 @@ function rule(overrides: Record<string, unknown> = {}): Record<string, unknown> 
   return {
     ruleId: "settlement_requires_ledger_record",
     kind: "settlement_rule",
-    statement:
-      "a settlement instruction proceeds only when it cites a canonical ledger record",
+    statement: "a settlement instruction proceeds only when it cites a canonical ledger record",
     version: 1,
     status: "active",
     changeRequiresHumanApproval: true,
@@ -178,7 +177,9 @@ describe("market and settlement rules", () => {
   });
 
   it("binds every rule to human-approval gating — the literal cannot be false or absent", () => {
-    expect(marketRuleSchema.safeParse(rule({ changeRequiresHumanApproval: false })).success).toBe(false);
+    expect(marketRuleSchema.safeParse(rule({ changeRequiresHumanApproval: false })).success).toBe(
+      false,
+    );
     const ungated = rule();
     delete ungated.changeRequiresHumanApproval;
     expect(marketRuleSchema.safeParse(ungated).success).toBe(false);
@@ -193,7 +194,9 @@ describe("market and settlement rules", () => {
   it("rejects silent retirements — a retired rule must name its reason", () => {
     expect(marketRuleSchema.safeParse(rule({ status: "retired" })).success).toBe(false);
     expect(
-      marketRuleSchema.safeParse(rule({ status: "retired", retiredReason: "superseded by version 2" })).success,
+      marketRuleSchema.safeParse(
+        rule({ status: "retired", retiredReason: "superseded by version 2" }),
+      ).success,
     ).toBe(true);
   });
 
@@ -215,7 +218,10 @@ describe("market and settlement rules", () => {
       expect(parsed.reason).toBe("cross_record_invariant");
       expect(parsed.issues[0].message).toContain("duplicate rule id");
     }
-    const valid = parseMarketRules([rule(), rule({ ruleId: "participation_requires_active_status", kind: "participation_rule" })]);
+    const valid = parseMarketRules([
+      rule(),
+      rule({ ruleId: "participation_requires_active_status", kind: "participation_rule" }),
+    ]);
     expect(valid.ok).toBe(true);
     if (valid.ok) expect(valid.rules).toHaveLength(2);
   });
@@ -258,7 +264,9 @@ describe("economic proposals (AI actions are AI proposals — AGENTS §21)", () 
   });
 
   it("binds proposals to requiresHumanApproval:true — no exempt proposal class", () => {
-    expect(economicProposalSchema.safeParse(proposal({ requiresHumanApproval: false })).success).toBe(false);
+    expect(
+      economicProposalSchema.safeParse(proposal({ requiresHumanApproval: false })).success,
+    ).toBe(false);
   });
 
   it("rejects proposals without canonical basis references — intelligence is derived, never conjured (AGENTS §9)", () => {
@@ -301,7 +309,12 @@ describe("proposal release decision (validation → policy check → human appro
   it("rejects a failed validation even with approval attached", () => {
     const decision = decideProposalRelease(
       typedProposal({
-        validation: { validatorRef: "validator:core", outcome: "failed", validatedAt: ACTION_AT, failureDetail: "amount mismatch" },
+        validation: {
+          validatorRef: "validator:core",
+          outcome: "failed",
+          validatedAt: ACTION_AT,
+          failureDetail: "amount mismatch",
+        },
         policyCheck: { checkerRef: "policy:core", outcome: "allowed", checkedAt: ACTION_AT },
         humanApproval: APPROVAL,
       }),
@@ -328,11 +341,21 @@ describe("proposal release decision (validation → policy check → human appro
       validation: { validatorRef: "validator:core", outcome: "passed", validatedAt: ACTION_AT },
       humanApproval: APPROVAL,
     };
-    const denied = decideProposalRelease(typedProposal({ ...validated, policyCheck: { checkerRef: "policy:core", outcome: "denied", checkedAt: ACTION_AT } }));
+    const denied = decideProposalRelease(
+      typedProposal({
+        ...validated,
+        policyCheck: { checkerRef: "policy:core", outcome: "denied", checkedAt: ACTION_AT },
+      }),
+    );
     expect(denied.ok).toBe(false);
     if (!denied.ok) expect(denied.reason).toBe("policy_check_denied");
 
-    const escalated = decideProposalRelease(typedProposal({ ...validated, policyCheck: { checkerRef: "policy:core", outcome: "escalated", checkedAt: ACTION_AT } }));
+    const escalated = decideProposalRelease(
+      typedProposal({
+        ...validated,
+        policyCheck: { checkerRef: "policy:core", outcome: "escalated", checkedAt: ACTION_AT },
+      }),
+    );
     expect(escalated.ok).toBe(false);
     if (!escalated.ok) expect(escalated.reason).toBe("policy_check_escalated");
   });
@@ -395,14 +418,20 @@ describe("settlement instructions (AGENTS §36 payment security)", () => {
     const noKey = instruction();
     delete noKey.idempotencyKey;
     expect(settlementInstructionSchema.safeParse(noKey).success).toBe(false);
-    expect(settlementInstructionSchema.safeParse(instruction({ idempotencyKey: "short" })).success).toBe(false);
     expect(
-      settlementInstructionSchema.safeParse(instruction({ idempotencyKey: "k".repeat(IDEMPOTENCY_KEY_MAX_LENGTH + 1) })).success,
+      settlementInstructionSchema.safeParse(instruction({ idempotencyKey: "short" })).success,
+    ).toBe(false);
+    expect(
+      settlementInstructionSchema.safeParse(
+        instruction({ idempotencyKey: "k".repeat(IDEMPOTENCY_KEY_MAX_LENGTH + 1) }),
+      ).success,
     ).toBe(false);
   });
 
   it("binds replay protection to a literal true — it cannot be opted out", () => {
-    expect(settlementInstructionSchema.safeParse(instruction({ replayProtected: false })).success).toBe(false);
+    expect(
+      settlementInstructionSchema.safeParse(instruction({ replayProtected: false })).success,
+    ).toBe(false);
     const missing = instruction();
     delete missing.replayProtected;
     expect(settlementInstructionSchema.safeParse(missing).success).toBe(false);
@@ -412,28 +441,53 @@ describe("settlement instructions (AGENTS §36 payment security)", () => {
     const noLedger = instruction();
     delete noLedger.ledgerRecordRef;
     expect(settlementInstructionSchema.safeParse(noLedger).success).toBe(false);
-    expect(settlementInstructionSchema.safeParse(instruction({ ledgerRecordRef: "  " })).success).toBe(false);
+    expect(
+      settlementInstructionSchema.safeParse(instruction({ ledgerRecordRef: "  " })).success,
+    ).toBe(false);
   });
 
   it("rejects non-positive, fractional, and over-bounded amounts", () => {
     expect(settlementInstructionSchema.safeParse(instruction({ amount: 0 })).success).toBe(false);
     expect(settlementInstructionSchema.safeParse(instruction({ amount: -5 })).success).toBe(false);
-    expect(settlementInstructionSchema.safeParse(instruction({ amount: 10.5 })).success).toBe(false);
-    expect(settlementInstructionSchema.safeParse(instruction({ amount: MAX_AMOUNT_MINOR_UNITS + 1 })).success).toBe(false);
+    expect(settlementInstructionSchema.safeParse(instruction({ amount: 10.5 })).success).toBe(
+      false,
+    );
+    expect(
+      settlementInstructionSchema.safeParse(instruction({ amount: MAX_AMOUNT_MINOR_UNITS + 1 }))
+        .success,
+    ).toBe(false);
   });
 
   it("rejects malformed currency codes", () => {
-    expect(settlementInstructionSchema.safeParse(instruction({ currency: "usd" })).success).toBe(false);
-    expect(settlementInstructionSchema.safeParse(instruction({ currency: "USDD" })).success).toBe(false);
+    expect(settlementInstructionSchema.safeParse(instruction({ currency: "usd" })).success).toBe(
+      false,
+    );
+    expect(settlementInstructionSchema.safeParse(instruction({ currency: "USDD" })).success).toBe(
+      false,
+    );
   });
 
   it("accepts only recognized signature algorithms with key references and opaque digests", () => {
-    expect(signatureEnvelopeSchema.safeParse({ algorithm: "md5", keyRef: "key_01", digest: "AA".repeat(32) }).success).toBe(false);
-    const keyEmbedded = { algorithm: "ed25519", keyRef: "key_01", digest: "-----BEGIN PRIVATE KEY-----AA" };
+    expect(
+      signatureEnvelopeSchema.safeParse({
+        algorithm: "md5",
+        keyRef: "key_01",
+        digest: "AA".repeat(32),
+      }).success,
+    ).toBe(false);
+    const keyEmbedded = {
+      algorithm: "ed25519",
+      keyRef: "key_01",
+      digest: "-----BEGIN PRIVATE KEY-----AA",
+    };
     expect(signatureEnvelopeSchema.safeParse(keyEmbedded).success).toBe(false);
     const shortDigest = { algorithm: "ed25519", keyRef: "key_01", digest: "AA" };
     expect(signatureEnvelopeSchema.safeParse(shortDigest).success).toBe(false);
-    const longDigest = { algorithm: "ed25519", keyRef: "key_01", digest: "A".repeat(SIGNATURE_DIGEST_MAX_LENGTH + 1) };
+    const longDigest = {
+      algorithm: "ed25519",
+      keyRef: "key_01",
+      digest: "A".repeat(SIGNATURE_DIGEST_MAX_LENGTH + 1),
+    };
     expect(signatureEnvelopeSchema.safeParse(longDigest).success).toBe(false);
   });
 });
@@ -442,7 +496,11 @@ describe("settlement batch parsing (replay protection at the boundary)", () => {
   it("parses a valid batch of distinct instructions", () => {
     const parsed = parseSettlementBatch([
       instruction(),
-      instruction({ instructionId: "settle_exchange_002", idempotencyKey: "idem-2026-10-03-000002", exchangeRef: "exchange_002" }),
+      instruction({
+        instructionId: "settle_exchange_002",
+        idempotencyKey: "idem-2026-10-03-000002",
+        exchangeRef: "exchange_002",
+      }),
     ]);
     expect(parsed.ok).toBe(true);
     if (parsed.ok) expect(parsed.instructions).toHaveLength(2);
@@ -485,7 +543,11 @@ describe("settlement batch parsing (replay protection at the boundary)", () => {
 
   it("rejects batches above the bounded count", () => {
     const many = Array.from({ length: MAX_INSTRUCTIONS_PER_BATCH + 1 }, (_, i) =>
-      instruction({ instructionId: `settle_${i}`, idempotencyKey: `idem-2026-10-03-${String(i).padStart(6, "0")}`, exchangeRef: `exchange_${i}` }),
+      instruction({
+        instructionId: `settle_${i}`,
+        idempotencyKey: `idem-2026-10-03-${String(i).padStart(6, "0")}`,
+        exchangeRef: `exchange_${i}`,
+      }),
     );
     const parsed = parseSettlementBatch(many);
     expect(parsed.ok).toBe(false);
@@ -501,7 +563,14 @@ describe("ownership validation (AGENTS §36)", () => {
   });
 
   it("rejects malformed claims — a bad claim fails closed, it is never defaulted", () => {
-    for (const bad of [undefined, null, {}, { tenantRef: "tenant:org-a" }, { ...CLAIM, attestationRef: "Not-An-Identifier" }, { ...CLAIM, claimedAt: "yesterday" }]) {
+    for (const bad of [
+      undefined,
+      null,
+      {},
+      { tenantRef: "tenant:org-a" },
+      { ...CLAIM, attestationRef: "Not-An-Identifier" },
+      { ...CLAIM, claimedAt: "yesterday" },
+    ]) {
       const decision = validateSettlementOwnership(typedInstruction(), bad);
       expect(decision.ok).toBe(false);
       if (!decision.ok) expect(decision.reason).toBe("claim_invalid");
@@ -538,7 +607,9 @@ describe("derived economic intelligence (canonical truth — AGENTS §9)", () =>
   });
 
   it("binds observations to isCanonical:false — derived intelligence can never be canonical truth", () => {
-    expect(derivedObservationSchema.safeParse(observation({ isCanonical: true })).success).toBe(false);
+    expect(derivedObservationSchema.safeParse(observation({ isCanonical: true })).success).toBe(
+      false,
+    );
     const missing = observation();
     delete missing.isCanonical;
     expect(derivedObservationSchema.safeParse(missing).success).toBe(false);
@@ -552,10 +623,16 @@ describe("derived economic intelligence (canonical truth — AGENTS §9)", () =>
   });
 
   it("rejects out-of-range confidence and bounds reference sets", () => {
-    expect(derivedObservationSchema.safeParse(observation({ confidence: -0.1 })).success).toBe(false);
-    expect(derivedObservationSchema.safeParse(observation({ confidence: 1.1 })).success).toBe(false);
+    expect(derivedObservationSchema.safeParse(observation({ confidence: -0.1 })).success).toBe(
+      false,
+    );
+    expect(derivedObservationSchema.safeParse(observation({ confidence: 1.1 })).success).toBe(
+      false,
+    );
     const many = Array.from({ length: MAX_REFS_PER_RECORD + 1 }, (_, i) => `basis_${i}`);
-    expect(derivedObservationSchema.safeParse(observation({ basisRefs: many })).success).toBe(false);
+    expect(derivedObservationSchema.safeParse(observation({ basisRefs: many })).success).toBe(
+      false,
+    );
   });
 
   it("flags sub-floor confidence for human review — low confidence is never silently actioned", () => {
@@ -570,7 +647,14 @@ describe("append-only audit trail (AGENTS §29, §36)", () => {
   it("accepts a valid, ordered trail", () => {
     const parsed = parseAuditTrail([
       auditEvent(),
-      auditEvent({ eventId: "evt_002", eventKind: "proposal_released", occurredAt: ACTION_AT, outcome: "released", subjectRefs: ["adjust_price_band"], detail: "released after human approval" }),
+      auditEvent({
+        eventId: "evt_002",
+        eventKind: "proposal_released",
+        occurredAt: ACTION_AT,
+        outcome: "released",
+        subjectRefs: ["adjust_price_band"],
+        detail: "released after human approval",
+      }),
     ]);
     expect(parsed.ok).toBe(true);
     if (parsed.ok) expect(parsed.events).toHaveLength(2);
@@ -610,7 +694,10 @@ describe("append-only audit trail (AGENTS §29, §36)", () => {
       if (!parsed.ok) expect(parsed.reason).toBe("invalid_shape");
     }
     const many = Array.from({ length: MAX_AUDIT_EVENTS_PER_TRAIL + 1 }, (_, i) =>
-      auditEvent({ eventId: `evt_${i}`, occurredAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString() }),
+      auditEvent({
+        eventId: `evt_${i}`,
+        occurredAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+      }),
     );
     const parsed = parseAuditTrail(many);
     expect(parsed.ok).toBe(false);

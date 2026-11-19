@@ -4,6 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tenantId } from "@/lib/tenant-core";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { startRun, type WorkflowActorScope, type WorkflowTrigger } from "./workflow-engine";
+import { workflowActionCategory, workflowActionDefinitionSchema } from "./workflow-actions";
 import {
   validateWorkflowDefinition,
   type WorkflowDefinition,
@@ -159,13 +160,34 @@ function definitionFromGraph(
 ): WorkflowDefinition | null {
   const graph = object(graphValue);
   if (!graph || !Array.isArray(graph.steps)) return null;
+  const steps = graph.steps.map((candidate) => {
+    const step = object(candidate);
+    if (!step || !workflowActionDefinitionSchema.safeParse(step.action).success) return candidate;
+    const action = workflowActionDefinitionSchema.parse(step.action);
+    const actionClass =
+      typeof step.actionClass === "string"
+        ? step.actionClass
+        : action.kind === "task" || action.kind === "wait"
+          ? "internal"
+          : "communication";
+    return {
+      ...step,
+      action,
+      actionClass: workflowActionCategory({
+        actionClass,
+        recipientCount: action.recipientIds.length,
+        hasAudienceSelector: action.audienceSelector !== undefined,
+        ...(action.dataClass ? { dataClass: action.dataClass } : {}),
+      }),
+    };
+  });
   const definition: WorkflowDefinition = {
     definitionId: input.definitionId,
     tenantRef: tenantId(input.orgId),
     name: input.name,
     version: String(input.version),
     trigger: workflowTrigger(graph.trigger, input.eventType),
-    steps: graph.steps as WorkflowDefinition["steps"],
+    steps: steps as WorkflowDefinition["steps"],
     onFailure: (object(graph.onFailure) ?? { kind: "halt" }) as WorkflowDefinition["onFailure"],
     requiredApprovals: Array.isArray(graph.requiredApprovals)
       ? (graph.requiredApprovals as WorkflowDefinition["requiredApprovals"])

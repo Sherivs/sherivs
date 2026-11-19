@@ -1,10 +1,14 @@
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain .mjs script without types
 import { compareLedger, readRepoState } from "../../scripts/verify-migration-ledger.mjs";
 import {
   checkMigrationsFolder,
+  checkOpsPrivate,
+  opsPrivateGrants,
   tablesWithoutGrant,
   // @ts-expect-error plain .mjs script without types
 } from "../../scripts/verify-migration-grants.mjs";
@@ -87,6 +91,41 @@ describe("M0 migration ledger drift check", () => {
     });
     expect(report.status).toBe("PASS");
     expect(report.duplicateLedgerNames).toEqual(["sec01"]);
+  });
+
+  it("prints duplicate ledger names as warnings without failing a clean CLI run", () => {
+    const repo = readRepoState(process.cwd());
+    const duplicates = [
+      ["sherivs_sec01_check_result_uniform", "20261103181438", "20261103181444"],
+      ["sherivs_sec01_consent_set_for_actor_grants", "20261103181450", "20261103181454"],
+    ] as const;
+    const duplicateNames = duplicates.map(([name]) => name);
+    const ledger = [
+      ...repo.fileStems.map((name: string) => ({ version: "", name })),
+      ...repo.outOfFolder.map((entry: { ledgerName: string }) => ({
+        version: "",
+        name: entry.ledgerName,
+      })),
+      ...duplicates.flatMap(([name, ...versions]) =>
+        versions.map((version) => ({ version, name })),
+      ),
+    ];
+    const dir = mkdtempSync(join(tmpdir(), "migration-ledger-"));
+    const ledgerPath = join(dir, "ledger.json");
+    try {
+      writeFileSync(ledgerPath, JSON.stringify(ledger));
+      const run = spawnSync(
+        "node",
+        ["scripts/verify-migration-ledger.mjs", "--ledger", ledgerPath],
+        { encoding: "utf8" },
+      );
+      expect(run.status).toBe(0);
+      for (const name of duplicateNames)
+        expect(run.stdout).toContain(`WARN duplicate ledger name: ${name}`);
+      expect(run.stdout).toContain("STATUS=PASS");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("reports legacy rows named by a bare UUID without failing", () => {
@@ -224,5 +263,41 @@ describe("M0 migration grant check (private by default needs explicit grants)", 
 
   it("passes on the repository's migrations folder", () => {
     expect(checkMigrationsFolder("database/supabase/migrations")).toEqual([]);
+  });
+});
+
+describe("M0 guard: schema ops_private stays closed to client roles", () => {
+  it("flags a grant on the schema or on an object in it, to anon, authenticated or PUBLIC", () => {
+    expect(opsPrivateGrants("GRANT USAGE ON SCHEMA ops_private TO authenticated;")).toHaveLength(1);
+    expect(
+      opsPrivateGrants("GRANT SELECT ON TABLE ops_private.sec_m0_acl_snapshot TO anon;"),
+    ).toHaveLength(1);
+    expect(
+      opsPrivateGrants("GRANT SELECT ON ALL TABLES IN SCHEMA ops_private TO PUBLIC;"),
+    ).toHaveLength(1);
+    expect(
+      opsPrivateGrants("grant select on ops_private.t to service_role, authenticated;"),
+    ).toHaveLength(1);
+  });
+
+  it("flags a grant hidden in dynamic SQL", () => {
+    expect(
+      opsPrivateGrants("DO $$ BEGIN EXECUTE 'GRANT USAGE ON SCHEMA ops_private TO anon'; END $$;"),
+    ).toHaveLength(1);
+  });
+
+  it("allows revokes, service-role grants, comments and grants on other schemas", () => {
+    expect(
+      opsPrivateGrants(
+        "REVOKE ALL ON SCHEMA ops_private FROM PUBLIC, anon, authenticated;\n" +
+          "GRANT USAGE ON SCHEMA ops_private TO service_role;\n" +
+          "-- GRANT USAGE ON SCHEMA ops_private TO anon;\n" +
+          "GRANT SELECT ON TABLE public.news TO anon;",
+      ),
+    ).toEqual([]);
+  });
+
+  it("passes on the repository's migrations and proposals", () => {
+    expect(checkOpsPrivate(["database/supabase/migrations", "database/proposals"])).toEqual([]);
   });
 });

@@ -45,25 +45,27 @@ export const ARCHITECTURE_LAYERS: readonly ArchitectureLayer[] = [
     title: "Institutional computing",
     summary:
       "A shared operating environment where an organization's people, records, and workflows live together instead of in disconnected tools.",
-    status: "available",
-    evidence: "Organization onboarding, Scholar runtime workspaces, tenant public sites.",
+    status: "in_development",
+    evidence:
+      "Shared workspace and school setup interview exist. The tenant website builder is not reachable yet.",
   },
   {
     id: "agent-orchestration",
     title: "Agent orchestration",
     summary:
-      "AI workers can be given bounded tasks inside permissions and human oversight. They are not unrestricted administrators and cannot expand their own access.",
+      "AI workers are planned to take bounded tasks inside permissions and human oversight. Today they exist only as definitions limited to suggesting work. They cannot expand their own access.",
     status: "in_development",
     evidence:
-      "AI gateway and worker-mission surfaces exist; live execution depends on configured model credentials.",
+      "Agent definitions exist. There is no agent runtime or scheduler, so nothing runs them.",
   },
   {
     id: "digital-twin-runtime",
-    title: "Digital-twin runtime",
+    title: "Twin runtime",
     summary:
-      "Twins are intended to hold identity, state, relationships, and events, then compute on change or schedule. A complete twin runtime is not a finished public product.",
-    status: "in_development",
-    evidence: "Admin digital-twin UI exists; hardware/IoT twin scope is frozen for V1.",
+      "Personal twins exist only as stored data and a short brief panel. They do not act on their own. A twin runtime is not built.",
+    status: "planned",
+    evidence:
+      "Personal twin data and a brief panel only; hardware/IoT twin scope is frozen for V1.",
   },
   {
     id: "intelligence-routing",
@@ -107,7 +109,7 @@ export const PRODUCT_FAMILIES: readonly ProductFamily[] = [
     name: "Sherivs Scholar",
     href: "/solutions/education",
     summary:
-      "The school product from Sherivs. Organization records and a shared workspace are in the product. Separate role applications, campus screens, and AI assistants are in development.",
+      "The school product from Sherivs. A shared workspace, school setup, roles, and student records are in the product. Role-specific screens, campus management, and AI assistants are in development.",
     status: "available",
   },
   {
@@ -128,10 +130,10 @@ export const PRODUCT_FAMILIES: readonly ProductFamily[] = [
   },
   {
     id: "twins",
-    name: "Sherivs Digital Twins",
+    name: "Sherivs Twins",
     href: "/product/digital-twins",
     summary:
-      "Persistent digital models of people, places, and systems. Directional capability; not a hardware or IoT product announcement.",
+      "Personal twins exist only as stored data and a short brief panel. They do not act on their own. Not a hardware or IoT product.",
     status: "in_development",
   },
   {
@@ -153,12 +155,12 @@ export const HOW_IT_WORKS = [
   {
     step: "02",
     title: "Define the objective and permissions",
-    body: "State what should happen and who may do it. Agents and people operate inside those bounds. Permissions are not inferred from a prompt.",
+    body: "State what should happen and who may do it. People, and later AI agents, work inside those bounds. Permissions are not inferred from a prompt.",
   },
   {
     step: "03",
     title: "Coordinate execution",
-    body: "People and AI workers share the same operating picture. Work is coordinated as bounded tasks, not as unattended autonomy.",
+    body: "Planned: people and AI workers will share the same operating picture, with work split into bounded tasks, not unattended autonomy.",
   },
   {
     step: "04",
@@ -171,16 +173,16 @@ export const APPROACH_PILLARS = [
   {
     id: "connect",
     title: "Connect",
-    body: "People, organizations, agents, and digital twins share identity and relationship rather than living in separate tools. Connection is the substrate; it is not the same as unrestricted data sharing.",
+    body: "People and organizations, and later AI agents and personal twins, share identity and relationship rather than living in separate tools. Connection is the substrate; it is not the same as unrestricted data sharing.",
   },
   {
     id: "coordinate",
     title: "Coordinate",
-    body: "Work is coordinated across humans and AI workers with owners, permissions, and completion criteria. Coordination replaces the pile of chat threads, spreadsheets, and one-off automations.",
+    body: "Work is meant to be coordinated across people and, later, AI workers, with owners, permissions, and completion criteria. Coordination replaces the pile of chat threads, spreadsheets, and one-off automations.",
   },
   {
     id: "intelligence",
     title: "Intelligence",
-    body: "Models operate on authorized context and return proposals that can be inspected. Intelligence is a layer on top of institutional reality — it does not replace governance.",
+    body: "Planned: models will work on authorized context and return proposals that can be inspected. Intelligence is a layer on top of institutional reality — it does not replace governance.",
   },
 ] as const;

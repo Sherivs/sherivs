@@ -255,7 +255,11 @@ export async function executeOrganizationProvisioning(
     payload: Record<string, unknown>,
   ): Promise<{ row: ProvisioningRecordRow; id: string }> {
     const { data, error } = await client.from(table).insert(payload).select("id");
-    if (error) throw new ProvisioningStepError(step, `substrate rejected insert on "${table}": ${error.message}`);
+    if (error)
+      throw new ProvisioningStepError(
+        step,
+        `substrate rejected insert on "${table}": ${error.message}`,
+      );
     if (!data || data.length === 0) {
       throw new ProvisioningStepError(step, `substrate returned no row for insert on "${table}"`);
     }
@@ -303,7 +307,9 @@ export async function executeOrganizationProvisioning(
       try {
         if (entry.kind === "auth_user") {
           if (!identityAdmin) {
-            errors.push(`compensation ${entry.step}: no identity admin surface to delete ${entry.id}`);
+            errors.push(
+              `compensation ${entry.step}: no identity admin surface to delete ${entry.id}`,
+            );
             continue;
           }
           const { error } = await identityAdmin.deleteUser(entry.id);
@@ -315,7 +321,9 @@ export async function executeOrganizationProvisioning(
           else compensated.push(entry);
         }
       } catch (err) {
-        errors.push(`compensation ${entry.step}: ${err instanceof Error ? err.message : String(err)}`);
+        errors.push(
+          `compensation ${entry.step}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
     return { compensated, errors };
@@ -405,4 +413,92 @@ export async function executeOrganizationProvisioning(
       compensationErrors,
     };
   }
+}
+/* ─────────────────────────────────────────────────────────────
+ * M6 (ADR-117): provisioning from an approved plan, natively atomic
+ *
+ * The residual gap named at the top of this file (native atomicity needs a
+ * Postgres function) is closed for plan-based onboarding: the database
+ * function `onboarding_provision_from_plan` writes the organization root, the
+ * kernel and console records, the institution profile, the org units, the role
+ * pack installation, the first-admin invitation, the website draft and the
+ * application record in ONE transaction, and asserts that the organization has
+ * no root gaps before commit. A failure rolls every row back; a second call for
+ * a provisioned request returns the first result and writes nothing.
+ *
+ * This wrapper only calls it and maps errors to stable codes; it never decides
+ * the organization, the plan or the approver (the database reads them from the
+ * approved request).
+ * ────────────────────────────────────────────────────────────*/
+
+export type PlanProvisioningRpc = (
+  fn: string,
+  args: Record<string, unknown>,
+) => PromiseLike<{ data: unknown; error: { code?: string; message?: string } | null }>;
+
+export type PlanProvisioningFailureCode =
+  | "not_allowed"
+  | "not_found"
+  | "stale_plan"
+  | "invalid_plan"
+  | "incomplete_organization"
+  | "conflict"
+  | "unavailable";
+
+export type PlanProvisioningOutcome =
+  | {
+      readonly ok: true;
+      readonly replay: boolean;
+      readonly organizationId: string;
+      readonly appliedResult: Readonly<Record<string, unknown>>;
+    }
+  | { readonly ok: false; readonly code: PlanProvisioningFailureCode };
+
+export function planProvisioningFailureCode(
+  error: { code?: string } | null | undefined,
+): PlanProvisioningFailureCode {
+  switch (error?.code) {
+    case "42501":
+      return "not_allowed";
+    case "PT404":
+      return "not_found";
+    case "PT409":
+      return "stale_plan";
+    case "22023":
+      return "invalid_plan";
+    case "55000":
+      return "incomplete_organization";
+    case "23505":
+      return "conflict";
+    default:
+      return "unavailable";
+  }
+}
+
+export async function provisionApprovedPlan(
+  rpc: PlanProvisioningRpc,
+  input: {
+    readonly requestId: string;
+    readonly actorId: string;
+    readonly expectedPlanHash: string;
+    readonly websiteDraft: Readonly<Record<string, unknown>> | null;
+  },
+): Promise<PlanProvisioningOutcome> {
+  const { data, error } = await rpc("onboarding_provision_from_plan", {
+    p_request: input.requestId,
+    p_actor: input.actorId,
+    p_expected_plan_hash: input.expectedPlanHash,
+    p_website_draft: input.websiteDraft,
+    p_channel: "console",
+  });
+  if (error) return { ok: false, code: planProvisioningFailureCode(error) };
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return { ok: false, code: "unavailable" };
+  }
+  const result = data as Record<string, unknown>;
+  const organizationId = result.organization_id;
+  if (typeof organizationId !== "string" || organizationId === "") {
+    return { ok: false, code: "unavailable" };
+  }
+  return { ok: true, replay: result.replay === true, organizationId, appliedResult: result };
 }

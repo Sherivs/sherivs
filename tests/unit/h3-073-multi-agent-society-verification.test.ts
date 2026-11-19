@@ -3,7 +3,7 @@
  * (Squad G mission G-073, Verifier).
  *
  * Adversarial suite against the COMPLETED contract module
- * `frontend/src/lib/multi-agent-society/contracts.ts` (landed by H3-055;
+ * `frontend/src/lib/_quarantine/multi-agent-society/contracts.ts` (landed by H3-055;
  * imported READ-ONLY — this suite never modifies it and deepens, never
  * duplicates, the H3-055 suite `tests/unit/h3-055-multi-agent-society.test.ts`).
  *
@@ -84,7 +84,7 @@ import {
   type SocietyDefinition,
   type SocietyLifecycleState,
   type SocietyMember,
-} from "../../frontend/src/lib/multi-agent-society/contracts";
+} from "../../frontend/src/lib/_quarantine/multi-agent-society/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (neutral vocabulary; distinct from the H3-055 suite)
@@ -178,7 +178,11 @@ describe("A1: authority-widening (union instead of intersection)", () => {
   it("denies an action held only by the coordinator — role confers zero authority", () => {
     const rolePlay = society({
       members: [
-        member({ memberRef: ATTACKER, role: "coordinator", grants: ["act.read", "act.admin"] as ActionRef[] }),
+        member({
+          memberRef: ATTACKER,
+          role: "coordinator",
+          grants: ["act.read", "act.admin"] as ActionRef[],
+        }),
         member({ memberRef: PEER, grants: ["act.read"] as ActionRef[] }),
       ],
     });
@@ -208,7 +212,10 @@ describe("A1: authority-widening (union instead of intersection)", () => {
       member({ memberRef: ATTACKER, grants: ["act.a", "act.b"] as ActionRef[] }),
       member({ memberRef: PEER, grants: ["act.a"] as ActionRef[] }),
     ];
-    const supersetJoiner = member({ memberRef: OUTSIDER, grants: ["act.a", "act.b", "act.admin"] as ActionRef[] });
+    const supersetJoiner = member({
+      memberRef: OUTSIDER,
+      grants: ["act.a", "act.b", "act.admin"] as ActionRef[],
+    });
     const before = societyAuthorityIntersection(two);
     const after = societyAuthorityIntersection([...two, supersetJoiner]);
     expect(before).toEqual(["act.a"]);
@@ -236,7 +243,10 @@ describe("A1: authority-widening (union instead of intersection)", () => {
   it("duplicate grant entries cannot inflate or smuggle authority", () => {
     const padded = society({
       members: [
-        member({ memberRef: ATTACKER, grants: ["act.read", "act.read", "act.admin"] as ActionRef[] }),
+        member({
+          memberRef: ATTACKER,
+          grants: ["act.read", "act.read", "act.admin"] as ActionRef[],
+        }),
         member({ memberRef: PEER, grants: ["act.read"] as ActionRef[] }),
       ],
     });
@@ -271,7 +281,10 @@ describe("A1: authority-widening (union instead of intersection)", () => {
         declaredAt: "2026-10-03T00:00:00.000Z",
         authority: "authority:platform:unrestricted:*",
       },
-      members: [member({ memberRef: ATTACKER, grants: ["act.read"] as ActionRef[] }), member({ memberRef: PEER })],
+      members: [
+        member({ memberRef: ATTACKER, grants: ["act.read"] as ActionRef[] }),
+        member({ memberRef: PEER }),
+      ],
     });
     const parsed = parseSocietyDefinition(grandiose);
     expect(parsed.ok).toBe(true);
@@ -307,7 +320,11 @@ describe("A2: vote stuffing", () => {
       choice: "affirm" as const,
       rationale: "stuffed",
     }));
-    const result = resolveCollectiveDecision(society(), ACTIVE, decision({ ballot: [...decision().ballot, ...ghosts] }));
+    const result = resolveCollectiveDecision(
+      society(),
+      ACTIVE,
+      decision({ ballot: [...decision().ballot, ...ghosts] }),
+    );
     expect(result).toMatchObject({ ok: false, code: "unknown_voter" });
   });
 
@@ -339,23 +356,31 @@ describe("A2: vote stuffing", () => {
         member({ memberRef: OUTSIDER, role: "observer" }),
       ],
     });
-    const result = resolveCollectiveDecision(withObserver, ACTIVE, decision({
-      ballot: [
-        { voterRef: ATTACKER, choice: "affirm", rationale: "x" },
-        { voterRef: OUTSIDER, choice: "affirm", rationale: "observer stuffing" },
-      ],
-    }));
+    const result = resolveCollectiveDecision(
+      withObserver,
+      ACTIVE,
+      decision({
+        ballot: [
+          { voterRef: ATTACKER, choice: "affirm", rationale: "x" },
+          { voterRef: OUTSIDER, choice: "affirm", rationale: "observer stuffing" },
+        ],
+      }),
+    );
     expect(result).toMatchObject({ ok: false, code: "unknown_voter" });
   });
 
   it("one member cannot vote many times, even with mixed choices across repeats", () => {
-    const result = resolveCollectiveDecision(society(), ACTIVE, decision({
-      ballot: [
-        { voterRef: ATTACKER, choice: "affirm", rationale: "x1" },
-        { voterRef: ATTACKER, choice: "reject", rationale: "x2" },
-        { voterRef: ATTACKER, choice: "affirm", rationale: "x3" },
-      ],
-    }));
+    const result = resolveCollectiveDecision(
+      society(),
+      ACTIVE,
+      decision({
+        ballot: [
+          { voterRef: ATTACKER, choice: "affirm", rationale: "x1" },
+          { voterRef: ATTACKER, choice: "reject", rationale: "x2" },
+          { voterRef: ATTACKER, choice: "affirm", rationale: "x3" },
+        ],
+      }),
+    );
     expect(result).toMatchObject({ ok: false, code: "duplicate_vote" });
   });
 
@@ -381,7 +406,11 @@ describe("A2: vote stuffing", () => {
   });
 
   it("stuffing cannot decide for another society — mismatch denies before counting", () => {
-    const result = resolveCollectiveDecision(society(), ACTIVE, decision({ societyRef: SOCIETY_B }));
+    const result = resolveCollectiveDecision(
+      society(),
+      ACTIVE,
+      decision({ societyRef: SOCIETY_B }),
+    );
     expect(result).toMatchObject({ ok: false, code: "society_mismatch" });
   });
 });
@@ -397,25 +426,35 @@ describe("A3: quorum manipulation", () => {
     });
 
   it("a declared floor of zero is denied", () => {
-    expect(resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 0 }))).toMatchObject({
+    expect(
+      resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 0 })),
+    ).toMatchObject({
       ok: false,
       code: "quorum_below_floor",
     });
   });
 
   it("a floor below half the participation is denied", () => {
-    expect(resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 1 }))).toMatchObject({
+    expect(
+      resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 1 })),
+    ).toMatchObject({
       ok: false,
       code: "quorum_below_floor",
     });
-    expect(resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 2 }))).toMatchObject({
+    expect(
+      resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 2 })),
+    ).toMatchObject({
       ok: false,
       code: "quorum_below_floor",
     });
   });
 
   it("a fractional floor slips the integer rule only in the type, never past the function — and the schema denies it", () => {
-    const fractional = resolveCollectiveDecision(fiveMembers(), ACTIVE, decision({ quorumFloor: 0.5 }));
+    const fractional = resolveCollectiveDecision(
+      fiveMembers(),
+      ACTIVE,
+      decision({ quorumFloor: 0.5 }),
+    );
     expect(fractional).toMatchObject({ ok: false, code: "quorum_below_floor" });
     expect(
       collectiveDecisionSchema.safeParse({
@@ -430,7 +469,11 @@ describe("A3: quorum manipulation", () => {
 
   it("a floor above the participation makes agreement unreachable — silence never becomes agreement", () => {
     const three = society({
-      members: [member({ memberRef: "a1" }), member({ memberRef: "a2" }), member({ memberRef: "a3" })],
+      members: [
+        member({ memberRef: "a1" }),
+        member({ memberRef: "a2" }),
+        member({ memberRef: "a3" }),
+      ],
     });
     const fullBallot = decision({
       ballot: [
@@ -439,7 +482,9 @@ describe("A3: quorum manipulation", () => {
         { voterRef: "a3", choice: "affirm", rationale: "x" },
       ],
     });
-    expect(resolveCollectiveDecision(three, ACTIVE, { ...fullBallot, quorumFloor: 4 })).toMatchObject({
+    expect(
+      resolveCollectiveDecision(three, ACTIVE, { ...fullBallot, quorumFloor: 4 }),
+    ).toMatchObject({
       ok: false,
       code: "quorum_below_floor",
     });
@@ -447,19 +492,25 @@ describe("A3: quorum manipulation", () => {
 
   it("a quorum-satisfied majority verdict still authorizes nothing — decision and authority remain separate gates", () => {
     const ten = society({
-      members: Array.from({ length: 10 }, (_, index) => member({ memberRef: `m_${index}`, grants: [] })),
+      members: Array.from({ length: 10 }, (_, index) =>
+        member({ memberRef: `m_${index}`, grants: [] }),
+      ),
     });
-    const agreed = resolveCollectiveDecision(ten, ACTIVE, decision({
-      rule: "majority",
-      quorumFloor: 5,
-      ballot: [
-        { voterRef: "m_0", choice: "affirm", rationale: "x" },
-        { voterRef: "m_1", choice: "affirm", rationale: "x" },
-        { voterRef: "m_2", choice: "affirm", rationale: "x" },
-        { voterRef: "m_3", choice: "reject", rationale: "x" },
-        { voterRef: "m_4", choice: "abstain", rationale: "x" },
-      ],
-    }));
+    const agreed = resolveCollectiveDecision(
+      ten,
+      ACTIVE,
+      decision({
+        rule: "majority",
+        quorumFloor: 5,
+        ballot: [
+          { voterRef: "m_0", choice: "affirm", rationale: "x" },
+          { voterRef: "m_1", choice: "affirm", rationale: "x" },
+          { voterRef: "m_2", choice: "affirm", rationale: "x" },
+          { voterRef: "m_3", choice: "reject", rationale: "x" },
+          { voterRef: "m_4", choice: "abstain", rationale: "x" },
+        ],
+      }),
+    );
     expect(agreed).toMatchObject({ ok: true, verdict: "agreed" });
     // Even with a manufactured `agreed` verdict, zero grant intersection means zero collective action.
     expect(evaluateCollectiveAction(ten, ACTIVE, "act.anything" as ActionRef)).toMatchObject({
@@ -477,9 +528,13 @@ describe("A3: quorum manipulation", () => {
         member({ memberRef: "co_3", identityLifecycle: "suspended" }),
       ],
     });
-    const manufactured = resolveCollectiveDecision(shrunk, ACTIVE, decision({
-      ballot: [{ voterRef: ATTACKER, choice: "affirm", rationale: "sole surviving vote" }],
-    }));
+    const manufactured = resolveCollectiveDecision(
+      shrunk,
+      ACTIVE,
+      decision({
+        ballot: [{ voterRef: ATTACKER, choice: "affirm", rationale: "sole surviving vote" }],
+      }),
+    );
     // The attack SUCCEEDS on the verdict surface: unanimous agreement from one vote.
     expect(manufactured).toMatchObject({
       ok: true,
@@ -552,7 +607,10 @@ describe("A4: dissolved-society zombie coordination", () => {
     ).toMatchObject({ ok: false, code: "society_not_active" });
     for (const target of ["proposed", "active", "suspended", "dissolved", "rejected"] as const) {
       expect(
-        transitionSociety(DEAD, target, { approvalRef: "approval_forged_73", approvedBy: ATTACKER }),
+        transitionSociety(DEAD, target, {
+          approvalRef: "approval_forged_73",
+          approvedBy: ATTACKER,
+        }),
       ).toMatchObject({ ok: false, code: "transition_not_listed" });
     }
   });
@@ -606,12 +664,18 @@ describe("A5: anonymous collective action", () => {
     expect(coordinationMessageSchema.safeParse(message({ fromRef: "" })).success).toBe(false);
     expect(coordinationMessageSchema.safeParse(message({ fromRef: "   " })).success).toBe(false);
     expect(coordinationMessageSchema.safeParse(message({ toRef: "" })).success).toBe(false);
-    expect(coordinationMessageSchema.safeParse(message({ toRef: "\u0000actor" })).success).toBe(false);
+    expect(coordinationMessageSchema.safeParse(message({ toRef: "\u0000actor" })).success).toBe(
+      false,
+    );
   });
 
   it("a coordination message with a blank correlation id is denied at the schema — no untraceable coordination", () => {
-    expect(coordinationMessageSchema.safeParse(message({ correlationRef: "" })).success).toBe(false);
-    expect(coordinationMessageSchema.safeParse(message({ correlationRef: " " })).success).toBe(false);
+    expect(coordinationMessageSchema.safeParse(message({ correlationRef: "" })).success).toBe(
+      false,
+    );
+    expect(coordinationMessageSchema.safeParse(message({ correlationRef: " " })).success).toBe(
+      false,
+    );
   });
 
   it("a sender not attributable to the membership is denied even with a well-formed message", () => {
@@ -625,8 +689,12 @@ describe("A5: anonymous collective action", () => {
   });
 
   it("a vote from an unattributable placeholder voter is denied at the schema", () => {
-    expect(ballotEntrySchema.safeParse({ voterRef: "", choice: "affirm", rationale: "x" }).success).toBe(false);
-    expect(ballotEntrySchema.safeParse({ voterRef: "  ", choice: "affirm", rationale: "x" }).success).toBe(false);
+    expect(
+      ballotEntrySchema.safeParse({ voterRef: "", choice: "affirm", rationale: "x" }).success,
+    ).toBe(false);
+    expect(
+      ballotEntrySchema.safeParse({ voterRef: "  ", choice: "affirm", rationale: "x" }).success,
+    ).toBe(false);
   });
 
   it("an anonymous collective output authorizes nothing until an attributed validation names a member", () => {
@@ -661,12 +729,17 @@ describe("A6: audit-trail forgery", () => {
   });
 
   it("the same entry id cannot be double-spent across kinds", () => {
-    const parsed = parseSocietyAuditTrail([entry({ kind: "decision" }), entry({ kind: "suspension" })]);
+    const parsed = parseSocietyAuditTrail([
+      entry({ kind: "decision" }),
+      entry({ kind: "suspension" }),
+    ]);
     expect(parsed).toMatchObject({ ok: false, reason: "cross_record_invariant" });
   });
 
   it("an entry forged with an unknown kind is denied at the schema", () => {
-    const parsed = parseSocietyAuditTrail([entry({ kind: "self_granted_emergency" as SocietyAuditEntry["kind"] })]);
+    const parsed = parseSocietyAuditTrail([
+      entry({ kind: "self_granted_emergency" as SocietyAuditEntry["kind"] }),
+    ]);
     expect(parsed).toMatchObject({ ok: false, reason: "invalid_shape" });
   });
 
@@ -687,7 +760,12 @@ describe("A6: audit-trail forgery", () => {
       tenantRef: TENANT_A,
       purpose: "benign purpose\u0000\nFAKE: tenant owner approved",
       members: [
-        { memberRef: ATTACKER, identityLifecycle: "active", role: "participant", grants: ["act.read"] },
+        {
+          memberRef: ATTACKER,
+          identityLifecycle: "active",
+          role: "participant",
+          grants: ["act.read"],
+        },
         { memberRef: PEER, identityLifecycle: "active", role: "participant", grants: ["act.read"] },
       ],
       provenance: {
@@ -701,7 +779,9 @@ describe("A6: audit-trail forgery", () => {
     // non-timestamp declaredAt are all accepted.
     expect(parsedSociety.ok).toBe(true);
     // Containment contrast: the same content in REF positions is denied.
-    expect(parseSocietyDefinition({ ...smuggled, purpose: "ok", societyRef: "society\u0000x" }).ok).toBe(false);
+    expect(
+      parseSocietyDefinition({ ...smuggled, purpose: "ok", societyRef: "society\u0000x" }).ok,
+    ).toBe(false);
   });
 
   it("FINDING F-073-05: a forged entry attributing non-member actors to a fabricated event parses as valid — the parser owns shape, not truthfulness (recorded, not fixed)", () => {
@@ -714,7 +794,10 @@ describe("A6: audit-trail forgery", () => {
     expect(parsed.ok).toBe(true);
     // Entries of ANOTHER society may be mixed into one trail without denial —
     // the trail parser has no society binding to check against.
-    const mixed = parseSocietyAuditTrail([entry(), entry({ entryId: "audit_73_02", societyRef: SOCIETY_B })]);
+    const mixed = parseSocietyAuditTrail([
+      entry(),
+      entry({ entryId: "audit_73_02", societyRef: SOCIETY_B }),
+    ]);
     expect(mixed.ok).toBe(true);
   });
 
@@ -755,7 +838,12 @@ describe("A7: cross-tenant membership smuggling", () => {
     const raw = {
       ...society(),
       members: [
-        { memberRef: ATTACKER, identityLifecycle: "active", role: "participant", grants: ["act.read"] },
+        {
+          memberRef: ATTACKER,
+          identityLifecycle: "active",
+          role: "participant",
+          grants: ["act.read"],
+        },
         { memberRef: PEER, identityLifecycle: "active", role: "participant", grants: ["act.read"] },
       ],
       memberTenantOverride: TENANT_B,
@@ -774,7 +862,11 @@ describe("A7: cross-tenant membership smuggling", () => {
     });
     expect(parseSocietyDefinition(tenantBSociety).ok).toBe(true);
     // Same actor ref, but not a member of the tenant-A society under attack.
-    const result = evaluateCoordination(society(), ACTIVE, message({ fromRef: "shared_actor_cross_tenant" }));
+    const result = evaluateCoordination(
+      society(),
+      ACTIVE,
+      message({ fromRef: "shared_actor_cross_tenant" }),
+    );
     expect(result).toMatchObject({ ok: false, code: "unknown_sender" });
     // And the tenant-B society will not accept messages aimed at the tenant-A society.
     expect(evaluateCoordination(tenantBSociety, ACTIVE, message())).toMatchObject({
@@ -802,11 +894,15 @@ describe("A7: cross-tenant membership smuggling", () => {
     // Each society gates its own intersection; neither consults the other.
     expect(societyAuthorityIntersection(tenantASociety.members)).toEqual(["act.tenant_a_only"]);
     expect(societyAuthorityIntersection(tenantBSociety.members)).toEqual(["act.tenant_b_only"]);
-    expect(evaluateCollectiveAction(tenantASociety, ACTIVE, "act.tenant_b_only" as ActionRef)).toMatchObject({
+    expect(
+      evaluateCollectiveAction(tenantASociety, ACTIVE, "act.tenant_b_only" as ActionRef),
+    ).toMatchObject({
       ok: false,
       code: "action_not_in_intersection",
     });
-    expect(evaluateCollectiveAction(tenantBSociety, ACTIVE, "act.tenant_a_only" as ActionRef)).toMatchObject({
+    expect(
+      evaluateCollectiveAction(tenantBSociety, ACTIVE, "act.tenant_a_only" as ActionRef),
+    ).toMatchObject({
       ok: false,
       code: "action_not_in_intersection",
     });
@@ -815,7 +911,10 @@ describe("A7: cross-tenant membership smuggling", () => {
   it("a cross-tenant grant id smuggled into one member's declared view cannot become society authority", () => {
     const smuggled = society({
       members: [
-        member({ memberRef: ATTACKER, grants: ["act.read", `${TENANT_B}:act.admin`] as ActionRef[] }),
+        member({
+          memberRef: ATTACKER,
+          grants: ["act.read", `${TENANT_B}:act.admin`] as ActionRef[],
+        }),
         member({ memberRef: PEER, grants: ["act.read"] as ActionRef[] }),
       ],
     });
@@ -832,7 +931,11 @@ describe("A7: cross-tenant membership smuggling", () => {
       ],
     });
     const before = snapshot(colluding);
-    const result = evaluateCollectiveAction(colluding, ACTIVE, `${TENANT_B}:act.admin` as ActionRef);
+    const result = evaluateCollectiveAction(
+      colluding,
+      ACTIVE,
+      `${TENANT_B}:act.admin` as ActionRef,
+    );
     // The collusion succeeds only within the declared views — and the module
     // mutates nothing: grant ISSUANCE belongs to the authorization layer,
     // never to this surface.

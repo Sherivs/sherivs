@@ -4,6 +4,7 @@
  * lists every remaining role preference. Account items stay under the portrait.
  */
 
+import { catalogItem } from "@/lib/sherivs-ws/engine";
 import { APP_SHELL_AI, APP_SHELL_HOME, appShellSectionPath } from "./paths";
 import { rankByUsage, type ShellUsageCounts } from "./usage";
 
@@ -31,11 +32,26 @@ export interface Catalogish {
   to: string;
 }
 
+/**
+ * Catalogue provenance route of an item. Once `workspace_item_catalog.route` holds shell routes
+ * (`/home/s/<key>`, migration 20261117001200), the legacy destination still decides which cards
+ * are duplicates of each other and which notification links an item accepts, so it is read from the
+ * catalogue mirror. Items whose route is not a shell route are returned unchanged.
+ */
+export function catalogueProvenance(item: Pick<Catalogish, "key" | "to">): string {
+  const to = item.to.trim();
+  const cut = to.search(/[?#]/);
+  const path = cut === -1 ? to : to.slice(0, cut);
+  if (path !== APP_SHELL_HOME && !path.startsWith(`${APP_SHELL_HOME}/`)) return item.to;
+  const legacy = catalogItem(item.key)?.to;
+  return legacy ? `${legacy}${cut === -1 ? "" : to.slice(cut)}` : item.to;
+}
+
 export function uniqueCatalogItems<T extends Catalogish>(items: readonly T[]): T[] {
   const seenKeys = new Set<string>();
   const seenDestinations = new Set<string>();
   return items.filter((item) => {
-    const path = item.to.trim().split(/[?#]/, 1)[0] ?? "";
+    const path = catalogueProvenance(item).trim().split(/[?#]/, 1)[0] ?? "";
     const destination = path.replace(/\/+$/, "") || (path ? "/" : "");
     if (seenKeys.has(item.key) || (destination && seenDestinations.has(destination))) return false;
     seenKeys.add(item.key);
@@ -78,13 +94,14 @@ export function toShellNavItem(item: Catalogish): ShellNavItem {
   const query = item.to.includes("?")
     ? `?${new URLSearchParams(item.to.slice(item.to.indexOf("?") + 1)).toString()}`
     : "";
+  const catalogTo = catalogueProvenance(item);
   if (isHomeNavKey(item.key)) {
-    return { ...item, catalogTo: item.to, href: `${APP_SHELL_HOME}${query}` };
+    return { ...item, catalogTo, href: `${APP_SHELL_HOME}${query}` };
   }
   if (isAiNavKey(item.key)) {
-    return { ...item, catalogTo: item.to, href: `${APP_SHELL_AI}${query}` };
+    return { ...item, catalogTo, href: `${APP_SHELL_AI}${query}` };
   }
-  return { ...item, catalogTo: item.to, href: `${appShellSectionPath(item.key)}${query}` };
+  return { ...item, catalogTo, href: `${appShellSectionPath(item.key)}${query}` };
 }
 
 export function compactBottomLabel(label: string): string {
