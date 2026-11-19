@@ -14363,7 +14363,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "vocabulary",
       "token": "get_my_school_id",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 33,
       "lines": [
         17,
@@ -14406,7 +14406,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "structural",
       "token": "school_id",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 15,
       "lines": [
         33,
@@ -14431,7 +14431,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "vocabulary",
       "token": "admission",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 15,
       "lines": [
         62,
@@ -14456,7 +14456,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "vocabulary",
       "token": "school",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 1,
       "lines": [
         343
@@ -14467,7 +14467,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "vocabulary",
       "token": "guardian",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 1,
       "lines": [
         728
@@ -14478,7 +14478,7 @@
       "file": "database/supabase/migrations/20261117001400_sherivs_m11_admissions_model.sql",
       "kind": "vocabulary",
       "token": "discipline",
-      "streamIRef": "ADR-111",
+      "streamIRef": "ADR-115",
       "occurrences": 1,
       "lines": [
         729
