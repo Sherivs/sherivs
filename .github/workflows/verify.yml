@@ -260,6 +260,13 @@ jobs:
             -f tests/integration/wf03-workflow-runtime.local.sql 2>&1 | tee /tmp/wf03.out
           ! grep -Fq 'WF03 FAIL' /tmp/wf03.out
           grep -Fq 'WF03 ALL PASS' /tmp/wf03.out
+      - name: WF-05 event sources (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf05-event-sources.local.sql 2>&1 | tee /tmp/wf05-sources.out
+          ! grep -Fq 'WF05 FAIL' /tmp/wf05-sources.out
+          grep -Eq 'WF05 ALL PASS: [0-9]+ checks' /tmp/wf05-sources.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -296,6 +303,8 @@ jobs:
           WF04_N=8 WF04_WORKERS=2 node load/workflow-tick-load.mjs 2>&1 | tee /tmp/wf04-load.out
           grep -Eq 'WF04-LOAD RESULT: .* dup=0$' /tmp/wf04-load.out
           grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
+          node load/wf05-event-e2e.mjs 2>&1 | tee /tmp/wf05-e2e.out
+          grep -Eq 'WF05-E2E RESULT: .* dup=0$' /tmp/wf05-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

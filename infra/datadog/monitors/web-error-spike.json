@@ -1,0 +1,25 @@
+{
+  "name": "[sherivs-web] Error spike (production)",
+  "type": "query alert",
+  "query": "sum(last_5m):sum:trace.http.server.request.errors{service:sherivs-web,env:production}.as_count() > 25",
+  "message": "{{#is_alert}}sherivs-web production logged more than 25 failed requests in 5 minutes.{{/is_alert}}{{#is_warning}}sherivs-web production logged more than 10 failed requests in 5 minutes.{{/is_warning}} Check APM Error Tracking for the top error and whether it started with a deploy.\n\nRunbook: https://github.com/Sherivs/sherivs/blob/master/docs/runbooks/observability.md\n\n@hello@sherivs.com",
+  "tags": [
+    "team:sherivs",
+    "managed-by:sherivs-repo",
+    "sherivs-monitor-id:web-error-spike",
+    "service:sherivs-web",
+    "env:production"
+  ],
+  "options": {
+    "thresholds": {
+      "critical": 25,
+      "warning": 10
+    },
+    "notify_audit": false,
+    "include_tags": false,
+    "renotify_interval": 0,
+    "require_full_window": false,
+    "notify_no_data": false,
+    "evaluation_delay": 60
+  }
+}
