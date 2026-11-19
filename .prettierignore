@@ -6,3 +6,4 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 frontend/src/routeTree.gen.ts
+frontend/src/lib/scholar/roles/ng-role-catalog.generated.ts
