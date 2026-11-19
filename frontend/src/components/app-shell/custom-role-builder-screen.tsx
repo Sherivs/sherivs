@@ -149,6 +149,9 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
     const codes = new Set([
       ...(catalogue?.allowedPermissions ?? []),
       ...(template ? [...template.mandatory, ...template.optional] : []),
+      // Protected permissions are listed (flagged, not selectable) so the admin sees what only
+      // a catalogue role can carry.
+      ...(catalogue?.permissions ?? []).filter((p) => p.protected).map((p) => p.code),
     ]);
     return [...codes]
       .map((code) => permissionByCode.get(code))

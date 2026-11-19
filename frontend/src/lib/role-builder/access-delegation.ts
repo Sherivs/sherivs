@@ -4,7 +4,7 @@
  * the database audits every one (`role_access_review_audit_events`, `role_assignment_audit_events`).
  */
 import { z } from "zod";
-import { RoleBuilderError, mapDatabaseError, parseInput } from "./role-builder-core";
+import { RoleBuilderError, mapDatabaseError, parseInput, uuidLike } from "./role-builder-core";
 import { resolveCaller, type CallerContext, type UserClient } from "./role-builder-port";
 
 const DAY_MS = 86_400_000;
@@ -85,13 +85,13 @@ export const campaignInputSchema = z.object({
   dueAt: isoDateTime,
 });
 export const decisionInputSchema = z.object({
-  itemId: z.string().uuid(),
+  itemId: uuidLike,
   decision: z.enum(["retain", "revoke"]),
 });
 export const delegationInputSchema = z
   .object({
-    assignmentId: z.string().uuid(),
-    delegateUserId: z.string().uuid(),
+    assignmentId: uuidLike,
+    delegateUserId: uuidLike,
     validFrom: isoDateTime,
     validUntil: isoDateTime,
   })
@@ -100,7 +100,7 @@ export const delegationInputSchema = z
     path: ["validUntil"],
   });
 export type DelegationInput = z.infer<typeof delegationInputSchema>;
-export const delegationIdSchema = z.object({ id: z.string().uuid() });
+export const delegationIdSchema = z.object({ id: uuidLike });
 
 // ---------------------------------------------------------------------------
 // Handlers

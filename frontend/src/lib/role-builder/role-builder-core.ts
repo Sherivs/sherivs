@@ -161,7 +161,11 @@ export const draftInputSchema = z.object({
 });
 export type CustomRoleDraftInput = z.infer<typeof draftInputSchema>;
 
-export const roleIdSchema = z.object({ id: z.string().uuid() });
+/** Any canonical uuid (Postgres accepts non-RFC-variant ids, e.g. seeded rows). */
+export const uuidLike = z
+  .string()
+  .regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, "Invalid id");
+export const roleIdSchema = z.object({ id: uuidLike });
 export const roleCodeSchema = z.object({ code: z.string().regex(/^custom\.[a-z0-9_.-]{2,60}$/) });
 
 export const responsibilityInputSchema = z.object({
