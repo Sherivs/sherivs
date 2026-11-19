@@ -1,0 +1,89 @@
+{
+  "admissions": {
+    "enabledByDefault": false,
+    "mode": "none"
+  },
+  "authorityLinkCandidates": [
+    {
+      "authority": "ubec",
+      "relation": "reports_to",
+      "scope": null,
+      "status": "unverified"
+    }
+  ],
+  "calendarModel": "not_applicable",
+  "curricula": [],
+  "flags": [
+    "oversight_mandate_unverified",
+    "placeholder:role_pack",
+    "placeholder:website_template"
+  ],
+  "gradingSystem": "not_applicable",
+  "institutionProfile": {
+    "attributes": {
+      "directorates": ["schools", "planning_research_statistics", "inspectorate_quality_assurance"],
+      "inspection_cycle": "termly",
+      "institutions_in_jurisdiction": 4200,
+      "jurisdiction_kinds": ["nursery_primary", "junior_secondary"],
+      "lga_count": 23,
+      "mandate_link": "https://example.invalid/gazette",
+      "mandate_reference": "State Universal Basic Education Board law (reference as supplied by the body)",
+      "returns_calendar": "annual_census",
+      "state": "kaduna"
+    },
+    "calendar_model": "not_applicable",
+    "curricula": [],
+    "grading_system": "not_applicable",
+    "institution_type": "subeb",
+    "languages": ["en", "ha"],
+    "ownership": "government",
+    "regulators": []
+  },
+  "modules": [
+    {
+      "code": "communications",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "oversight_workspace",
+      "enabled": false,
+      "gate": {
+        "kind": "mandate_verification",
+        "mandate_status": "unverified"
+      }
+    },
+    {
+      "code": "website",
+      "enabled": true,
+      "gate": null
+    }
+  ],
+  "orgUnits": [
+    {
+      "key": "org",
+      "kind": "organization",
+      "parentKey": null
+    },
+    {
+      "key": "directorate_schools",
+      "kind": "directorate",
+      "parentKey": "org"
+    },
+    {
+      "key": "directorate_planning_research_statistics",
+      "kind": "directorate",
+      "parentKey": "org"
+    },
+    {
+      "key": "directorate_inspectorate_quality_assurance",
+      "kind": "directorate",
+      "parentKey": "org"
+    }
+  ],
+  "rolePack": {
+    "code": "ng.subeb",
+    "version": "0.1.0"
+  },
+  "websiteTemplate": "authority_information"
+}
