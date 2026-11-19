@@ -1,5 +1,7 @@
 /**
  * Restrained constellation: people, organizations, agents, twins, compute.
+ * Not rendered on any public page (truth audit 2026-11-17). If revived, keep
+ * the caption a diagram of direction, not a claim that agents or twins run.
  * CSS-only motion; disabled under prefers-reduced-motion.
  */
 export function NetworkViz({ className = "" }: { className?: string }) {
@@ -10,7 +12,8 @@ export function NetworkViz({ className = "" }: { className?: string }) {
     >
       <svg viewBox="0 0 640 420" role="img" className="h-auto w-full">
         <title id="network-viz-caption">
-          Sherivs connecting people, organizations, AI agents, digital twins, and compute
+          Diagram of the Sherivs direction: people, organizations, planned AI agents, and personal
+          twins
         </title>
         <defs>
           <radialGradient id="nv-glow" cx="50%" cy="50%" r="50%">
@@ -39,7 +42,7 @@ export function NetworkViz({ className = "" }: { className?: string }) {
         <Node cx={140} cy={90} label="People" />
         <Node cx={500} cy={90} label="Organizations" />
         <Node cx={110} cy={300} label="AI agents" />
-        <Node cx={530} cy={300} label="Digital twins" />
+        <Node cx={530} cy={300} label="Personal twins" />
       </svg>
     </figure>
   );
