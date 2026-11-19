@@ -136,6 +136,13 @@ export function createAttendanceQueue(opts: {
           else await store.discard(item.id);
         }
       }
+      if (report.sent > 0 && !report.error) {
+        try {
+          await store.markSynced();
+        } catch {
+          /* The "last sync" marker is presentation only. */
+        }
+      }
     } finally {
       await store.setSyncing(false);
     }
