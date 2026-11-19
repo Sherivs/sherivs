@@ -1,0 +1,31 @@
+# Datadog Service Catalog entry for the web app. Synced by the Datadog GitHub integration
+# (once installed) or by `node scripts/datadog/apply.mjs --apply`. No secrets belong here.
+schema-version: v2.2
+dd-service: sherivs-web
+team: sherivs
+application: sherivs
+tier: "1"
+lifecycle: production
+type: web
+languages:
+  - js
+description: Sherivs web app and API (TanStack Start on Vercel, Supabase Postgres).
+contacts:
+  - name: Sherivs engineering
+    type: email
+    contact: hello@sherivs.com
+links:
+  - name: Source
+    type: repo
+    provider: github
+    url: https://github.com/Sherivs/sherivs
+  - name: Observability runbook
+    type: runbook
+    url: https://github.com/Sherivs/sherivs/blob/master/docs/runbooks/observability.md
+  - name: Production
+    type: other
+    url: https://www.sherivs.com
+tags:
+  - team:sherivs
+  - platform:vercel
+  - datastore:supabase
