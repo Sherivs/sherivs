@@ -1,0 +1,212 @@
+{
+  "title": "Sherivs overview",
+  "description": "Managed in Sherivs/sherivs infra/datadog. Edit there, not in the UI.",
+  "layout_type": "ordered",
+  "reflow_type": "auto",
+  "tags": ["team:sherivs"],
+  "template_variables": [
+    {
+      "name": "env",
+      "prefix": "env",
+      "available_values": ["production", "staging"],
+      "default": "production"
+    }
+  ],
+  "widgets": [
+    {
+      "definition": {
+        "type": "note",
+        "content": "**Sherivs overview** \u2014 sherivs-web (Vercel) and sherivs-cron (Cloudflare Worker), Datadog EU over OTLP. Source: `infra/datadog/` in Sherivs/sherivs.",
+        "background_color": "white",
+        "font_size": "14",
+        "text_align": "left",
+        "show_tick": false,
+        "has_padding": true
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "sherivs-web requests and errors",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "q0",
+                "query": "sum:trace.http.server.request.hits{service:sherivs-web,$env}.as_count()"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q0",
+                "alias": "requests"
+              }
+            ],
+            "display_type": "bars"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "q1",
+                "query": "sum:trace.http.server.request.errors{service:sherivs-web,$env}.as_count()"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q1",
+                "alias": "errors (5xx)"
+              }
+            ],
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "sherivs-web latency (p50 / p95)",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "q0",
+                "query": "p50:trace.http.server.request{service:sherivs-web,$env}"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q0",
+                "alias": "p50"
+              }
+            ],
+            "display_type": "line"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "q1",
+                "query": "p95:trace.http.server.request{service:sherivs-web,$env}"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q1",
+                "alias": "p95"
+              }
+            ],
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "toplist",
+        "title": "sherivs-web slowest routes (p95)",
+        "requests": [
+          {
+            "response_format": "scalar",
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "q0",
+                "query": "p95:trace.http.server.request{service:sherivs-web,$env} by {resource_name}",
+                "aggregator": "avg"
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q0",
+                "limit": {
+                  "count": 10,
+                  "order": "desc"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "timeseries",
+        "title": "sherivs-cron runs by outcome",
+        "show_legend": true,
+        "requests": [
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "logs",
+                "name": "q0",
+                "indexes": ["*"],
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:sherivs-cron env:$env.value @cron.outcome:success"
+                },
+                "group_by": []
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q0",
+                "alias": "success"
+              }
+            ],
+            "display_type": "bars"
+          },
+          {
+            "response_format": "timeseries",
+            "queries": [
+              {
+                "data_source": "logs",
+                "name": "q1",
+                "indexes": ["*"],
+                "compute": {
+                  "aggregation": "count"
+                },
+                "search": {
+                  "query": "service:sherivs-cron env:$env.value @cron.outcome:failure"
+                },
+                "group_by": []
+              }
+            ],
+            "formulas": [
+              {
+                "formula": "q1",
+                "alias": "failure"
+              }
+            ],
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "type": "manage_status",
+        "title": "Sherivs monitors",
+        "query": "tag:team:sherivs",
+        "summary_type": "monitors",
+        "display_format": "countsAndList",
+        "color_preference": "text",
+        "hide_zero_counts": true,
+        "show_last_triggered": true,
+        "sort": "status,asc"
+      }
+    }
+  ]
+}
