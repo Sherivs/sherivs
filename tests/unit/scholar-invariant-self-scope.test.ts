@@ -462,3 +462,46 @@ defineFamilySuite({
     "§27.6 note: the intent row is audited by the scholar_audit trigger; settlement is idempotent on the reference. Recorded, not accommodated.",
   ],
 });
+
+defineFamilySuite({
+  family: "cashier.functions.ts",
+  functions: [
+    {
+      fn: "getCashierDesk",
+      method: "GET",
+      input: "none",
+      gate: "rls-scoped",
+      gateMarker:
+        /loadCashierDesk\(\s*context\.supabase as unknown as FinanceDb,\s*context\.userId/,
+      audit: "pure-read",
+      note: "open invoices and the caller's own drawer totals, read under the M07 RLS read rule",
+    },
+    {
+      fn: "recordCashierPayment",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      gateMarker: /recordPayment\(context\.supabase as unknown as FinanceDb/,
+      audit: "write-through",
+      auditSource: "file",
+      auditMarkers: [/\.rpc\("cg_fee_record_payment"/],
+      extra: [/cashierPaymentSchema\.parse/],
+      note: "cg_fee_record_payment derives the organization, checks the cashier role and campus, bounds the amount by the ledger balance and audits (cg_fee_audit_event)",
+    },
+    {
+      fn: "closeCashierDay",
+      method: "POST",
+      input: "zod",
+      gate: "rls-scoped",
+      gateMarker: /closeDay\(context\.supabase as unknown as FinanceDb/,
+      audit: "write-through",
+      auditSource: "file",
+      auditMarkers: [/\.rpc\("cg_fee_close_cash_day"/],
+      extra: [/cashierDayCloseSchema\.parse/],
+      note: "expected drawer totals are computed by the database; the scope is read from the ledger, never sent by the browser; audited by scholar_audit",
+    },
+  ],
+  findings: [
+    "§27.3 note (M9, ADR-119): authorization is enforced inside the SECURITY DEFINER ledger functions (cg_fee_authorize: cashier role, campus scope, SoD assert) on the caller's own session, not by a TypeScript gate. Recorded, not accommodated.",
+  ],
+});
