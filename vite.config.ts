@@ -9,6 +9,7 @@ import {
   sentrySourceMapUploadEnabled,
   vendorBuildDefine,
 } from "./frontend/src/lib/observability/vendor-telemetry.ts";
+import { buildVersionDefine } from "./frontend/src/lib/observability/build-version.ts";
 
 const isVitest = process.env.VITEST === "true";
 
@@ -30,7 +31,14 @@ const telemetryInput = {
 const sentryUpload = sentrySourceMapUploadEnabled(telemetryInput);
 
 export default defineConfig(({ command, mode }) => ({
-  define: vendorBuildDefine({ ...telemetryInput, command, mode }),
+  define: {
+    ...vendorBuildDefine({ ...telemetryInput, command, mode }),
+    // OBS-DD-03: bake the commit SHA so Datadog spans carry version:<sha> on prebuilt deploys.
+    ...buildVersionDefine({
+      command,
+      sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA,
+    }),
+  },
   build: sentryUpload ? { sourcemap: "hidden" } : undefined,
   resolve: {
     alias: {
