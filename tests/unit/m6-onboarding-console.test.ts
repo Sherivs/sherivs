@@ -14,12 +14,7 @@ import {
   stepUpChallengeMatches,
   type StepUpBinding,
 } from "@/lib/jarvis-bridge/step-up";
-import {
-  diffPlans,
-  onboardingApprovalId,
-  queueAge,
-  sortQueue,
-} from "@/lib/onboarding/plan-review";
+import { diffPlans, onboardingApprovalId, queueAge, sortQueue } from "@/lib/onboarding/plan-review";
 import {
   planProvisioningFailureCode,
   provisionApprovedPlan,
@@ -186,13 +181,23 @@ describe("plan schema (M5a plan contract)", () => {
 
     const verified = goldenPlan() as { authorityLinkCandidates: { status: string }[] };
     verified.authorityLinkCandidates = [
-      { ...(verified.authorityLinkCandidates[0] ?? {}), authority: "x", relation: "regulated_by", scope: null, status: "verified" } as never,
+      {
+        ...(verified.authorityLinkCandidates[0] ?? {}),
+        authority: "x",
+        relation: "regulated_by",
+        scope: null,
+        status: "verified",
+      } as never,
     ];
     expect(validateOnboardingPlan(verified).ok).toBe(false);
 
     const gated = goldenPlan() as { modules: unknown[] };
     gated.modules = [
-      { code: "oversight_workspace", enabled: true, gate: { kind: "mandate_verification", mandate_status: "unverified" } },
+      {
+        code: "oversight_workspace",
+        enabled: true,
+        gate: { kind: "mandate_verification", mandate_status: "unverified" },
+      },
     ];
     expect(validateOnboardingPlan(gated).ok).toBe(false);
 
@@ -208,7 +213,10 @@ describe("plan schema (M5a plan contract)", () => {
 
 describe("provisionApprovedPlan (atomic database path)", () => {
   it("sends only ids, the reviewed hash and a server-built draft, on the console channel", async () => {
-    const rpc = vi.fn(async () => ({ data: { organization_id: "org-1", replay: false }, error: null }));
+    const rpc = vi.fn(async () => ({
+      data: { organization_id: "org-1", replay: false },
+      error: null,
+    }));
     const out = await provisionApprovedPlan(rpc, {
       requestId: REQ,
       actorId: STAFF,
@@ -232,11 +240,21 @@ describe("provisionApprovedPlan (atomic database path)", () => {
     expect(planProvisioningFailureCode({ code: "XX001" })).toBe("unavailable");
     const failing = async () => ({ data: null, error: { code: "PT409" } });
     expect(
-      await provisionApprovedPlan(failing, { requestId: REQ, actorId: STAFF, expectedPlanHash: HASH_A, websiteDraft: null }),
+      await provisionApprovedPlan(failing, {
+        requestId: REQ,
+        actorId: STAFF,
+        expectedPlanHash: HASH_A,
+        websiteDraft: null,
+      }),
     ).toEqual({ ok: false, code: "stale_plan" });
     const empty = async () => ({ data: {}, error: null });
     expect(
-      await provisionApprovedPlan(empty, { requestId: REQ, actorId: STAFF, expectedPlanHash: HASH_A, websiteDraft: null }),
+      await provisionApprovedPlan(empty, {
+        requestId: REQ,
+        actorId: STAFF,
+        expectedPlanHash: HASH_A,
+        websiteDraft: null,
+      }),
     ).toEqual({ ok: false, code: "unavailable" });
   });
 });
@@ -246,7 +264,13 @@ describe("website draft", () => {
     const r = validateOnboardingPlan(goldenPlan());
     if (!r.ok) throw new Error("golden plan invalid");
     const doc = buildWebsiteDraft(
-      { orgName: "Bright Future College", slugHint: "draft", contactEmail: "ada@bright.test", contactPhone: null, state: "lagos" },
+      {
+        orgName: "Bright Future College",
+        slugHint: "draft",
+        contactEmail: "ada@bright.test",
+        contactPhone: null,
+        state: "lagos",
+      },
       r.plan,
     );
     if (doc) expect(validateDocument(doc)).toEqual([]);
@@ -288,16 +312,27 @@ function request(over: Partial<RequestRow> = {}): RequestRow {
   };
 }
 
-function harness(opts: {
-  caps?: string[];
-  row?: RequestRow | null;
-  session?: SessionRow | null;
-  rpc?: (fn: string, args: Record<string, unknown>) => { data: unknown; error: { code?: string } | null };
-  verifyFails?: boolean;
-} = {}) {
+function harness(
+  opts: {
+    caps?: string[];
+    row?: RequestRow | null;
+    session?: SessionRow | null;
+    rpc?: (
+      fn: string,
+      args: Record<string, unknown>,
+    ) => { data: unknown; error: { code?: string } | null };
+    verifyFails?: boolean;
+  } = {},
+) {
   const audits: AuditInput[] = [];
   const rpcCalls: { fn: string; args: Record<string, unknown> }[] = [];
-  const caps = new Set(opts.caps ?? ["platform.onboarding.read", "platform.onboarding.handle", "platform.tenants.manage"]);
+  const caps = new Set(
+    opts.caps ?? [
+      "platform.onboarding.read",
+      "platform.onboarding.handle",
+      "platform.tenants.manage",
+    ],
+  );
   const challenges: string[] = [];
   const deps: OnboardingConsoleDeps = {
     hasCapability: async (c) => caps.has(c),
@@ -314,15 +349,28 @@ function harness(opts: {
       },
       verifyAssertion: async ({ challengeAccepted, response }) => {
         if (opts.verifyFails) throw new Error("bad assertion");
-        if (!challengeAccepted((response as { signed: string }).signed)) throw new Error("challenge mismatch");
+        if (!challengeAccepted((response as { signed: string }).signed))
+          throw new Error("challenge mismatch");
       },
     },
     store: {
-      listRequests: async () => [request(), request({ id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", status: "new", assigned_staff: STAFF })],
+      listRequests: async () => [
+        request(),
+        request({
+          id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          status: "new",
+          assigned_staff: STAFF,
+        }),
+      ],
       getRequest: async () => (opts.row === undefined ? request() : opts.row),
       latestSession: async () =>
         opts.session === undefined
-          ? { graph_version: "pending-graph", answers: { "entry.organization.type": "private_secondary" }, completion_pct: 100, completed_at: "2026-11-15T13:00:00Z" }
+          ? {
+              graph_version: "pending-graph",
+              answers: { "entry.organization.type": "private_secondary" },
+              completion_pct: 100,
+              completed_at: "2026-11-15T13:00:00Z",
+            }
           : opts.session,
       staffNames: async (ids) => Object.fromEntries(ids.map((i) => [i, `Staff ${i.slice(0, 4)}`])),
       publishedPacks: async () => [{ code: "ng.private_secondary", version: "1.0.0" }],
@@ -331,7 +379,10 @@ function harness(opts: {
         rpcCalls.push({ fn, args });
         if (opts.rpc) return opts.rpc(fn, args);
         if (fn === "onboarding_review_set_plan")
-          return { data: [{ plan_hash: HASH_B, plan_revision: 2, status: "under_review" }], error: null };
+          return {
+            data: [{ plan_hash: HASH_B, plan_revision: 2, status: "under_review" }],
+            error: null,
+          };
         if (fn === "onboarding_provision_from_plan")
           return { data: { organization_id: "org-1", replay: false }, error: null };
         return { data: null, error: null };
@@ -353,7 +404,12 @@ describe("queue and detail", () => {
   it("lists requests with status, type, age and assignment", async () => {
     const { deps } = harness();
     const q = await loadQueue(ctx, deps);
-    expect(q.rows[0]).toMatchObject({ status: "plan_ready", institutionType: "private_secondary", age: "2d", assignedStaffName: null });
+    expect(q.rows[0]).toMatchObject({
+      status: "plan_ready",
+      institutionType: "private_secondary",
+      age: "2d",
+      assignedStaffName: null,
+    });
     expect(q.rows[1]).toMatchObject({ status: "new", assignedToMe: true });
     expect(q.can).toEqual({ handle: true, manage: true });
   });
@@ -361,11 +417,16 @@ describe("queue and detail", () => {
   it("detail shows answers read-only, the diff, and audits the view", async () => {
     const { deps, audits } = harness();
     const d = await loadRequestDetail(ctx, deps, REQ);
-    expect(d.interview?.answers[0]).toMatchObject({ questionId: "entry.organization.type", value: "private_secondary" });
+    expect(d.interview?.answers[0]).toMatchObject({
+      questionId: "entry.organization.type",
+      value: "private_secondary",
+    });
     expect(d.plan.diff.map((e) => e.path)).toContain("rolePack.version");
     expect(d.plan.issues).toEqual([]);
     expect(d.can.approve).toBe(true);
-    expect(audits).toContainEqual(expect.objectContaining({ action: "onboarding.request.view", outcome: "succeeded" }));
+    expect(audits).toContainEqual(
+      expect.objectContaining({ action: "onboarding.request.view", outcome: "succeeded" }),
+    );
   });
 
   it("flags an unpublished pack and blocks approval in the view", async () => {
@@ -385,8 +446,13 @@ describe("staff actions", () => {
   it("assign to self passes the verified actor, never a client value", async () => {
     const { deps, rpcCalls, audits } = harness();
     await assignToSelf(ctx, deps, REQ);
-    expect(rpcCalls).toEqual([{ fn: "onboarding_review_assign", args: { p_request: REQ, p_actor: STAFF } }]);
-    expect(audits.at(-1)).toMatchObject({ action: "onboarding.request.assign", outcome: "succeeded" });
+    expect(rpcCalls).toEqual([
+      { fn: "onboarding_review_assign", args: { p_request: REQ, p_actor: STAFF } },
+    ]);
+    expect(audits.at(-1)).toMatchObject({
+      action: "onboarding.request.assign",
+      outcome: "succeeded",
+    });
   });
 
   it("a database refusal is audited as denied and surfaces a code", async () => {
@@ -396,8 +462,12 @@ describe("staff actions", () => {
   });
 
   it("generating needs a completed interview and stores a schema-valid plan", async () => {
-    const incomplete = harness({ session: { graph_version: "g", answers: {}, completion_pct: 40, completed_at: null } });
-    await expect(generateRequestPlan(ctx, incomplete.deps, { requestId: REQ, expectedRevision: 0 })).rejects.toThrow("interview_incomplete");
+    const incomplete = harness({
+      session: { graph_version: "g", answers: {}, completion_pct: 40, completed_at: null },
+    });
+    await expect(
+      generateRequestPlan(ctx, incomplete.deps, { requestId: REQ, expectedRevision: 0 }),
+    ).rejects.toThrow("interview_incomplete");
     expect(incomplete.rpcCalls).toEqual([]);
 
     const { deps, rpcCalls } = harness();
@@ -410,7 +480,11 @@ describe("staff actions", () => {
 
   it("an invalid edit is refused before the database and audited", async () => {
     const { deps, rpcCalls, audits } = harness();
-    const out = await saveRequestPlanEdit(ctx, deps, { requestId: REQ, expectedRevision: 1, plan: { rolePack: 1 } });
+    const out = await saveRequestPlanEdit(ctx, deps, {
+      requestId: REQ,
+      expectedRevision: 1,
+      plan: { rolePack: 1 },
+    });
     expect("invalid" in out && out.invalid.length > 0).toBe(true);
     expect(rpcCalls).toEqual([]);
     expect(audits.at(-1)).toMatchObject({ action: "onboarding.plan.edit", outcome: "failed" });
@@ -420,19 +494,32 @@ describe("staff actions", () => {
     const { deps, rpcCalls } = harness();
     const plan = { ...goldenPlan(), rolePack: { code: "ng.private_secondary", version: "1.0.0" } };
     await saveRequestPlanEdit(ctx, deps, { requestId: REQ, expectedRevision: 1, plan });
-    expect(rpcCalls[0]).toMatchObject({ fn: "onboarding_review_set_plan", args: { p_kind: "edited", p_expected_revision: 1 } });
+    expect(rpcCalls[0]).toMatchObject({
+      fn: "onboarding_review_set_plan",
+      args: { p_kind: "edited", p_expected_revision: 1 },
+    });
   });
 });
 
 describe("approval with passkey bound to request and plan hash", () => {
   it("begin refuses a stale or different hash, and the plan's editor", async () => {
-    await expect(beginPlanApproval(ctx, harness().deps, { requestId: REQ, planHash: HASH_B })).rejects.toThrow("stale");
-    await expect(beginPlanApproval(ctx, harness().deps, { requestId: REQ, planHash: "nothex" })).rejects.toThrow("stale");
     await expect(
-      beginPlanApproval(ctx, harness({ row: request({ plan_edited_by: STAFF }) }).deps, { requestId: REQ, planHash: HASH_A }),
+      beginPlanApproval(ctx, harness().deps, { requestId: REQ, planHash: HASH_B }),
+    ).rejects.toThrow("stale");
+    await expect(
+      beginPlanApproval(ctx, harness().deps, { requestId: REQ, planHash: "nothex" }),
+    ).rejects.toThrow("stale");
+    await expect(
+      beginPlanApproval(ctx, harness({ row: request({ plan_edited_by: STAFF }) }).deps, {
+        requestId: REQ,
+        planHash: HASH_A,
+      }),
     ).rejects.toThrow("editor_cannot_approve");
     await expect(
-      beginPlanApproval(ctx, harness({ caps: ["platform.onboarding.handle"] }).deps, { requestId: REQ, planHash: HASH_A }),
+      beginPlanApproval(ctx, harness({ caps: ["platform.onboarding.handle"] }).deps, {
+        requestId: REQ,
+        planHash: HASH_A,
+      }),
     ).rejects.toThrow("not_authorized");
   });
 
@@ -441,30 +528,82 @@ describe("approval with passkey bound to request and plan hash", () => {
     const out = await beginPlanApproval(ctx, deps, { requestId: REQ, planHash: HASH_A });
     expect(out.nonce).toBe("BBBBBBBBBBBBBBBBBBBBBB");
     expect(challenges[0]).toBe(
-      stepUpChallenge({ userId: STAFF, approvalId: onboardingApprovalId(REQ), decision: "approve", nonce: out.nonce, subjectDigest: HASH_A }),
+      stepUpChallenge({
+        userId: STAFF,
+        approvalId: onboardingApprovalId(REQ),
+        decision: "approve",
+        nonce: out.nonce,
+        subjectDigest: HASH_A,
+      }),
     );
   });
 
   it("an assertion signed for another plan hash is refused before any database write", async () => {
     const { deps, rpcCalls, audits } = harness();
-    const signedForB = stepUpChallenge({ userId: STAFF, approvalId: onboardingApprovalId(REQ), decision: "approve", nonce: "BBBBBBBBBBBBBBBBBBBBBB", subjectDigest: HASH_B });
+    const signedForB = stepUpChallenge({
+      userId: STAFF,
+      approvalId: onboardingApprovalId(REQ),
+      decision: "approve",
+      nonce: "BBBBBBBBBBBBBBBBBBBBBB",
+      subjectDigest: HASH_B,
+    });
     await expect(
-      approveAndProvision(ctx, deps, { requestId: REQ, planHash: HASH_A, nonce: "BBBBBBBBBBBBBBBBBBBBBB", response: { signed: signedForB } }),
+      approveAndProvision(ctx, deps, {
+        requestId: REQ,
+        planHash: HASH_A,
+        nonce: "BBBBBBBBBBBBBBBBBBBBBB",
+        response: { signed: signedForB },
+      }),
     ).rejects.toThrow("step_up_failed");
     expect(rpcCalls).toEqual([]);
-    expect(audits.at(-1)).toMatchObject({ action: "onboarding.approval.step_up", outcome: "failed" });
+    expect(audits.at(-1)).toMatchObject({
+      action: "onboarding.approval.step_up",
+      outcome: "failed",
+    });
   });
 
   it("a matching assertion approves with the hash, then provisions once in the database", async () => {
-    const { deps, rpcCalls, audits } = harness({ row: request({ status: "approved", approved_plan_hash: HASH_A, approved_by: STAFF }) });
+    const { deps, rpcCalls, audits } = harness({
+      row: request({ status: "approved", approved_plan_hash: HASH_A, approved_by: STAFF }),
+    });
     const nonce = "BBBBBBBBBBBBBBBBBBBBBB";
-    const signed = stepUpChallenge({ userId: STAFF, approvalId: onboardingApprovalId(REQ), decision: "approve", nonce, subjectDigest: HASH_A });
-    const out = await approveAndProvision(ctx, deps, { requestId: REQ, planHash: HASH_A, nonce, response: { signed } });
+    const signed = stepUpChallenge({
+      userId: STAFF,
+      approvalId: onboardingApprovalId(REQ),
+      decision: "approve",
+      nonce,
+      subjectDigest: HASH_A,
+    });
+    const out = await approveAndProvision(ctx, deps, {
+      requestId: REQ,
+      planHash: HASH_A,
+      nonce,
+      response: { signed },
+    });
     expect(out).toMatchObject({ ok: true, organizationId: "org-1" });
-    expect(rpcCalls.map((c) => c.fn)).toEqual(["onboarding_review_approve", "onboarding_provision_from_plan"]);
-    expect(rpcCalls[0].args).toEqual({ p_request: REQ, p_actor: STAFF, p_expected_plan_hash: HASH_A, p_step_up_verified: true });
-    expect(rpcCalls[1].args).toMatchObject({ p_request: REQ, p_actor: STAFF, p_expected_plan_hash: HASH_A, p_channel: "console" });
-    expect(Object.keys(rpcCalls[1].args).sort()).toEqual(["p_actor", "p_channel", "p_expected_plan_hash", "p_request", "p_website_draft"]);
+    expect(rpcCalls.map((c) => c.fn)).toEqual([
+      "onboarding_review_approve",
+      "onboarding_provision_from_plan",
+    ]);
+    expect(rpcCalls[0].args).toEqual({
+      p_request: REQ,
+      p_actor: STAFF,
+      p_expected_plan_hash: HASH_A,
+      p_step_up_verified: true,
+    });
+    expect(rpcCalls[1].args).toMatchObject({
+      p_request: REQ,
+      p_actor: STAFF,
+      p_expected_plan_hash: HASH_A,
+      p_channel: "console",
+    });
+    expect(Object.keys(rpcCalls[1].args).sort()).toEqual([
+      "p_actor",
+      "p_channel",
+      "p_expected_plan_hash",
+      "p_request",
+      "p_website_draft",
+    ]);
     expect(audits.map((a) => `${a.action}:${a.outcome}`)).toEqual([
       "onboarding.approval.step_up:succeeded",
       "onboarding.plan.approve:succeeded",
@@ -474,9 +613,27 @@ describe("approval with passkey bound to request and plan hash", () => {
 
   it("a stale hash at approval stops before provisioning", async () => {
     const nonce = "BBBBBBBBBBBBBBBBBBBBBB";
-    const signed = stepUpChallenge({ userId: STAFF, approvalId: onboardingApprovalId(REQ), decision: "approve", nonce, subjectDigest: HASH_A });
-    const { deps, rpcCalls } = harness({ rpc: (fn) => ({ data: null, error: fn === "onboarding_review_approve" ? { code: "PT409" } : null }) });
-    await expect(approveAndProvision(ctx, deps, { requestId: REQ, planHash: HASH_A, nonce, response: { signed } })).rejects.toThrow("stale");
+    const signed = stepUpChallenge({
+      userId: STAFF,
+      approvalId: onboardingApprovalId(REQ),
+      decision: "approve",
+      nonce,
+      subjectDigest: HASH_A,
+    });
+    const { deps, rpcCalls } = harness({
+      rpc: (fn) => ({
+        data: null,
+        error: fn === "onboarding_review_approve" ? { code: "PT409" } : null,
+      }),
+    });
+    await expect(
+      approveAndProvision(ctx, deps, {
+        requestId: REQ,
+        planHash: HASH_A,
+        nonce,
+        response: { signed },
+      }),
+    ).rejects.toThrow("stale");
     expect(rpcCalls.map((c) => c.fn)).toEqual(["onboarding_review_approve"]);
   });
 });
@@ -493,17 +650,33 @@ describe("migration contract and console wiring", () => {
   });
 
   it("grants every new function to service_role only", () => {
-    const fns = [...MIGRATION.matchAll(/CREATE OR REPLACE FUNCTION (public\.[a-z0-9_]+)\(/g)].map((m) => m[1]);
+    const fns = [...MIGRATION.matchAll(/CREATE OR REPLACE FUNCTION (public\.[a-z0-9_]+)\(/g)].map(
+      (m) => m[1],
+    );
     expect(fns.length).toBeGreaterThanOrEqual(10);
     for (const f of new Set(fns)) {
-      expect(MIGRATION).toMatch(new RegExp(`REVOKE ALL ON FUNCTION ${f.replace(".", "\\.")}\\([^)]*\\) FROM PUBLIC, anon, authenticated;`));
-      expect(MIGRATION).not.toMatch(new RegExp(`GRANT EXECUTE ON FUNCTION ${f.replace(".", "\\.")}\\([^)]*\\) TO [^;]*authenticated`));
+      expect(MIGRATION).toMatch(
+        new RegExp(
+          `REVOKE ALL ON FUNCTION ${f.replace(".", "\\.")}\\([^)]*\\) FROM PUBLIC, anon, authenticated;`,
+        ),
+      );
+      expect(MIGRATION).not.toMatch(
+        new RegExp(
+          `GRANT EXECUTE ON FUNCTION ${f.replace(".", "\\.")}\\([^)]*\\) TO [^;]*authenticated`,
+        ),
+      );
     }
     expect(MIGRATION).toMatch(/organization_root_gaps\(\) g WHERE g\.org_id = v_org/);
   });
 
   it("the rollback drops what the migration adds", () => {
-    for (const name of ["onboarding_provision_from_plan", "onboarding_review_approve", "organization_invitations", "onboarding_request_id", "self_serve_provisioning"])
+    for (const name of [
+      "onboarding_provision_from_plan",
+      "onboarding_review_approve",
+      "organization_invitations",
+      "onboarding_request_id",
+      "self_serve_provisioning",
+    ])
       expect(ROLLBACK).toContain(name);
   });
 

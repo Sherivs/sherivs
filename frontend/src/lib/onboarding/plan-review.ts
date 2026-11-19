@@ -49,8 +49,10 @@ function walk(before: unknown, after: unknown, path: string, out: PlanDiffEntry[
     const keys = [...new Set([...Object.keys(before), ...Object.keys(after)])].sort();
     for (const k of keys) {
       const p = path ? `${path}.${k}` : k;
-      if (!(k in after)) out.push({ path: p, kind: "removed", before: before[k], after: undefined });
-      else if (!(k in before)) out.push({ path: p, kind: "added", before: undefined, after: after[k] });
+      if (!(k in after))
+        out.push({ path: p, kind: "removed", before: before[k], after: undefined });
+      else if (!(k in before))
+        out.push({ path: p, kind: "added", before: undefined, after: after[k] });
       else walk(before[k], after[k], p, out);
     }
     return;
@@ -65,7 +67,8 @@ function walk(before: unknown, after: unknown, path: string, out: PlanDiffEntry[
       for (const id of [...new Set([...a.keys(), ...b.keys()])].sort()) {
         const p = `${path}[${id}]`;
         if (!b.has(id)) out.push({ path: p, kind: "removed", before: a.get(id), after: undefined });
-        else if (!a.has(id)) out.push({ path: p, kind: "added", before: undefined, after: b.get(id) });
+        else if (!a.has(id))
+          out.push({ path: p, kind: "added", before: undefined, after: b.get(id) });
         else walk(a.get(id), b.get(id), p, out);
       }
       return;

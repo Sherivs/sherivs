@@ -13,8 +13,7 @@ export const CONSOLE_PATHS = {
   organizationNew: `${CONSOLE_HOME_PATH}/organizations/new`,
   organization: (id: string) => `${CONSOLE_HOME_PATH}/organizations/${encodeURIComponent(id)}`,
   onboarding: `${CONSOLE_HOME_PATH}/onboarding`,
-  onboardingRequest: (id: string) =>
-    `${CONSOLE_HOME_PATH}/onboarding/${encodeURIComponent(id)}`,
+  onboardingRequest: (id: string) => `${CONSOLE_HOME_PATH}/onboarding/${encodeURIComponent(id)}`,
   team: `${CONSOLE_HOME_PATH}/team`,
   teamInvitations: `${CONSOLE_HOME_PATH}/team/invitations`,
   teamRoles: `${CONSOLE_HOME_PATH}/team/roles`,

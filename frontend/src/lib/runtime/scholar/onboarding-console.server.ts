@@ -31,8 +31,15 @@ import {
   type PlanProvisioningFailureCode,
   type PlanProvisioningRpc,
 } from "@/lib/onboarding/provision-organization";
-import { newStepUpNonce, stepUpChallenge, stepUpChallengeMatches } from "@/lib/jarvis-bridge/step-up";
-import { validateOnboardingPlan, type ValidatedOnboardingPlan } from "@/lib/scholar/onboarding/plan-schema";
+import {
+  newStepUpNonce,
+  stepUpChallenge,
+  stepUpChallengeMatches,
+} from "@/lib/jarvis-bridge/step-up";
+import {
+  validateOnboardingPlan,
+  type ValidatedOnboardingPlan,
+} from "@/lib/scholar/onboarding/plan-schema";
 import { buildWebsiteDraft } from "@/lib/scholar/onboarding/website-draft";
 import { FULL_REALITY_GRAPH } from "@/lib/scholar/reality/graph/full-graph";
 import { generatePlan } from "@/lib/scholar/reality/graph/plan";
@@ -50,7 +57,8 @@ export interface ConsoleOnboardingContext {
 
 /** Plain JSON (what the console screen receives). */
 export type Json = string | number | boolean | null | Json[] | { [key: string]: Json };
-const json = (v: unknown): Json => (v === undefined ? null : (JSON.parse(JSON.stringify(v)) as Json));
+const json = (v: unknown): Json =>
+  v === undefined ? null : (JSON.parse(JSON.stringify(v)) as Json);
 
 export interface DiffView {
   readonly path: string;
@@ -109,10 +117,7 @@ export interface OnboardingConsoleStore {
 }
 
 export interface StepUpService {
-  assertionOptions(input: {
-    userId: string;
-    challenge: string;
-  }): Promise<unknown>;
+  assertionOptions(input: { userId: string; challenge: string }): Promise<unknown>;
   verifyAssertion(input: {
     userId: string;
     response: unknown;
@@ -289,9 +294,9 @@ export async function loadQueue(
 ): Promise<QueueView> {
   await requireAny(deps, [CAP_READ, CAP_MANAGE]);
   const rows = await deps.store.listRequests(200);
-  const names = await deps.store.staffNames(
-    [...new Set(rows.map((r) => r.assigned_staff).filter((x): x is string => !!x))],
-  );
+  const names = await deps.store.staffNames([
+    ...new Set(rows.map((r) => r.assigned_staff).filter((x): x is string => !!x)),
+  ]);
   const now = deps.nowMs();
   const view = sortQueue(
     rows
@@ -473,7 +478,11 @@ function planWriteResult(data: unknown): PlanWriteResult {
   const hash = row?.plan_hash;
   const revision = row?.plan_revision;
   const status = row?.status;
-  if (typeof hash !== "string" || typeof revision !== "number" || !isOnboardingRequestStatus(status))
+  if (
+    typeof hash !== "string" ||
+    typeof revision !== "number" ||
+    !isOnboardingRequestStatus(status)
+  )
     throw new OnboardingConsoleError("unavailable");
   return { planHash: hash, revision, status };
 }
@@ -542,7 +551,12 @@ export async function saveRequestPlanEdit(
   });
 }
 
-function approvalBinding(ctx: ConsoleOnboardingContext, requestId: string, planHash: string, nonce: string) {
+function approvalBinding(
+  ctx: ConsoleOnboardingContext,
+  requestId: string,
+  planHash: string,
+  nonce: string,
+) {
   return {
     userId: ctx.userId,
     approvalId: onboardingApprovalId(requestId),
@@ -558,23 +572,30 @@ export async function beginPlanApproval(
   deps: OnboardingConsoleDeps,
   input: { requestId: string; planHash: string },
 ): Promise<{ options: unknown; nonce: string }> {
-  return runAudited(deps, "onboarding.approval.begin", input.requestId, { plan_hash: input.planHash }, async () => {
-    await requireAny(deps, [CAP_MANAGE]);
-    deps.assertAal2();
-    if (!PLAN_HASH_PATTERN.test(input.planHash)) throw new OnboardingConsoleError("stale");
-    const r = await deps.store.getRequest(input.requestId);
-    if (!r) throw new OnboardingConsoleError("not_found");
-    if (r.plan_hash !== input.planHash) throw new OnboardingConsoleError("stale");
-    if (!["plan_ready", "under_review", "approved"].includes(r.status))
-      throw new OnboardingConsoleError("not_awaiting_approval");
-    if (r.plan_edited_by === ctx.userId) throw new OnboardingConsoleError("editor_cannot_approve");
-    const nonce = (deps.newNonce ?? newStepUpNonce)();
-    const options = await deps.stepUp.assertionOptions({
-      userId: ctx.userId,
-      challenge: stepUpChallenge(approvalBinding(ctx, input.requestId, input.planHash, nonce)),
-    });
-    return { options, nonce };
-  });
+  return runAudited(
+    deps,
+    "onboarding.approval.begin",
+    input.requestId,
+    { plan_hash: input.planHash },
+    async () => {
+      await requireAny(deps, [CAP_MANAGE]);
+      deps.assertAal2();
+      if (!PLAN_HASH_PATTERN.test(input.planHash)) throw new OnboardingConsoleError("stale");
+      const r = await deps.store.getRequest(input.requestId);
+      if (!r) throw new OnboardingConsoleError("not_found");
+      if (r.plan_hash !== input.planHash) throw new OnboardingConsoleError("stale");
+      if (!["plan_ready", "under_review", "approved"].includes(r.status))
+        throw new OnboardingConsoleError("not_awaiting_approval");
+      if (r.plan_edited_by === ctx.userId)
+        throw new OnboardingConsoleError("editor_cannot_approve");
+      const nonce = (deps.newNonce ?? newStepUpNonce)();
+      const options = await deps.stepUp.assertionOptions({
+        userId: ctx.userId,
+        challenge: stepUpChallenge(approvalBinding(ctx, input.requestId, input.planHash, nonce)),
+      });
+      return { options, nonce };
+    },
+  );
 }
 
 export type ApproveAndProvisionResult =
@@ -596,31 +617,43 @@ export async function approveAndProvision(
   deps: OnboardingConsoleDeps,
   input: { requestId: string; planHash: string; nonce: string; response: unknown },
 ): Promise<ApproveAndProvisionResult> {
-  await runAudited(deps, "onboarding.approval.step_up", input.requestId, { plan_hash: input.planHash }, async () => {
-    await requireAny(deps, [CAP_MANAGE]);
-    deps.assertAal2();
-    if (!PLAN_HASH_PATTERN.test(input.planHash)) throw new OnboardingConsoleError("stale");
-    const binding = approvalBinding(ctx, input.requestId, input.planHash, input.nonce);
-    try {
-      await deps.stepUp.verifyAssertion({
-        userId: ctx.userId,
-        response: input.response,
-        challengeAccepted: (signed) => stepUpChallengeMatches(signed, binding),
-      });
-    } catch {
-      throw new OnboardingConsoleError("step_up_failed");
-    }
-  });
+  await runAudited(
+    deps,
+    "onboarding.approval.step_up",
+    input.requestId,
+    { plan_hash: input.planHash },
+    async () => {
+      await requireAny(deps, [CAP_MANAGE]);
+      deps.assertAal2();
+      if (!PLAN_HASH_PATTERN.test(input.planHash)) throw new OnboardingConsoleError("stale");
+      const binding = approvalBinding(ctx, input.requestId, input.planHash, input.nonce);
+      try {
+        await deps.stepUp.verifyAssertion({
+          userId: ctx.userId,
+          response: input.response,
+          challengeAccepted: (signed) => stepUpChallengeMatches(signed, binding),
+        });
+      } catch {
+        throw new OnboardingConsoleError("step_up_failed");
+      }
+    },
+  );
 
-  await runAudited(deps, "onboarding.plan.approve", input.requestId, { plan_hash: input.planHash }, async () => {
-    const { error } = await deps.store.rpc("onboarding_review_approve", {
-      p_request: input.requestId,
-      p_actor: ctx.userId,
-      p_expected_plan_hash: input.planHash,
-      p_step_up_verified: true,
-    });
-    if (error) throw new OnboardingConsoleError(dbCode(error));
-  });
+  await runAudited(
+    deps,
+    "onboarding.plan.approve",
+    input.requestId,
+    { plan_hash: input.planHash },
+    async () => {
+      const { error } = await deps.store.rpc("onboarding_review_approve", {
+        p_request: input.requestId,
+        p_actor: ctx.userId,
+        p_expected_plan_hash: input.planHash,
+        p_step_up_verified: true,
+      });
+      if (error) throw new OnboardingConsoleError(dbCode(error));
+    },
+  );
 
   const r = await deps.store.getRequest(input.requestId);
   if (!r) return { ok: false, code: "not_found" };
@@ -661,7 +694,11 @@ export async function approveAndProvision(
     recordId: input.requestId,
     outcome: outcome.ok ? "succeeded" : outcome.code === "not_allowed" ? "denied" : "failed",
     details: outcome.ok
-      ? { organization_id: outcome.organizationId, replay: outcome.replay, plan_hash: input.planHash }
+      ? {
+          organization_id: outcome.organizationId,
+          replay: outcome.replay,
+          plan_hash: input.planHash,
+        }
       : { code: outcome.code, plan_hash: input.planHash },
   });
   return outcome;

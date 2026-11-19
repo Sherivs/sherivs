@@ -49,7 +49,8 @@ export const ONBOARDING_ERROR_MESSAGES: Record<string, string> = {
   mfa_required: "Approving needs a session with two-factor sign-in.",
   step_up_failed: "The passkey check failed. Nothing was approved.",
   not_allowed: "Provisioning was refused for your role. Nothing was created.",
-  incomplete_organization: "Provisioning stopped because a required record was missing. Nothing was created.",
+  incomplete_organization:
+    "Provisioning stopped because a required record was missing. Nothing was created.",
   conflict: "A name or address is already taken. Nothing was created.",
   unavailable: "The service is unavailable. Nothing was changed.",
 };
@@ -60,11 +61,17 @@ export function onboardingErrorMessage(err: unknown): string {
 }
 
 function StatusPill({ status }: { status: OnboardingRequestStatus }) {
-  return <span className={`sherivs-console-pill is-${status}`}>{ONBOARDING_STATUS_LABELS[status]}</span>;
+  return (
+    <span className={`sherivs-console-pill is-${status}`}>{ONBOARDING_STATUS_LABELS[status]}</span>
+  );
 }
 
 function Mono({ children }: { children: string }) {
-  return <code style={{ fontFamily: "ui-monospace, monospace", wordBreak: "break-all" }}>{children}</code>;
+  return (
+    <code style={{ fontFamily: "ui-monospace, monospace", wordBreak: "break-all" }}>
+      {children}
+    </code>
+  );
 }
 
 function pretty(v: unknown): string {
@@ -186,7 +193,11 @@ export function ConsoleOnboardingRequest() {
       <h1 id="onboarding-request-title">{view.orgName}</h1>
       <p>
         <StatusPill status={view.status} /> · <Mono>{view.institutionType}</Mono> · {view.age} old ·{" "}
-        {view.assignedToMe ? "Assigned to you" : view.assignedStaffName ? `Assigned to ${view.assignedStaffName}` : "Unassigned"}
+        {view.assignedToMe
+          ? "Assigned to you"
+          : view.assignedStaffName
+            ? `Assigned to ${view.assignedStaffName}`
+            : "Unassigned"}
       </p>
       {error ? <ConsoleNotice tone="error">{error}</ConsoleNotice> : null}
       {notice ? <ConsoleNotice>{notice}</ConsoleNotice> : null}
@@ -293,7 +304,11 @@ export function ConsoleOnboardingRequest() {
         <>
           <p>
             Revision {view.plan.revision} · hash <Mono>{view.plan.hash ?? ""}</Mono>
-            {view.plan.edited ? (view.plan.editedByMe ? " · edited by you" : " · edited by staff") : " · as generated"}
+            {view.plan.edited
+              ? view.plan.editedByMe
+                ? " · edited by you"
+                : " · edited by staff"
+              : " · as generated"}
           </p>
           {view.plan.issues.length > 0 ? (
             <ConsoleNotice tone="warning">
@@ -311,12 +326,14 @@ export function ConsoleOnboardingRequest() {
                   <strong>{d.kind}</strong> <Mono>{d.path}</Mono>
                   {d.kind !== "added" ? (
                     <>
-                      {" "}from <Mono>{JSON.stringify(d.before)}</Mono>
+                      {" "}
+                      from <Mono>{JSON.stringify(d.before)}</Mono>
                     </>
                   ) : null}
                   {d.kind !== "removed" ? (
                     <>
-                      {" "}to <Mono>{JSON.stringify(d.after)}</Mono>
+                      {" "}
+                      to <Mono>{JSON.stringify(d.after)}</Mono>
                     </>
                   ) : null}
                 </li>
@@ -390,8 +407,10 @@ export function ConsoleOnboardingRequest() {
       {view.approval.approvedHash ? (
         <p>
           Approved by {view.approval.approvedByName ?? "staff"}
-          {view.approval.approvedAt ? ` on ${new Date(view.approval.approvedAt).toLocaleString()}` : ""} for
-          hash <Mono>{view.approval.approvedHash}</Mono>.
+          {view.approval.approvedAt
+            ? ` on ${new Date(view.approval.approvedAt).toLocaleString()}`
+            : ""}{" "}
+          for hash <Mono>{view.approval.approvedHash}</Mono>.
         </p>
       ) : (
         <p>Not approved.</p>
@@ -416,7 +435,9 @@ export function ConsoleOnboardingRequest() {
             onClick={() =>
               act(async () => {
                 const planHash = view.plan.hash as string;
-                const begun = (await beginOnboardingApproval({ data: { requestId, planHash } })) as {
+                const begun = (await beginOnboardingApproval({
+                  data: { requestId, planHash },
+                })) as {
                   options: Parameters<typeof startAuthentication>[0]["optionsJSON"];
                   nonce: string;
                 };

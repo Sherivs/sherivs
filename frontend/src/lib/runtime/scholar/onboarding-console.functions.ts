@@ -15,7 +15,10 @@ import type { OnboardingConsoleDeps } from "./onboarding-console.server";
 
 type Ctx = { supabase: unknown; userId: string; claims?: { aal?: unknown; email?: string } };
 type Rpc = {
-  rpc: (fn: string, args?: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }>;
+  rpc: (
+    fn: string,
+    args?: Record<string, unknown>,
+  ) => PromiseLike<{ data: unknown; error: unknown }>;
 };
 
 const RequestId = z.string().uuid();
@@ -181,7 +184,9 @@ export const saveOnboardingPlanEdit = createServerFn({ method: "POST" })
 
 export const beginOnboardingApproval = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((input: unknown) => z.object({ requestId: RequestId, planHash: PlanHash }).parse(input))
+  .validator((input: unknown) =>
+    z.object({ requestId: RequestId, planHash: PlanHash }).parse(input),
+  )
   .handler(async ({ context, data }) =>
     run(async () => {
       const { beginPlanApproval } = await import("./onboarding-console.server");

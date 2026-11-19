@@ -255,7 +255,11 @@ export async function executeOrganizationProvisioning(
     payload: Record<string, unknown>,
   ): Promise<{ row: ProvisioningRecordRow; id: string }> {
     const { data, error } = await client.from(table).insert(payload).select("id");
-    if (error) throw new ProvisioningStepError(step, `substrate rejected insert on "${table}": ${error.message}`);
+    if (error)
+      throw new ProvisioningStepError(
+        step,
+        `substrate rejected insert on "${table}": ${error.message}`,
+      );
     if (!data || data.length === 0) {
       throw new ProvisioningStepError(step, `substrate returned no row for insert on "${table}"`);
     }
@@ -303,7 +307,9 @@ export async function executeOrganizationProvisioning(
       try {
         if (entry.kind === "auth_user") {
           if (!identityAdmin) {
-            errors.push(`compensation ${entry.step}: no identity admin surface to delete ${entry.id}`);
+            errors.push(
+              `compensation ${entry.step}: no identity admin surface to delete ${entry.id}`,
+            );
             continue;
           }
           const { error } = await identityAdmin.deleteUser(entry.id);
@@ -315,7 +321,9 @@ export async function executeOrganizationProvisioning(
           else compensated.push(entry);
         }
       } catch (err) {
-        errors.push(`compensation ${entry.step}: ${err instanceof Error ? err.message : String(err)}`);
+        errors.push(
+          `compensation ${entry.step}: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     }
     return { compensated, errors };

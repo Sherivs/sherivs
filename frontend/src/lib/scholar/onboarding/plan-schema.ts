@@ -106,7 +106,10 @@ export const onboardingPlanSchema = z
         calendar_model: code,
         grading_system: code,
         curricula: z.array(code).max(12),
-        languages: z.array(z.string().regex(/^[a-z]{2,3}$/)).min(1).max(12),
+        languages: z
+          .array(z.string().regex(/^[a-z]{2,3}$/))
+          .min(1)
+          .max(12),
         attributes: z.record(z.string().regex(/^[a-z][a-z0-9_]{0,63}$/), attributeValue),
       })
       .strict(),
@@ -118,7 +121,11 @@ export const onboardingPlanSchema = z
     let roots = 0;
     plan.orgUnits.forEach((u, i) => {
       if (seen.has(u.key))
-        ctx.addIssue({ code: "custom", path: ["orgUnits", i, "key"], message: "duplicate unit key" });
+        ctx.addIssue({
+          code: "custom",
+          path: ["orgUnits", i, "key"],
+          message: "duplicate unit key",
+        });
       if (u.parentKey === null) roots += 1;
       else if (!seen.has(u.parentKey))
         ctx.addIssue({
