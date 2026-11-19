@@ -11,6 +11,8 @@ export function readClientSentryEnv(): SentryEnv {
     viteAppEnv: import.meta.env.VITE_APP_ENV as string | undefined,
     vercelEnv: import.meta.env.VITE_VERCEL_ENV as string | undefined,
     release: import.meta.env.VITE_SENTRY_RELEASE as string | undefined,
+    // OBS-DD-01: baked from OBSERVABILITY_SENTRY_ENABLED at production build time.
+    switchValue: import.meta.env.VITE_OBSERVABILITY_SENTRY_ENABLED as string | undefined,
   };
 }
 

@@ -9,6 +9,7 @@ import {
   sentrySourceMapUploadEnabled,
   vendorBuildDefine,
 } from "./frontend/src/lib/observability/vendor-telemetry.ts";
+import { buildVersionDefine } from "./frontend/src/lib/observability/build-version.ts";
 
 const isVitest = process.env.VITEST === "true";
 
@@ -23,11 +24,21 @@ const telemetryInput = {
   authToken: process.env.SENTRY_AUTH_TOKEN,
   vitest: isVitest,
   release: process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.VITE_SENTRY_RELEASE ?? "",
+  // OBS-DD-01 kill switches (default on). Only exact "false" turns a vendor off.
+  sentrySwitch: process.env.OBSERVABILITY_SENTRY_ENABLED,
+  posthogSwitch: process.env.OBSERVABILITY_POSTHOG_ENABLED,
 };
 const sentryUpload = sentrySourceMapUploadEnabled(telemetryInput);
 
 export default defineConfig(({ command, mode }) => ({
-  define: vendorBuildDefine({ ...telemetryInput, command, mode }),
+  define: {
+    ...vendorBuildDefine({ ...telemetryInput, command, mode }),
+    // OBS-DD-03: bake the commit SHA so Datadog spans carry version:<sha> on prebuilt deploys.
+    ...buildVersionDefine({
+      command,
+      sha: process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA,
+    }),
+  },
   build: sentryUpload ? { sourcemap: "hidden" } : undefined,
   resolve: {
     alias: {

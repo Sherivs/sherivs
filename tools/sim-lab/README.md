@@ -15,6 +15,46 @@ node load/tokens.mjs && bin/postgrest load/postgrest.conf &   # local JWT secret
 cd load && PEAK=1000 ../bin/k6 run mix.js
 ```
 
+### WF-04 workflow-tick load
+
+With the local sim database and migrations running, run:
+
+```bash
+(bin/postgrest load/postgrest.conf > postgrest.log 2>&1 &) ; sleep 2
+WF04_N=100 WF04_WORKERS=2 node load/workflow-tick-load.mjs
+```
+
+The Node harness uses 1–4 concurrent workers, the real `runWorkflowTick` implementation and its
+Supabase service-role port, a JWT signed with the sim's local `.jwt-secret`, and loopback PostgREST.
+It refuses non-loopback Postgres and blocks requests outside the local PostgREST endpoint. It only
+plans synthetic no-op actions; it does not call external providers. Each run removes its synthetic
+workflow rows and audit records after capturing
+`steps_per_minute`, `events_per_minute`, p50/p95 tick duration, claimed/succeeded/retried/dead
+counts, and duplicate-execution count. Duplicate executions are counted as repeated workflow runs
+for one event or successful steps that required more than one attempt.
+
+CI uses a small fixture and bounded worker count; the smoke must finish within 60 seconds and
+fails if duplicate executions are nonzero or `steps_per_minute` is zero. JSON results are written
+to `results/wf04-workflow-tick-*.json`. The separate operator-only staging SQL probe is
+`../../tests/load/wf04-staging-claim-throughput.sql`; it is intentionally guarded and rolls back
+its measurement fixtures.
+
+### WF-05 event-source end-to-end
+
+With the sim database, seeded synthetic schools, local JWT secret and loopback PostgREST running:
+
+```bash
+node load/wf05-event-e2e.mjs
+```
+
+The probe posts a synthetic wallet top-up through the existing atomic `_wallet_post` path,
+verifies the WF-05 event, then drives the real `runWorkflowTick` and Supabase port against a
+published event-bound workflow. It asserts dispatch, the workflow audit-chain row and `dup=0`,
+then disables the synthetic organization's workflow setting. It retains the synthetic source,
+workflow and audit rows in the local disposable database to preserve append-only evidence, and
+requires a school with no existing workflow or audit history. It refuses non-loopback Postgres and
+blocks requests outside local PostgREST.
+
 ## Archetypes (full scale)
 | Institution | Kind | Plan | Students |
 |---|---|---|---|
