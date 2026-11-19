@@ -1,0 +1,17 @@
+{
+  "entry.org.institution_type": "private_secondary",
+  "entry.location.state": "lagos",
+  "private_basic.structure.sections": ["jss", "sss"],
+  "private_basic.structure.boarding": true,
+  "private_basic.layout.campus_count": 1,
+  "private_basic.layout.shifts": false,
+  "private_basic.academics.curricula": ["nigerian_national", "british"],
+  "private_basic.finance.billing_period": "termly",
+  "private_basic.finance.instalments": true,
+  "private_basic.intake.use_sherivs": true,
+  "private_basic.intake.mode": "cycle_with_entrance_exam",
+  "private_basic.exams.external_centres": ["waec", "neco"],
+  "private_basic.size.population_band": "from_300_to_1000",
+  "private_basic.governance.leadership": "head_led",
+  "private_basic.profile.languages": ["en", "yo"]
+}

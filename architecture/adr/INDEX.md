@@ -144,6 +144,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | --- | ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | 006 | Event architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-006 Event architecture" as planned | **No ADR-006 file exists anywhere in the repository.** The planned decision record was never authored. |
 | 007 | Audit architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-007 Audit architecture" as planned | **No ADR-007 file exists anywhere in the repository.** The planned decision record was never authored. |
+| 107 | [ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md](./ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md) | Reality Interview Question Graph, Predicate Language and Versioning | PROPOSED | 2026-11-17 | Versioned directed question graph with a safe declarative predicate language; pure deterministic answers-to-plan with placeholder packs and unverified links |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 
