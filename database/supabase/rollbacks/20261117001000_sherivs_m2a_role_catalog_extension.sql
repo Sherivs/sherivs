@@ -10,7 +10,8 @@ BEGIN;
 ALTER TABLE public.role_templates DISABLE TRIGGER trg_role_templates_guard;
 ALTER TABLE public.role_template_permissions DISABLE TRIGGER trg_role_template_permissions_guard;
 
-UPDATE public.role_catalog r SET template_code = v.template_code, institution_types = v.institution_types
+UPDATE public.role_catalog r SET template_code = CASE WHEN r.template_code = 'm009_tertiary_executive_read_only' THEN r.template_code ELSE v.template_code END,  -- M009-B1 owns these
+       institution_types = v.institution_types
   FROM (VALUES
   ('ng.honourable_minister_of_education','regulator',ARRAY['government']::text[]),
   ('ng.minister_of_state_for_education','regulator',ARRAY['government']::text[]),
