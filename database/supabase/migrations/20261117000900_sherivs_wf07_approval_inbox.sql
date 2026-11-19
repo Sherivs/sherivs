@@ -101,7 +101,9 @@ $$;
 -- -----------------------------------------------------------------------------
 -- Defaults when no row exists: one approver for normal risk; two distinct approvers for money
 -- movement, safeguarding and mass messages; one approver (with step-up) for the other capped
--- categories. Only the service role can change it, so an editor cannot relax their own review.
+-- categories. Only the service role can change it, so an editor cannot relax their own review. An
+-- organization may raise counts and add categories; money movement and safeguarding always stay on
+-- the two-person list, and the two-person count never drops below 2.
 CREATE TABLE public.wf_approval_policy (
   org_id                 uuid PRIMARY KEY REFERENCES public.wf_org_settings(org_id) ON DELETE RESTRICT,
   normal_required        smallint NOT NULL DEFAULT 1 CHECK (normal_required BETWEEN 1 AND 3),
@@ -114,6 +116,8 @@ CREATE TABLE public.wf_approval_policy (
         'money_movement', 'safeguarding', 'credential_change', 'public_publish',
         'mass_message', 'external_authority_share'
       ]::text[]
+      -- Money movement and safeguarding are two-person in every organization; they cannot be removed.
+      AND two_person_categories @> ARRAY['money_movement', 'safeguarding']::text[]
     ),
   created_at             timestamptz NOT NULL DEFAULT now(),
   updated_at             timestamptz NOT NULL DEFAULT now()

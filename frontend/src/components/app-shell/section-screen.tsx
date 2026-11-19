@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { catalogItem } from "@/lib/sherivs-ws/engine";
@@ -15,6 +15,10 @@ import { AscExportScreen } from "./asc-export-screen";
 import { OrgAgentsScreen, RolePacketScreen, WorkspacePolicyScreen } from "./org-workforce-screens";
 import { InstitutionInterviewScreen } from "./institution-interview-screen";
 
+// WF-07: the approval inbox loads on demand (it brings the passkey client and the server-function
+// stubs), so the /home bundle stays inside its budget.
+const ApprovalInboxScreen = lazy(() => import("./approval-inbox-screen"));
+
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
   const [query, setQuery] = useState("");
@@ -24,6 +28,13 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   if (sectionKey === "workspace-policies") return <WorkspacePolicyScreen />;
   if (sectionKey === "school_setup") return <InstitutionInterviewScreen />;
   if (sectionKey === "communications") return <CommunicationInboxScreen />;
+  if (sectionKey === "approvals") {
+    return (
+      <Suspense fallback={<p className="app-shell-empty">Loading approvals…</p>}>
+        <ApprovalInboxScreen />
+      </Suspense>
+    );
+  }
   if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
   if (sectionKey === "nav.reports") return <AscExportScreen />;
   const item =

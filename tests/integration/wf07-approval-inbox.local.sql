@@ -375,7 +375,22 @@ SELECT wf07t.expect_error('two-person policy cannot be set below two',
 SELECT wf07t.expect_error('policy categories are limited to the protected set',
   $q$UPDATE public.wf_approval_policy SET two_person_categories = ARRAY['communication']
       WHERE org_id = wf07t.id('orgA')$q$, '23514');
-UPDATE public.wf_approval_policy SET two_person_required = 2 WHERE org_id = wf07t.id('orgA');
+SELECT wf07t.expect_error('money movement and safeguarding cannot be removed from the two-person list',
+  $q$UPDATE public.wf_approval_policy SET two_person_categories = ARRAY['mass_message']
+      WHERE org_id = wf07t.id('orgA')$q$, '23514');
+SELECT wf07t.expect_error('an empty two-person list is refused',
+  $q$UPDATE public.wf_approval_policy SET two_person_categories = '{}'::text[]
+      WHERE org_id = wf07t.id('orgA')$q$, '23514');
+UPDATE public.wf_approval_policy
+   SET two_person_required = 2,
+       two_person_categories = ARRAY['money_movement', 'safeguarding', 'mass_message', 'credential_change']
+ WHERE org_id = wf07t.id('orgA');
+SELECT wf07t.expect_true('an organization may add a category to the two-person list',
+  public.wf_approval_required_count(wf07t.id('orgA'), 'high', 'credential_change') = 2
+  AND public.wf_approval_required_count(wf07t.id('orgB'), 'high', 'credential_change') = 1);
+UPDATE public.wf_approval_policy
+   SET two_person_categories = ARRAY['money_movement', 'safeguarding', 'mass_message']
+ WHERE org_id = wf07t.id('orgA');
 SELECT wf07t.expect_true('policy defaults are restored to two approvers',
   public.wf_approval_required_count(wf07t.id('orgA'), 'high', 'money_movement') = 2);
 
@@ -426,7 +441,7 @@ SELECT wf07t.logout();
 
 SELECT wf07t.expect_true('each draft gets one pending approval with its own review step, risk by category',
   (SELECT count(*) = 12 FROM public.wf_approval a JOIN public.wf_action_draft d ON d.approval_id = a.id
-     WHERE a.status = 'pending')
+     WHERE a.status = 'pending' AND a.org_id IN (wf07t.id('orgA'), wf07t.id('orgB')))
   AND (SELECT risk = 'high' FROM public.wf_approval WHERE id = wf07t.id('apr_m'))
   AND (SELECT risk = 'high' FROM public.wf_approval WHERE id = wf07t.id('apr_rj'))
   AND (SELECT risk = 'high' FROM public.wf_approval WHERE id = wf07t.id('apr_ms'))

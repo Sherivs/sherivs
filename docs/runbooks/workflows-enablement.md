@@ -32,6 +32,64 @@ the organization's `wf_org_settings.workflows_enabled`, and disable the Worker r
 gate is checked for each effectful action; invalid mode values also stop delivery. These controls
 do not delete ledger, draft, or sandbox-outbox records.
 
+## Approval inbox (WF-07)
+
+Origin: `database/supabase/migrations/20261117000900_sherivs_wf07_approval_inbox.sql` and
+`architecture/adr/ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md`. Not applied to any hosted database by
+the mission that wrote it; the lead applies it to staging.
+
+Every draft WF-06 produces now gets an approval in the tenant inbox, opened from the workspace menu
+as **Approvals** (`/home/s/approvals`). Who can decide, and how many people are needed:
+
+- Deciding needs the `workflows.approve` permission. The admin pass-through that grants view does
+  not grant it. The person who started the run, wrote or last edited the workflow version, or created
+  its template cannot decide it, and nobody votes twice. Open decision 4 (who may author and approve)
+  is not settled; until it is, only these existing rules apply.
+- One approver is needed for normal risk and for high-risk categories outside the list below. Two
+  different approvers are needed for money movement, safeguarding and mass messages. Those
+  categories are always high risk.
+- Each high-risk approval needs its own passkey confirmation, tied to that approval and to the
+  content fingerprint on screen. It is single use and valid for five minutes. A person without a
+  passkey cannot approve a high-risk item; they can still reject. Rejecting never needs a passkey.
+- If the content changes after someone opened it, their approval is refused and earlier approvals no
+  longer count. A reject or an expiry (seven days) ends the whole run.
+- After the required approvals, the cron route's approval sweep dispatches the draft to the sandbox
+  outbox, through the broker, and lets the run continue. Live delivery of an approved draft is
+  refused in v1. The inbox is pull-based: nothing notifies the approvers, so tell them where to look.
+
+Per-organization counts live in `wf_approval_policy` (service role only; each change is audited).
+Defaults apply when no row exists. Money movement and safeguarding cannot be taken off the
+two-person list, and the two-person count cannot go below 2:
+
+```sql
+-- Staging only, as an authorized operator. Raises the count for one organization to three.
+INSERT INTO public.wf_approval_policy (org_id, two_person_required)
+VALUES ('<verified-staging-school-uuid>', 3)
+ON CONFLICT (org_id) DO UPDATE SET two_person_required = EXCLUDED.two_person_required;
+```
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
+
+1. Give two different users in the pilot organization `workflows.approve`, neither the workflow's
+   author nor the person who starts runs, and register a passkey for each.
+2. Trigger a draft (for example a message to more than 25 recipients). It appears under
+   **Waiting for a decision** with "0 of 2 approvals" and a high-risk tag.
+3. Approve as the first person: the item stays waiting and shows "waiting for a second approver".
+   `wf_action_sandbox_outbox` must have no row for it yet.
+4. Approve as the second person. After the next cron pass there is one outbox row with `draft_id` set
+   and a broker decision keyed `wf-approved:<draft id>`, and the run continues.
+5. Reject one item and let another expire: neither reaches the outbox, and both runs are cancelled.
+
+The evidence is in `wf_approval_decision`, `wf_approval_step_up` and the audit chain
+(`workflow.approval.vote_approve`, `.vote_reject`, `.step_up_verified`, `.step_up_failed`,
+`.viewed`). Do not log the content fingerprint with person data.
+
+If the sweep misbehaves, the existing kill switch applies unchanged (`WORKFLOW_DELIVERY_MODE=off`,
+`WORKFLOWS_ENABLED=false`, the organization setting, the Worker route). Already approved drafts stay
+approved and wait; nothing is deleted. For schema rollback use the paired WF-07 rollback after the
+kill switch, and note that it refuses to run while approved capped drafts or their outbox records
+exist: export and remove those first.
+
 ## Before a staging pilot
 
 1. Confirm the WF-01 through WF-05 migrations and rollbacks are present in the intended staging
