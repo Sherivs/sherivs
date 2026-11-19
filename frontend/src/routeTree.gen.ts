@@ -131,10 +131,13 @@ import { Route as ApiPublicCronIntegrationsSyncRouteImport } from './routes/api/
 import { Route as ApiPublicCronJarvisTickRouteImport } from './routes/api/public/cron/jarvis-tick'
 import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/public/cron/org-notifications'
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
+import { Route as ApiPublicCronSmsDispatchRouteImport } from './routes/api/public/cron/sms-dispatch'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
+import { Route as ApiPublicCronWhatsappDispatchRouteImport } from './routes/api/public/cron/whatsapp-dispatch'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
 import { Route as ApiPublicCronWorkflowTickRouteImport } from './routes/api/public/cron/workflow-tick'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
+import { Route as ApiPublicWebhooksBulksmsRouteImport } from './routes/api/public/webhooks/bulksms'
 import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
 import { Route as ApiPublicWebhooksPaystackRouteImport } from './routes/api/public/webhooks/paystack'
 import { Route as ApiPublicWebhooksResendRouteImport } from './routes/api/public/webhooks/resend'
@@ -767,10 +770,22 @@ const ApiPublicCronOrgWeeklyReportsRoute =
     path: '/api/public/cron/org-weekly-reports',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronSmsDispatchRoute =
+  ApiPublicCronSmsDispatchRouteImport.update({
+    id: '/api/public/cron/sms-dispatch',
+    path: '/api/public/cron/sms-dispatch',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWalletTopupReconcileRoute =
   ApiPublicCronWalletTopupReconcileRouteImport.update({
     id: '/api/public/cron/wallet-topup-reconcile',
     path: '/api/public/cron/wallet-topup-reconcile',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicCronWhatsappDispatchRoute =
+  ApiPublicCronWhatsappDispatchRouteImport.update({
+    id: '/api/public/cron/whatsapp-dispatch',
+    path: '/api/public/cron/whatsapp-dispatch',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicCronWhatsappN8nForwardRoute =
@@ -789,6 +804,12 @@ const ApiPublicWebhooksAfricasTalkingVoiceRoute =
   ApiPublicWebhooksAfricasTalkingVoiceRouteImport.update({
     id: '/api/public/webhooks/africas-talking-voice',
     path: '/api/public/webhooks/africas-talking-voice',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicWebhooksBulksmsRoute =
+  ApiPublicWebhooksBulksmsRouteImport.update({
+    id: '/api/public/webhooks/bulksms',
+    path: '/api/public/webhooks/bulksms',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicWebhooksOwnerAlertVoiceRoute =
@@ -960,10 +981,13 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1082,10 +1106,13 @@ export interface FileRoutesByTo {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1219,10 +1246,13 @@ export interface FileRoutesById {
   '/api/public/cron/jarvis-tick': typeof ApiPublicCronJarvisTickRoute
   '/api/public/cron/org-notifications': typeof ApiPublicCronOrgNotificationsRoute
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
+  '/api/public/cron/sms-dispatch': typeof ApiPublicCronSmsDispatchRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
+  '/api/public/cron/whatsapp-dispatch': typeof ApiPublicCronWhatsappDispatchRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  '/api/public/webhooks/bulksms': typeof ApiPublicWebhooksBulksmsRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   '/api/public/webhooks/paystack': typeof ApiPublicWebhooksPaystackRoute
   '/api/public/webhooks/resend': typeof ApiPublicWebhooksResendRoute
@@ -1356,10 +1386,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1478,10 +1511,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1614,10 +1650,13 @@ export interface FileRouteTypes {
     | '/api/public/cron/jarvis-tick'
     | '/api/public/cron/org-notifications'
     | '/api/public/cron/org-weekly-reports'
+    | '/api/public/cron/sms-dispatch'
     | '/api/public/cron/wallet-topup-reconcile'
+    | '/api/public/cron/whatsapp-dispatch'
     | '/api/public/cron/whatsapp-n8n-forward'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
+    | '/api/public/webhooks/bulksms'
     | '/api/public/webhooks/owner-alert-voice'
     | '/api/public/webhooks/paystack'
     | '/api/public/webhooks/resend'
@@ -1656,10 +1695,13 @@ export interface RootRouteChildren {
   ApiPublicCronJarvisTickRoute: typeof ApiPublicCronJarvisTickRoute
   ApiPublicCronOrgNotificationsRoute: typeof ApiPublicCronOrgNotificationsRoute
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
+  ApiPublicCronSmsDispatchRoute: typeof ApiPublicCronSmsDispatchRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
+  ApiPublicCronWhatsappDispatchRoute: typeof ApiPublicCronWhatsappDispatchRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
   ApiPublicCronWorkflowTickRoute: typeof ApiPublicCronWorkflowTickRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
+  ApiPublicWebhooksBulksmsRoute: typeof ApiPublicWebhooksBulksmsRoute
   ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
   ApiPublicWebhooksPaystackRoute: typeof ApiPublicWebhooksPaystackRoute
   ApiPublicWebhooksResendRoute: typeof ApiPublicWebhooksResendRoute
@@ -2525,11 +2567,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronOrgWeeklyReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/sms-dispatch': {
+      id: '/api/public/cron/sms-dispatch'
+      path: '/api/public/cron/sms-dispatch'
+      fullPath: '/api/public/cron/sms-dispatch'
+      preLoaderRoute: typeof ApiPublicCronSmsDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/wallet-topup-reconcile': {
       id: '/api/public/cron/wallet-topup-reconcile'
       path: '/api/public/cron/wallet-topup-reconcile'
       fullPath: '/api/public/cron/wallet-topup-reconcile'
       preLoaderRoute: typeof ApiPublicCronWalletTopupReconcileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/cron/whatsapp-dispatch': {
+      id: '/api/public/cron/whatsapp-dispatch'
+      path: '/api/public/cron/whatsapp-dispatch'
+      fullPath: '/api/public/cron/whatsapp-dispatch'
+      preLoaderRoute: typeof ApiPublicCronWhatsappDispatchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/cron/whatsapp-n8n-forward': {
@@ -2551,6 +2607,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/webhooks/africas-talking-voice'
       fullPath: '/api/public/webhooks/africas-talking-voice'
       preLoaderRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/bulksms': {
+      id: '/api/public/webhooks/bulksms'
+      path: '/api/public/webhooks/bulksms'
+      fullPath: '/api/public/webhooks/bulksms'
+      preLoaderRoute: typeof ApiPublicWebhooksBulksmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/webhooks/owner-alert-voice': {
@@ -2978,12 +3041,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronJarvisTickRoute: ApiPublicCronJarvisTickRoute,
   ApiPublicCronOrgNotificationsRoute: ApiPublicCronOrgNotificationsRoute,
   ApiPublicCronOrgWeeklyReportsRoute: ApiPublicCronOrgWeeklyReportsRoute,
+  ApiPublicCronSmsDispatchRoute: ApiPublicCronSmsDispatchRoute,
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
+  ApiPublicCronWhatsappDispatchRoute: ApiPublicCronWhatsappDispatchRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
   ApiPublicCronWorkflowTickRoute: ApiPublicCronWorkflowTickRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,
+  ApiPublicWebhooksBulksmsRoute: ApiPublicWebhooksBulksmsRoute,
   ApiPublicWebhooksOwnerAlertVoiceRoute: ApiPublicWebhooksOwnerAlertVoiceRoute,
   ApiPublicWebhooksPaystackRoute: ApiPublicWebhooksPaystackRoute,
   ApiPublicWebhooksResendRoute: ApiPublicWebhooksResendRoute,
