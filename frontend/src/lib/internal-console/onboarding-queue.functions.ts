@@ -2,7 +2,7 @@
  * M6 (mission E-016, ADR-117) — server functions behind /console/onboarding.
  *
  * Each one: verified session (requireSupabaseAuth) -> zod input (ids and the reviewed plan hash
- * only; never an organization id, an approver or an amount) -> onboarding-console.server.ts,
+ * only; never an organization id, an approver or an amount) -> onboarding-queue.server.ts,
  * which checks the console capability, AAL2 and the passkey step-up and calls the service-role
  * database functions. Server-only modules are imported inside the handlers so this file is safe
  * to import from components.
@@ -11,7 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import type { OnboardingConsoleDeps } from "./onboarding-console.server";
+import type { OnboardingConsoleDeps } from "./onboarding-queue.server";
 
 type Ctx = { supabase: unknown; userId: string; claims?: { aal?: unknown; email?: string } };
 type Rpc = {
@@ -43,7 +43,7 @@ async function deps(ctx: Ctx): Promise<OnboardingConsoleDeps> {
   const [{ supabaseAdmin }, server, { writeAuditRecord }, { assertInternalAal2 }, time] =
     await Promise.all([
       import("@/integrations/supabase/client.server"),
-      import("./onboarding-console.server"),
+      import("./onboarding-queue.server"),
       import("@/lib/server/write-audit"),
       import("@/lib/security/mfa-server"),
       import("@/lib/kernel/time-authority"),
@@ -116,7 +116,7 @@ async function run<T>(fn: () => Promise<T>): Promise<T> {
   try {
     return await fn();
   } catch (err) {
-    const { OnboardingConsoleError } = await import("./onboarding-console.server");
+    const { OnboardingConsoleError } = await import("./onboarding-queue.server");
     throw new Error(err instanceof OnboardingConsoleError ? err.code : "unavailable");
   }
 }
@@ -125,7 +125,7 @@ export const loadOnboardingQueue = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) =>
     run(async () => {
-      const { loadQueue } = await import("./onboarding-console.server");
+      const { loadQueue } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return loadQueue(c, await deps(c));
     }),
@@ -136,7 +136,7 @@ export const loadOnboardingRequest = createServerFn({ method: "GET" })
   .validator((input: unknown) => z.object({ requestId: RequestId }).parse(input))
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { loadRequestDetail } = await import("./onboarding-console.server");
+      const { loadRequestDetail } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return loadRequestDetail(c, await deps(c), data.requestId);
     }),
@@ -147,7 +147,7 @@ export const assignOnboardingRequestToSelf = createServerFn({ method: "POST" })
   .validator((input: unknown) => z.object({ requestId: RequestId }).parse(input))
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { assignToSelf } = await import("./onboarding-console.server");
+      const { assignToSelf } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return assignToSelf(c, await deps(c), data.requestId);
     }),
@@ -160,7 +160,7 @@ export const generateOnboardingPlan = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { generateRequestPlan } = await import("./onboarding-console.server");
+      const { generateRequestPlan } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return generateRequestPlan(c, await deps(c), data);
     }),
@@ -176,7 +176,7 @@ export const saveOnboardingPlanEdit = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { saveRequestPlanEdit } = await import("./onboarding-console.server");
+      const { saveRequestPlanEdit } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return saveRequestPlanEdit(c, await deps(c), data);
     }),
@@ -189,7 +189,7 @@ export const beginOnboardingApproval = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { beginPlanApproval } = await import("./onboarding-console.server");
+      const { beginPlanApproval } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       return beginPlanApproval(c, await deps(c), data) as Promise<{
         options: never;
@@ -212,7 +212,7 @@ export const approveAndProvisionOnboarding = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) =>
     run(async () => {
-      const { approveAndProvision } = await import("./onboarding-console.server");
+      const { approveAndProvision } = await import("./onboarding-queue.server");
       const c = context as unknown as Ctx;
       const result = await approveAndProvision(c, await deps(c), data);
       return JSON.parse(JSON.stringify(result)) as {

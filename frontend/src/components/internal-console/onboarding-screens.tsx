@@ -20,7 +20,7 @@ import {
   loadOnboardingQueue,
   loadOnboardingRequest,
   saveOnboardingPlanEdit,
-} from "@/lib/runtime/scholar/onboarding-console.functions";
+} from "@/lib/internal-console/onboarding-queue.functions";
 import { ConsoleNotice } from "./console-primitives";
 
 type QueueView = Awaited<ReturnType<typeof loadOnboardingQueue>>;

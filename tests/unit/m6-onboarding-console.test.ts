@@ -34,7 +34,7 @@ import {
   type OnboardingConsoleDeps,
   type RequestRow,
   type SessionRow,
-} from "@/lib/runtime/scholar/onboarding-console.server";
+} from "@/lib/internal-console/onboarding-queue.server";
 import { CONSOLE_NAV } from "@/lib/internal-console/roles";
 import { CONSOLE_PATHS } from "@/lib/internal-console/paths";
 
