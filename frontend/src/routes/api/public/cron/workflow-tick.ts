@@ -41,8 +41,9 @@ export function createWorkflowTickHandler(dependencies: {
         ? await dependencies.createActionExecutor(env)
         : dependencies.createPort
           ? undefined
-          : (await import("@/lib/workflow/workflow-action-runtime.server"))
-              .createWorkflowActionExecutor(env);
+          : (
+              await import("@/lib/workflow/workflow-action-runtime.server")
+            ).createWorkflowActionExecutor(env);
       const counts = await runWorkflowTick(port, {
         worker: "workflow-tick",
         limit: 50,

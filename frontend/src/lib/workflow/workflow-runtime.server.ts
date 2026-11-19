@@ -4,10 +4,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { tenantId } from "@/lib/tenant-core";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
 import { startRun, type WorkflowActorScope, type WorkflowTrigger } from "./workflow-engine";
-import {
-  workflowActionCategory,
-  workflowActionDefinitionSchema,
-} from "./workflow-actions";
+import { workflowActionCategory, workflowActionDefinitionSchema } from "./workflow-actions";
 import {
   validateWorkflowDefinition,
   type WorkflowDefinition,
