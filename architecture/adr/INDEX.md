@@ -145,6 +145,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | --- | ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | 006 | Event architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-006 Event architecture" as planned | **No ADR-006 file exists anywhere in the repository.** The planned decision record was never authored. |
 | 007 | Audit architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-007 Audit architecture" as planned | **No ADR-007 file exists anywhere in the repository.** The planned decision record was never authored. |
+| 106 | [ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md](./ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md) | Every Workspace Card Is a Contract | PROPOSED | 2026-11-17 | One registry entry per card; live cards open real screens, planned cards say so, unknown keys are not found; routes move to the shell (NOT APPLIED) |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 

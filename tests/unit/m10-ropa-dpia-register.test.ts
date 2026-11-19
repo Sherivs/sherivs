@@ -15,7 +15,7 @@ const screen = readFileSync(
   "frontend/src/components/app-shell/privacy-register-screen.tsx",
   "utf8",
 );
-const sectionScreen = readFileSync("frontend/src/components/app-shell/section-screen.tsx", "utf8");
+const cardRegistry = readFileSync("frontend/src/lib/shell/card-registry.ts", "utf8");
 const workflow = readFileSync(".github/workflows/verify.yml", "utf8");
 
 describe("M10 ROPA and DPIA registers", () => {
@@ -56,7 +56,7 @@ describe("M10 ROPA and DPIA registers", () => {
     expect(functions).toContain('"privacy_register_export"');
     expect(screen).toContain("Export JSON");
     expect(screen).toContain("Sign off as DPO");
-    expect(sectionScreen).toContain('"r001.org_admin.ndpa"');
+    expect(cardRegistry).toContain('"r001.org_admin.ndpa": { ...privacyRegister');
     expect(harness).toContain("tenant A cannot read tenant B ROPA");
     expect(harness).toContain("tenant A cannot read platform ROPA");
     expect(harness).toContain("oversized ROPA values are rejected");
