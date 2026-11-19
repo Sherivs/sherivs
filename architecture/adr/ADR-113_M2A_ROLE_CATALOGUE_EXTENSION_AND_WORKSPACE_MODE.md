@@ -52,3 +52,16 @@ SHERIVS-017 shipped 572 roles, 56 templates and 94 permissions for nine coarse i
 - Whether the 31 remaps are wanted for tenants that already use those titles (the guard blocks the apply if any are assigned).
 - State-specific names of teaching service commissions, secondary and Arabic/Islamic education boards, and the CHPRBN/MLSCN-type boards [VERIFY].
 - Military/para-military schools and adult literacy centres have types but no roles, because Appendix A gives no titles for them. `tvet_board`, `agency_for_mass_literacy` and `multi_shift` also have no roles.
+
+## Amendment (2026-11-19): the catalogue never overrides later governed state
+
+The combined integration rehearsal (#464) found that the generated upserts re-asserted 017-era values over two applied decisions:
+M07 (20261103130000) had turned the bursar's optional `payments.record_cash` off, and M009-B1 (20261103145000) had moved 16 tertiary executive roles to `m009_tertiary_executive_read_only` until their authority link is verified.
+Re-enabling the first made `ng.bursar` unassignable (it then held both cash recording and reconciliation); undoing the second would have given unverified acting and deputy executives full executive templates.
+
+The generator now:
+
+- keeps `default_on` on existing `role_template_permissions` rows (new rows get the catalogue default), and the bursar's cash recording is off at the source;
+- keeps any role already on the read-only executive template, in the migration and in its rollback.
+
+Two declared remaps target M009-B1 roles (`ng.provost_of_college_university`, `ng.deputy_vice_chancellor_research_innovation_and_development`), so they wait for a verified authority link and 29 of the 31 take effect. The SQL test now models M07 and M009-B1 and asserts both survive the migration and the rollback.

@@ -606,13 +606,13 @@ INSERT INTO public.role_template_permissions (template_code, permission_code, ki
   ('bursar','hr.leave_request','mandatory',true),
   ('bursar','hr.staff_view','mandatory',true),
   ('bursar','timetable.view','mandatory',true),
-  ('bursar','payments.record_cash','optional',true),
   ('bursar','expenses.approve','optional',true),
   ('bursar','payroll.approve','optional',true),
   ('bursar','payments.refund','optional',true),
   ('bursar','wallet.topup','optional',true),
   ('bursar','payroll.view_all','optional',true),
   ('bursar','expenses.create','optional',false),
+  ('bursar','payments.record_cash','optional',false),
   ('accountant','fees.view','mandatory',true),
   ('accountant','payments.reconcile','mandatory',true),
   ('accountant','reports.financial','mandatory',true),
@@ -1264,7 +1264,7 @@ INSERT INTO public.role_template_permissions (template_code, permission_code, ki
   ('state_exams_officer','exam_body.import','mandatory',true),
   ('projects_officer','regulator.read_aggregate','mandatory',true),
   ('projects_officer','action.assign','mandatory',true)
-ON CONFLICT (template_code, permission_code) DO UPDATE SET kind=EXCLUDED.kind, default_on=EXCLUDED.default_on;
+ON CONFLICT (template_code, permission_code) DO UPDATE SET kind=EXCLUDED.kind, default_on=public.role_template_permissions.default_on;
 INSERT INTO public.role_catalog (code, name, category, template_code, institution_types, workspace_mode, default_enabled, mandate_status, requires_verified_authority_link) VALUES
   ('ng.honourable_minister_of_education','Honourable Minister of Education','Federal Ministry of Education','regulator',ARRAY['government','federal_ministry_of_education']::text[],'full',false,'unverified',true),
   ('ng.minister_of_state_for_education','Minister of State for Education','Federal Ministry of Education','regulator',ARRAY['government','federal_ministry_of_education']::text[],'full',false,'unverified',true),
@@ -1915,7 +1915,7 @@ INSERT INTO public.role_catalog (code, name, category, template_code, institutio
   ('ng.exam_centre_liaison','Exam Centre Liaison','Exam councils','exam_body_liaison',ARRAY['government','waec','neco','nabteb','nbais']::text[],'full',false,'unverified',true),
   ('ng.jamb_admissions_liaison_caps','JAMB Admissions Liaison (CAPS)','Exam councils','admissions',ARRAY['government','jamb']::text[],'full',false,'unverified',true),
   ('ng.teacher_licence_verification_desk_officer','Teacher Licence Verification Desk Officer','Regulators & commissions','licence_verifier',ARRAY['government','trcn']::text[],'full',false,'unverified',true)
-ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, category=EXCLUDED.category, template_code=EXCLUDED.template_code, institution_types=EXCLUDED.institution_types, workspace_mode=EXCLUDED.workspace_mode, default_enabled=EXCLUDED.default_enabled, mandate_status=EXCLUDED.mandate_status, requires_verified_authority_link=(public.role_catalog.requires_verified_authority_link OR EXCLUDED.requires_verified_authority_link);
+ON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, category=EXCLUDED.category, template_code=CASE WHEN public.role_catalog.template_code = 'm009_tertiary_executive_read_only' THEN public.role_catalog.template_code ELSE EXCLUDED.template_code END, institution_types=EXCLUDED.institution_types, workspace_mode=EXCLUDED.workspace_mode, default_enabled=EXCLUDED.default_enabled, mandate_status=EXCLUDED.mandate_status, requires_verified_authority_link=(public.role_catalog.requires_verified_authority_link OR EXCLUDED.requires_verified_authority_link);
 INSERT INTO public.sod_template_conflicts (template_a, template_b) VALUES
   ('accountant','auditor'),
   ('auditor','bursar'),

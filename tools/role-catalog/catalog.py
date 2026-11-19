@@ -148,7 +148,7 @@ TPL = {
  "teaching_support": T(["attendance.take","students.view",*STAFF],["lesson_notes.submit","comms.send_class"],[],"class","internal",None,["own_classes_only","no_sensitive_by_default"]),
  "early_years_carer": T(["attendance.take","students.view",*STAFF],["comms.send_class","health.records_view"],[],"class","confidential",None,["own_classes_only","no_sensitive_by_default"]),
  "lab_workshop": T(["inventory.manage",*STAFF],["attendance.take","assets.manage"],[],"department","internal"),
- "bursar": T(["fees.view","fees.manage_plans","payments.reconcile","reports.financial","wallet.view","budget.manage",*STAFF],["payments.record_cash","expenses.approve","payroll.approve","payments.refund","wallet.topup","payroll.view_all"],["expenses.create"],"org","restricted",2_000_000,["no_self_payroll_approval","no_self_expense_approval","no_sensitive_by_default"]),
+ "bursar": T(["fees.view","fees.manage_plans","payments.reconcile","reports.financial","wallet.view","budget.manage",*STAFF],["expenses.approve","payroll.approve","payments.refund","wallet.topup","payroll.view_all"],["expenses.create","payments.record_cash"],"org","restricted",2_000_000,["no_self_payroll_approval","no_self_expense_approval","no_sensitive_by_default"]),
  "accountant": T(["fees.view","payments.reconcile","reports.financial","expenses.create",*STAFF],["payments.record_cash","budget.manage","wallet.view"],["payroll.prepare"],"org","confidential",None,["no_self_expense_approval"]),
  "cashier": T(["fees.view","payments.record_cash",*STAFF],["wallet.view"],[],"campus","confidential",None,["no_self_expense_approval"]),
  "payroll": T(["payroll.prepare","payroll.view_all","hr.view_sensitive",*STAFF],["reports.financial"],[],"org","restricted",None,["no_self_payroll_approval"]),
@@ -911,8 +911,12 @@ def sql():
     tp=[]
     for k,t in TPL.items():
         tp += [f"({q(k)},{q(p)},'mandatory',true)" for p in t["m"]] + [f"({q(k)},{q(p)},'optional',true)" for p in t["on"]] + [f"({q(k)},{q(p)},'optional',false)" for p in t["off"]]
-    out.append("INSERT INTO public.role_template_permissions (template_code, permission_code, kind, default_on) VALUES\n  " + ",\n  ".join(tp) + "\nON CONFLICT (template_code, permission_code) DO UPDATE SET kind=EXCLUDED.kind, default_on=EXCLUDED.default_on;")
-    out.append("INSERT INTO public.role_catalog (code, name, category, template_code, institution_types, workspace_mode, default_enabled, mandate_status, requires_verified_authority_link) VALUES\n" + ",\n".join(f"  ({q(code(r['name']))},{q(r['name'])},{q(r['category'])},{q(r['template'])},{arr(r['types'])},{q(r['mode'])},{b(r['enabled'])},{q(r['mandate'])},{b(r['oversight'])})" for r in RESOLVED) + "\nON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, category=EXCLUDED.category, template_code=EXCLUDED.template_code, institution_types=EXCLUDED.institution_types, workspace_mode=EXCLUDED.workspace_mode, default_enabled=EXCLUDED.default_enabled, mandate_status=EXCLUDED.mandate_status, requires_verified_authority_link=(public.role_catalog.requires_verified_authority_link OR EXCLUDED.requires_verified_authority_link);")
+    # Existing rows keep their default_on: later applied migrations govern it (M07 turned the
+    # bursar's payments.record_cash off; the cashier alone records cash). New rows get the default.
+    out.append("INSERT INTO public.role_template_permissions (template_code, permission_code, kind, default_on) VALUES\n  " + ",\n  ".join(tp) + "\nON CONFLICT (template_code, permission_code) DO UPDATE SET kind=EXCLUDED.kind, default_on=public.role_template_permissions.default_on;")
+    # Roles that M009-B1 moved to the read-only executive template stay there until their
+    # authority link is verified; the catalogue never re-grants full executive templates.
+    out.append("INSERT INTO public.role_catalog (code, name, category, template_code, institution_types, workspace_mode, default_enabled, mandate_status, requires_verified_authority_link) VALUES\n" + ",\n".join(f"  ({q(code(r['name']))},{q(r['name'])},{q(r['category'])},{q(r['template'])},{arr(r['types'])},{q(r['mode'])},{b(r['enabled'])},{q(r['mandate'])},{b(r['oversight'])})" for r in RESOLVED) + "\nON CONFLICT (code) DO UPDATE SET name=EXCLUDED.name, category=EXCLUDED.category, template_code=CASE WHEN public.role_catalog.template_code = 'm009_tertiary_executive_read_only' THEN public.role_catalog.template_code ELSE EXCLUDED.template_code END, institution_types=EXCLUDED.institution_types, workspace_mode=EXCLUDED.workspace_mode, default_enabled=EXCLUDED.default_enabled, mandate_status=EXCLUDED.mandate_status, requires_verified_authority_link=(public.role_catalog.requires_verified_authority_link OR EXCLUDED.requires_verified_authority_link);")
     out.append("INSERT INTO public.sod_template_conflicts (template_a, template_b) VALUES\n" + ",\n".join(f"  ({q(a)},{q(b_)})" for a,b_ in SOD_ROLE_TEMPLATES) + "\nON CONFLICT DO NOTHING;")
     out.append("INSERT INTO public.sod_permission_rules (permission_a, permission_b, description) VALUES\n" + ",\n".join(f"  ({q(a)},{q(b_)},{q(d)})" for a,b_,d,*_ in SOD_PERM) + "\nON CONFLICT DO NOTHING;")
     out.append("-- <<< generated <<<")
@@ -986,7 +990,8 @@ BEGIN;
 ALTER TABLE public.role_templates DISABLE TRIGGER trg_role_templates_guard;
 ALTER TABLE public.role_template_permissions DISABLE TRIGGER trg_role_template_permissions_guard;
 
-UPDATE public.role_catalog r SET template_code = v.template_code, institution_types = v.institution_types
+UPDATE public.role_catalog r SET template_code = CASE WHEN r.template_code = 'm009_tertiary_executive_read_only' THEN r.template_code ELSE v.template_code END,  -- M009-B1 owns these
+       institution_types = v.institution_types
   FROM (VALUES
 {vals}
   ) AS v(code, template_code, institution_types)
