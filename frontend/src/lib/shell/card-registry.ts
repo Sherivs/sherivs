@@ -264,7 +264,12 @@ const accessReviews: LiveSpec = {
     "role_catalog",
   ],
   permissions: { any: ["roles.assign"] },
-  auditEvents: ["campaign_created", "assignment_retained", "assignment_revoked", "campaign_completed"],
+  auditEvents: [
+    "campaign_created",
+    "assignment_retained",
+    "assignment_revoked",
+    "campaign_completed",
+  ],
   offline: false,
 };
 

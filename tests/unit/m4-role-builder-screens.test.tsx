@@ -45,9 +45,16 @@ vi.mock("@/lib/role-builder/access-delegation.functions", () => ({
 import { CustomRoleBuilderScreen } from "@/components/app-shell/custom-role-builder-screen";
 import { AccessReviewScreen } from "@/components/app-shell/access-review-screen";
 import { DelegationScreen } from "@/components/app-shell/delegation-screen";
-import { ActingContextBanner, actingBannerText } from "@/components/app-shell/acting-context-banner";
+import {
+  ActingContextBanner,
+  actingBannerText,
+} from "@/components/app-shell/acting-context-banner";
 import { CARD_REGISTRY, resolveCard } from "@/lib/shell/card-registry";
-import { previewDraft, simulateDraft, type BuilderCatalogue } from "@/lib/role-builder/role-builder-core";
+import {
+  previewDraft,
+  simulateDraft,
+  type BuilderCatalogue,
+} from "@/lib/role-builder/role-builder-core";
 import type { CustomRoleVersion } from "@/lib/role-builder/role-builder-port";
 
 const ME = "a0000000-0000-0000-0000-0000000000a1";
@@ -55,13 +62,44 @@ const OTHER = "a0000000-0000-0000-0000-0000000000a2";
 const catalogue: BuilderCatalogue = {
   institutionType: "private_secondary",
   templates: [
-    { code: "bursar_t", scope: "org", mandatory: ["fees.view"], optional: ["reports.view"], nav: [], workspaceMode: "full" },
+    {
+      code: "bursar_t",
+      scope: "org",
+      mandatory: ["fees.view"],
+      optional: ["reports.view"],
+      nav: [],
+      workspaceMode: "full",
+    },
   ],
   permissions: [
-    { code: "fees.view", label: "View fees", module: "fees", sensitivity: "internal", protected: false },
-    { code: "payments.reconcile", label: "Reconcile", module: "payments", sensitivity: "confidential", protected: false },
-    { code: "payroll.approve", label: "Approve payroll", module: "payroll", sensitivity: "restricted", protected: true },
-    { code: "reports.view", label: "Reports", module: "reports", sensitivity: "internal", protected: false },
+    {
+      code: "fees.view",
+      label: "View fees",
+      module: "fees",
+      sensitivity: "internal",
+      protected: false,
+    },
+    {
+      code: "payments.reconcile",
+      label: "Reconcile",
+      module: "payments",
+      sensitivity: "confidential",
+      protected: false,
+    },
+    {
+      code: "payroll.approve",
+      label: "Approve payroll",
+      module: "payroll",
+      sensitivity: "restricted",
+      protected: true,
+    },
+    {
+      code: "reports.view",
+      label: "Reports",
+      module: "reports",
+      sensitivity: "internal",
+      protected: false,
+    },
   ],
   allowedPermissions: ["fees.view", "payments.reconcile", "reports.view"],
   sodRules: [{ a: "fees.view", b: "payments.reconcile", description: "Test rule" }],
@@ -107,7 +145,14 @@ describe("M4 custom role builder screen", () => {
     <CustomRoleBuilderScreen
       initial={{
         catalogue,
-        versions: [version({}), version({ id: "00000000-0000-4000-8000-000000000002", code: "custom.other", createdBy: OTHER })],
+        versions: [
+          version({}),
+          version({
+            id: "00000000-0000-4000-8000-000000000002",
+            code: "custom.other",
+            createdBy: OTHER,
+          }),
+        ],
         me: ME,
         draft: { ...draft, slug: "Bad Code" },
         preview: previewDraft(draft, catalogue),
@@ -128,19 +173,27 @@ describe("M4 custom role builder screen", () => {
   });
 
   it("flags protected permissions and does not let them be selected", () => {
-    expect(html).toMatch(/data-protected="true"[^>]*><input type="checkbox" class="size-5" disabled=""/);
+    expect(html).toMatch(
+      /data-protected="true"[^>]*><input type="checkbox" class="size-5" disabled=""/,
+    );
     expect(html).toContain("(protected)");
   });
 
   it("shows the SoD explanation and the simulated three sections", () => {
-    expect(html).toContain("fees.view and payments.reconcile cannot be held by one role: Test rule.");
+    expect(html).toContain(
+      "fees.view and payments.reconcile cannot be held by one role: Test rule.",
+    );
     expect(html).toContain("This draft cannot be saved yet.");
-    expect(html).toMatch(/data-testid="simulated-nav">(<li[^>]*>(Collections|Receipts|Reports)<\/li>){3}<\/ol>/);
+    expect(html).toMatch(
+      /data-testid="simulated-nav">(<li[^>]*>(Collections|Receipts|Reports)<\/li>){3}<\/ol>/,
+    );
   });
 
   it("disables approval for the creator with a text explanation and allows it for another admin", () => {
     expect(html).toContain("You created this version, so another administrator must approve it.");
-    expect(html).toMatch(/disabled="" aria-describedby="four-eyes-00000000-0000-4000-8000-000000000001"/);
+    expect(html).toMatch(
+      /disabled="" aria-describedby="four-eyes-00000000-0000-4000-8000-000000000001"/,
+    );
     const otherRow = html.slice(html.indexOf("custom.other"));
     expect(otherRow).not.toContain("four-eyes-00000000-0000-4000-8000-000000000002");
   });
@@ -166,8 +219,28 @@ describe("M4 access review screen", () => {
             completedAt: null,
             auditCount: 1,
             items: [
-              { id: "i1", campaignId: "e1", userId: OTHER, userName: "Ada", roleCode: "r", roleName: "Bursar", status: "pending", decidedBy: null, decidedAt: null },
-              { id: "i2", campaignId: "e1", userId: ME, userName: "Me", roleCode: "r", roleName: "Admin", status: "pending", decidedBy: null, decidedAt: null },
+              {
+                id: "i1",
+                campaignId: "e1",
+                userId: OTHER,
+                userName: "Ada",
+                roleCode: "r",
+                roleName: "Bursar",
+                status: "pending",
+                decidedBy: null,
+                decidedAt: null,
+              },
+              {
+                id: "i2",
+                campaignId: "e1",
+                userId: ME,
+                userName: "Me",
+                roleCode: "r",
+                roleName: "Admin",
+                status: "pending",
+                decidedBy: null,
+                decidedAt: null,
+              },
             ],
           },
         ],
@@ -190,10 +263,26 @@ describe("M4 delegation screen", () => {
         me: ME,
         assignmentId: "as1",
         assignments: [
-          { id: "as1", userId: OTHER, userName: "Ada", roleCode: "r", roleName: "Bursar", startedAt: "2026-11-01T00:00:00Z", validUntil: "2026-12-01T00:00:00Z" },
+          {
+            id: "as1",
+            userId: OTHER,
+            userName: "Ada",
+            roleCode: "r",
+            roleName: "Bursar",
+            startedAt: "2026-11-01T00:00:00Z",
+            validUntil: "2026-12-01T00:00:00Z",
+          },
         ],
         delegations: [
-          { id: "d1", assignmentId: "as1", delegateUserId: "x", delegateName: "Bola", validFrom: "2026-11-18T00:00:00Z", validUntil: "2026-11-20T00:00:00Z", revokedAt: null },
+          {
+            id: "d1",
+            assignmentId: "as1",
+            delegateUserId: "x",
+            delegateName: "Bola",
+            validFrom: "2026-11-18T00:00:00Z",
+            validUntil: "2026-11-20T00:00:00Z",
+            revokedAt: null,
+          },
         ],
         members: [{ id: "x", name: "Bola" }],
       }}
@@ -209,8 +298,24 @@ describe("M4 delegation screen", () => {
 
 describe("M4 acting banner", () => {
   const rows = [
-    { kind: "delegated" as const, recordId: "1", roleCode: "r", roleName: "Bursar", holderName: "Ada", validFrom: "2026-11-18T00:00:00Z", validUntil: "2026-11-20T08:00:00Z" },
-    { kind: "acting" as const, recordId: "2", roleCode: "p", roleName: "Head", holderName: null, validFrom: "2026-11-18T00:00:00Z", validUntil: null },
+    {
+      kind: "delegated" as const,
+      recordId: "1",
+      roleCode: "r",
+      roleName: "Bursar",
+      holderName: "Ada",
+      validFrom: "2026-11-18T00:00:00Z",
+      validUntil: "2026-11-20T08:00:00Z",
+    },
+    {
+      kind: "acting" as const,
+      recordId: "2",
+      roleCode: "p",
+      roleName: "Head",
+      holderName: null,
+      validFrom: "2026-11-18T00:00:00Z",
+      validUntil: null,
+    },
   ];
   it("says acting or delegated in words and is announced politely", () => {
     const html = renderToStaticMarkup(<ActingContextBanner initialRows={rows} />);

@@ -99,9 +99,17 @@ export function AccessReviewScreen({
         </CardHeader>
         <CardContent>
           <form className="grid gap-3" noValidate onSubmit={onStart}>
-            <FieldShell label="Title" error={formError && title.trim().length < 2 ? formError : undefined}>
+            <FieldShell
+              label="Title"
+              error={formError && title.trim().length < 2 ? formError : undefined}
+            >
               {(p) => (
-                <input {...p} className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
+                <input
+                  {...p}
+                  className={inputClass}
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
               )}
             </FieldShell>
             <FieldShell
@@ -110,7 +118,13 @@ export function AccessReviewScreen({
               error={formError && title.trim().length >= 2 ? formError : undefined}
             >
               {(p) => (
-                <input {...p} type="datetime-local" className={inputClass} value={due} onChange={(e) => setDue(e.target.value)} />
+                <input
+                  {...p}
+                  type="datetime-local"
+                  className={inputClass}
+                  value={due}
+                  onChange={(e) => setDue(e.target.value)}
+                />
               )}
             </FieldShell>
             <Button type="submit" className={`${TARGET} justify-self-start`} disabled={busy}>
@@ -156,7 +170,9 @@ export function AccessReviewScreen({
                             aria-label={`Keep ${item.roleName} for ${item.userName}`}
                             onClick={() =>
                               void act("Kept and audited.", () =>
-                                decideAccessReviewItem({ data: { itemId: item.id, decision: "retain" } }),
+                                decideAccessReviewItem({
+                                  data: { itemId: item.id, decision: "retain" },
+                                }),
                               )
                             }
                           >
@@ -170,7 +186,9 @@ export function AccessReviewScreen({
                             aria-label={`Revoke ${item.roleName} from ${item.userName}`}
                             onClick={() =>
                               void act("Revoked and audited.", () =>
-                                decideAccessReviewItem({ data: { itemId: item.id, decision: "revoke" } }),
+                                decideAccessReviewItem({
+                                  data: { itemId: item.id, decision: "revoke" },
+                                }),
                               )
                             }
                           >

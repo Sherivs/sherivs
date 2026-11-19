@@ -108,10 +108,12 @@ export const delegationIdSchema = z.object({ id: uuidLike });
 async function requireRoleManager(port: AccessPort) {
   const caller = await port.caller();
   if (!caller.userId) throw new RoleBuilderError("UNAUTHENTICATED", "Sign in again.");
-  if (!caller.orgId)
-    throw new RoleBuilderError("NO_ORGANIZATION", "Choose an organization first.");
+  if (!caller.orgId) throw new RoleBuilderError("NO_ORGANIZATION", "Choose an organization first.");
   if (!caller.canManageRoles)
-    throw new RoleBuilderError("FORBIDDEN", "Managing access needs roles.assign in this organization.");
+    throw new RoleBuilderError(
+      "FORBIDDEN",
+      "Managing access needs roles.assign in this organization.",
+    );
   return { ...caller, orgId: caller.orgId };
 }
 
@@ -138,7 +140,10 @@ export async function handleDecide(port: AccessPort, input: unknown) {
     .find((i) => i.id === itemId);
   if (!item) throw new RoleBuilderError("NOT_FOUND", "That review item does not exist here.");
   if (item.userId === caller.userId)
-    throw new RoleBuilderError("SELF_GRANT", "no_self_role_grant: another reviewer decides your own access.");
+    throw new RoleBuilderError(
+      "SELF_GRANT",
+      "no_self_role_grant: another reviewer decides your own access.",
+    );
   if (item.status !== "pending")
     throw new RoleBuilderError("CONFLICT", "That item has already been decided.");
   return { result: await port.decide(itemId, decision) };
@@ -162,14 +167,18 @@ export async function handleGrantDelegation(port: AccessPort, input: unknown, no
   );
   if (!assignment)
     throw new RoleBuilderError("NOT_FOUND", "That assignment is not active in this organization.");
-  if (delegation.delegateUserId === assignment.userId || delegation.delegateUserId === caller.userId)
+  if (
+    delegation.delegateUserId === assignment.userId ||
+    delegation.delegateUserId === caller.userId
+  )
     throw new RoleBuilderError(
       "SELF_GRANT",
       "no_self_role_grant: delegate to another member, not the holder or yourself.",
     );
   const from = Date.parse(delegation.validFrom);
   const until = Date.parse(delegation.validUntil);
-  if (until <= nowMs) throw new RoleBuilderError("VALIDATION", "The delegation must end in the future.");
+  if (until <= nowMs)
+    throw new RoleBuilderError("VALIDATION", "The delegation must end in the future.");
   if (from < Date.parse(assignment.startedAt))
     throw new RoleBuilderError(
       "DELEGATION_EXCEEDS_SOURCE",
@@ -203,7 +212,9 @@ type Row = Record<string, unknown>;
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const strOrNull = (v: unknown) => (typeof v === "string" ? v : null);
 
-async function read(query: PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>) {
+async function read(
+  query: PromiseLike<{ data: unknown; error: { code?: string; message: string } | null }>,
+) {
   const result = await query;
   if (result.error) throw mapDatabaseError(result.error);
   return Array.isArray(result.data)
@@ -250,7 +261,9 @@ export function supabaseAccessPort(client: UserClient, userId: string): AccessPo
             .select("id,campaign_id,user_id,role_code,status,decided_by,decided_at")
             .eq("org_id", orgId),
         ),
-        read(client.from("role_access_review_audit_events").select("campaign_id").eq("org_id", orgId)),
+        read(
+          client.from("role_access_review_audit_events").select("campaign_id").eq("org_id", orgId),
+        ),
         names(orgId),
       ]);
       return campaigns.map((c) => ({
@@ -277,10 +290,18 @@ export function supabaseAccessPort(client: UserClient, userId: string): AccessPo
       }));
     },
     async startCampaign(orgId, title, dueAt) {
-      return str(await call("workspace_access_review_campaign_create", { p_org: orgId, p_title: title, p_due_at: dueAt }));
+      return str(
+        await call("workspace_access_review_campaign_create", {
+          p_org: orgId,
+          p_title: title,
+          p_due_at: dueAt,
+        }),
+      );
     },
     async decide(itemId, decision) {
-      return str(await call("workspace_access_review_decide", { p_item_id: itemId, p_decision: decision }));
+      return str(
+        await call("workspace_access_review_decide", { p_item_id: itemId, p_decision: decision }),
+      );
     },
     async listAssignments(orgId) {
       const [assignments, lookup] = await Promise.all([
@@ -326,7 +347,11 @@ export function supabaseAccessPort(client: UserClient, userId: string): AccessPo
     },
     async members(orgId) {
       const users = await read(
-        client.from("users").select("id,full_name,is_active").eq("school_id", orgId).eq("is_active", true),
+        client
+          .from("users")
+          .select("id,full_name,is_active")
+          .eq("school_id", orgId)
+          .eq("is_active", true),
       );
       return users.map((u) => ({ id: str(u.id), name: str(u.full_name) || "Member" }));
     },

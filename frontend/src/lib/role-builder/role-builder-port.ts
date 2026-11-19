@@ -149,7 +149,9 @@ export function supabaseRoleBuilderPort(client: UserClient, userId: string): Rol
             .from("workspace_responsibility_catalog")
             .select("id,org_id,code,label,kind,description,evidence_required,review_cadence_days")
             .order("code"),
-          client.from("workspace_responsibility_permissions").select("responsibility_id,permission_code"),
+          client
+            .from("workspace_responsibility_permissions")
+            .select("responsibility_id,permission_code"),
         ]);
       const institutionType = strOrNull(rows(profile)[0]?.institution_type);
       const permissions: CataloguePermission[] = rows(perms).map((r) => ({
@@ -195,10 +197,13 @@ export function supabaseRoleBuilderPort(client: UserClient, userId: string): Rol
           code: str(r.code),
           label: str(r.label),
           kind: str(r.kind) as CatalogueResponsibility["kind"],
-          permissions: rp.filter((p) => p.responsibility_id === r.id).map((p) => str(p.permission_code)),
+          permissions: rp
+            .filter((p) => p.responsibility_id === r.id)
+            .map((p) => str(p.permission_code)),
           description: strOrNull(r.description),
           evidenceRequired: list(r.evidence_required),
-          reviewCadenceDays: typeof r.review_cadence_days === "number" ? r.review_cadence_days : null,
+          reviewCadenceDays:
+            typeof r.review_cadence_days === "number" ? r.review_cadence_days : null,
         }));
       return {
         institutionType,

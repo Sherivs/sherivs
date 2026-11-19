@@ -142,7 +142,9 @@ const uniqueList = <T extends z.ZodTypeAny>(item: T, max: number) =>
   z
     .array(item)
     .max(max)
-    .refine((list) => new Set(list).size === list.length, { message: "duplicates are not allowed" });
+    .refine((list) => new Set(list).size === list.length, {
+      message: "duplicates are not allowed",
+    });
 
 export const draftInputSchema = z.object({
   slug: z
@@ -289,7 +291,10 @@ function templateOf(catalogue: BuilderCatalogue, code: string | null) {
 }
 
 /** Read-only SoD and risk preview, from the database's own rules. */
-export function previewDraft(draft: CustomRoleDraftInput, catalogue: BuilderCatalogue): RiskPreview {
+export function previewDraft(
+  draft: CustomRoleDraftInput,
+  catalogue: BuilderCatalogue,
+): RiskPreview {
   const byCode = new Map(catalogue.permissions.map((p) => [p.code, p]));
   const template = templateOf(catalogue, draft.baseTemplate);
   const reasons: string[] = [];
@@ -305,7 +310,8 @@ export function previewDraft(draft: CustomRoleDraftInput, catalogue: BuilderCata
   const baseMandatory = template?.mandatory ?? [];
   const sod = analyseSod(draft.permissions, baseMandatory, catalogue.sodRules);
   let scopeProblem: string | null = null;
-  if (draft.baseTemplate && !template) scopeProblem = `Unknown base template ${draft.baseTemplate}.`;
+  if (draft.baseTemplate && !template)
+    scopeProblem = `Unknown base template ${draft.baseTemplate}.`;
   else if (template && SCOPE_RANK[draft.scopeCeiling] < SCOPE_RANK[template.scope]) {
     scopeProblem = `Scope ${draft.scopeCeiling} is wider than the base template's ${template.scope}.`;
   }
@@ -375,8 +381,7 @@ export function assertDraftAllowed(preview: RiskPreview): void {
       "VALIDATION",
       `Permission ${preview.outsideInstitution[0]} is not available to this institution type.`,
     );
-  if (preview.sod.length)
-    throw new RoleBuilderError("SOD_VIOLATION", preview.sod[0]!.explanation);
+  if (preview.sod.length) throw new RoleBuilderError("SOD_VIOLATION", preview.sod[0]!.explanation);
   if (preview.scopeProblem) throw new RoleBuilderError("SCOPE_TOO_WIDE", preview.scopeProblem);
 }
 

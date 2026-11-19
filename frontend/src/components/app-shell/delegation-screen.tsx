@@ -83,7 +83,8 @@ export function DelegationScreen({ initial }: { initial?: DelegationInitial } = 
 
   function onGrant(event: FormEvent) {
     event.preventDefault();
-    if (!source) return setFormError({ field: "assignment", text: "Choose the assignment to delegate." });
+    if (!source)
+      return setFormError({ field: "assignment", text: "Choose the assignment to delegate." });
     if (!delegateId) return setFormError({ field: "delegate", text: "Choose who covers." });
     const start = Date.parse(from);
     const end = Date.parse(until);
@@ -159,7 +160,12 @@ export function DelegationScreen({ initial }: { initial?: DelegationInitial } = 
             </FieldShell>
             <FieldShell label="Who covers" error={err("delegate")}>
               {(p) => (
-                <select {...p} className={inputClass} value={delegateId} onChange={(e) => setDelegateId(e.target.value)}>
+                <select
+                  {...p}
+                  className={inputClass}
+                  value={delegateId}
+                  onChange={(e) => setDelegateId(e.target.value)}
+                >
                   <option value="">Choose…</option>
                   {members
                     .filter((m) => m.id !== me && m.id !== source?.userId)
@@ -173,12 +179,22 @@ export function DelegationScreen({ initial }: { initial?: DelegationInitial } = 
             </FieldShell>
             <FieldShell label="Starts" error={err("from")}>
               {(p) => (
-                <input {...p} type="datetime-local" className={inputClass} value={from} onChange={(e) => setFrom(e.target.value)} />
+                <input
+                  {...p}
+                  type="datetime-local"
+                  className={inputClass}
+                  value={from}
+                  onChange={(e) => setFrom(e.target.value)}
+                />
               )}
             </FieldShell>
             <FieldShell
               label="Ends"
-              hint={source?.validUntil ? `No later than ${source.validUntil}.` : "Required: delegations are always time-boxed."}
+              hint={
+                source?.validUntil
+                  ? `No later than ${source.validUntil}.`
+                  : "Required: delegations are always time-boxed."
+              }
               error={err("until")}
             >
               {(p) => (
@@ -212,7 +228,8 @@ export function DelegationScreen({ initial }: { initial?: DelegationInitial } = 
                 return (
                   <li key={d.id} className="flex flex-wrap items-center gap-2">
                     <span>
-                      {d.delegateName} covers {a ? `${a.roleName} for ${a.userName}` : "an ended assignment"} ·{" "}
+                      {d.delegateName} covers{" "}
+                      {a ? `${a.roleName} for ${a.userName}` : "an ended assignment"} ·{" "}
                       {d.validFrom} to {d.validUntil}
                     </span>
                     <StatusBadge status={d.revokedAt ? "revoked" : "in_force"} />
@@ -224,7 +241,9 @@ export function DelegationScreen({ initial }: { initial?: DelegationInitial } = 
                         disabled={busy}
                         aria-label={`Revoke the delegation to ${d.delegateName}`}
                         onClick={() =>
-                          void act("Delegation revoked and audited.", () => revokeDelegation({ data: { id: d.id } }))
+                          void act("Delegation revoked and audited.", () =>
+                            revokeDelegation({ data: { id: d.id } }),
+                          )
                         }
                       >
                         Revoke

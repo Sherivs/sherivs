@@ -18,7 +18,12 @@ import {
   type RiskPreview,
   type SimulationResult,
 } from "./role-builder-core";
-import type { AuditEntry, CallerContext, CustomRoleVersion, RoleBuilderPort } from "./role-builder-port";
+import type {
+  AuditEntry,
+  CallerContext,
+  CustomRoleVersion,
+  RoleBuilderPort,
+} from "./role-builder-port";
 
 export interface AdminContext extends CallerContext {
   orgId: string;
@@ -28,8 +33,7 @@ export interface AdminContext extends CallerContext {
 export async function requireAdmin(port: RoleBuilderPort): Promise<AdminContext> {
   const caller = await port.caller();
   if (!caller.userId) throw new RoleBuilderError("UNAUTHENTICATED", "Sign in again.");
-  if (!caller.orgId)
-    throw new RoleBuilderError("NO_ORGANIZATION", "Choose an organization first.");
+  if (!caller.orgId) throw new RoleBuilderError("NO_ORGANIZATION", "Choose an organization first.");
   if (!caller.isAdmin)
     throw new RoleBuilderError(
       "FORBIDDEN",

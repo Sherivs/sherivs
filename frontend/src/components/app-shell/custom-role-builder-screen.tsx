@@ -212,7 +212,9 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
     update({
       baseTemplate: next?.code ?? null,
       scopeCeiling: next?.scope ?? draft.scopeCeiling,
-      permissions: next ? [...new Set([...next.mandatory, ...draft.permissions])] : draft.permissions,
+      permissions: next
+        ? [...new Set([...next.mandatory, ...draft.permissions])]
+        : draft.permissions,
       layout: next?.nav.length
         ? {
             ...draft.layout,
@@ -235,10 +237,14 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
     event.preventDefault();
     setTouched(true);
     if (Object.keys(fieldErrors(draft)).length) return;
-    await run("Draft saved and audited.", () => saveCustomRoleDraft({ data: draft }), (r) => {
-      setPreview(r.preview);
-      void reload();
-    });
+    await run(
+      "Draft saved and audited.",
+      () => saveCustomRoleDraft({ data: draft }),
+      (r) => {
+        setPreview(r.preview);
+        void reload();
+      },
+    );
   }
 
   if (loading) return <p role="status">Loading the role builder…</p>;
@@ -397,7 +403,9 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
                   {...p}
                   className={inputClass}
                   value={draft.scopeCeiling}
-                  onChange={(e) => update({ scopeCeiling: e.target.value as Draft["scopeCeiling"] })}
+                  onChange={(e) =>
+                    update({ scopeCeiling: e.target.value as Draft["scopeCeiling"] })
+                  }
                 >
                   {SCOPE_CEILINGS.map((s) => (
                     <option key={s} value={s}>
@@ -506,7 +514,11 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
                 disabled={busy}
                 onClick={() => {
                   setTouched(true);
-                  void run("Simulation ready.", () => simulateCustomRole({ data: draft }), setSimulation);
+                  void run(
+                    "Simulation ready.",
+                    () => simulateCustomRole({ data: draft }),
+                    setSimulation,
+                  );
                 }}
               >
                 6. Simulate as a holder
@@ -552,8 +564,10 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
                 variant="ghost"
                 className={`${TARGET} justify-self-start`}
                 onClick={() =>
-                  void run("History loaded.", () => customRoleHistory({ data: { code } }), (r) =>
-                    setHistory({ code, audit: r.audit }),
+                  void run(
+                    "History loaded.",
+                    () => customRoleHistory({ data: { code } }),
+                    (r) => setHistory({ code, audit: r.audit }),
                   )
                 }
               >
@@ -563,7 +577,8 @@ export function CustomRoleBuilderScreen({ initial }: { initial?: CustomRoleBuild
                 <ul className="grid gap-1 text-xs" aria-label={`Audit history of ${code}`}>
                   {history.audit.map((entry, i) => (
                     <li key={i}>
-                      {entry.at} · {entry.action} · {entry.actor === me ? "you" : (entry.actor ?? "system")}
+                      {entry.at} · {entry.action} ·{" "}
+                      {entry.actor === me ? "you" : (entry.actor ?? "system")}
                     </li>
                   ))}
                 </ul>
@@ -619,7 +634,9 @@ function VersionRow({
             type="button"
             className={TARGET}
             disabled={busy}
-            onClick={() => onAction("Submitted for approval.", () => submitCustomRole({ data: { id } }))}
+            onClick={() =>
+              onAction("Submitted for approval.", () => submitCustomRole({ data: { id } }))
+            }
           >
             Submit for approval
           </Button>
@@ -632,7 +649,9 @@ function VersionRow({
             variant="outline"
             className={TARGET}
             disabled={busy}
-            onClick={() => onAction("Withdrawn to draft.", () => withdrawCustomRole({ data: { id } }))}
+            onClick={() =>
+              onAction("Withdrawn to draft.", () => withdrawCustomRole({ data: { id } }))
+            }
           >
             Withdraw
           </Button>
@@ -799,27 +818,51 @@ function ResponsibilityBuilder({
         >
           <FieldShell label="Code" error={errors.code}>
             {(p) => (
-              <input {...p} className={inputClass} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+              <input
+                {...p}
+                className={inputClass}
+                value={form.code}
+                onChange={(e) => setForm({ ...form, code: e.target.value })}
+              />
             )}
           </FieldShell>
           <FieldShell label="Name" error={errors.label}>
             {(p) => (
-              <input {...p} className={inputClass} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+              <input
+                {...p}
+                className={inputClass}
+                value={form.label}
+                onChange={(e) => setForm({ ...form, label: e.target.value })}
+              />
             )}
           </FieldShell>
           <FieldShell label="Description" error={errors.description}>
             {(p) => (
-              <textarea {...p} className={inputClass} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+              <textarea
+                {...p}
+                className={inputClass}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
             )}
           </FieldShell>
-          <FieldShell label="Permissions (non-protected only)" hint="Ctrl or Cmd to pick several." error={errors.permissions}>
+          <FieldShell
+            label="Permissions (non-protected only)"
+            hint="Ctrl or Cmd to pick several."
+            error={errors.permissions}
+          >
             {(p) => (
               <select
                 {...p}
                 multiple
                 className={`${inputClass} h-40`}
                 value={form.permissions}
-                onChange={(e) => setForm({ ...form, permissions: [...e.target.selectedOptions].map((o) => o.value) })}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    permissions: [...e.target.selectedOptions].map((o) => o.value),
+                  })
+                }
               >
                 {permissions.map((perm) => (
                   <option key={perm.code} value={perm.code}>
@@ -829,25 +872,56 @@ function ResponsibilityBuilder({
               </select>
             )}
           </FieldShell>
-          <FieldShell label="Evidence required" hint="One item per line, for example: Duty rota signed by the head." error={errors.evidenceRequired}>
+          <FieldShell
+            label="Evidence required"
+            hint="One item per line, for example: Duty rota signed by the head."
+            error={errors.evidenceRequired}
+          >
             {(p) => (
-              <textarea {...p} className={inputClass} value={form.evidence} onChange={(e) => setForm({ ...form, evidence: e.target.value })} />
+              <textarea
+                {...p}
+                className={inputClass}
+                value={form.evidence}
+                onChange={(e) => setForm({ ...form, evidence: e.target.value })}
+              />
             )}
           </FieldShell>
-          <FieldShell label="Review cadence (days)" hint="Between 7 and 730." error={errors.reviewCadenceDays}>
+          <FieldShell
+            label="Review cadence (days)"
+            hint="Between 7 and 730."
+            error={errors.reviewCadenceDays}
+          >
             {(p) => (
-              <input {...p} type="number" min={7} max={730} className={inputClass} value={form.cadence} onChange={(e) => setForm({ ...form, cadence: e.target.value })} />
+              <input
+                {...p}
+                type="number"
+                min={7}
+                max={730}
+                className={inputClass}
+                value={form.cadence}
+                onChange={(e) => setForm({ ...form, cadence: e.target.value })}
+              />
             )}
           </FieldShell>
           <div className="grid gap-2 sm:grid-cols-2">
             <FieldShell label="Navigation section label" error={errors.navSection}>
               {(p) => (
-                <input {...p} className={inputClass} value={form.navLabel} onChange={(e) => setForm({ ...form, navLabel: e.target.value })} />
+                <input
+                  {...p}
+                  className={inputClass}
+                  value={form.navLabel}
+                  onChange={(e) => setForm({ ...form, navLabel: e.target.value })}
+                />
               )}
             </FieldShell>
             <FieldShell label="Navigation section id">
               {(p) => (
-                <input {...p} className={inputClass} value={form.navId} onChange={(e) => setForm({ ...form, navId: e.target.value })} />
+                <input
+                  {...p}
+                  className={inputClass}
+                  value={form.navId}
+                  onChange={(e) => setForm({ ...form, navId: e.target.value })}
+                />
               )}
             </FieldShell>
           </div>

@@ -67,14 +67,62 @@ const CATALOGUE: BuilderCatalogue = {
     },
   ],
   permissions: [
-    { code: "fees.view", label: "View fees", module: "fees", sensitivity: "internal", protected: false },
-    { code: "fees.collect", label: "Collect", module: "fees", sensitivity: "confidential", protected: false },
-    { code: "payments.record_cash", label: "Cash", module: "payments", sensitivity: "confidential", protected: false },
-    { code: "payments.reconcile", label: "Reconcile", module: "payments", sensitivity: "confidential", protected: false },
-    { code: "payroll.approve", label: "Approve payroll", module: "payroll", sensitivity: "restricted", protected: true },
-    { code: "reports.view", label: "Reports", module: "reports", sensitivity: "internal", protected: false },
-    { code: "expenses.create", label: "Raise", module: "expenses", sensitivity: "internal", protected: false },
-    { code: "expenses.approve", label: "Approve", module: "expenses", sensitivity: "confidential", protected: false },
+    {
+      code: "fees.view",
+      label: "View fees",
+      module: "fees",
+      sensitivity: "internal",
+      protected: false,
+    },
+    {
+      code: "fees.collect",
+      label: "Collect",
+      module: "fees",
+      sensitivity: "confidential",
+      protected: false,
+    },
+    {
+      code: "payments.record_cash",
+      label: "Cash",
+      module: "payments",
+      sensitivity: "confidential",
+      protected: false,
+    },
+    {
+      code: "payments.reconcile",
+      label: "Reconcile",
+      module: "payments",
+      sensitivity: "confidential",
+      protected: false,
+    },
+    {
+      code: "payroll.approve",
+      label: "Approve payroll",
+      module: "payroll",
+      sensitivity: "restricted",
+      protected: true,
+    },
+    {
+      code: "reports.view",
+      label: "Reports",
+      module: "reports",
+      sensitivity: "internal",
+      protected: false,
+    },
+    {
+      code: "expenses.create",
+      label: "Raise",
+      module: "expenses",
+      sensitivity: "internal",
+      protected: false,
+    },
+    {
+      code: "expenses.approve",
+      label: "Approve",
+      module: "expenses",
+      sensitivity: "confidential",
+      protected: false,
+    },
   ],
   allowedPermissions: [
     "expenses.approve",
@@ -118,7 +166,10 @@ class FakePort implements RoleBuilderPort {
   me: CallerContext = { userId: ADMIN_A, orgId: ORG, isAdmin: true };
   rows: (CustomRoleVersion & { orgId: string })[] = [];
   audit: AuditEntry[] = [];
-  catalogueRoles = new Map<string, { navRows: RoleNavRow[]; permissions: string[]; name: string }>();
+  catalogueRoles = new Map<
+    string,
+    { navRows: RoleNavRow[]; permissions: string[]; name: string }
+  >();
   responsibilities: ResponsibilityInput[] = [];
   calls: string[] = [];
   private seq = 0;
@@ -255,14 +306,18 @@ describe("M4 typed errors", () => {
     expect(mapDatabaseError({ code: "42501", message: "protected permission x" }).code).toBe(
       "PROTECTED_PERMISSION",
     );
-    expect(mapDatabaseError({ code: "42501", message: "no_self_role_grant" }).code).toBe("SELF_GRANT");
+    expect(mapDatabaseError({ code: "42501", message: "no_self_role_grant" }).code).toBe(
+      "SELF_GRANT",
+    );
     expect(mapDatabaseError({ code: "42501", message: "not allowed" }).code).toBe("FORBIDDEN");
     expect(mapDatabaseError({ code: "22023", message: "bad" }).code).toBe("VALIDATION");
     expect(mapDatabaseError({ code: "42704", message: "missing" }).code).toBe("NOT_FOUND");
     expect(mapDatabaseError({ code: "55000", message: "pending" }).code).toBe("CONFLICT");
     expect(
-      mapDatabaseError({ code: "22023", message: "a delegation cannot end after its source assignment" })
-        .code,
+      mapDatabaseError({
+        code: "22023",
+        message: "a delegation cannot end after its source assignment",
+      }).code,
     ).toBe("DELEGATION_EXCEEDS_SOURCE");
   });
 });
@@ -307,9 +362,15 @@ describe("M4 draft validation", () => {
     ["duplicate permissions", { permissions: ["fees.view", "fees.view"] }],
     ["an unknown scope", { scopeCeiling: "planet" }],
     ["an unknown workspace category", { workspaceCategory: "elsewhere" }],
-    ["four navigation sections", { layout: { nav: [...NAV, { id: "four", label: "Four" }], widgets: [] } }],
+    [
+      "four navigation sections",
+      { layout: { nav: [...NAV, { id: "four", label: "Four" }], widgets: [] } },
+    ],
     ["duplicate navigation ids", { layout: { nav: [NAV[0], NAV[0]], widgets: [] } }],
-    ["a malformed navigation id", { layout: { nav: [{ id: "Has Space", label: "Ok" }], widgets: [] } }],
+    [
+      "a malformed navigation id",
+      { layout: { nav: [{ id: "Has Space", label: "Ok" }], widgets: [] } },
+    ],
   ])("refuses %s", async (_label, patch) => {
     const p = port();
     await expectCode(handleSaveDraft(p, { ...draft(), ...patch }), "VALIDATION");
@@ -327,7 +388,10 @@ describe("M4 draft validation", () => {
 
   it("refuses a scope wider than the base template", async () => {
     await expectCode(
-      handleSaveDraft(port(), draft({ baseTemplate: "clerk_t", permissions: ["reports.view"], scopeCeiling: "org" })),
+      handleSaveDraft(
+        port(),
+        draft({ baseTemplate: "clerk_t", permissions: ["reports.view"], scopeCeiling: "org" }),
+      ),
       "SCOPE_TOO_WIDE",
     );
   });
@@ -359,13 +423,17 @@ describe("M4 draft validation", () => {
   });
 
   it("rates risk from sensitivity and flags permissions outside the institution", () => {
-    const low = previewDraft(draft({ baseTemplate: null, permissions: ["reports.view"] }), CATALOGUE);
+    const low = previewDraft(
+      draft({ baseTemplate: null, permissions: ["reports.view"] }),
+      CATALOGUE,
+    );
     expect(low.level).toBe("low");
     expect(previewDraft(draft(), CATALOGUE).level).toBe("medium");
-    const outside = previewDraft(
-      draft({ permissions: ["fees.view"] }),
-      { ...CATALOGUE, allowedPermissions: [], templates: [] },
-    );
+    const outside = previewDraft(draft({ permissions: ["fees.view"] }), {
+      ...CATALOGUE,
+      allowedPermissions: [],
+      templates: [],
+    });
     expect(outside.scopeProblem).toBe("Unknown base template bursar_t.");
   });
 });
@@ -380,13 +448,22 @@ describe("M4 simulate as", () => {
       { id: "reports", label: "Reports" },
     ]);
     expect(result.manifest?.category).toBe("administrative_operations");
-    expect(result.permissions).toEqual(["fees.collect", "fees.view", "payments.record_cash", "reports.view"]);
+    expect(result.permissions).toEqual([
+      "fees.collect",
+      "fees.view",
+      "payments.record_cash",
+      "reports.view",
+    ]);
     expect(port.calls).toEqual([]);
     expect(port.rows).toEqual([]);
   });
 
   it("gives no workspace for fewer than three sections and explains hidden widgets", () => {
-    const two = simulateDraft(draft({ layout: { nav: NAV.slice(0, 2), widgets: ["w.nothing"] } }), CATALOGUE, AT);
+    const two = simulateDraft(
+      draft({ layout: { nav: NAV.slice(0, 2), widgets: ["w.nothing"] } }),
+      CATALOGUE,
+      AT,
+    );
     expect(two.manifest).toBeNull();
     expect(two.widgets).toEqual([
       { key: "w.nothing", label: "w.nothing", shown: false, reason: "not a catalogue widget" },
@@ -397,12 +474,18 @@ describe("M4 simulate as", () => {
 describe("M4 approval workflow handlers", () => {
   it("refuses submit with fewer than three sections, and transitions in the wrong state", async () => {
     const port = new FakePort().as(ADMIN_A);
-    const { id } = await handleSaveDraft(port, draft({ layout: { nav: NAV.slice(0, 2), widgets: [] } }));
+    const { id } = await handleSaveDraft(
+      port,
+      draft({ layout: { nav: NAV.slice(0, 2), widgets: [] } }),
+    );
     await expectCode(handleSubmit(port, { id }), "VALIDATION");
     await expectCode(handleApprove(port.as(ADMIN_B), { id }), "CONFLICT");
     await expectCode(handleActivate(port, { id }), "CONFLICT");
     await expectCode(handleSubmit(port, { id: "not-a-uuid" }), "VALIDATION");
-    await expectCode(handleSubmit(port, { id: "99999999-9999-4999-8999-999999999999" }), "NOT_FOUND");
+    await expectCode(
+      handleSubmit(port, { id: "99999999-9999-4999-8999-999999999999" }),
+      "NOT_FOUND",
+    );
   });
 
   it("refuses editing while pending (database CONFLICT) and allows it after withdraw", async () => {
@@ -430,7 +513,10 @@ describe("M4 approval workflow handlers", () => {
 
   it("refuses activating a scratch role for assignment", async () => {
     const port = new FakePort().as(ADMIN_A);
-    const { id } = await handleSaveDraft(port, draft({ baseTemplate: null, permissions: ["reports.view"] }));
+    const { id } = await handleSaveDraft(
+      port,
+      draft({ baseTemplate: null, permissions: ["reports.view"] }),
+    );
     await handleSubmit(port, { id });
     await handleApprove(port.as(ADMIN_B), { id });
     await expectCode(handleActivate(port, { id }), "VALIDATION");
@@ -462,7 +548,11 @@ describe("M4 end to end (unit level): A creates, B approves, holder sees exactly
       permissions: role.permissions,
       at: AT,
     });
-    expect(workspace?.primaryNav.map((s) => s.label)).toEqual(["Collections", "Receipts", "Reports"]);
+    expect(workspace?.primaryNav.map((s) => s.label)).toEqual([
+      "Collections",
+      "Receipts",
+      "Reports",
+    ]);
     expect(workspace?.primaryNav).toHaveLength(3);
     expect(workspace?.sidePanel).toHaveLength(3);
 
@@ -494,7 +584,10 @@ describe("M4 end to end (unit level): A creates, B approves, holder sees exactly
     await handleSubmit(port, { id: v2.id });
     await handleApprove(port.as(ADMIN_B), { id: v2.id });
     const after = await handleHistory(port, { code: "custom.fees_desk" });
-    expect(after.versions.map((v) => `${v.version}:${v.status}`)).toEqual(["2:active", "1:retired"]);
+    expect(after.versions.map((v) => `${v.version}:${v.status}`)).toEqual([
+      "2:active",
+      "1:retired",
+    ]);
   });
 });
 

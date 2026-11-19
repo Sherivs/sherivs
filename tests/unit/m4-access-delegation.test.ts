@@ -47,8 +47,28 @@ function fakePort(patch: Partial<{ canManageRoles: boolean; orgId: string | null
     completedAt: null,
     auditCount: 1,
     items: [
-      { id: ITEM, campaignId: "c", userId: HOLDER, userName: "Holder", roleCode: "r", roleName: "R", status: "pending", decidedBy: null, decidedAt: null },
-      { id: OWN_ITEM, campaignId: "c", userId: ME, userName: "Me", roleCode: "r", roleName: "R", status: "pending", decidedBy: null, decidedAt: null },
+      {
+        id: ITEM,
+        campaignId: "c",
+        userId: HOLDER,
+        userName: "Holder",
+        roleCode: "r",
+        roleName: "R",
+        status: "pending",
+        decidedBy: null,
+        decidedAt: null,
+      },
+      {
+        id: OWN_ITEM,
+        campaignId: "c",
+        userId: ME,
+        userName: "Me",
+        roleCode: "r",
+        roleName: "R",
+        status: "pending",
+        decidedBy: null,
+        decidedAt: null,
+      },
     ],
   };
   const port: AccessPort = {
@@ -62,7 +82,15 @@ function fakePort(patch: Partial<{ canManageRoles: boolean; orgId: string | null
     grantDelegation: async () => (calls.push("grant"), "new-delegation"),
     revokeDelegation: async () => void calls.push("revoke"),
     myActingContext: async () => [
-      { kind: "delegated", recordId: "x", roleCode: "r", roleName: "Fees desk", holderName: "Holder", validFrom: iso(0), validUntil: iso(2) },
+      {
+        kind: "delegated",
+        recordId: "x",
+        roleCode: "r",
+        roleName: "Fees desk",
+        holderName: "Holder",
+        validFrom: iso(0),
+        validUntil: iso(2),
+      },
     ],
   };
   return { port, calls, campaign };
@@ -85,19 +113,35 @@ describe("M4 access reviews", () => {
   it("validates the campaign title and due date", async () => {
     const { port, calls } = fakePort();
     await expectCode(handleStartCampaign(port, { title: "x", dueAt: iso(5) }, NOW), "VALIDATION");
-    await expectCode(handleStartCampaign(port, { title: "Term", dueAt: "tomorrow" }, NOW), "VALIDATION");
-    await expectCode(handleStartCampaign(port, { title: "Term", dueAt: iso(-1) }, NOW), "VALIDATION");
-    await expectCode(handleStartCampaign(port, { title: "Term", dueAt: iso(400) }, NOW), "VALIDATION");
+    await expectCode(
+      handleStartCampaign(port, { title: "Term", dueAt: "tomorrow" }, NOW),
+      "VALIDATION",
+    );
+    await expectCode(
+      handleStartCampaign(port, { title: "Term", dueAt: iso(-1) }, NOW),
+      "VALIDATION",
+    );
+    await expectCode(
+      handleStartCampaign(port, { title: "Term", dueAt: iso(400) }, NOW),
+      "VALIDATION",
+    );
     expect(calls).toEqual([]);
-    await expect(handleStartCampaign(port, { title: "Term review", dueAt: iso(7) }, NOW)).resolves.toEqual({ id: "new-campaign" });
+    await expect(
+      handleStartCampaign(port, { title: "Term review", dueAt: iso(7) }, NOW),
+    ).resolves.toEqual({ id: "new-campaign" });
   });
   it("refuses a bad decision, an unknown item and a review of one's own access", async () => {
     const { port, calls } = fakePort();
     await expectCode(handleDecide(port, { itemId: ITEM, decision: "maybe" }), "VALIDATION");
-    await expectCode(handleDecide(port, { itemId: "f0000000-0000-4000-8000-000000000009", decision: "retain" }), "NOT_FOUND");
+    await expectCode(
+      handleDecide(port, { itemId: "f0000000-0000-4000-8000-000000000009", decision: "retain" }),
+      "NOT_FOUND",
+    );
     await expectCode(handleDecide(port, { itemId: OWN_ITEM, decision: "revoke" }), "SELF_GRANT");
     expect(calls).toEqual([]);
-    await expect(handleDecide(port, { itemId: ITEM, decision: "retain" })).resolves.toEqual({ result: "retained" });
+    await expect(handleDecide(port, { itemId: ITEM, decision: "retain" })).resolves.toEqual({
+      result: "retained",
+    });
   });
   it("refuses deciding an item twice", async () => {
     const { port, campaign } = fakePort();
@@ -116,30 +160,57 @@ describe("M4 delegations", () => {
   });
   it("refuses an end after the source assignment, before the database is called", async () => {
     const { port, calls } = fakePort();
-    await expectCode(handleGrantDelegation(port, input({ validUntil: iso(11) }), NOW), "DELEGATION_EXCEEDS_SOURCE");
-    await expectCode(handleGrantDelegation(port, input({ validFrom: iso(-11) }), NOW), "DELEGATION_EXCEEDS_SOURCE");
+    await expectCode(
+      handleGrantDelegation(port, input({ validUntil: iso(11) }), NOW),
+      "DELEGATION_EXCEEDS_SOURCE",
+    );
+    await expectCode(
+      handleGrantDelegation(port, input({ validFrom: iso(-11) }), NOW),
+      "DELEGATION_EXCEEDS_SOURCE",
+    );
     expect(calls).toEqual([]);
   });
   it("refuses delegating to the holder or oneself, bad windows and unknown assignments", async () => {
     const { port, calls } = fakePort();
-    await expectCode(handleGrantDelegation(port, input({ delegateUserId: HOLDER }), NOW), "SELF_GRANT");
+    await expectCode(
+      handleGrantDelegation(port, input({ delegateUserId: HOLDER }), NOW),
+      "SELF_GRANT",
+    );
     await expectCode(handleGrantDelegation(port, input({ delegateUserId: ME }), NOW), "SELF_GRANT");
     await expectCode(handleGrantDelegation(port, input({ validUntil: iso(0) }), NOW), "VALIDATION");
-    await expectCode(handleGrantDelegation(port, input({ validFrom: iso(-3), validUntil: iso(-1) }), NOW), "VALIDATION");
-    await expectCode(handleGrantDelegation(port, input({ assignmentId: "f0000000-0000-4000-8000-000000000009" }), NOW), "NOT_FOUND");
-    await expectCode(handleGrantDelegation(port, input({ assignmentId: "nope" }), NOW), "VALIDATION");
+    await expectCode(
+      handleGrantDelegation(port, input({ validFrom: iso(-3), validUntil: iso(-1) }), NOW),
+      "VALIDATION",
+    );
+    await expectCode(
+      handleGrantDelegation(
+        port,
+        input({ assignmentId: "f0000000-0000-4000-8000-000000000009" }),
+        NOW,
+      ),
+      "NOT_FOUND",
+    );
+    await expectCode(
+      handleGrantDelegation(port, input({ assignmentId: "nope" }), NOW),
+      "VALIDATION",
+    );
     expect(calls).toEqual([]);
   });
   it("grants a delegation inside the source window and revokes it", async () => {
     const { port, calls } = fakePort();
-    await expect(handleGrantDelegation(port, input(), NOW)).resolves.toEqual({ id: "new-delegation" });
+    await expect(handleGrantDelegation(port, input(), NOW)).resolves.toEqual({
+      id: "new-delegation",
+    });
     await handleRevokeDelegation(port, { id: "f0000000-0000-4000-8000-000000000001" });
     expect(calls).toEqual(["grant", "revoke"]);
   });
   it("needs roles.assign to grant or revoke", async () => {
     const { port } = fakePort({ canManageRoles: false });
     await expectCode(handleGrantDelegation(port, input(), NOW), "FORBIDDEN");
-    await expectCode(handleRevokeDelegation(port, { id: "f0000000-0000-4000-8000-000000000001" }), "FORBIDDEN");
+    await expectCode(
+      handleRevokeDelegation(port, { id: "f0000000-0000-4000-8000-000000000001" }),
+      "FORBIDDEN",
+    );
   });
   it("returns the caller's acting context for the banner", async () => {
     const rows = await handleMyActingContext(fakePort().port);
