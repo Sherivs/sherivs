@@ -1,0 +1,27 @@
+# Datadog Service Catalog entry for the scheduler Worker. No secrets belong here.
+schema-version: v2.2
+dd-service: sherivs-cron
+team: sherivs
+application: sherivs
+tier: "1"
+lifecycle: production
+type: function
+languages:
+  - js
+description: Cloudflare Worker that calls the authenticated /api/public/cron/* endpoints on sherivs-web.
+contacts:
+  - name: Sherivs engineering
+    type: email
+    contact: hello@sherivs.com
+links:
+  - name: Source
+    type: repo
+    provider: github
+    url: https://github.com/Sherivs/sherivs/tree/master/infra/cloudflare/sherivs-cron
+  - name: Worker runbook
+    type: runbook
+    url: https://github.com/Sherivs/sherivs/blob/master/infra/cloudflare/sherivs-cron/README.md
+tags:
+  - team:sherivs
+  - platform:cloudflare-workers
+  - depends-on:sherivs-web
