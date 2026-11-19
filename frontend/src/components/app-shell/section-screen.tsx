@@ -1,31 +1,65 @@
-import { useState } from "react";
-import { Search } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { lazy, Suspense, type ComponentType, type LazyExoticComponent } from "react";
 import { catalogItem } from "@/lib/sherivs-ws/engine";
 import { shellIcon } from "@/lib/shell/icon-registry";
 import { formatWidgetMetric } from "@/lib/shell/metrics";
 import { homeHrefForScope } from "@/lib/shell/chrome";
-import { searchableSection } from "@/lib/shell/role-template";
-import { ShellGlassIcon } from "./glass-icon";
+import { resolveCard, type CardKind, type ScreenLoader } from "@/lib/shell/card-registry";
 import { useAppShell } from "./shell-context";
-import { RoleManagementScreen } from "./role-management-screen";
-import { CommunicationInboxScreen } from "./communication-inbox";
-import { StudentMobilityScreen } from "./student-mobility-screen";
-import { AscExportScreen } from "./asc-export-screen";
-import { OrgAgentsScreen, RolePacketScreen, WorkspacePolicyScreen } from "./org-workforce-screens";
-import { InstitutionInterviewScreen } from "./institution-interview-screen";
+import { CardNotFoundState, PlannedCapabilityState } from "./planned-capability-state";
 
+const lazyScreens = new Map<ScreenLoader, LazyExoticComponent<ComponentType>>();
+
+function lazyScreen(loader: ScreenLoader): LazyExoticComponent<ComponentType> {
+  let screen = lazyScreens.get(loader);
+  if (!screen) {
+    screen = lazy(loader);
+    lazyScreens.set(loader, screen);
+  }
+  return screen;
+}
+
+function SectionLoading() {
+  return (
+    <section className="app-shell-section" aria-busy="true" data-testid="app-shell-section-loading">
+      <p className="app-shell-empty">Loading…</p>
+    </section>
+  );
+}
+
+/**
+ * Opens `/home/s/<key>` through the card registry (ADR-106): a live card renders its real screen
+ * (loaded lazily), a planned card renders the honest planned state, and an unknown key renders a
+ * not-found state.
+ */
 export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
+  const resolution = resolveCard(sectionKey);
+  if (resolution.kind === "live") {
+    const Screen = lazyScreen(resolution.contract.screen);
+    return (
+      <Suspense fallback={<SectionLoading />}>
+        <Screen />
+      </Suspense>
+    );
+  }
+  if (resolution.kind === "planned") {
+    return <PlannedSection sectionKey={sectionKey} kind={resolution.contract.kind} />;
+  }
+  return <UnknownSection sectionKey={sectionKey} />;
+}
+
+function UnknownSection({ sectionKey }: { sectionKey: string }) {
   const shell = useAppShell();
-  const [query, setQuery] = useState("");
-  if (sectionKey === "roles") return <RoleManagementScreen />;
-  if (sectionKey === "agents") return <OrgAgentsScreen />;
-  if (sectionKey === "role-packets") return <RolePacketScreen />;
-  if (sectionKey === "workspace-policies") return <WorkspacePolicyScreen />;
-  if (sectionKey === "school_setup") return <InstitutionInterviewScreen />;
-  if (sectionKey === "communications") return <CommunicationInboxScreen />;
-  if (sectionKey === "nav.students" || sectionKey === "students") return <StudentMobilityScreen />;
-  if (sectionKey === "nav.reports") return <AscExportScreen />;
+  return (
+    <CardNotFoundState
+      sectionKey={sectionKey}
+      homeHref={homeHrefForScope(shell.scopeFocus)}
+      locale={shell.manifest?.locale}
+    />
+  );
+}
+
+function PlannedSection({ sectionKey, kind }: { sectionKey: string; kind: CardKind }) {
+  const shell = useAppShell();
   const item =
     shell.nav.find((row) => row.key === sectionKey) ??
     shell.manifest?.widgets.find((row) => row.key === sectionKey) ??
@@ -34,45 +68,19 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
   const rawLabel = item && "label" in item ? item.label : sectionKey;
   const label = typeof rawLabel === "string" ? rawLabel : (rawLabel?.en ?? sectionKey);
   const icon = item && "icon" in item ? item.icon : "layout";
-  const Icon = shellIcon(icon);
-  const showSearch = searchableSection(sectionKey, String(label));
-  const metric = formatWidgetMetric(shell.cards[sectionKey]);
-  const homeHref = homeHrefForScope(shell.scopeFocus);
-
+  const data = shell.cards[sectionKey];
+  const hasFigure =
+    !!data && !data.unavailable && data.metric != null && String(data.metric) !== "";
+  const metric = formatWidgetMetric(data);
   return (
-    <section className="app-shell-section" data-testid="app-shell-section">
-      <Link to={homeHref as never} className="app-shell-back">
-        ← Home
-      </Link>
-      <ShellGlassIcon size={44} tone="accent">
-        <Icon />
-      </ShellGlassIcon>
-      <h1>{label}</h1>
-      <p className="app-shell-org">
-        {shell.roleTitle} in {shell.orgName}
-      </p>
-      {showSearch ? (
-        <label className="app-shell-search">
-          <Search size={16} />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder={`Search ${label}`}
-            aria-label={`Search ${label}`}
-          />
-        </label>
-      ) : null}
-      {metric.text !== "—" ? (
-        <div className="app-shell-widget">
-          <strong className={`app-shell-metric-${metric.tone}`}>{metric.text}</strong>
-          <span>{shell.cards[sectionKey]?.note ?? label}</span>
-        </div>
-      ) : (
-        <p className="app-shell-empty">
-          This section is open for your current role. Records stay tenant-scoped and only appear
-          when your administration has granted the matching permission.
-        </p>
-      )}
-    </section>
+    <PlannedCapabilityState
+      label={label}
+      kind={kind}
+      homeHref={homeHrefForScope(shell.scopeFocus)}
+      Icon={shellIcon(icon)}
+      context={`${shell.roleTitle} in ${shell.orgName}`}
+      figure={hasFigure ? { text: metric.text, tone: metric.tone, note: data?.note } : null}
+      locale={shell.manifest?.locale}
+    />
   );
 }
