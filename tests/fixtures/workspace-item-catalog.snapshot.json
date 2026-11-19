@@ -1,0 +1,545 @@
+{
+  "source": "public.workspace_item_catalog (production, read-only SELECT)",
+  "capturedOn": "2026-11-17",
+  "query": "SELECT key, kind, route FROM public.workspace_item_catalog ORDER BY key",
+  "rowCount": 107,
+  "md5OfCatalogRouteRows": "c9d45ba8c47f098596aa8c2df285636a",
+  "refresh": "Run the query above read-only against production, then regenerate this file with the same key|kind|route rows sorted by key (COLLATE \"C\"); the md5 is of the rows joined by newlines.",
+  "items": [
+    {
+      "key": "a.approve_payroll",
+      "kind": "action",
+      "route": "/admin/hr-payroll"
+    },
+    {
+      "key": "a.ask_tutor",
+      "kind": "action",
+      "route": "/student/ai-tutor"
+    },
+    {
+      "key": "a.assign_role",
+      "kind": "action",
+      "route": "/admin/roles"
+    },
+    {
+      "key": "a.broadcast",
+      "kind": "action",
+      "route": "/admin/broadcast"
+    },
+    {
+      "key": "a.enrol_student",
+      "kind": "action",
+      "route": "/admin/students"
+    },
+    {
+      "key": "a.enter_scores",
+      "kind": "action",
+      "route": "/teacher/gradebook"
+    },
+    {
+      "key": "a.gov_inspect",
+      "kind": "action",
+      "route": "/gov-dashboard"
+    },
+    {
+      "key": "a.issue_book",
+      "kind": "action",
+      "route": "/admin/library"
+    },
+    {
+      "key": "a.issue_receipt",
+      "kind": "action",
+      "route": "/bursar/receipts"
+    },
+    {
+      "key": "a.log_visit",
+      "kind": "action",
+      "route": "/admin/health"
+    },
+    {
+      "key": "a.message_parents",
+      "kind": "action",
+      "route": "/messages"
+    },
+    {
+      "key": "a.new_cbt",
+      "kind": "action",
+      "route": "/admin/exams"
+    },
+    {
+      "key": "a.pay_fees",
+      "kind": "action",
+      "route": "/parent/fees"
+    },
+    {
+      "key": "a.prepare_payroll",
+      "kind": "action",
+      "route": "/admin/hr-payroll"
+    },
+    {
+      "key": "a.publish_results",
+      "kind": "action",
+      "route": "/admin/report-cards"
+    },
+    {
+      "key": "a.record_cash",
+      "kind": "action",
+      "route": "/bursar/receipts"
+    },
+    {
+      "key": "a.report_incident",
+      "kind": "action",
+      "route": "/admin/visitors"
+    },
+    {
+      "key": "a.request_leave",
+      "kind": "action",
+      "route": "/settings"
+    },
+    {
+      "key": "a.roll_call",
+      "kind": "action",
+      "route": "/admin/hostel"
+    },
+    {
+      "key": "a.schedule_exam",
+      "kind": "action",
+      "route": "/admin/examinations"
+    },
+    {
+      "key": "a.sign_in_visitor",
+      "kind": "action",
+      "route": "/admin/visitors"
+    },
+    {
+      "key": "a.start_trip",
+      "kind": "action",
+      "route": "/driver"
+    },
+    {
+      "key": "a.submit_note",
+      "kind": "action",
+      "route": "/teacher/lesson-notes"
+    },
+    {
+      "key": "a.take_attendance",
+      "kind": "action",
+      "route": "/teacher/attendance"
+    },
+    {
+      "key": "a.topup_wallet",
+      "kind": "action",
+      "route": "/admin/wallet"
+    },
+    {
+      "key": "i.alerts",
+      "kind": "inbox",
+      "route": "/notifications"
+    },
+    {
+      "key": "i.approvals",
+      "kind": "inbox",
+      "route": "/notifications"
+    },
+    {
+      "key": "i.messages",
+      "kind": "inbox",
+      "route": "/messages"
+    },
+    {
+      "key": "i.payments",
+      "kind": "inbox",
+      "route": "/bursar/reconciliation"
+    },
+    {
+      "key": "i.safeguarding",
+      "kind": "inbox",
+      "route": "/admin/discipline"
+    },
+    {
+      "key": "nav.admissions",
+      "kind": "nav",
+      "route": "/admin/admissions"
+    },
+    {
+      "key": "nav.ai_tutor",
+      "kind": "nav",
+      "route": "/student/ai-tutor"
+    },
+    {
+      "key": "nav.attendance",
+      "kind": "nav",
+      "route": "/teacher/attendance"
+    },
+    {
+      "key": "nav.cbt",
+      "kind": "nav",
+      "route": "/admin/exams"
+    },
+    {
+      "key": "nav.children",
+      "kind": "nav",
+      "route": "/parent/children"
+    },
+    {
+      "key": "nav.exams",
+      "kind": "nav",
+      "route": "/admin/examinations"
+    },
+    {
+      "key": "nav.fees",
+      "kind": "nav",
+      "route": "/bursar/dashboard"
+    },
+    {
+      "key": "nav.gov",
+      "kind": "nav",
+      "route": "/gov-dashboard"
+    },
+    {
+      "key": "nav.gradebook",
+      "kind": "nav",
+      "route": "/teacher/gradebook"
+    },
+    {
+      "key": "nav.health",
+      "kind": "nav",
+      "route": "/admin/health"
+    },
+    {
+      "key": "nav.home",
+      "kind": "nav",
+      "route": "/workspace"
+    },
+    {
+      "key": "nav.hostel",
+      "kind": "nav",
+      "route": "/admin/hostel"
+    },
+    {
+      "key": "nav.lesson_notes",
+      "kind": "nav",
+      "route": "/teacher/lesson-notes"
+    },
+    {
+      "key": "nav.library",
+      "kind": "nav",
+      "route": "/admin/library"
+    },
+    {
+      "key": "nav.messages",
+      "kind": "nav",
+      "route": "/messages"
+    },
+    {
+      "key": "nav.my_classes",
+      "kind": "nav",
+      "route": "/teacher/dashboard"
+    },
+    {
+      "key": "nav.my_pay",
+      "kind": "nav",
+      "route": "/settings"
+    },
+    {
+      "key": "nav.my_results",
+      "kind": "nav",
+      "route": "/student/grades"
+    },
+    {
+      "key": "nav.payroll",
+      "kind": "nav",
+      "route": "/admin/hr-payroll"
+    },
+    {
+      "key": "nav.reports",
+      "kind": "nav",
+      "route": "/admin/analytics"
+    },
+    {
+      "key": "nav.roles",
+      "kind": "nav",
+      "route": "/admin/roles"
+    },
+    {
+      "key": "nav.settings",
+      "kind": "nav",
+      "route": "/admin/settings"
+    },
+    {
+      "key": "nav.staff",
+      "kind": "nav",
+      "route": "/admin/hr"
+    },
+    {
+      "key": "nav.students",
+      "kind": "nav",
+      "route": "/admin/students"
+    },
+    {
+      "key": "nav.transport",
+      "kind": "nav",
+      "route": "/admin/bus-management"
+    },
+    {
+      "key": "nav.visitors",
+      "kind": "nav",
+      "route": "/admin/visitors"
+    },
+    {
+      "key": "nav.wallet",
+      "kind": "nav",
+      "route": "/admin/wallet"
+    },
+    {
+      "key": "nav.workspace_policies",
+      "kind": "nav",
+      "route": "/workspace/settings"
+    },
+    {
+      "key": "w.admissions_funnel",
+      "kind": "widget",
+      "route": "/admin/admissions-funnel"
+    },
+    {
+      "key": "w.ai_lesson_helper",
+      "kind": "widget",
+      "route": "/teacher/ai-assistant"
+    },
+    {
+      "key": "w.ai_tutor",
+      "kind": "widget",
+      "route": "/student/ai-tutor"
+    },
+    {
+      "key": "w.announcements",
+      "kind": "widget",
+      "route": "/messages"
+    },
+    {
+      "key": "w.at_risk",
+      "kind": "widget",
+      "route": "/admin/early-warning"
+    },
+    {
+      "key": "w.attendance_todo",
+      "kind": "widget",
+      "route": "/teacher/attendance"
+    },
+    {
+      "key": "w.bus_live",
+      "kind": "widget",
+      "route": "/admin/bus-management"
+    },
+    {
+      "key": "w.campus_overview",
+      "kind": "widget",
+      "route": "/admin/students"
+    },
+    {
+      "key": "w.cashflow",
+      "kind": "widget",
+      "route": "/admin/financial-reports"
+    },
+    {
+      "key": "w.cbt_sessions",
+      "kind": "widget",
+      "route": "/admin/exams"
+    },
+    {
+      "key": "w.child_bus",
+      "kind": "widget",
+      "route": "/parent/bus-tracking"
+    },
+    {
+      "key": "w.child_fees",
+      "kind": "widget",
+      "route": "/parent/fees"
+    },
+    {
+      "key": "w.children_summary",
+      "kind": "widget",
+      "route": "/parent/children"
+    },
+    {
+      "key": "w.defaulters",
+      "kind": "widget",
+      "route": "/admin/fees-defaulters"
+    },
+    {
+      "key": "w.dept_performance",
+      "kind": "widget",
+      "route": "/admin/analytics"
+    },
+    {
+      "key": "w.enrolment",
+      "kind": "widget",
+      "route": "/admin/students"
+    },
+    {
+      "key": "w.exam_timetable",
+      "kind": "widget",
+      "route": "/admin/examinations"
+    },
+    {
+      "key": "w.expense_approvals",
+      "kind": "widget",
+      "route": "/admin/expenses"
+    },
+    {
+      "key": "w.fee_collection",
+      "kind": "widget",
+      "route": "/bursar/dashboard"
+    },
+    {
+      "key": "w.form_class",
+      "kind": "widget",
+      "route": "/teacher/class-intelligence"
+    },
+    {
+      "key": "w.gate_log",
+      "kind": "widget",
+      "route": "/admin/visitors"
+    },
+    {
+      "key": "w.gov_compliance",
+      "kind": "widget",
+      "route": "/gov-dashboard"
+    },
+    {
+      "key": "w.gov_overview",
+      "kind": "widget",
+      "route": "/gov-dashboard"
+    },
+    {
+      "key": "w.governance",
+      "kind": "widget",
+      "route": "/admin/audit"
+    },
+    {
+      "key": "w.grading_queue",
+      "kind": "widget",
+      "route": "/teacher/gradebook"
+    },
+    {
+      "key": "w.hostel_beds",
+      "kind": "widget",
+      "route": "/admin/hostel"
+    },
+    {
+      "key": "w.hostel_roll",
+      "kind": "widget",
+      "route": "/admin/hostel"
+    },
+    {
+      "key": "w.house_overview",
+      "kind": "widget",
+      "route": "/admin/discipline"
+    },
+    {
+      "key": "w.incidents",
+      "kind": "widget",
+      "route": "/admin/visitors"
+    },
+    {
+      "key": "w.leave_requests",
+      "kind": "widget",
+      "route": "/admin/hr"
+    },
+    {
+      "key": "w.lesson_note_approvals",
+      "kind": "widget",
+      "route": "/admin/lesson-plans"
+    },
+    {
+      "key": "w.lesson_note_status",
+      "kind": "widget",
+      "route": "/teacher/lesson-notes"
+    },
+    {
+      "key": "w.level_overview",
+      "kind": "widget",
+      "route": "/teacher/gradebook"
+    },
+    {
+      "key": "w.library_loans",
+      "kind": "widget",
+      "route": "/admin/library"
+    },
+    {
+      "key": "w.malpractice",
+      "kind": "widget",
+      "route": "/admin/examinations"
+    },
+    {
+      "key": "w.my_cbt",
+      "kind": "widget",
+      "route": "/student/cbt"
+    },
+    {
+      "key": "w.my_results",
+      "kind": "widget",
+      "route": "/student/grades"
+    },
+    {
+      "key": "w.my_timetable",
+      "kind": "widget",
+      "route": "/student/timetable"
+    },
+    {
+      "key": "w.my_trip",
+      "kind": "widget",
+      "route": "/driver"
+    },
+    {
+      "key": "w.payroll_run",
+      "kind": "widget",
+      "route": "/admin/hr-payroll"
+    },
+    {
+      "key": "w.reconciliation",
+      "kind": "widget",
+      "route": "/bursar/reconciliation"
+    },
+    {
+      "key": "w.results_pipeline",
+      "kind": "widget",
+      "route": "/admin/report-cards"
+    },
+    {
+      "key": "w.school_health",
+      "kind": "widget",
+      "route": "/admin/analytics"
+    },
+    {
+      "key": "w.section_overview",
+      "kind": "widget",
+      "route": "/admin/students"
+    },
+    {
+      "key": "w.shift_overview",
+      "kind": "widget",
+      "route": "/teacher/attendance"
+    },
+    {
+      "key": "w.sick_bay",
+      "kind": "widget",
+      "route": "/admin/health"
+    },
+    {
+      "key": "w.staff_attendance",
+      "kind": "widget",
+      "route": "/admin/hr"
+    },
+    {
+      "key": "w.today_classes",
+      "kind": "widget",
+      "route": "/teacher/timetable"
+    },
+    {
+      "key": "w.wallet_balance",
+      "kind": "widget",
+      "route": "/admin/wallet"
+    }
+  ]
+}
