@@ -6,6 +6,7 @@ import { createToolLedgerDb } from "../tool-broker/tool-ledger-db.server";
 import { validateConnectorBinding } from "../tool-broker/connector-vault";
 import type { ConnectorBinding } from "../tool-broker/connector-vault";
 import type { ActingContext, BrokerState } from "../tool-broker/broker";
+import type { ToolDefinition } from "../tool-broker/tool-contract";
 import type { WorkflowTickOptions } from "./workflow-runtime";
 import { parseWorkflowDeliveryMode, type WorkflowDeliveryEnvironment } from "./workflow-actions";
 import {
@@ -128,7 +129,7 @@ export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = 
   const brokerAuthority = {
     async resolve(input: {
       twinContextId: string;
-      tool: import("../tool-broker/tool-contract").ToolDefinition;
+      tool: ToolDefinition;
     }): Promise<{ ctx: ActingContext; state: BrokerState } | null> {
       const context = await one(
         client
@@ -363,6 +364,7 @@ export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = 
           template_params: draft.templateParams,
           recipient_ids: draft.recipientIds,
           audience_selector: draft.audienceSelector,
+          data_class: draft.dataClass,
           webhook_target_id: draft.webhookTargetId,
           idempotency_key: draft.idempotencyKey,
         },
@@ -377,10 +379,12 @@ export function createWorkflowActionExecutor(env: WorkflowDeliveryEnvironment = 
           run_id: outbox.runId,
           step_run_id: outbox.stepRunId,
           kind: outbox.kind,
+          category: outbox.category,
           template_ref: outbox.templateRef,
           template_params: outbox.templateParams,
           recipient_ids: outbox.recipientIds,
           audience_selector: outbox.audienceSelector,
+          data_class: outbox.dataClass,
           webhook_target_id: outbox.webhookTargetId,
           idempotency_key: outbox.idempotencyKey,
           broker_decision_id: outbox.brokerDecisionId,

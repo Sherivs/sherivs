@@ -1,5 +1,12 @@
+-- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
 -- WF-06: V1 workflow action catalogue and tenant-scoped drafts/outbox.
 -- Effects remain disabled unless the application delivery gate explicitly permits them.
+--
+-- Mass communication threshold: WORKFLOW_MASS_RECIPIENT_THRESHOLD = 25 (the same named constant
+-- lives in frontend/src/lib/workflow/workflow-actions.ts). More than 25 recipients, or any
+-- audience selector, is mass communication and is capped at draft.
+-- Data classes (WORKFLOW_DATA_CLASSES in TS): public, internal, confidential, minor_sensitive.
+-- Only public and internal may ever reach the executed (sandbox outbox) record.
 BEGIN;
 
 DO $prereq$
@@ -10,7 +17,10 @@ BEGIN
      OR to_regclass('public.wf_step_run') IS NULL
      OR to_regclass('public.wf_org_settings') IS NULL
      OR to_regclass('public.wf_template') IS NULL
+     OR to_regclass('public.wf_agent_autonomy') IS NULL
+     OR to_regclass('public.organization_memberships') IS NULL
      OR to_regprocedure('public.wf_can(uuid,text)') IS NULL
+     OR to_regprocedure('public.wf_autonomy_guard()') IS NULL
      OR to_regclass('public.cg_tool_registry') IS NULL
      OR to_regclass('public.cg_tool_call_ledger') IS NULL THEN
     RAISE EXCEPTION 'WF-06: WF-01 through WF-05 or ENGINE-03 prerequisites are missing';
@@ -208,6 +218,8 @@ CREATE TABLE public.wf_action_draft (
   audience_selector text CHECK (
     audience_selector IS NULL OR audience_selector IN ('whole_class', 'all_guardians', 'all_staff')
   ),
+  data_class      text NOT NULL DEFAULT 'internal'
+    CHECK (data_class IN ('public', 'internal', 'confidential', 'minor_sensitive')),
   status          text NOT NULL DEFAULT 'draft'
     CHECK (status IN ('draft', 'approved', 'rejected', 'expired')),
   idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 8 AND 200),
@@ -225,6 +237,19 @@ CREATE TABLE public.wf_action_draft (
       'mass_message', 'external_authority_share', 'unregistered_webhook'
     ) OR status <> 'approved'
   ),
+  -- Mass (> WORKFLOW_MASS_RECIPIENT_THRESHOLD = 25 recipients, or any audience selector) or
+  -- confidential drafts must carry a capped category, so they can never be approved.
+  CONSTRAINT wf_action_draft_mass_confidential_check CHECK (
+    category IN (
+      'money_movement', 'safeguarding', 'credential_change', 'public_publish',
+      'mass_message', 'external_authority_share', 'unregistered_webhook'
+    )
+    OR (
+      cardinality(recipient_ids) <= 25
+      AND audience_selector IS NULL
+      AND data_class IN ('public', 'internal')
+    )
+  ),
   CONSTRAINT wf_action_draft_template_check CHECK (
     kind IN ('webhook', 'task', 'wait') OR template_ref IS NOT NULL
   )
@@ -237,6 +262,7 @@ CREATE TABLE public.wf_action_sandbox_outbox (
   run_id          uuid NOT NULL,
   step_run_id     uuid NOT NULL,
   kind            text NOT NULL REFERENCES public.wf_action_type(kind) ON DELETE RESTRICT,
+  category        text NOT NULL CHECK (category ~ '^[a-z][a-z0-9_]{1,63}$'),
   template_ref    text CHECK (
     template_ref IS NULL OR template_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$'
   ),
@@ -250,6 +276,8 @@ CREATE TABLE public.wf_action_sandbox_outbox (
   audience_selector text CHECK (
     audience_selector IS NULL OR audience_selector IN ('whole_class', 'all_guardians', 'all_staff')
   ),
+  data_class      text NOT NULL DEFAULT 'internal'
+    CHECK (data_class IN ('public', 'internal', 'confidential', 'minor_sensitive')),
   broker_decision_id uuid NOT NULL REFERENCES public.cg_tool_call_ledger(id) ON DELETE RESTRICT,
   idempotency_key text NOT NULL CHECK (length(idempotency_key) BETWEEN 8 AND 200),
   created_at      timestamptz NOT NULL DEFAULT now(),
@@ -257,8 +285,48 @@ CREATE TABLE public.wf_action_sandbox_outbox (
     REFERENCES public.wf_run (org_id, id) ON DELETE RESTRICT,
   CONSTRAINT wf_action_sandbox_step_fk FOREIGN KEY (org_id, step_run_id)
     REFERENCES public.wf_step_run (org_id, id) ON DELETE RESTRICT,
-  CONSTRAINT wf_action_sandbox_idempotency_uniq UNIQUE (org_id, idempotency_key)
+  CONSTRAINT wf_action_sandbox_idempotency_uniq UNIQUE (org_id, idempotency_key),
+  -- The executed record never carries a capped category (defence in depth for the TS caps).
+  CONSTRAINT wf_action_sandbox_cap_check CHECK (
+    category NOT IN (
+      'money_movement', 'safeguarding', 'credential_change', 'public_publish',
+      'mass_message', 'external_authority_share', 'unregistered_webhook'
+    )
+  ),
+  -- Mass communication (> WORKFLOW_MASS_RECIPIENT_THRESHOLD = 25, or any audience selector)
+  -- never executes.
+  CONSTRAINT wf_action_sandbox_mass_check CHECK (
+    cardinality(recipient_ids) <= 25 AND audience_selector IS NULL
+  ),
+  -- Confidential or minor-sensitive data never executes.
+  CONSTRAINT wf_action_sandbox_data_class_check CHECK (data_class IN ('public', 'internal'))
 );
+
+-- An executed record must point at an `execute` broker decision of the same tenant, for the
+-- action's own tool and idempotency key.
+CREATE OR REPLACE FUNCTION public.wf_action_sandbox_outbox_guard()
+RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path = ''
+AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM public.cg_tool_call_ledger l
+     WHERE l.id = NEW.broker_decision_id
+       AND l.kind = 'decision'
+       AND l.verdict = 'execute'
+       AND l.tenant_ref = NEW.org_id::text
+       AND l.tool_id = 'workflow.action.' || NEW.kind
+       AND l.idempotency_key = NEW.idempotency_key
+  ) THEN
+    RAISE EXCEPTION 'wf_action_sandbox_outbox: broker decision does not clear this action'
+      USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END
+$$;
+REVOKE ALL ON FUNCTION public.wf_action_sandbox_outbox_guard() FROM PUBLIC, anon, authenticated;
+CREATE TRIGGER wf_action_sandbox_outbox_00_guard
+  BEFORE INSERT OR UPDATE ON public.wf_action_sandbox_outbox
+  FOR EACH ROW EXECUTE FUNCTION public.wf_action_sandbox_outbox_guard();
 
 CREATE TABLE public.wf_webhook_target (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),

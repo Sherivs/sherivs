@@ -239,11 +239,133 @@ SELECT wf06t.expect_true('Org B workflow member cannot read Org A action drafts'
                    WHERE org_id = 'f0600000-0000-4000-8000-0000000000a1'));
 SELECT wf06t.logout();
 
+-- ---- B1: SQL backs the mass and confidential cap on the executed record -------------
+-- WORKFLOW_MASS_RECIPIENT_THRESHOLD = 25 (same constant as workflow-actions.ts).
+INSERT INTO public.cg_role_pack (code, version, kind, applies_to, status, definition) VALUES
+ ('wf06-pack','1.0.0','tenant_role',ARRAY['wf06-role'],'published',
+  jsonb_build_object(
+    'schema','sherivs.role-pack.v1','code','wf06-pack','version','1.0.0','kind','tenant_role',
+    'title','WF06 synthetic pack','permissions',jsonb_build_array('workflows.run'),
+    'capabilities',jsonb_build_array(jsonb_build_object('id','workflow.in-app','title','In-app',
+      'tier','T1','autonomy','act_autonomously','requiresPermission','workflows.run','connector','in-app')),
+    'playbooks','[]'::jsonb,
+    'memory',jsonb_build_object('domains',jsonb_build_array('work'),'maxSensitivity','internal','retentionDays',90,'crossTenant',false),
+    'budget',jsonb_build_object('dailyActions',50,'dailyModelCalls',20,'dailyCostCapMinor',1000),
+    'escalation',jsonb_build_object('defaultApprover','role_owner','t3Approver','sheriff'),
+    'startsInShadow',true));
+SELECT public.cg_twin_ensure_context('f0600000-0000-4000-8000-000000000001','tenant_membership',
+  'f0600000-0000-4000-8000-0000000000a1','wf06-role','wf06-src-a',true);
+SELECT public.cg_twin_ensure_context('f0600000-0000-4000-8000-000000000002','tenant_membership',
+  'f0600000-0000-4000-8000-0000000000b2','wf06-role','wf06-src-b',true);
+CREATE FUNCTION wf06t.decision(p_org uuid, p_kind text, p_key text) RETURNS uuid LANGUAGE plpgsql AS $$
+DECLARE v_id uuid;
+BEGIN
+  INSERT INTO public.cg_tool_call_ledger
+    (kind,twin_context_id,tenant_ref,tool_id,tool_version,tier,verdict,args_digest,idempotency_key)
+  SELECT 'decision', c.id, p_org::text, 'workflow.action.' || p_kind, '1.0.0', r.tier, 'execute',
+         repeat('a',64), p_key
+    FROM public.cg_twin_context c
+    JOIN public.cg_tool_registry r ON r.tool_id = 'workflow.action.' || p_kind AND r.version = '1.0.0'
+   WHERE c.tenant_ref = p_org::text AND c.role_code = 'wf06-role'
+  RETURNING id INTO v_id;
+  IF v_id IS NULL THEN RAISE EXCEPTION 'WF06 FAIL: fixture decision missing'; END IF;
+  RETURN v_id;
+END $$;
+CREATE FUNCTION wf06t.ids(p_n integer) RETURNS uuid[] LANGUAGE sql AS $$
+  SELECT coalesce(array_agg(('f0690000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid), '{}')
+    FROM generate_series(1, p_n) g
+$$;
+CREATE FUNCTION wf06t.outbox(p_key text, p_n integer, p_audience text, p_category text,
+  p_data_class text, p_org uuid DEFAULT 'f0600000-0000-4000-8000-0000000000a1',
+  p_run uuid DEFAULT 'f0630000-0000-4000-8000-0000000000a1',
+  p_decision_org uuid DEFAULT NULL) RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  INSERT INTO public.wf_action_sandbox_outbox
+    (org_id,run_id,step_run_id,kind,category,template_ref,recipient_ids,audience_selector,
+     data_class,broker_decision_id,idempotency_key)
+  VALUES (p_org, p_run, 'f0640000-0000-4000-8000-000000000007', 'in_app', p_category,
+    'attendance.notice', wf06t.ids(p_n), p_audience, p_data_class,
+    wf06t.decision(coalesce(p_decision_org, p_org), 'in_app', p_key), p_key);
+END $$;
+
+SELECT wf06t.outbox('wf06-outbox-25', 25, NULL, 'communication', 'internal');
+SELECT wf06t.expect_true('outbox accepts exactly 25 recipients (threshold boundary)',
+  (SELECT cardinality(recipient_ids) = 25 AND category = 'communication' AND data_class = 'internal'
+     FROM public.wf_action_sandbox_outbox WHERE idempotency_key = 'wf06-outbox-25'));
+SELECT wf06t.expect_error('outbox refuses 26 recipients',
+  $q$SELECT wf06t.outbox('wf06-outbox-26', 26, NULL, 'communication', 'internal')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses any audience selector',
+  $q$SELECT wf06t.outbox('wf06-outbox-aud', 1, 'all_guardians', 'communication', 'internal')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses a capped category',
+  $q$SELECT wf06t.outbox('wf06-outbox-cap', 1, NULL, 'mass_message', 'internal')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses the unregistered webhook category',
+  $q$SELECT wf06t.outbox('wf06-outbox-hook', 1, NULL, 'unregistered_webhook', 'internal')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses a confidential data class',
+  $q$SELECT wf06t.outbox('wf06-outbox-conf', 1, NULL, 'communication', 'confidential')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses a minor-sensitive data class',
+  $q$SELECT wf06t.outbox('wf06-outbox-minor', 1, NULL, 'communication', 'minor_sensitive')$q$, '23514');
+SELECT wf06t.expect_error('outbox refuses an unknown data class',
+  $q$SELECT wf06t.outbox('wf06-outbox-unknown', 1, NULL, 'communication', 'secretish')$q$, '23514');
+SELECT wf06t.expect_error('outbox row cannot reference another organization''s run',
+  $q$SELECT wf06t.outbox('wf06-outbox-xrun', 1, NULL, 'communication', 'internal',
+       'f0600000-0000-4000-8000-0000000000a1', 'f0630000-0000-4000-8000-0000000000b2')$q$, '23503');
+SELECT wf06t.expect_error('outbox row cannot use another tenant''s broker decision',
+  $q$SELECT wf06t.outbox('wf06-outbox-xdec', 1, NULL, 'communication', 'internal',
+       'f0600000-0000-4000-8000-0000000000a1', 'f0630000-0000-4000-8000-0000000000a1',
+       'f0600000-0000-4000-8000-0000000000b2')$q$, '42501');
+SELECT wf06t.expect_error('outbox row needs an execute decision for its own key',
+  $q$INSERT INTO public.wf_action_sandbox_outbox
+       (org_id,run_id,step_run_id,kind,category,template_ref,broker_decision_id,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1',
+       'f0640000-0000-4000-8000-000000000007','in_app','communication','attendance.notice',
+       wf06t.decision('f0600000-0000-4000-8000-0000000000a1','in_app','wf06-key-one'),
+       'wf06-key-two')$q$, '42501');
+SELECT wf06t.expect_error('draft cannot reference another organization''s run',
+  $q$INSERT INTO public.wf_action_draft
+       (org_id,run_id,step_run_id,kind,category,template_ref,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000b2',
+       'f0640000-0000-4000-8000-000000000010','sms','mass_message','attendance.notice',
+       'wf06-draft-xrun')$q$, '23503');
+SELECT wf06t.expect_error('a 26-recipient draft must carry a capped category',
+  $q$INSERT INTO public.wf_action_draft
+       (org_id,run_id,step_run_id,kind,category,template_ref,recipient_ids,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1',
+       'f0640000-0000-4000-8000-000000000010','sms','communication','attendance.notice',
+       wf06t.ids(26),'wf06-draft-mass-uncapped')$q$, '23514');
+SELECT wf06t.expect_error('a confidential draft must carry a capped category',
+  $q$INSERT INTO public.wf_action_draft
+       (org_id,run_id,step_run_id,kind,category,template_ref,data_class,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1',
+       'f0640000-0000-4000-8000-000000000010','sms','communication','attendance.notice',
+       'confidential','wf06-draft-conf-uncapped')$q$, '23514');
+SELECT wf06t.expect_error('draft data class is limited to the explicit set',
+  $q$INSERT INTO public.wf_action_draft
+       (org_id,run_id,step_run_id,kind,category,template_ref,data_class,idempotency_key)
+     VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1',
+       'f0640000-0000-4000-8000-000000000010','sms','mass_message','attendance.notice',
+       'secretish','wf06-draft-bad-class')$q$, '23514');
+INSERT INTO public.wf_action_draft
+  (org_id,run_id,step_run_id,kind,category,template_ref,recipient_ids,data_class,idempotency_key)
+VALUES ('f0600000-0000-4000-8000-0000000000a1','f0630000-0000-4000-8000-0000000000a1',
+  'f0640000-0000-4000-8000-000000000010','sms','mass_message','attendance.notice',
+  wf06t.ids(26),'minor_sensitive','wf06-draft-mass-capped');
+SELECT wf06t.expect_true('a capped 26-recipient minor-sensitive draft is stored for review',
+  (SELECT category = 'mass_message' AND status = 'draft' FROM public.wf_action_draft
+    WHERE idempotency_key = 'wf06-draft-mass-capped'));
+SELECT wf06t.expect_true('authenticated and anon hold no outbox privilege',
+  NOT has_table_privilege('authenticated', 'public.wf_action_sandbox_outbox', 'SELECT')
+  AND NOT has_table_privilege('authenticated', 'public.wf_action_sandbox_outbox', 'INSERT')
+  AND NOT has_table_privilege('anon', 'public.wf_action_sandbox_outbox', 'INSERT'));
+SELECT wf06t.login('f0600000-0000-4000-8000-000000000003');
+SELECT wf06t.expect_error('authenticated member cannot read the outbox',
+  $q$SELECT count(*) FROM public.wf_action_sandbox_outbox$q$, '42501');
+SELECT wf06t.logout();
+
 DO $summary$
 DECLARE v_count integer;
 BEGIN
   SELECT count(*) INTO v_count FROM wf06t.passed;
-  IF v_count < 11 THEN RAISE EXCEPTION 'WF06 FAIL: expected at least 11 checks, got %', v_count; END IF;
+  IF v_count < 29 THEN RAISE EXCEPTION 'WF06 FAIL: expected at least 29 checks, got %', v_count; END IF;
   RAISE NOTICE 'WF06 ALL PASS: % checks', v_count;
 END $summary$;
 ROLLBACK;

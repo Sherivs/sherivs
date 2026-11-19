@@ -8,12 +8,15 @@ import {
   isWorkflowMassCommunication,
   isWorkflowWebhookTargetAllowed,
   parseWorkflowDeliveryMode,
+  resolveWorkflowDataClass,
   workflowActionHasMoneyEffect,
+  workflowDataClassRequired,
   workflowActionCategory,
   workflowActionDefinitionIsValid,
   workflowDeliveryGate,
   WORKFLOW_ACTION_CATEGORY_CAPS,
   WORKFLOW_AUTONOMY_LEVELS,
+  WORKFLOW_DATA_CLASSES,
   WORKFLOW_MASS_RECIPIENT_THRESHOLD,
   type WorkflowAutonomyLevel,
   type WorkflowDeliveryEnvironment,
@@ -37,11 +40,36 @@ function workflowSourceFiles(path: string): string[] {
 }
 
 describe("WF-06 action policy", () => {
-  it("keeps provider imports out of the workflow runtime", () => {
-    const source = workflowSourceFiles("frontend/src/lib/workflow").join("\n");
-    expect(source).not.toMatch(
-      /from\s+["'][^"']*(?:resend|twilio|whatsapp|sendgrid|mailgun|stripe|provider)[^"']*["']/i,
-    );
+  it("keeps provider imports, dynamic loads and direct network calls out of the workflow runtime", () => {
+    const providerModule =
+      "[^\"'`]*(?:resend|twilio|whatsapp|bulksms|termii|sendgrid|mailgun|stripe|paystack|flutterwave|provider|communications/|undici|node-fetch|axios|node:https?)[^\"'`]*";
+    const forbidden: ReadonlyArray<[string, RegExp]> = [
+      ["static provider import", new RegExp(`from\\s+["'\`]${providerModule}["'\`]`, "i")],
+      ["dynamic import()", /\bimport\s*\(/],
+      ["require()", /\brequire\s*\(/],
+      ["direct fetch()", /\bfetch\s*\(/],
+      ["XMLHttpRequest", /\bXMLHttpRequest\b/],
+    ];
+    // The patterns must actually catch the forms they claim to catch.
+    const samples = [
+      'import { send } from "../communications/resend-email.server";',
+      'const m = await import("../communications/bulksms.server");',
+      'const m = require("twilio");',
+      'import https from "node:https";',
+      "await fetch(url, { method: 'POST' });",
+      "await globalThis.fetch(url);",
+      "new XMLHttpRequest();",
+    ];
+    for (const sample of samples) {
+      expect(forbidden.some(([, pattern]) => pattern.test(sample))).toBe(true);
+    }
+    const files = workflowSourceFiles("frontend/src/lib/workflow");
+    expect(files.length).toBeGreaterThan(5);
+    for (const source of files) {
+      for (const [label, pattern] of forbidden) {
+        expect({ label, found: pattern.test(source) }).toEqual({ label, found: false });
+      }
+    }
   });
 
   it("does not hardcode the broker kill switch as disengaged", () => {
@@ -115,7 +143,7 @@ describe("WF-06 action policy", () => {
   });
 
   it("caps confidential and minor-sensitive messages without reading event text", () => {
-    for (const dataClass of ["confidential", "minor_sensitive", "minor-sensitive"]) {
+    for (const dataClass of ["confidential", "minor_sensitive"] as const) {
       expect(isWorkflowConfidentialDataClass(dataClass)).toBe(true);
       expect(
         workflowActionCategory({
@@ -126,15 +154,64 @@ describe("WF-06 action policy", () => {
         }),
       ).toBe("mass_message");
     }
-    expect(isWorkflowConfidentialDataClass("internal")).toBe(false);
+    for (const dataClass of ["public", "internal"] as const) {
+      expect(isWorkflowConfidentialDataClass(dataClass)).toBe(false);
+      expect(
+        workflowActionCategory({
+          actionClass: "internal",
+          recipientCount: WORKFLOW_MASS_RECIPIENT_THRESHOLD,
+          hasAudienceSelector: false,
+          dataClass,
+        }),
+      ).toBe("internal");
+    }
+    expect(WORKFLOW_DATA_CLASSES).toEqual([
+      "public",
+      "internal",
+      "confidential",
+      "minor_sensitive",
+    ]);
+  });
+
+  it("treats unknown or missing-but-required data classes as confidential (fail closed)", () => {
+    for (const unknown of [
+      "minor-sensitive",
+      "Confidential",
+      "INTERNAL",
+      " internal",
+      "secret",
+      "",
+      "__proto__",
+      "toString",
+      42,
+      true,
+      {},
+      [],
+    ]) {
+      expect(resolveWorkflowDataClass(unknown, { required: false })).toBe("confidential");
+      expect(resolveWorkflowDataClass(unknown, { required: true })).toBe("confidential");
+    }
+    expect(resolveWorkflowDataClass(undefined, { required: true })).toBe("confidential");
+    expect(resolveWorkflowDataClass(null, { required: true })).toBe("confidential");
+    expect(resolveWorkflowDataClass(undefined, { required: false })).toBe("internal");
+    for (const known of WORKFLOW_DATA_CLASSES) {
+      expect(resolveWorkflowDataClass(known, { required: true })).toBe(known);
+    }
+    for (const kind of ["email", "in_app", "whatsapp", "sms", "webhook"] as const) {
+      expect(workflowDataClassRequired(kind)).toBe(true);
+    }
+    for (const kind of ["task", "wait"] as const) {
+      expect(workflowDataClassRequired(kind)).toBe(false);
+    }
+    // A forged value cast past the type is still capped.
     expect(
       workflowActionCategory({
-        actionClass: "internal",
-        recipientCount: 25,
+        actionClass: "communication",
+        recipientCount: 1,
         hasAudienceSelector: false,
-        dataClass: "internal",
+        dataClass: "secret" as unknown as "internal",
       }),
-    ).toBe("internal");
+    ).toBe("mass_message");
   });
 
   it("accepts only template references and recipient IDs, never message or address fields", () => {

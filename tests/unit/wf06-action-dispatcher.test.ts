@@ -227,6 +227,7 @@ describe("WF-06 action dispatcher", () => {
     const input = actionInput({
       kind: "in_app",
       templateRef: "attendance.notice",
+      dataClass: "internal",
       templateParams: { status: "absent" },
       recipientIds: [],
     });
@@ -243,6 +244,7 @@ describe("WF-06 action dispatcher", () => {
       actionInput({
         kind: "in_app",
         templateRef: "attendance.notice",
+        dataClass: "internal",
         recipientIds: [],
       }),
     );
@@ -280,6 +282,7 @@ describe("WF-06 action dispatcher", () => {
         actionInput({
           kind: "in_app",
           templateRef: "attendance.notice",
+          dataClass: "internal",
           recipientIds: [],
         }),
       ),
@@ -302,6 +305,7 @@ describe("WF-06 action dispatcher", () => {
         actionInput({
           kind: "in_app",
           templateRef: "attendance.notice",
+          dataClass: "internal",
           recipientIds: [],
         }),
       ),
@@ -326,5 +330,52 @@ describe("WF-06 action dispatcher", () => {
     ).rejects.toThrow("workflow_recipient_scope_invalid");
     expect(state.drafts).toHaveLength(0);
     expect(state.brokerCalls()).toBe(0);
+  });
+  it("passes category and data class to the executed record writer", async () => {
+    const state = dispatcher();
+    await dispatchWorkflowAction(
+      state.ports,
+      actionInput({
+        kind: "in_app",
+        templateRef: "attendance.notice",
+        dataClass: "public",
+        recipientIds: [],
+      }),
+    );
+    expect([...state.outbox.values()][0]).toMatchObject({
+      category: "communication",
+      dataClass: "public",
+      audienceSelector: null,
+    });
+  });
+
+  it("drafts unknown or missing data classes as confidential without calling the broker", async () => {
+    for (const [index, dataClass] of [
+      undefined,
+      "secret",
+      "Internal",
+      "minor-sensitive",
+    ].entries()) {
+      const state = dispatcher();
+      const result = await dispatchWorkflowAction(
+        state.ports,
+        actionInput(
+          {
+            kind: "in_app",
+            templateRef: "attendance.notice",
+            recipientIds: [],
+            ...(dataClass === undefined ? {} : { dataClass }),
+          },
+          { idempotencyKey: `wf-step-run:data-class:${index}` },
+        ),
+      );
+      expect(result).toEqual({ status: "draft" });
+      expect(state.drafts[0]).toMatchObject({
+        category: "mass_message",
+        dataClass: "confidential",
+      });
+      expect(state.brokerCalls()).toBe(0);
+      expect(state.outbox.size).toBe(0);
+    }
   });
 });

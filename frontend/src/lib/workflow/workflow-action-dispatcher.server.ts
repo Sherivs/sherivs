@@ -10,12 +10,15 @@ import type { EffectiveAutonomy } from "../twin-engine/autonomy-ladder";
 import {
   effectiveWorkflowAutonomy,
   isWorkflowWebhookTargetAllowed,
+  resolveWorkflowDataClass,
   workflowActionHasMoneyEffect,
+  workflowDataClassRequired,
   workflowActionCategory,
   workflowDeliveryGate,
   workflowActionDefinitionSchema,
   WORKFLOW_ACTION_CATEGORY_CAPS,
   type WorkflowAutonomyLevel,
+  type WorkflowDataClass,
   type WorkflowDeliveryEnvironment,
 } from "./workflow-actions";
 
@@ -57,6 +60,8 @@ export interface WorkflowActionDraftInput {
   templateParams: Record<string, string | number | boolean>;
   recipientIds: readonly string[];
   audienceSelector: "whole_class" | "all_guardians" | "all_staff" | null;
+  /** Resolved fail-closed: unknown or missing-but-required values are `confidential`. */
+  dataClass: WorkflowDataClass;
   webhookTargetId: string | null;
 }
 
@@ -168,6 +173,9 @@ export async function dispatchWorkflowAction(
     throw new Error("workflow_action_template_unavailable");
   }
 
+  const dataClass = resolveWorkflowDataClass(action.dataClass, {
+    required: workflowDataClassRequired(action.kind),
+  });
   let category = workflowActionCategory({
     actionClass: Object.prototype.hasOwnProperty.call(
       WORKFLOW_ACTION_CATEGORY_CAPS,
@@ -177,7 +185,7 @@ export async function dispatchWorkflowAction(
       : actionType.category,
     recipientCount: recipients.length,
     hasAudienceSelector: action.audienceSelector !== undefined,
-    ...(action.dataClass ? { dataClass: action.dataClass } : {}),
+    dataClass,
   });
   if (workflowActionHasMoneyEffect(actionType.effect)) category = "money_movement";
   if (action.kind === "webhook" && !webhookRegistered) category = "unregistered_webhook";
@@ -199,6 +207,7 @@ export async function dispatchWorkflowAction(
     templateParams: action.templateParams,
     recipientIds: recipients,
     audienceSelector: action.audienceSelector ?? null,
+    dataClass,
     webhookTargetId,
   };
   if (

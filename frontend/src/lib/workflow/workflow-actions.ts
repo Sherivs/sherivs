@@ -13,6 +13,31 @@ export const WORKFLOW_ACTION_KINDS = [
 
 export type WorkflowActionKind = (typeof WORKFLOW_ACTION_KINDS)[number];
 
+/**
+ * Explicit data classes. The same set is enforced by CHECK constraints on `wf_action_draft` and
+ * `wf_action_sandbox_outbox` (migration 20261117000800). Only the non-confidential classes may
+ * ever reach the executed record.
+ */
+export const WORKFLOW_DATA_CLASSES = [
+  "public",
+  "internal",
+  "confidential",
+  "minor_sensitive",
+] as const;
+export type WorkflowDataClass = (typeof WORKFLOW_DATA_CLASSES)[number];
+export const WORKFLOW_NON_CONFIDENTIAL_DATA_CLASSES: readonly WorkflowDataClass[] = Object.freeze([
+  "public",
+  "internal",
+]);
+/** Kinds that carry content to a person or outside system: they must declare a data class. */
+const DATA_CLASS_REQUIRED_KINDS: ReadonlySet<WorkflowActionKind> = new Set([
+  "email",
+  "in_app",
+  "whatsapp",
+  "sms",
+  "webhook",
+]);
+
 export const workflowActionDefinitionSchema = z
   .strictObject({
     kind: z.enum(WORKFLOW_ACTION_KINDS),
@@ -75,6 +100,7 @@ export const WORKFLOW_ACTION_CATEGORY_CAPS = Object.freeze({
   external_authority_share: "draft",
 } as const satisfies Readonly<Record<string, WorkflowAutonomyLevel>>);
 
+/** More than this many recipients is mass communication (capped at draft). SQL uses the same 25. */
 export const WORKFLOW_MASS_RECIPIENT_THRESHOLD = 25;
 
 const AUTONOMY_RANK: Readonly<Record<WorkflowAutonomyLevel, number>> = {
@@ -131,26 +157,46 @@ export function isWorkflowMassCommunication(input: {
   );
 }
 
-export function isWorkflowConfidentialDataClass(dataClass: string | undefined): boolean {
-  const normalized = dataClass
-    ?.trim()
-    .toLowerCase()
-    .replace(/[_\s]+/g, "-");
-  return normalized === "confidential" || normalized === "minor-sensitive";
+/**
+ * Fail-closed data class resolution. A known value is kept; an unknown value, or a missing value
+ * where the kind requires one, is treated as `confidential` (and so capped at draft). A missing
+ * value on a kind that sends nothing to a person (task, wait) is `internal`.
+ */
+export function resolveWorkflowDataClass(
+  dataClass: unknown,
+  options: { required: boolean },
+): WorkflowDataClass {
+  if (dataClass === undefined || dataClass === null) {
+    return options.required ? "confidential" : "internal";
+  }
+  return typeof dataClass === "string" &&
+    (WORKFLOW_DATA_CLASSES as readonly string[]).includes(dataClass)
+    ? (dataClass as WorkflowDataClass)
+    : "confidential";
+}
+
+export function workflowDataClassRequired(kind: WorkflowActionKind): boolean {
+  return DATA_CLASS_REQUIRED_KINDS.has(kind);
+}
+
+export function isWorkflowConfidentialDataClass(dataClass: WorkflowDataClass): boolean {
+  return !WORKFLOW_NON_CONFIDENTIAL_DATA_CLASSES.includes(dataClass);
 }
 
 export function workflowActionCategory(input: {
   actionClass: string;
   recipientCount: number;
   hasAudienceSelector: boolean;
-  dataClass?: string;
+  dataClass: WorkflowDataClass;
 }): string {
+  // An already-capped category is the more specific reason; keep it.
+  if (hasOwnCategory(WORKFLOW_ACTION_CATEGORY_CAPS, input.actionClass)) return input.actionClass;
   if (
     isWorkflowMassCommunication({
       recipientCount: input.recipientCount,
       hasAudienceSelector: input.hasAudienceSelector,
     }) ||
-    isWorkflowConfidentialDataClass(input.dataClass)
+    isWorkflowConfidentialDataClass(resolveWorkflowDataClass(input.dataClass, { required: true }))
   ) {
     return "mass_message";
   }

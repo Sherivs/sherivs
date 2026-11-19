@@ -1,3 +1,4 @@
+-- Rollback for 20261117000800 (WF-06). Restores public.wf_autonomy_guard() to the WF-03 body.
 BEGIN;
 
 DO $prereq$
@@ -17,6 +18,7 @@ DROP TABLE public.wf_action_draft;
 DROP TABLE public.wf_webhook_target;
 DROP TABLE public.wf_action_template;
 DROP TABLE public.wf_action_type;
+DROP FUNCTION public.wf_action_sandbox_outbox_guard();
 
 UPDATE public.cg_tool_registry
    SET enabled = false
