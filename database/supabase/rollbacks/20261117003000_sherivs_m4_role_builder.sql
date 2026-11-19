@@ -1,4 +1,4 @@
--- Rollback for 20261117003000_sherivs_m4_role_builder.sql (M4, ADR-116). NOT APPLIED.
+-- Rollback for 20261117003000_sherivs_m4_role_builder.sql (M4, ADR-121). NOT APPLIED.
 -- Removes the M4 functions and triggers and the three responsibility columns. Rows written through
 -- the functions (custom role versions, materialised catalogue roles, settings, grants, navigation
 -- responsibilities, delegations) are kept: they belong to tables owned by ADR-114 and M009, and their

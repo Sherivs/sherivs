@@ -1,5 +1,5 @@
 /**
- * Custom role and responsibility builder (mission M4, ADR-116), in the shell, admin only.
+ * Custom role and responsibility builder (mission M4, ADR-121), in the shell, admin only.
  * Steps follow master brief §7.3: base template or scratch, responsibilities then permissions
  * (protected ones flagged and not selectable), scope ceiling, workspace (three navigation sections
  * and widgets), SoD and risk preview, "simulate as", submit, second-admin approval, activation,

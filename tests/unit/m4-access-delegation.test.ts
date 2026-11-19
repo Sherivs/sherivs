@@ -1,5 +1,5 @@
 /**
- * M4 (ADR-116): access-review campaigns and delegation handlers — validation and refusal paths.
+ * M4 (ADR-121): access-review campaigns and delegation handlers — validation and refusal paths.
  * The database side (bounds guard, trim/revoke on source change, cross-organization refusal) is
  * proven by tests/sql/m4-role-builder.sql.
  */

@@ -1715,7 +1715,7 @@ body:has(.workspace-preview) {
   cursor: not-allowed;
 }
 
-/* M4 (ADR-116): acting / delegated banner. Text carries the meaning; colour is decoration. */
+/* M4 (ADR-121): acting / delegated banner. Text carries the meaning; colour is decoration. */
 .app-shell-acting-banner {
   background: color-mix(in oklab, var(--background, #fff) 85%, #f59e0b 15%);
   color: var(--foreground, #111);

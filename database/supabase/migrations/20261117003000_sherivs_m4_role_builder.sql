@@ -1,5 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
--- M4 (ADR-116): custom role and responsibility builder, delegation bounds, acting context.
+-- M4 (ADR-121): custom role and responsibility builder, delegation bounds, acting context.
 --
 -- Builds on, and does not replace:
 --   * 20261117001100 (M2 part B, ADR-114): org_custom_roles and its four-eyes guard. This file adds

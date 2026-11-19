@@ -1,5 +1,5 @@
 /**
- * M4 (ADR-116): custom role and responsibility builder. Every server-function handler's validation
+ * M4 (ADR-121): custom role and responsibility builder. Every server-function handler's validation
  * and refusal paths, the SoD explanation, "simulate as", and the end-to-end story at unit level:
  * admin A creates, admin B approves, and a holder's computed workspace has exactly the configured
  * three navigation sections. The fake port mirrors the database rules proven by

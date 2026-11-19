@@ -1,5 +1,5 @@
 /**
- * Delegation and acting roles (mission M4, ADR-116): grant a time-boxed delegation of an active
+ * Delegation and acting roles (mission M4, ADR-121): grant a time-boxed delegation of an active
  * assignment (leave cover, acting head). The end can never be later than the source assignment's
  * end; the database refuses it (M009 RPC and the M4 table guard) and trims or revokes delegations
  * when the source is shortened or ended.

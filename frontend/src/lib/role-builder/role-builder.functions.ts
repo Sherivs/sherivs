@@ -1,5 +1,5 @@
 /**
- * Server functions of the custom role and responsibility builder (mission M4, ADR-116).
+ * Server functions of the custom role and responsibility builder (mission M4, ADR-121).
  * Every call authenticates, derives the organization from the caller and runs the database
  * functions with the caller's JWT (no service role), so four-eyes and audit stay in Postgres.
  */

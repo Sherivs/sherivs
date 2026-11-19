@@ -1,5 +1,5 @@
 /**
- * Custom role and responsibility builder: pure rules (mission M4, ADR-116).
+ * Custom role and responsibility builder: pure rules (mission M4, ADR-121).
  *
  * Nothing here talks to the network. The database is the authority (ADR-114 guard on
  * `org_custom_roles`, the M4 definer functions, the M009 triggers); these functions give the admin

@@ -1,5 +1,5 @@
 /**
- * Access-review campaigns and delegation / acting roles (mission M4, ADR-116): schemas, ports and
+ * Access-review campaigns and delegation / acting roles (mission M4, ADR-121): schemas, ports and
  * handlers. Writes go through the existing M13 and M009 database functions with the caller's JWT;
  * the database audits every one (`role_access_review_audit_events`, `role_assignment_audit_events`).
  */

@@ -1,5 +1,5 @@
 /**
- * Always-visible "acting as / delegated" banner (mission M4, ADR-116; master brief §10.1 and
+ * Always-visible "acting as / delegated" banner (mission M4, ADR-121; master brief §10.1 and
  * Appendix D "Acting Principal / Acting HOD: delegation with expiry and an audit banner").
  * Shows the caller's own active delegations and acting assignments, from
  * `workspace_my_acting_context()`. Renders nothing when there are none or the lookup fails.

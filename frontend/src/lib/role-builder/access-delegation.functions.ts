@@ -1,5 +1,5 @@
 /**
- * Server functions for access-review campaigns, delegations and the acting banner (M4, ADR-116).
+ * Server functions for access-review campaigns, delegations and the acting banner (M4, ADR-121).
  * Caller's JWT only; the organization comes from the caller.
  */
 import { createServerFn } from "@tanstack/react-start";

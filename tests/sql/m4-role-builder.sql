@@ -1,5 +1,5 @@
 -- Disposable proof for database/supabase/migrations/20261117003000_sherivs_m4_role_builder.sql
--- (M4, ADR-116). It builds a small production-shaped fixture (the M2 part B fixture of
+-- (M4, ADR-121). It builds a small production-shaped fixture (the M2 part B fixture of
 -- tests/sql/m2-role-pack-engine.sql, then the 017 / M009-A1 tables the builder writes to, with the
 -- M009 audit trigger and the delegate RPC verbatim), applies 20261117001100 and this migration, and
 -- proves the custom role story (admin A drafts, admin B approves, a holder's role carries exactly the

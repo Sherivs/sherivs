@@ -1,5 +1,5 @@
 /**
- * Access-review campaigns (mission M4, ADR-116) over the M13 tables and functions: start a
+ * Access-review campaigns (mission M4, ADR-121) over the M13 tables and functions: start a
  * campaign over every active assignment, reviewers keep or revoke each one, the campaign completes
  * when nothing is pending. Every decision is written to role_access_review_audit_events.
  */

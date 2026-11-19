@@ -1,5 +1,5 @@
 /**
- * M4 (ADR-116): the three screens and the acting banner render accessibly from seeded data, and
+ * M4 (ADR-121): the three screens and the acting banner render accessibly from seeded data, and
  * the card registry opens them as live, lazily loaded sections.
  * Screens: frontend/src/components/app-shell/custom-role-builder-screen,
  * frontend/src/components/app-shell/access-review-screen,

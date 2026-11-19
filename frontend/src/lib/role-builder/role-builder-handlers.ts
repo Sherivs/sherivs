@@ -1,5 +1,5 @@
 /**
- * Server-side handlers of the custom role and responsibility builder (ADR-116). Pure over a
+ * Server-side handlers of the custom role and responsibility builder (ADR-121). Pure over a
  * `RoleBuilderPort`, so every validation and refusal path is unit-tested without a network.
  * `role-builder.functions.ts` wraps each one in `createServerFn` with the caller's JWT.
  */

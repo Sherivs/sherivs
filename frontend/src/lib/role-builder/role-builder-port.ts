@@ -1,5 +1,5 @@
 /**
- * Data port for the M4 builder screens (ADR-116). One implementation talks to Supabase with the
+ * Data port for the M4 builder screens (ADR-121). One implementation talks to Supabase with the
  * CALLER's JWT (never the service role): every write is a SECURITY DEFINER function that reads
  * `auth.uid()` and `get_my_school_id()`, so four-eyes, the organization and the audit actor are
  * decided by the database. Tests use an in-memory fake with the same contract.
