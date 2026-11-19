@@ -1,0 +1,17 @@
+{
+  "entry.org.institution_type": "college_of_nursing_midwifery",
+  "entry.location.state": "enugu",
+  "health_college.programmes.offered": ["nursing", "midwifery"],
+  "health_college.authority.owner": "state",
+  "health_college.clinical.site_count": 3,
+  "health_college.clinical.external_preceptors": true,
+  "health_college.licensing.bodies": ["nmcn"],
+  "health_college.licensing.indexing": true,
+  "health_college.calendar.model": "two_semester",
+  "health_college.assessment.scale": "percentage_pass_mark",
+  "health_college.intake.routes": ["direct_application", "entrance_exam", "interview"],
+  "health_college.welfare.hostels": true,
+  "health_college.layout.campus_count": 1,
+  "health_college.size.population_band": "from_300_to_1000",
+  "health_college.profile.languages": ["en", "ig"]
+}

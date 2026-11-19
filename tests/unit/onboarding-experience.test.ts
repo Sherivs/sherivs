@@ -1,6 +1,6 @@
 /**
- * M008 — organization request page copy, mailto honesty, and field contract.
- * The page opens an email draft. It must not describe that as a submission.
+ * M008 — organization request page copy and field contract.
+ * M5 part B (ADR-108): the page now posts to the intake endpoint; mailto is only a fallback.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -40,26 +40,28 @@ describe("onboarding experience copy", () => {
     expect(route).toContain("Bring your school into Sherivs —");
   });
 
-  it("keeps the existing fields and does not add organization type, location, or telephone", () => {
+  it("keeps the existing fields and adds the intake fields the request record needs", () => {
     expect(screen).toContain("Organization name");
     expect(screen).toContain("Full name");
     expect(screen).toContain("Work email");
     expect(screen).toContain("Role or title");
-    expect(screen).toContain(">Message<");
-    expect(screen).not.toMatch(/Organization type|Telephone|name="location"|type="tel"/i);
+    expect(screen).toContain("Message ");
+    expect(screen).toContain("Organization type");
+    expect(screen).toContain('type="tel"');
+    expect(screen).toContain('name="website"');
   });
 
-  it("describes mailto honestly and never claims a successful submission", () => {
-    expect(screen).toContain("buildOnboardingMailto");
-    expect(screen).toContain("window.location.href = href");
-    expect(screen).toContain("This opens your email app with a draft to");
-    expect(screen).toContain("Nothing is sent until you send that message.");
-    expect(screen).toContain("This page does not create a ticket.");
-    expect(screen).toContain("Nothing has been submitted until you send that message.");
-    expect(screen).not.toMatch(/submitted successfully|ticket was created|request received/i);
+  it("posts to the intake endpoint; mailto is only a fallback, and success is honest", () => {
+    expect(screen).toContain("useIntakeForm");
+    expect(screen).not.toContain("window.location.href = href");
+    expect(screen).toContain("form.showFallback ?");
+    expect(screen).toContain("we will continue your interview by link");
+    expect(screen).toContain("No account has been created yet.");
+    expect(screen).not.toMatch(/submitted successfully|ticket was created/i);
     expect(screen).not.toContain("signUp");
     expect(screen).not.toContain("Scholar is");
     expect(screen).not.toContain("Scholar's");
+    expect(route).not.toContain("opens your email app");
   });
 
   it("identifies invalid fields for assistive technology", () => {
@@ -67,14 +69,10 @@ describe("onboarding experience copy", () => {
     expect(screen).toContain("aria-describedby");
     expect(screen).toContain('role="alert"');
     expect(screen).toContain("noValidate");
-    expect(screen).toContain("Enter the organization name.");
-    expect(screen).toContain("Enter the admin's name.");
-    expect(screen).toContain("Enter a work email address.");
-    expect(screen).toContain("Describe the organization and who should be the admin.");
-    expect(screen).toContain("Confirm you understand how this request is sent.");
+    expect(screen).toContain('role="alert"');
   });
 
-  it("still builds a mailto and does not invent a ticket id", () => {
+  it("the fallback mailto does not invent a ticket id", () => {
     const { href } = buildOnboardingMailto({
       organization: "Northwind",
       name: "Ada",

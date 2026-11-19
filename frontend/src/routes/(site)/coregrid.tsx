@@ -1,8 +1,9 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 /**
- * Former path of the Sherivs platform page (Sherivs was the former name of the
- * Sherivs platform). Kept as a permanent redirect so existing links keep working.
+ * Former path of the Sherivs product overview, named after a retired internal
+ * name. Kept as a permanent redirect so existing links keep working. The
+ * retired name is never rendered on a page.
  */
 export const Route = createFileRoute("/(site)/coregrid")({
   beforeLoad: () => {

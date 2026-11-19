@@ -1,0 +1,61 @@
+name: Uptime probe
+
+# Mission M23 (ADR-110). Requests the public health endpoint and fails unless
+# it answers HTTP 200 with a database check whose status is ok
+# (scripts/check-uptime.mjs).
+#
+# - The URL comes from the repository VARIABLE SHERIVS_HEALTH_URL (Settings >
+#   Secrets and variables > Actions > Variables), e.g. the production
+#   /health.json URL. It is a public URL, not a secret.
+# - When the variable is unset the job reports BLOCKED in the run summary and
+#   exits 0.
+# - One unauthenticated GET per run, no credentials sent. The endpoint caches
+#   its database ping for 30 s, so this probe cannot load the database.
+# - A failed run is the alert (GitHub notifies on failed scheduled runs);
+#   routing to the owner-alert channel is not configured here (ADR-110).
+
+on:
+  schedule:
+    # Hourly at minute 17 (off the top of the hour). GitHub may delay or skip
+    # scheduled runs under load, so this is a coarse probe, not an SLA monitor.
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: uptime-probe
+  cancel-in-progress: true
+
+jobs:
+  probe:
+    name: Health endpoint answers 200 with database ok
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Probe health endpoint
+        env:
+          SHERIVS_HEALTH_URL: ${{ vars.SHERIVS_HEALTH_URL }}
+        run: |
+          set -uo pipefail
+          node scripts/check-uptime.mjs | tee uptime.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo "### Uptime probe"
+            sed 's/^/- /' uptime.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -ne 0 ]; then
+            echo "::error title=Uptime probe::$(tail -n 1 uptime.txt) — see the run summary"
+          fi
+          exit "$code"

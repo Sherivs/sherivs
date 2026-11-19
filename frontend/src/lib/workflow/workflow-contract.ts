@@ -23,6 +23,8 @@
  */
 
 import type { TenantId } from "../tenant-core";
+import { workflowActionDefinitionIsValid } from "./workflow-actions";
+import type { WorkflowActionDefinition } from "./workflow-actions";
 
 /* ─────────────────────────────────────────────────────────────
  * Triggers (Part 17: eight kinds)
@@ -117,6 +119,7 @@ export interface WorkflowStep {
   kind: WorkflowStepKind;
   assignment: StepAssignment;
   actionClass?: string;
+  action?: WorkflowActionDefinition;
   timeoutSeconds?: number;
   budgetUnits?: number;
   /**
@@ -255,6 +258,9 @@ export function validateWorkflowDefinition(def: WorkflowDefinition): DefinitionV
         ok: false,
         error: `Action step ${step.stepId} must declare at least one authorized action`,
       };
+    }
+    if (step.action !== undefined && !workflowActionDefinitionIsValid(step.action)) {
+      return { ok: false, error: `Action step ${step.stepId} has an invalid action definition` };
     }
   }
 

@@ -6,6 +6,11 @@
  * which is frozen for new consumers — this module is a typed marketing view,
  * not an access-decision surface. Entitlement enforcement remains with the
  * canonical feature-access contract surface, never with this page.
+ *
+ * Truth audit 2026-11-17: no public page renders this catalog today, and
+ * there is no self-serve checkout (Paystack is in test mode). Highlights say
+ * "(coming)" for anything not live in production. Every call to action is
+ * "Talk to us" until the founder confirms public prices.
  */
 
 export interface MarketingTier {
@@ -37,74 +42,74 @@ export const MARKETING_TIERS: readonly MarketingTier[] = [
     name: "Trial",
     monthlyPrice: 0,
     annualPrice: 0,
-    summary: "Evaluate the full platform core free for 30 days.",
+    summary: "A 30-day evaluation, arranged with the Sherivs team.",
     featured: false,
     highlights: [
       "30-day evaluation",
       "Up to 50 members",
       "One workspace",
-      "Core profiles and calendar",
+      "Shared workspace and roles",
     ],
-    ctaLabel: "Start free",
+    ctaLabel: "Talk to us",
   },
   {
     id: "starter",
     name: "Starter",
     monthlyPrice: 15_000,
     annualPrice: 150_000,
-    summary: "Everything a small organization needs to run on Sherivs.",
+    summary: "For a small organization starting on Sherivs.",
     featured: false,
     highlights: [
       "Up to 200 members",
-      "Five role workspaces",
-      "Payments and receipts",
-      "Email notifications",
+      "Role-based workspace",
+      "Fee payments and receipts (coming)",
+      "Email notifications (coming)",
     ],
-    ctaLabel: "Choose Starter",
+    ctaLabel: "Talk to us",
   },
   {
     id: "growth",
     name: "Growth",
     monthlyPrice: 35_000,
     annualPrice: 350_000,
-    summary: "Advanced intelligence for organizations that are scaling.",
+    summary: "For organizations that are growing.",
     featured: true,
     highlights: [
       "Up to 500 members",
-      "AI scheduling and insights",
-      "SMS and WhatsApp notifications",
-      "Advanced analytics",
+      "AI suggestions (coming)",
+      "SMS and WhatsApp messages (coming)",
+      "Advanced reports (coming)",
     ],
-    ctaLabel: "Choose Growth",
+    ctaLabel: "Talk to us",
   },
   {
     id: "professional",
     name: "Professional",
     monthlyPrice: 75_000,
     annualPrice: 750_000,
-    summary: "Full governed autonomy: AI workforce, twins and API access.",
+    summary: "For larger organizations.",
     featured: false,
     highlights: [
       "Up to 1,000 members",
-      "AI workforce and Digital Twin",
-      "White-label and custom domain",
-      "Priority support",
+      "AI agents that suggest work for approval (coming)",
+      "Custom domain for your public website (coming)",
+      "Priority support (coming)",
     ],
-    ctaLabel: "Choose Professional",
+    ctaLabel: "Talk to us",
   },
   {
     id: "enterprise",
     name: "Enterprise",
     monthlyPrice: null,
     annualPrice: null,
-    summary: "Unlimited scale for groups of institutions and multi-branch operations.",
+    summary: "For groups of institutions with several branches.",
     featured: false,
     highlights: [
       "Unlimited members",
-      "Dedicated database",
-      "Full API and webhook surface",
-      "Fleet and branch management",
+      "Dedicated database (coming)",
+      "API access (coming)",
+      "Multi-branch management (coming)",
     ],
-    ctaLabel: "Talk to sales",
+    ctaLabel: "Talk to us",
   },
 ];

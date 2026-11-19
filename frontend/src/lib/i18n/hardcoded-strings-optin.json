@@ -1,0 +1,15 @@
+{
+  "$comment": "Mission M23 (ADR-110). Files opted in to the hard-coded user-facing string check (tests/unit/m23-i18n-catalogues.test.ts). The check flags NEW literals only: each file's existing literals are listed as its baseline. Move a literal into lib/i18n/catalogues and drop it from the baseline; never add a new one here without review.",
+  "files": [
+    {
+      "path": "frontend/src/components/app-shell/section-screen.tsx",
+      "baseline": [
+        "← Home",
+        "in",
+        "Search ${label}",
+        "This section is open for your current role. Records stay tenant-scoped and only appear when your administration has granted the matching permission.",
+        "Loading…"
+      ]
+    }
+  ]
+}

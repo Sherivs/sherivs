@@ -1,0 +1,125 @@
+{
+  "admissions": {
+    "enabledByDefault": true,
+    "mode": "direct_cycle"
+  },
+  "authorityLinkCandidates": [
+    {
+      "authority": "nmcn",
+      "relation": "regulated_by",
+      "scope": null,
+      "status": "unverified"
+    }
+  ],
+  "calendarModel": "two_semester",
+  "curricula": ["midwifery", "nursing"],
+  "flags": [
+    "founder_confirm:admissions_availability",
+    "placeholder:role_pack",
+    "placeholder:website_template"
+  ],
+  "gradingSystem": "percentage_pass_mark",
+  "institutionProfile": {
+    "attributes": {
+      "campus_count": 1,
+      "clinical_site_count": 3,
+      "external_preceptors": true,
+      "hostels": true,
+      "intake_routes": ["direct_application", "entrance_exam", "interview"],
+      "licensing_indexing": true,
+      "population_band": "from_300_to_1000",
+      "state": "enugu"
+    },
+    "calendar_model": "two_semester",
+    "curricula": ["midwifery", "nursing"],
+    "grading_system": "percentage_pass_mark",
+    "institution_type": "college_of_nursing_midwifery",
+    "languages": ["en", "ig"],
+    "ownership": "state",
+    "regulators": ["nmcn"]
+  },
+  "modules": [
+    {
+      "code": "admissions",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "assessment_results",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "attendance",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "billing",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "boarding_hostels",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "clinical_postings",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "communications",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "course_registration",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "licensing_indexing",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "people_records",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "timetable",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "website",
+      "enabled": true,
+      "gate": null
+    }
+  ],
+  "orgUnits": [
+    {
+      "key": "org",
+      "kind": "organization",
+      "parentKey": null
+    },
+    {
+      "key": "programme_midwifery",
+      "kind": "programme",
+      "parentKey": "org"
+    },
+    {
+      "key": "programme_nursing",
+      "kind": "programme",
+      "parentKey": "org"
+    }
+  ],
+  "rolePack": {
+    "code": "ng.college_of_nursing_midwifery",
+    "version": "0.1.0"
+  },
+  "websiteTemplate": "tertiary_health_college"
+}

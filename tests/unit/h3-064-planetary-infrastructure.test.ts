@@ -30,7 +30,7 @@ import {
   type AdmissionPolicy,
   type AdmissionRequest,
   type RegionTopology,
-} from "../../frontend/src/lib/planetary-infrastructure/contracts";
+} from "../../frontend/src/lib/_quarantine/planetary-infrastructure/contracts";
 
 const DECLARED_AT = "2026-10-03T00:00:00.000Z";
 const REQUESTED_AT = "2026-10-03T01:00:00.000Z";
@@ -63,8 +63,18 @@ function topology(overrides: Record<string, unknown> = {}): Record<string, unkno
       region({ regionId: "compute_region_1", kind: "compute", tenantDataEligible: false }),
     ],
     links: [
-      { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 10 },
-      { fromRegionId: "core_region_1", toRegionId: "compute_region_1", linkKind: "regional", weight: 20 },
+      {
+        fromRegionId: "core_region_1",
+        toRegionId: "edge_region_1",
+        linkKind: "backbone",
+        weight: 10,
+      },
+      {
+        fromRegionId: "core_region_1",
+        toRegionId: "compute_region_1",
+        linkKind: "regional",
+        weight: 20,
+      },
     ],
     ...overrides,
   };
@@ -132,19 +142,22 @@ function policyFixture(overrides: Record<string, unknown> = {}): Record<string, 
 
 function parsedPolicy(overrides: Record<string, unknown> = {}): AdmissionPolicy {
   const result = admissionPolicySchema.safeParse(policyFixture(overrides));
-  if (!result.success) throw new Error(`fixture policy failed to parse: ${JSON.stringify(result.error.issues)}`);
+  if (!result.success)
+    throw new Error(`fixture policy failed to parse: ${JSON.stringify(result.error.issues)}`);
   return result.data;
 }
 
 function parsedTopology(overrides: Record<string, unknown> = {}): RegionTopology {
   const result = parseRegionTopology(topology(overrides));
-  if (!result.ok) throw new Error(`fixture topology failed to parse: ${JSON.stringify(result.issues)}`);
+  if (!result.ok)
+    throw new Error(`fixture topology failed to parse: ${JSON.stringify(result.issues)}`);
   return result.topology;
 }
 
 function parsedRequest(overrides: Record<string, unknown> = {}): AdmissionRequest {
   const result = parseAdmissionRequest(request(overrides));
-  if (!result.ok) throw new Error(`fixture request failed to parse: ${JSON.stringify(result.issues)}`);
+  if (!result.ok)
+    throw new Error(`fixture request failed to parse: ${JSON.stringify(result.issues)}`);
   return result.request;
 }
 
@@ -185,16 +198,24 @@ describe("distributed-node identity", () => {
   it("rejects anonymous nodes: owner, purpose and provenance are mandatory", () => {
     expect(distributedNodeIdentitySchema.safeParse(node({ ownerRef: "" })).success).toBe(false);
     expect(distributedNodeIdentitySchema.safeParse(node({ purpose: "   " })).success).toBe(false);
-    expect(distributedNodeIdentitySchema.safeParse(node({ provenance: undefined })).success).toBe(false);
+    expect(distributedNodeIdentitySchema.safeParse(node({ provenance: undefined })).success).toBe(
+      false,
+    );
   });
 
   it("rejects unknown lifecycle states and unknown capability shapes", () => {
-    expect(distributedNodeIdentitySchema.safeParse(node({ lifecycleState: "trusted" })).success).toBe(false);
-    expect(distributedNodeIdentitySchema.safeParse(node({ capabilities: ["UPPER_CASE"] })).success).toBe(false);
+    expect(
+      distributedNodeIdentitySchema.safeParse(node({ lifecycleState: "trusted" })).success,
+    ).toBe(false);
+    expect(
+      distributedNodeIdentitySchema.safeParse(node({ capabilities: ["UPPER_CASE"] })).success,
+    ).toBe(false);
   });
 
   it("rejects raw key material in the identity slot", () => {
-    const parsed = distributedNodeIdentitySchema.safeParse(node({ keyFingerprint: "super-secret-key-value" }));
+    const parsed = distributedNodeIdentitySchema.safeParse(
+      node({ keyFingerprint: "super-secret-key-value" }),
+    );
     expect(parsed.success).toBe(false);
   });
 
@@ -226,7 +247,9 @@ describe("node lifecycle transitions (AGENTS §6, §8)", () => {
     expect(noApproval.ok).toBe(false);
     if (!noApproval.ok) expect(noApproval.reason).toBe("human_approval_invalid");
 
-    const machineShaped = decideNodeLifecycleTransition("approved", "deployed", { approvedBy: "agent:self" });
+    const machineShaped = decideNodeLifecycleTransition("approved", "deployed", {
+      approvedBy: "agent:self",
+    });
     expect(machineShaped.ok).toBe(false);
   });
 
@@ -236,7 +259,11 @@ describe("node lifecycle transitions (AGENTS §6, §8)", () => {
     const approved = decideNodeLifecycleTransition(
       "suspended",
       "reviewed",
-      approval({ approvedBy: "role:human-oversight", authority: "governed review", reason: "re-activation reviewed" }),
+      approval({
+        approvedBy: "role:human-oversight",
+        authority: "governed review",
+        reason: "re-activation reviewed",
+      }),
     );
     expect(approved.ok).toBe(true);
   });
@@ -267,36 +294,70 @@ describe("region topology parsing", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.reason).toBe("cross_record_invariant");
-      expect(result.issues.some((issue) => issue.message.includes("duplicate region id"))).toBe(true);
+      expect(result.issues.some((issue) => issue.message.includes("duplicate region id"))).toBe(
+        true,
+      );
     }
   });
 
   it("fails closed on unresolved link endpoints and duplicate links", () => {
     const unresolved = parseRegionTopology(
-      topology({ links: [{ fromRegionId: "core_region_1", toRegionId: "ghost_region", linkKind: "backbone", weight: 1 }] }),
+      topology({
+        links: [
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "ghost_region",
+            linkKind: "backbone",
+            weight: 1,
+          },
+        ],
+      }),
     );
     expect(unresolved.ok).toBe(false);
     if (!unresolved.ok) {
-      expect(unresolved.issues.some((issue) => issue.message.includes("unresolved region"))).toBe(true);
+      expect(unresolved.issues.some((issue) => issue.message.includes("unresolved region"))).toBe(
+        true,
+      );
     }
 
     const duplicated = parseRegionTopology(
       topology({
         links: [
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 1 },
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 2 },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 2,
+          },
         ],
       }),
     );
     expect(duplicated.ok).toBe(false);
     if (!duplicated.ok) {
-      expect(duplicated.issues.some((issue) => issue.message.includes("duplicate link"))).toBe(true);
+      expect(duplicated.issues.some((issue) => issue.message.includes("duplicate link"))).toBe(
+        true,
+      );
     }
   });
 
   it("rejects self-links and malformed shapes", () => {
     const selfLink = parseRegionTopology(
-      topology({ links: [{ fromRegionId: "core_region_1", toRegionId: "core_region_1", linkKind: "backbone", weight: 1 }] }),
+      topology({
+        links: [
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "core_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+        ],
+      }),
     );
     expect(selfLink.ok).toBe(false);
     expect(parseRegionTopology({ topologyId: "fabric_main" }).ok).toBe(false);
@@ -327,7 +388,9 @@ describe("residency (tenant-data eligibility)", () => {
 
   it("keeps canHostTenantData fail-closed on the region kind and declaration", () => {
     const storage = regionSchema.parse(region());
-    const edge = regionSchema.parse(region({ regionId: "edge_region_1", kind: "edge", tenantDataEligible: false }));
+    const edge = regionSchema.parse(
+      region({ regionId: "edge_region_1", kind: "edge", tenantDataEligible: false }),
+    );
     expect(canHostTenantData(storage)).toBe(true);
     expect(canHostTenantData(edge)).toBe(false);
   });
@@ -356,8 +419,12 @@ describe("trust decisions (E-060: never automatically trusted)", () => {
   it("rejects decisions without provenance, reason, or evidence basis", () => {
     expect(trustDecisionSchema.safeParse(trustDecision({ decidedBy: "" })).success).toBe(false);
     expect(trustDecisionSchema.safeParse(trustDecision({ reason: "" })).success).toBe(false);
-    expect(trustDecisionSchema.safeParse(trustDecision({ basisEvidenceRef: "" })).success).toBe(false);
-    expect(trustDecisionSchema.safeParse(trustDecision({ authority: undefined })).success).toBe(false);
+    expect(trustDecisionSchema.safeParse(trustDecision({ basisEvidenceRef: "" })).success).toBe(
+      false,
+    );
+    expect(trustDecisionSchema.safeParse(trustDecision({ authority: undefined })).success).toBe(
+      false,
+    );
   });
 });
 
@@ -370,9 +437,13 @@ describe("region admission (fail-closed, E-060)", () => {
 
   it("never carries a permissive default: the policy schema cannot express auto-trust", () => {
     expect(admissionPolicySchema.safeParse(policyFixture()).success).toBe(true);
-    const permissive = admissionPolicySchema.safeParse(policyFixture({ requireExplicitTrust: false }));
+    const permissive = admissionPolicySchema.safeParse(
+      policyFixture({ requireExplicitTrust: false }),
+    );
     expect(permissive.success).toBe(false);
-    const missing = admissionPolicySchema.safeParse(policyFixture({ requireExplicitTrust: undefined }));
+    const missing = admissionPolicySchema.safeParse(
+      policyFixture({ requireExplicitTrust: undefined }),
+    );
     expect(missing.success).toBe(false);
   });
 
@@ -386,13 +457,21 @@ describe("region admission (fail-closed, E-060)", () => {
   });
 
   it("denies admission on a malformed trust decision (fail-closed, never widens)", () => {
-    const decision = decideRegionAdmission(fabric, parsedPolicy(), parsedRequest(), { verdict: "trusted", nodeId: "node_ext_1" });
+    const decision = decideRegionAdmission(fabric, parsedPolicy(), parsedRequest(), {
+      verdict: "trusted",
+      nodeId: "node_ext_1",
+    });
     expect(decision.ok).toBe(false);
     if (!decision.ok) expect(decision.reason).toBe("trust_decision_invalid");
   });
 
   it("admits only through a valid, node-matched trusted decision", () => {
-    const decision = decideRegionAdmission(fabric, parsedPolicy(), parsedRequest(), trustDecision());
+    const decision = decideRegionAdmission(
+      fabric,
+      parsedPolicy(),
+      parsedRequest(),
+      trustDecision(),
+    );
     expect(decision.ok).toBe(true);
     if (decision.ok) {
       expect(decision.verdict).toBe("admitted");
@@ -402,7 +481,12 @@ describe("region admission (fail-closed, E-060)", () => {
   });
 
   it("denies on an explicit untrusted verdict and on node-mismatched decisions", () => {
-    const distrusted = decideRegionAdmission(fabric, parsedPolicy(), parsedRequest(), trustDecision({ verdict: "untrusted" }));
+    const distrusted = decideRegionAdmission(
+      fabric,
+      parsedPolicy(),
+      parsedRequest(),
+      trustDecision({ verdict: "untrusted" }),
+    );
     expect(distrusted.ok).toBe(false);
     if (!distrusted.ok) expect(distrusted.reason).toBe("distrusted_by_decision");
 
@@ -466,9 +550,13 @@ describe("region admission (fail-closed, E-060)", () => {
 
   it("parses requests fail-closed and refuses capability expansion", () => {
     expect(parseAdmissionRequest(request()).ok).toBe(true);
-    expect(parseAdmissionRequest(request({ node: node({ capabilities: ["serve_presence"] }) })).ok).toBe(true);
+    expect(
+      parseAdmissionRequest(request({ node: node({ capabilities: ["serve_presence"] }) })).ok,
+    ).toBe(true);
 
-    const expanded = parseAdmissionRequest(request({ capabilities: ["serve_presence", "admin_everything"] }));
+    const expanded = parseAdmissionRequest(
+      request({ capabilities: ["serve_presence", "admin_everything"] }),
+    );
     expect(expanded.ok).toBe(false);
     if (!expanded.ok) {
       expect(expanded.reason).toBe("capability_expansion");

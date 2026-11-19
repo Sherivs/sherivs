@@ -1,0 +1,60 @@
+name: Backup freshness check
+
+# Mission M23 (ADR-110). Fails visibly when the newest successful run of
+# nightly-db-backup.yml is older than 26 hours or produced no backup artifact.
+#
+# - Reads run and artifact METADATA only (scripts/check-backup-freshness.mjs):
+#   it never downloads a backup, never touches the database, never reads a
+#   repository secret. The built-in GITHUB_TOKEN is passed through the
+#   environment and is never printed.
+# - It does not run, change or re-trigger the backup workflow itself.
+# - A failed run of this workflow is the alert: GitHub notifies the
+#   repository's watchers of failed scheduled runs (routing to the owner-alert
+#   channel is not configured here; see ADR-110).
+
+on:
+  schedule:
+    # Daily 08:43 UTC (09:43 WAT): about 7.5 hours after the 01:07 UTC backup,
+    # off the top of the hour.
+    - cron: "43 8 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: backup-freshness
+  cancel-in-progress: true
+
+jobs:
+  freshness:
+    name: Newest nightly backup is under 26 hours old and has an artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+
+      - name: Check backup freshness
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          node scripts/check-backup-freshness.mjs | tee freshness.txt
+          code=${PIPESTATUS[0]}
+          {
+            echo "### Backup freshness"
+            sed 's/^/- /' freshness.txt
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" -ne 0 ]; then
+            echo "::error title=Backup freshness::$(tail -n 1 freshness.txt) — see the run summary"
+          fi
+          exit "$code"

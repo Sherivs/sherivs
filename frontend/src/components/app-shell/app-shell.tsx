@@ -18,6 +18,8 @@ import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import { ShellGlassIcon } from "./glass-icon";
 import { AppShellStateProvider, useAppShell } from "./shell-context";
 import { ConnectionStatus } from "./connection-status";
+import { DataSaverGate, useContextExitGuard, useDataSaver } from "./offline-controls";
+import { ActingContextBanner } from "./acting-context-banner";
 import { rememberResource } from "@/lib/internal-console/recent";
 import "./app-shell.css";
 
@@ -50,11 +52,32 @@ function ShellChrome({ children }: { children: ReactNode }) {
   const organizations = organizationOptions(shell.affiliations);
   const roles = rolesForOrganization(shell.affiliations, activeOrganizationId);
 
+  const exitGuard = useContextExitGuard();
+  const [dataSaver] = useDataSaver();
+
   async function switchContext(organizationId: string, role: string) {
+    const previous =
+      app.profile?.id && app.profile.school_id && app.profile.role
+        ? { tenantId: app.profile.school_id, userId: app.profile.id, role: app.profile.role }
+        : null;
+    await exitGuard.guard("switch", () => runSwitch(organizationId, role, previous));
+  }
+
+  async function runSwitch(
+    organizationId: string,
+    role: string,
+    previous: { tenantId: string; userId: string; role: string } | null,
+  ) {
     setContextError(false);
     setPending("context");
     try {
       await switchActiveOrganization({ data: { organizationId, role } });
+      // SV1-LITE (ADR-109): nothing from the previous context stays readable or sendable.
+      if (previous) {
+        const { noteUnsentBeforeWipe, wipeContext } = await import("@/lib/offline/context-exit");
+        await noteUnsentBeforeWipe(previous).catch(() => 0);
+        await wipeContext(previous).catch(() => undefined);
+      }
       await app.refresh();
     } catch {
       setContextError(true);
@@ -89,11 +112,12 @@ function ShellChrome({ children }: { children: ReactNode }) {
     );
   }
 
-  const portrait = avatar ? (
-    <img className="app-shell-avatar" src={avatar} alt="" />
-  ) : (
-    <span className="app-shell-avatar app-shell-avatar-fallback">{initials(display)}</span>
-  );
+  const portrait =
+    avatar && !dataSaver ? (
+      <img className="app-shell-avatar" src={avatar} alt="" />
+    ) : (
+      <span className="app-shell-avatar app-shell-avatar-fallback">{initials(display)}</span>
+    );
 
   return (
     <div className={`app-shell${drawer ? " is-drawer-open" : ""}`} data-testid="app-shell">
@@ -214,6 +238,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
+        <ActingContextBanner refreshKey={`${activeOrganizationId}:${activeRole}`} />
         <main id="main-content" tabIndex={-1} className="app-shell-main">
           <div className="app-shell-sheet">{children}</div>
         </main>
@@ -255,7 +280,9 @@ function ShellChrome({ children }: { children: ReactNode }) {
           <aside className="app-shell-drawer" data-testid="app-shell-drawer">
             <div className="app-shell-drawer-profile">
               {avatar ? (
-                <img className="app-shell-avatar app-shell-avatar-lg" src={avatar} alt="" />
+                <DataSaverGate kind="image" label="your profile photo">
+                  <img className="app-shell-avatar app-shell-avatar-lg" src={avatar} alt="" />
+                </DataSaverGate>
               ) : (
                 <span className="app-shell-avatar app-shell-avatar-lg app-shell-avatar-fallback">
                   {initials(display)}
@@ -345,13 +372,18 @@ function ShellChrome({ children }: { children: ReactNode }) {
                 Roles and responsibilities
               </button>
             ) : null}
-            <button type="button" className="app-shell-signout" onClick={() => void app.signOut()}>
+            <button
+              type="button"
+              className="app-shell-signout"
+              onClick={() => void exitGuard.guard("sign-out", () => app.signOut())}
+            >
               <LogOut size={16} />
               Sign out
             </button>
           </aside>
         </>
       ) : null}
+      {exitGuard.dialog}
     </div>
   );
 }

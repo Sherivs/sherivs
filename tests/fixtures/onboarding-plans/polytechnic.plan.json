@@ -1,0 +1,153 @@
+{
+  "admissions": {
+    "enabledByDefault": true,
+    "mode": "jamb_caps_cycle"
+  },
+  "authorityLinkCandidates": [
+    {
+      "authority": "nbte",
+      "relation": "regulated_by",
+      "scope": null,
+      "status": "unverified"
+    }
+  ],
+  "calendarModel": "two_semester",
+  "curricula": ["hnd", "nd", "pre_nd"],
+  "flags": [
+    "founder_confirm:admissions_availability",
+    "placeholder:role_pack",
+    "placeholder:website_template",
+    "verify:jamb_caps_access_terms"
+  ],
+  "gradingSystem": "four_point_cgpa",
+  "institutionProfile": {
+    "attributes": {
+      "academic_governance": "academic_board",
+      "campus_count": 2,
+      "consultancy_unit": true,
+      "department_count": 40,
+      "hostels": true,
+      "intake_routes": ["jamb_utme_caps", "direct_entry", "part_time"],
+      "population_band": "over_5000",
+      "school_count": 6,
+      "siwes": true,
+      "state": "kaduna"
+    },
+    "calendar_model": "two_semester",
+    "curricula": ["hnd", "nd", "pre_nd"],
+    "grading_system": "four_point_cgpa",
+    "institution_type": "polytechnic_federal",
+    "languages": ["en"],
+    "ownership": "federal",
+    "regulators": ["nbte"]
+  },
+  "modules": [
+    {
+      "code": "admissions",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "assessment_results",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "attendance",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "billing",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "boarding_hostels",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "communications",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "course_registration",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "industrial_training",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "people_records",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "timetable",
+      "enabled": true,
+      "gate": null
+    },
+    {
+      "code": "website",
+      "enabled": true,
+      "gate": null
+    }
+  ],
+  "orgUnits": [
+    {
+      "key": "org",
+      "kind": "organization",
+      "parentKey": null
+    },
+    {
+      "key": "campus_1",
+      "kind": "campus",
+      "parentKey": "org"
+    },
+    {
+      "key": "campus_2",
+      "kind": "campus",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_1",
+      "kind": "school",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_2",
+      "kind": "school",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_3",
+      "kind": "school",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_4",
+      "kind": "school",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_5",
+      "kind": "school",
+      "parentKey": "org"
+    },
+    {
+      "key": "school_6",
+      "kind": "school",
+      "parentKey": "org"
+    }
+  ],
+  "rolePack": {
+    "code": "ng.polytechnic_federal",
+    "version": "0.1.0"
+  },
+  "websiteTemplate": "tertiary_polytechnic"
+}

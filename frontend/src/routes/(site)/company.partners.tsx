@@ -78,7 +78,7 @@ function PartnersPage() {
             >
               integrations
             </a>{" "}
-            page as configured technology paths. They are not listed here as partners.
+            page as integrations in progress. They are not listed here as partners.
           </Callout>
           <Callout title="What this page does not claim">{THINKTECH_HONESTY}</Callout>
         </PageContainer>

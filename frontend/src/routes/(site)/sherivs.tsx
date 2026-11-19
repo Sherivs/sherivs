@@ -67,8 +67,8 @@ function SherivsPlatformPage() {
           <SectionHeading
             id="capabilities-heading"
             eyebrow="Product capabilities"
-            title="Everything your school needs to stay in sync."
-            lead="Organization records and a shared workspace are in the product. Separate applications for each role, campus screens, and AI assistants are in development."
+            title="What your school can use today, and what is coming."
+            lead="A shared workspace, guided school setup, roles, and student records are in the product today. Many other screens, campus management, and AI assistants are still being built."
           />
           <ul className="sherivs-stagger mt-10 grid gap-4 md:grid-cols-2">
             {SITE_CAPABILITIES.map((capability) => (

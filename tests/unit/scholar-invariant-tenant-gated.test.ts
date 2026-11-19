@@ -103,7 +103,7 @@ const HANDLER_DATA_RE = /\.handler\(\s*(?:async\s+)?\(\s*\{\s*data\b/;
 const SUBSTRATE_RE = /\bsupabase\b|\.rpc\(|supabaseAdmin|asKernelAdmin/;
 const MUTATION_RE = /\.(insert|update|upsert)\(/;
 const WRITE_EVIDENCE_RE =
-  /\.(insert|update|upsert)\(|\.rpc\(|updateUserById|performStaffPrivilegeChange\(/;
+  /\.(insert|update|upsert)\(|\.rpc\(|updateUserById|performStaffPrivilegeChange\(|insertNotificationRows\(/;
 const VENDOR_SDK_RE = /from ["'](@supabase\/supabase-js|twilio|paystack)["']/;
 
 function serverFnBlocks(src: string): Map<string, string> {
@@ -426,7 +426,7 @@ defineFamilySuite({
       input: "zod",
       gate: "school-admin",
       audit: "write-through",
-      auditMarkers: [/\.from\("notifications"\)/],
+      auditMarkers: [/insertNotificationRows\(/],
     },
     {
       fn: "notifyFeesDue",
@@ -434,7 +434,7 @@ defineFamilySuite({
       input: "zod",
       gate: "school-admin",
       audit: "write-through",
-      auditMarkers: [/\.from\("notifications"\)/],
+      auditMarkers: [/insertNotificationRows\(/],
     },
     {
       fn: "pushNotification",
@@ -442,7 +442,7 @@ defineFamilySuite({
       input: "zod",
       gate: "school-admin",
       audit: "write-through",
-      auditMarkers: [/\.from\("notifications"\)/],
+      auditMarkers: [/insertNotificationRows\(/],
     },
     {
       fn: "notifyCalendarEvent",
@@ -450,7 +450,7 @@ defineFamilySuite({
       input: "zod",
       gate: "school-admin",
       audit: "write-through",
-      auditMarkers: [/\.from\("notifications"\)/],
+      auditMarkers: [/insertNotificationRows\(/],
     },
     {
       fn: "unlockFaceAccount",

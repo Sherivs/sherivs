@@ -33,7 +33,7 @@ import {
   type EvolutionGate,
   type EvolutionGateRun,
   type PermissionScopeImpact,
-} from "../../frontend/src/lib/evolution-engine/contracts";
+} from "../../frontend/src/lib/_quarantine/evolution-engine/contracts";
 
 const NOW = "2026-10-03T00:00:00.000Z";
 
@@ -92,12 +92,18 @@ describe("kernel binding (no second engine — ADR PLATFORM-004)", () => {
   });
 
   it("derives the composable capabilities from the kernel contract's declared consumption", () => {
-    expect([...COMPOSABLE_CAPABILITIES]).toEqual([...PHASE_38_EVOLUTION_ENGINE.capabilities.consumes]);
+    expect([...COMPOSABLE_CAPABILITIES]).toEqual([
+      ...PHASE_38_EVOLUTION_ENGINE.capabilities.consumes,
+    ]);
   });
 
   it("keeps every program id inside the kernel contract namespace", () => {
     expect(EVOLUTION_PROGRAM_ID_PREFIX).toBe("evolution38.");
-    expect(PHASE_38_EVOLUTION_ENGINE.contracts.provides.every((ref) => ref.id.startsWith("evolution38:"))).toBe(true);
+    expect(
+      PHASE_38_EVOLUTION_ENGINE.contracts.provides.every((ref) =>
+        ref.id.startsWith("evolution38:"),
+      ),
+    ).toBe(true);
   });
 
   it("carries the no-second-engine law as an explicit refusal, not a limitation", () => {
@@ -107,7 +113,12 @@ describe("kernel binding (no second engine — ADR PLATFORM-004)", () => {
 
   it("cross-checks approval-required operations against the kernel autonomy profile", () => {
     const kernelRequired = PHASE_38_EVOLUTION_ENGINE.asi.autonomy.requiresApprovalFor;
-    for (const operation of ["program-activation", "migration-execution", "invariant-exception", "rollback-execution"]) {
+    for (const operation of [
+      "program-activation",
+      "migration-execution",
+      "invariant-exception",
+      "rollback-execution",
+    ]) {
       expect(kernelRequired).toContain(operation);
     }
   });
@@ -135,8 +146,12 @@ describe("transformation proposal schema", () => {
   });
 
   it("rejects unknown keys so undeclared semantics cannot leak in", () => {
-    expect(transformationProposalSchema.safeParse(proposal({ selfRatifiable: true })).success).toBe(false);
-    expect(transformationProposalSchema.safeParse(proposal({ ownsCapability: "my-thing" })).success).toBe(false);
+    expect(transformationProposalSchema.safeParse(proposal({ selfRatifiable: true })).success).toBe(
+      false,
+    );
+    expect(
+      transformationProposalSchema.safeParse(proposal({ ownsCapability: "my-thing" })).success,
+    ).toBe(false);
   });
 });
 
@@ -173,8 +188,15 @@ describe("permission classification (AGENTS §8 — improvement is not permissio
   });
 
   it("escalates access widening in every scope", () => {
-    for (const changeScope of ["read_only_analysis", "derived_artifact", "construction_surface"] as const) {
-      const decision = classifyProposalAutonomy({ changeScope, permissionScopeImpact: "access_widening" });
+    for (const changeScope of [
+      "read_only_analysis",
+      "derived_artifact",
+      "construction_surface",
+    ] as const) {
+      const decision = classifyProposalAutonomy({
+        changeScope,
+        permissionScopeImpact: "access_widening",
+      });
       expect(decision.status).toBe("ESCALATE");
       if (decision.status === "ESCALATE") {
         expect(decision.reason).toBe("access_widening");
@@ -184,7 +206,10 @@ describe("permission classification (AGENTS §8 — improvement is not permissio
 
   it("allows only read-only or derived work that provably changes no access", () => {
     for (const changeScope of ["read_only_analysis", "derived_artifact"] as const) {
-      const decision = classifyProposalAutonomy({ changeScope, permissionScopeImpact: "no_access_change" });
+      const decision = classifyProposalAutonomy({
+        changeScope,
+        permissionScopeImpact: "no_access_change",
+      });
       expect(decision.status).toBe("ALLOW");
       expect(decision.detail).toContain("grants nothing");
     }
@@ -227,7 +252,13 @@ describe("evolution program parsing (fail-closed, no partial programs)", () => {
   });
 
   it("refuses program ids outside the phase-38 namespace", () => {
-    for (const id of ["evolution37.thing", "Evolution38.thing", "evolution38.", "program", "evolution38.has space"]) {
+    for (const id of [
+      "evolution37.thing",
+      "Evolution38.thing",
+      "evolution38.",
+      "program",
+      "evolution38.has space",
+    ]) {
       const result = parseEvolutionProgram(program({ programId: id }));
       expect(result.ok).toBe(false);
       if (!result.ok) {
@@ -245,13 +276,22 @@ describe("evolution program parsing (fail-closed, no partial programs)", () => {
   });
 
   it("refuses stages without a rollback plan or declared invariants", () => {
-    expect(parseEvolutionProgram(program({ stages: [stage(0, { rollbackPlan: "   " })] })).ok).toBe(false);
-    expect(parseEvolutionProgram(program({ stages: [stage(0, { invariants: [] })] })).ok).toBe(false);
-    expect(parseEvolutionProgram(program({ stages: [stage(0, { invariants: ["schema"] })] })).ok).toBe(false);
+    expect(parseEvolutionProgram(program({ stages: [stage(0, { rollbackPlan: "   " })] })).ok).toBe(
+      false,
+    );
+    expect(parseEvolutionProgram(program({ stages: [stage(0, { invariants: [] })] })).ok).toBe(
+      false,
+    );
+    expect(
+      parseEvolutionProgram(program({ stages: [stage(0, { invariants: ["schema"] })] })).ok,
+    ).toBe(false);
   });
 
   it("refuses stages above the bounded invariants ceiling", () => {
-    const many = Array.from({ length: MAX_INVARIANTS_PER_STAGE + 1 }, (_, i) => `inv_invariant_${i}`);
+    const many = Array.from(
+      { length: MAX_INVARIANTS_PER_STAGE + 1 },
+      (_, i) => `inv_invariant_${i}`,
+    );
     const result = parseEvolutionProgram(program({ stages: [stage(0, { invariants: many })] }));
     expect(result.ok).toBe(false);
     if (!result.ok) {
@@ -306,7 +346,10 @@ describe("registry parsing (fail-closed, no partial registries)", () => {
 
   it("rejects registries above the bounded program count", () => {
     const many = Array.from({ length: 300 }, (_, i) =>
-      program({ programId: `evolution38.program_${i}`, proposal: proposal({ proposalId: `prop-${i}` }) }),
+      program({
+        programId: `evolution38.program_${i}`,
+        proposal: proposal({ proposalId: `prop-${i}` }),
+      }),
     );
     const result = parseEvolutionProgramRegistry({ programs: many });
     expect(result.ok).toBe(false);
@@ -410,18 +453,34 @@ describe("independence (no self-ratification)", () => {
   });
 
   it("admits no proposing authority in the approval-authority vocabulary", () => {
-    expect([...APPROVAL_AUTHORITIES]).toEqual(["human_governance", "phase_owner_review", "control_plane"]);
+    expect([...APPROVAL_AUTHORITIES]).toEqual([
+      "human_governance",
+      "phase_owner_review",
+      "control_plane",
+    ]);
     for (const authority of ["proposing_agent", "self", "the_engine"]) {
       expect(
-        approvalEvidenceSchema.safeParse({ approver: "human:x", authority, decidedAt: NOW }).success,
+        approvalEvidenceSchema.safeParse({ approver: "human:x", authority, decidedAt: NOW })
+          .success,
       ).toBe(false);
     }
   });
 
   it("refuses blank approvers and unknown keys (strict shape)", () => {
-    expect(approvalEvidenceSchema.safeParse({ approver: "", authority: "human_governance", decidedAt: NOW }).success).toBe(false);
     expect(
-      approvalEvidenceSchema.safeParse({ approver: "human:x", authority: "human_governance", decidedAt: NOW, extra: 1 }).success,
+      approvalEvidenceSchema.safeParse({
+        approver: "",
+        authority: "human_governance",
+        decidedAt: NOW,
+      }).success,
+    ).toBe(false);
+    expect(
+      approvalEvidenceSchema.safeParse({
+        approver: "human:x",
+        authority: "human_governance",
+        decidedAt: NOW,
+        extra: 1,
+      }).success,
     ).toBe(false);
   });
 });
@@ -472,8 +531,18 @@ describe("invariant verification (staged and reversible)", () => {
   });
 
   it("rejects malformed verification records and malformed invariant ids", () => {
-    expect(invariantVerificationSchema.safeParse({ stageIndex: 0, invariant: "inv_x", outcome: "held" }).success).toBe(false);
-    expect(invariantVerificationSchema.safeParse({ stageIndex: -1, invariant: "inv_x", outcome: "held", verifiedAt: NOW }).success).toBe(false);
+    expect(
+      invariantVerificationSchema.safeParse({ stageIndex: 0, invariant: "inv_x", outcome: "held" })
+        .success,
+    ).toBe(false);
+    expect(
+      invariantVerificationSchema.safeParse({
+        stageIndex: -1,
+        invariant: "inv_x",
+        outcome: "held",
+        verifiedAt: NOW,
+      }).success,
+    ).toBe(false);
     expect(invariantIdSchema.safeParse("inv_x").success).toBe(true);
     expect(invariantIdSchema.safeParse("schema_compatible").success).toBe(false);
     expect(invariantIdSchema.safeParse("inv_").success).toBe(false);
@@ -486,7 +555,12 @@ describe("program completion (gates AND stages must both hold)", () => {
   if (prog === null) throw new Error("fixture program must parse");
 
   const allStagesHeld = prog.stages.flatMap((s) =>
-    s.invariants.map((inv) => ({ stageIndex: s.stageIndex, invariant: inv, outcome: "held" as const, verifiedAt: NOW })),
+    s.invariants.map((inv) => ({
+      stageIndex: s.stageIndex,
+      invariant: inv,
+      outcome: "held" as const,
+      verifiedAt: NOW,
+    })),
   );
 
   it("is never complete by default — empty evidence leaves it open at its first gate", () => {
@@ -497,7 +571,11 @@ describe("program completion (gates AND stages must both hold)", () => {
   });
 
   it("stays incomplete while any gate or any stage is unverified", () => {
-    const partialGates = evaluateProgramCompletion(prog, FULL_GATE_CHAIN.slice(0, 4), allStagesHeld);
+    const partialGates = evaluateProgramCompletion(
+      prog,
+      FULL_GATE_CHAIN.slice(0, 4),
+      allStagesHeld,
+    );
     expect(partialGates.complete).toBe(false);
     expect(partialGates.gates.status).toBe("in_progress");
 
@@ -517,7 +595,15 @@ describe("program completion (gates AND stages must both hold)", () => {
   });
 
   it("refuses orphan verifications naming a stage the program does not declare", () => {
-    const orphaned = [...allStagesHeld, { stageIndex: 9, invariant: "inv_schema_compatible", outcome: "held" as const, verifiedAt: NOW }];
+    const orphaned = [
+      ...allStagesHeld,
+      {
+        stageIndex: 9,
+        invariant: "inv_schema_compatible",
+        outcome: "held" as const,
+        verifiedAt: NOW,
+      },
+    ];
     const state = evaluateProgramCompletion(prog, FULL_GATE_CHAIN, orphaned);
     expect(state.complete).toBe(false);
     expect(state.orphanVerifications).toEqual([9]);

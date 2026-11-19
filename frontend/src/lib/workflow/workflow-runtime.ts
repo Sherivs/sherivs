@@ -9,15 +9,16 @@ import {
   type WorkflowEvidenceRecord,
 } from "./workflow-engine";
 import type { WorkflowDefinition, WorkflowRun } from "./workflow-contract";
+import type { WorkflowActionDefinition } from "./workflow-actions";
+import {
+  effectiveWorkflowAutonomy,
+  WORKFLOW_ACTION_CATEGORY_CAPS,
+  WORKFLOW_AUTONOMY_LEVELS,
+} from "./workflow-actions";
+import type { WorkflowAutonomyLevel } from "./workflow-actions";
 
-export const WORKFLOW_AUTONOMY_LEVELS = [
-  "suggest",
-  "draft",
-  "act_with_approval",
-  "act_and_report",
-] as const;
-
-export type WorkflowAutonomyLevel = (typeof WORKFLOW_AUTONOMY_LEVELS)[number];
+export { effectiveWorkflowAutonomy, WORKFLOW_ACTION_CATEGORY_CAPS, WORKFLOW_AUTONOMY_LEVELS };
+export type { WorkflowAutonomyLevel };
 export type WorkflowActionClass =
   | "money_movement"
   | "safeguarding"
@@ -26,37 +27,6 @@ export type WorkflowActionClass =
   | "mass_message"
   | "external_authority_share"
   | (string & {});
-
-const AUTONOMY_RANK: Readonly<Record<WorkflowAutonomyLevel, number>> = {
-  suggest: 0,
-  draft: 1,
-  act_with_approval: 2,
-  act_and_report: 3,
-};
-
-const DRAFT_ONLY_ACTIONS = new Set<string>([
-  "money_movement",
-  "safeguarding",
-  "credential_change",
-  "public_publish",
-  "mass_message",
-  "external_authority_share",
-]);
-
-export function effectiveWorkflowAutonomy(input: {
-  template: WorkflowAutonomyLevel;
-  tenant: WorkflowAutonomyLevel;
-  agent: WorkflowAutonomyLevel;
-  actionClass: WorkflowActionClass;
-}): WorkflowAutonomyLevel {
-  const lowest = [input.template, input.tenant, input.agent].reduce((effective, level) =>
-    AUTONOMY_RANK[level] < AUTONOMY_RANK[effective] ? level : effective,
-  );
-  return (DRAFT_ONLY_ACTIONS.has(input.actionClass) || input.actionClass !== "internal") &&
-    AUTONOMY_RANK[lowest] > 1
-    ? "draft"
-    : lowest;
-}
 
 export function retryDelaySeconds(
   attempt: number,
@@ -189,10 +159,12 @@ export interface WorkflowTickOptions {
   executeAction?: (input: {
     orgId: string;
     step: ClaimedWorkflowStep;
+    action?: WorkflowActionDefinition;
+    authorizedActions: readonly string[];
     planId: string;
     idempotencyKey: string;
     signal: AbortSignal;
-  }) => Promise<void>;
+  }) => Promise<void | { status: "draft" | "executed" }>;
   estimateActionCost?: (input: {
     orgId: string;
     step: ClaimedWorkflowStep;
@@ -448,14 +420,17 @@ async function advanceClaimedStep(
     if (!planned.ok) {
       throw Object.assign(new Error("action_not_authorized"), { code: planned.denyCode });
     }
-    if (options.executeAction && step.autonomyLevel === "act_and_report") {
+    if (
+      options.executeAction &&
+      (currentStep.action !== undefined || step.autonomyLevel === "act_and_report")
+    ) {
       const costUnits =
         options.estimateActionCost?.({
           orgId: step.orgId,
           step,
           planId: planned.plan.planId,
           idempotencyKey: step.idempotencyKey,
-        }) ?? 1;
+        }) ?? (step.autonomyLevel === "act_and_report" ? 1 : 0);
       if (
         !Number.isInteger(costUnits) ||
         costUnits < 0 ||
@@ -463,19 +438,31 @@ async function advanceClaimedStep(
       ) {
         throw Object.assign(new Error("budget_exhausted"), { code: "budget.exhausted" });
       }
-      await withTimeout(
+      const actionResult: { value?: void | { status: "draft" | "executed" } } = {};
+      const effectStatus = await withTimeout(
         Math.min(step.timeoutSeconds, Math.max(1, Math.floor(options.timeoutMs / 1000))),
-        (signal) =>
-          port.executeIdempotentEffect(step.orgId, step, costUnits, () =>
-            options.executeAction!({
+        async (signal) => {
+          let status: "executed" | "replayed" = "executed";
+          status = await port.executeIdempotentEffect(step.orgId, step, costUnits, async () => {
+            actionResult.value = await options.executeAction!({
               orgId: step.orgId,
               step,
+              ...(currentStep.action ? { action: currentStep.action } : {}),
+              authorizedActions: currentStep.authorizedActions,
               planId: planned.plan.planId,
               idempotencyKey: step.idempotencyKey,
               signal,
-            }),
-          ),
+            });
+          });
+          return status;
+        },
       );
+      if (
+        actionResult.value?.status === "draft" ||
+        (effectStatus === "replayed" && step.autonomyLevel === "draft")
+      ) {
+        return { step, run: record.run, status: "waiting" };
+      }
     }
   }
 
