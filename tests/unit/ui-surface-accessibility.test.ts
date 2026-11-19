@@ -96,11 +96,16 @@ describe("UI-02 target size (WCAG 2.2 · 2.5.8, 24px)", () => {
     expect(social).toMatch(/className="inline-flex min-h-6 items-center gap-2 text-sm/);
   });
   it("sign-in 'Back to site' keeps a 24px target", () => {
-    expect(auth).toMatch(/to="\/"\s+className="flex min-h-6/);
+    // At least 24px: Tailwind min-h-6 is 24px; a larger target (min-h-11, 44px) also satisfies it.
+    const backLink = /to="\/"\s+className="flex min-h-(\d+)/.exec(auth);
+    expect(Number(backLink?.[1] ?? 0)).toBeGreaterThanOrEqual(6);
   });
   it("forgot-password and remember controls are at least 24px", () => {
-    expect(rule(entryCss, ".app-entry-login-forgot")).toMatch(/min-height:\s*1\.5rem/);
-    expect(rule(entryCss, ".app-entry-login-remember")).toMatch(/min-height:\s*1\.5rem/);
+    // At least 24px (1.5rem); a larger target also satisfies it.
+    const minHeightRem = (css: string) =>
+      Number(/min-height:\s*(\d*\.?\d+)rem/.exec(css)?.[1] ?? 0);
+    expect(minHeightRem(rule(entryCss, ".app-entry-login-forgot"))).toBeGreaterThanOrEqual(1.5);
+    expect(minHeightRem(rule(entryCss, ".app-entry-login-remember"))).toBeGreaterThanOrEqual(1.5);
     expect(rule(entryCss, ".app-entry-login-remember input")).toMatch(/width:\s*1\.1rem/);
   });
   it("the console sidebar toggle cannot be squashed by flex layout", () => {
