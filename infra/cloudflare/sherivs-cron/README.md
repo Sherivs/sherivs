@@ -5,8 +5,8 @@ This Worker schedules the existing authenticated `/api/public/cron/*` endpoints.
 `"true"` enablement independently. The default configuration keeps wallet reconciliation enabled;
 all other routes are off. No route is enabled in production by this change.
 
-The Worker is a free-tier-compatible project: it makes no more than six subrequests per scheduled
-invocation. Per-request timeouts are 50 seconds for `workflow-tick` and 25 seconds for other routes.
+The Worker is a free-tier-compatible project: it makes no more than six route subrequests per
+scheduled invocation, plus at most two Datadog export requests when telemetry is on. Per-request timeouts are 50 seconds for `workflow-tick` and 25 seconds for other routes.
 It logs statuses, durations, and response byte counts only; response bodies and credentials are
 never logged or returned.
 
@@ -62,12 +62,20 @@ For manual verification, use the Worker URL with a single `?route=<table-name>` 
 does not accept a URL and returns only `{route, status, ms}`. An invalid bearer returns an empty
 401 response, unknown routes return 404, and disabled routes return 409.
 
+## Datadog telemetry (off by default)
+
+`src/telemetry.js` sends one span and one log per route call to Datadog EU over OTLP when
+`OBSERVABILITY_DATADOG_ENABLED` is exactly `"true"` and the `DD_API_KEY` Worker secret is set
+(`npx wrangler secret put DD_API_KEY`, never in a file or argument). `DD_SITE` must be
+`datadoghq.eu`. Production ships with the switch `"true"` (approved 18 Nov 2026); staging stays `"false"`. Export failures never affect a route. See
+`docs/runbooks/observability.md` sections 8–10 and `service.datadog.yaml` in this directory.
+
 ## Local checks
 
 ```sh
 npm ci --no-audit --fund=false
 npx wrangler deploy --dry-run
-npx vitest run ../../../tests/unit/sherivs-cron-worker.test.ts
+npx vitest run ../../../tests/unit/sherivs-cron-worker.test.ts ../../../tests/unit/sherivs-cron-telemetry.test.ts
 ```
 
 The deploy dry-run is for local configuration validation only and does not deploy. The repository
