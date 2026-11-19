@@ -14,24 +14,24 @@ Names only in this file. Never paste a key, DSN or token into the repo (it is pu
 
 ## 1. What runs today
 
-| Vendor | Signal | Where it runs | Gate | Code |
-| --- | --- | --- | --- | --- |
-| Sentry | errors + 10% traces (browser + server) | **staging only** (INFRA-01) | `APP_ENV` and `VITE_APP_ENV` both exactly `staging`, a DSN, **and** `OBSERVABILITY_SENTRY_ENABLED` not `false` | `frontend/src/lib/observability/sentry-*.ts` |
-| PostHog (EU) | product analytics, after consent only | **staging only** (INFRA-01) | same staging gate, a project key, consent, **and** `OBSERVABILITY_POSTHOG_ENABLED` not `false` | `frontend/src/lib/analytics/posthog.ts` |
-| Datadog (EU) | server traces (+ optional request metrics) over OpenTelemetry | any environment, **off by default** | `OBSERVABILITY_DATADOG_ENABLED` exactly `true`, `DD_API_KEY` set, EU site only | `frontend/src/lib/observability/datadog-otel*.ts`, wired in `frontend/src/server.ts` |
-| Structured logs | JSON lines to stdout (Vercel logs) | everywhere | always on | `structured-log.ts`, `boundary-log.ts`, `trace-context.ts` |
+| Vendor          | Signal                                                        | Where it runs                       | Gate                                                                                                           | Code                                                                                 |
+| --------------- | ------------------------------------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Sentry          | errors + 10% traces (browser + server)                        | **staging only** (INFRA-01)         | `APP_ENV` and `VITE_APP_ENV` both exactly `staging`, a DSN, **and** `OBSERVABILITY_SENTRY_ENABLED` not `false` | `frontend/src/lib/observability/sentry-*.ts`                                         |
+| PostHog (EU)    | product analytics, after consent only                         | **staging only** (INFRA-01)         | same staging gate, a project key, consent, **and** `OBSERVABILITY_POSTHOG_ENABLED` not `false`                 | `frontend/src/lib/analytics/posthog.ts`                                              |
+| Datadog (EU)    | server traces (+ optional request metrics) over OpenTelemetry | any environment, **off by default** | `OBSERVABILITY_DATADOG_ENABLED` exactly `true`, `DD_API_KEY` set, EU site only                                 | `frontend/src/lib/observability/datadog-otel*.ts`, wired in `frontend/src/server.ts` |
+| Structured logs | JSON lines to stdout (Vercel logs)                            | everywhere                          | always on                                                                                                      | `structured-log.ts`, `boundary-log.ts`, `trace-context.ts`                           |
 
 The switches can only **turn a vendor off**. They never turn Sentry or PostHog on outside
 explicit staging; INFRA-01 still decides that.
 
 ## 2. Switches
 
-| Variable | Default | Turns the vendor off/on when | Scope |
-| --- | --- | --- | --- |
-| `OBSERVABILITY_SENTRY_ENABLED` | on (unset) | exactly `false` → off | server at runtime; browser at the next production build (baked into `VITE_OBSERVABILITY_SENTRY_ENABLED`); also skips source-map upload |
-| `OBSERVABILITY_POSTHOG_ENABLED` | on (unset) | exactly `false` → off | browser, baked at the next production build (`VITE_OBSERVABILITY_POSTHOG_ENABLED`) |
-| `OBSERVABILITY_DATADOG_ENABLED` | off (unset) | exactly `true` → on | server at runtime (new function instances) |
-| `OBSERVABILITY_DATADOG_METRICS_ENABLED` | off (unset) | exactly `true` → on | server; adds the `http.server.request.duration` histogram |
+| Variable                                | Default     | Turns the vendor off/on when | Scope                                                                                                                                  |
+| --------------------------------------- | ----------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `OBSERVABILITY_SENTRY_ENABLED`          | on (unset)  | exactly `false` → off        | server at runtime; browser at the next production build (baked into `VITE_OBSERVABILITY_SENTRY_ENABLED`); also skips source-map upload |
+| `OBSERVABILITY_POSTHOG_ENABLED`         | on (unset)  | exactly `false` → off        | browser, baked at the next production build (`VITE_OBSERVABILITY_POSTHOG_ENABLED`)                                                     |
+| `OBSERVABILITY_DATADOG_ENABLED`         | off (unset) | exactly `true` → on          | server at runtime (new function instances)                                                                                             |
+| `OBSERVABILITY_DATADOG_METRICS_ENABLED` | off (unset) | exactly `true` → on          | server; adds the `http.server.request.duration` histogram                                                                              |
 
 Values are compared exactly: `TRUE`, `1`, `yes` and a trailing space all keep the default.
 A typo therefore never changes today's behaviour.
@@ -87,15 +87,15 @@ Docs: <https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest/>,
 
 ## 5. Env vars to set in Vercel (project `coregrid-scholar-migration`) when turning Datadog on
 
-| Name | Value | Type |
-| --- | --- | --- |
-| `OBSERVABILITY_DATADOG_ENABLED` | `true` | plain |
-| `DD_API_KEY` | Datadog EU org **API key** (Organization Settings → API Keys). Not an application key. | **Sensitive** |
-| `DD_SITE` | `datadoghq.eu` (optional; this is the default) | plain |
-| `OTEL_SERVICE_NAME` | optional, default `sherivs-web` | plain |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | optional, default `https://otlp.datadoghq.eu` | plain |
-| `OBSERVABILITY_DATADOG_TRACES_SAMPLE_RATE` | optional, `0`–`1`, default `0.1` | plain |
-| `OBSERVABILITY_DATADOG_METRICS_ENABLED` | optional, `true` to send request metrics | plain |
+| Name                                       | Value                                                                                  | Type          |
+| ------------------------------------------ | -------------------------------------------------------------------------------------- | ------------- |
+| `OBSERVABILITY_DATADOG_ENABLED`            | `true`                                                                                 | plain         |
+| `DD_API_KEY`                               | Datadog EU org **API key** (Organization Settings → API Keys). Not an application key. | **Sensitive** |
+| `DD_SITE`                                  | `datadoghq.eu` (optional; this is the default)                                         | plain         |
+| `OTEL_SERVICE_NAME`                        | optional, default `sherivs-web`                                                        | plain         |
+| `OTEL_EXPORTER_OTLP_ENDPOINT`              | optional, default `https://otlp.datadoghq.eu`                                          | plain         |
+| `OBSERVABILITY_DATADOG_TRACES_SAMPLE_RATE` | optional, `0`–`1`, default `0.1`                                                       | plain         |
+| `OBSERVABILITY_DATADOG_METRICS_ENABLED`    | optional, `true` to send request metrics                                               | plain         |
 
 Roll out on **Preview** first, check APM → Traces in `app.datadoghq.eu` for
 `service:sherivs-web env:<preview env>`, then add to Production. Server env changes apply
@@ -124,3 +124,65 @@ Rollback at any step: unset the switch (or set it back) and redeploy.
   timer and spans from a frozen instance can be lost.
 - Datadog's free plan does not include APM; traces are expected to need the trial or
   startup credits.
+
+## 8. sherivs-cron (Cloudflare Worker) → Datadog EU (OBS-DD-02)
+
+The scheduler Worker exports one span and one log record per route call to Datadog's EU
+agentless OTLP intake (`https://otlp.datadoghq.eu/v1/traces` and `/v1/logs`, OTLP/HTTP JSON).
+Code: `infra/cloudflare/sherivs-cron/src/telemetry.js`. Cloudflare's built-in OTLP
+destinations need Workers Paid, so the Worker sends the data itself; that stays on Workers Free
+(at most two extra subrequests per invocation, only when a route was called).
+
+| Setting                         | Where                                                    | Default                                  |
+| ------------------------------- | -------------------------------------------------------- | ---------------------------------------- |
+| `OBSERVABILITY_DATADOG_ENABLED` | `wrangler.jsonc` var                                     | `"false"` (exactly `"true"` turns it on) |
+| `DD_API_KEY`                    | Worker **secret** (`npx wrangler secret put DD_API_KEY`) | unset → off                              |
+| `DD_SITE`                       | var                                                      | `datadoghq.eu`; anything else → off      |
+| `DEPLOYMENT_ENVIRONMENT`        | var                                                      | `production` / `staging` → `env` tag     |
+| `CF_VERSION_METADATA`           | `version_metadata` binding                               | Worker version id → `version` tag        |
+
+Tags follow unified service tagging: `service:sherivs-cron`, `env:<DEPLOYMENT_ENVIRONMENT>`,
+`version:<Worker version id>`. Exported fields: route name, fixed path, HTTP status, duration,
+response byte count, trigger (`scheduled`/`manual`), outcome. Never bodies or credentials.
+
+Turn on (needs Muhammad's yes in production): set the secret, change the var to `"true"`, deploy,
+then check Logs for `service:sherivs-cron` and APM for the `cron <route>` spans. Rollback: set
+the var back to `"false"` and deploy (or delete the secret).
+
+## 9. Monitors, dashboard and service catalog as code
+
+`infra/datadog/monitors/*.json`, `infra/datadog/dashboards/sherivs-overview.json`,
+`service.datadog.yaml` (sherivs-web) and `infra/cloudflare/sherivs-cron/service.datadog.yaml`.
+All notify `@hello@sherivs.com`. Apply from a trusted shell with an EU **application key**:
+
+```sh
+DD_API_KEY=… DD_APP_KEY=… node scripts/datadog/apply.mjs            # plan + remote validation
+DD_API_KEY=… DD_APP_KEY=… node scripts/datadog/apply.mjs --apply    # create/update
+# add --with-worker-telemetry once the Worker switch is on (the two cron monitors would
+# otherwise alert on missing data)
+```
+
+The script is idempotent (monitors match on the `sherivs-monitor-id` tag, the dashboard on its
+title), refuses any site other than `datadoghq.eu`, and never prints keys. Change monitors in the
+repo, not the UI.
+
+| Monitor                | Signal                                                                   | Alert / warn |
+| ---------------------- | ------------------------------------------------------------------------ | ------------ |
+| `web-5xx-rate`         | APM `trace.http.server.request` errors ÷ hits, 15 min, ≥20-request floor | 10% / 5%     |
+| `web-error-spike`      | APM errors, 5 min                                                        | 25 / 10      |
+| `web-latency-p95`      | APM p95, 15 min                                                          | 3 s / 1.5 s  |
+| `cron-wallet-failures` | Worker logs, `@cron.outcome:failure`, 30 min                             | ≥2           |
+| `cron-wallet-missing`  | Worker logs, no wallet run in 30 min (also on no data)                   | <1           |
+
+## 10. Cost and the post-trial $0 plan
+
+Monitors, dashboards and service catalog entries cost nothing on any plan. What costs money is
+the data: APM spans (OTLP APM ingest $0.50/GB plus indexed spans) and logs (ingest $0.10/GB plus
+indexing) are **not** part of Datadog's Free tier (Free = up to 5 Basic hosts, 1-day metric
+retention). Sherivs is on a 14-day trial with no card on file.
+
+- While the trial or startup credits cover it: switches may be on.
+- Trial ends with no credits: set `OBSERVABILITY_DATADOG_ENABLED` to unset/`false` on Vercel
+  production (redeploy) and leave the Worker var `"false"`. Sentry/PostHog keep running behind
+  their own switches. Monitors and the dashboard stay in place and will simply show no data.
+- Never add a card or accept a paid plan without Muhammad's yes.
