@@ -88,7 +88,7 @@ export type DeskOutcome =
       status: "recorded";
       duplicate: boolean;
       receiptNumber?: number;
-      detail?: Record<string, unknown>;
+      detail?: Record<string, string | number | boolean | null>;
     }
   | { status: "refused"; code: string; reason: string };
 
