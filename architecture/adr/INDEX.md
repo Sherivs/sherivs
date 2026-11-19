@@ -144,6 +144,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | --- | ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | 006 | Event architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-006 Event architecture" as planned | **No ADR-006 file exists anywhere in the repository.** The planned decision record was never authored. |
 | 007 | Audit architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-007 Audit architecture" as planned | **No ADR-007 file exists anywhere in the repository.** The planned decision record was never authored. |
+| 114 | [ADR-114_M2_ROLE_PACK_ENGINE_DATA_MODEL.md](./ADR-114_M2_ROLE_PACK_ENGINE_DATA_MODEL.md) | Roles Pack Engine Data Model and Database Functions | PROPOSED | 2026-11-17 | Institution packs in cg_role_pack; tenant installs and upgrades with a preview diff; overrides only narrow; custom roles need four-eyes |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 
