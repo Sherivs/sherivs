@@ -20,6 +20,7 @@
  * Never logs or returns the API key in an enumerable field.
  */
 import { explicitAppEnv } from "./vendor-telemetry";
+import { normaliseSha } from "./build-version";
 import {
   DATADOG_METRICS_SWITCH_ENV,
   DATADOG_SWITCH_ENV,
@@ -36,6 +37,17 @@ export const DEFAULT_TRACES_SAMPLE_RATE = 0.1;
 export const TRACES_SAMPLE_RATE_ENV = "OBSERVABILITY_DATADOG_TRACES_SAMPLE_RATE" as const;
 
 export type DatadogOtelEnv = Record<string, string | undefined>;
+
+declare const __SHERIVS_BUILD_SHA__: string | undefined;
+
+function builtSha(): string {
+  return typeof __SHERIVS_BUILD_SHA__ === "string" ? normaliseSha(__SHERIVS_BUILD_SHA__) : "";
+}
+
+/** service.version: runtime VERCEL_GIT_COMMIT_SHA, else the build-time SHA, else "unknown". */
+export function serviceVersion(env: DatadogOtelEnv, buildSha: string = builtSha()): string {
+  return (env.VERCEL_GIT_COMMIT_SHA ?? "").trim() || buildSha || "unknown";
+}
 
 export interface DatadogOtelConfig {
   readonly tracesUrl: string;
@@ -95,7 +107,7 @@ export function readDatadogOtelConfig(env: DatadogOtelEnv): DatadogOtelConfig | 
     sampleRate: parseSampleRate(env[TRACES_SAMPLE_RATE_ENV]),
     resourceAttributes: Object.freeze({
       "service.name": (env.OTEL_SERVICE_NAME ?? "").trim() || DEFAULT_SERVICE_NAME,
-      "service.version": (env.VERCEL_GIT_COMMIT_SHA ?? "").trim() || "unknown",
+      "service.version": serviceVersion(env),
       // Datadog reads both the stable and the older semantic-convention key.
       "deployment.environment.name": environment,
       "deployment.environment": environment,
