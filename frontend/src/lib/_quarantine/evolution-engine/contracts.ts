@@ -44,7 +44,7 @@
  */
 
 import { z } from "zod";
-import { PHASE_38_EVOLUTION_ENGINE } from "../kernel/phase-contracts/phase-38-evolution-engine";
+import { PHASE_38_EVOLUTION_ENGINE } from "../../kernel/phase-contracts/phase-38-evolution-engine";
 
 /* ─────────────────────────────────────────────────────────────
  * Kernel binding (read-only composition, no second engine)
@@ -176,9 +176,7 @@ export type EvolutionAutonomyDecision =
       readonly changeScope: ChangeScope;
       readonly permissionScopeImpact: PermissionScopeImpact;
       readonly reason:
-        | "security_boundary_scope"
-        | "access_widening"
-        | "security_boundary_and_access_widening";
+        "security_boundary_scope" | "access_widening" | "security_boundary_and_access_widening";
       readonly detail: string;
     };
 

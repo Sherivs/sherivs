@@ -60,7 +60,7 @@
  */
 
 import { z } from "zod";
-import { isIdentityUsable, type IdentityLifecycleState } from "../identity";
+import { isIdentityUsable, type IdentityLifecycleState } from "../../identity";
 
 /* ─────────────────────────────────────────────────────────────
  * Vocabulary
@@ -72,6 +72,8 @@ const REF_MAX = 160;
 const MAX_MEMBERS = 1_024;
 const MAX_BALLOT = 4_096;
 const MAX_TRAIL = 65_536;
+// Matching control characters is the point of this pattern (input hygiene).
+// eslint-disable-next-line no-control-regex
 const CONTROL_CHARS = /[\u0000-\u001f\u007f]/;
 
 function refSchema(label: string) {
@@ -80,7 +82,10 @@ function refSchema(label: string) {
     .min(1, `${label} must be a non-empty string`)
     .max(REF_MAX, `${label} must be at most ${REF_MAX} characters`)
     .refine((value) => value.trim().length > 0, `${label} must not be blank`)
-    .refine((value) => value === value.trim(), `${label} must not have leading or trailing whitespace`)
+    .refine(
+      (value) => value === value.trim(),
+      `${label} must not have leading or trailing whitespace`,
+    )
     .refine((value) => !CONTROL_CHARS.test(value), `${label} must not contain control characters`);
 }
 
@@ -125,7 +130,13 @@ export const societyMemberSchema = z.strictObject({
 export type SocietyMember = z.infer<typeof societyMemberSchema>;
 
 /** Society lifecycle — distinct from (and never overriding) agent lifecycle. */
-export const societyLifecycleSchema = z.enum(["proposed", "active", "suspended", "dissolved", "rejected"]);
+export const societyLifecycleSchema = z.enum([
+  "proposed",
+  "active",
+  "suspended",
+  "dissolved",
+  "rejected",
+]);
 export type SocietyLifecycleState = z.infer<typeof societyLifecycleSchema>;
 
 /** Provenance block: who declared this record, under what authority, when. */
@@ -147,7 +158,10 @@ export const societyDefinitionSchema = z.strictObject({
   purpose: z.string().min(1, "purpose must be a non-empty string").max(500),
   members: z
     .array(societyMemberSchema)
-    .min(2, "a society requires at least two members — a one-member society duplicates the agent runtime and is denied")
+    .min(
+      2,
+      "a society requires at least two members — a one-member society duplicates the agent runtime and is denied",
+    )
     .max(MAX_MEMBERS),
   provenance: provenanceSchema,
 });
@@ -157,9 +171,7 @@ export type SocietyDefinition = z.infer<typeof societyDefinitionSchema>;
  * Parsing (fail-closed: no partial societies)
  * ────────────────────────────────────────────────────────────*/
 
-export type SocietyParseFailureReason =
-  | "invalid_shape"
-  | "cross_record_invariant";
+export type SocietyParseFailureReason = "invalid_shape" | "cross_record_invariant";
 
 export interface SocietyParseIssue {
   readonly path: string;
@@ -176,7 +188,8 @@ export type SocietyParseResult =
 
 function issueList(error: z.ZodError): readonly SocietyParseIssue[] {
   return error.issues.map((issue) => ({
-    path: issue.path.length === 0 ? "(root)" : issue.path.map((segment) => String(segment)).join("."),
+    path:
+      issue.path.length === 0 ? "(root)" : issue.path.map((segment) => String(segment)).join("."),
     message: issue.message,
   }));
 }
@@ -224,9 +237,7 @@ export const societyApprovalSchema = z.strictObject({
 });
 export type SocietyApproval = z.infer<typeof societyApprovalSchema>;
 
-export type SocietyTransitionCode =
-  | "transition_not_listed"
-  | "approval_required";
+export type SocietyTransitionCode = "transition_not_listed" | "approval_required";
 
 export type SocietyTransitionResult =
   | { readonly ok: true; readonly state: SocietyLifecycleState }
@@ -235,7 +246,10 @@ export type SocietyTransitionResult =
 const SOCIETY_TRANSITIONS: Readonly<
   Record<SocietyLifecycleState, readonly { to: SocietyLifecycleState; requiresApproval: boolean }[]>
 > = {
-  proposed: [{ to: "active", requiresApproval: true }, { to: "rejected", requiresApproval: false }],
+  proposed: [
+    { to: "active", requiresApproval: true },
+    { to: "rejected", requiresApproval: false },
+  ],
   active: [
     { to: "suspended", requiresApproval: false },
     { to: "dissolved", requiresApproval: true },
@@ -289,9 +303,7 @@ export function transitionSociety(
 export const FAIL_CLOSED_INTERSECTION_DETAIL =
   "fail-closed collective authority: a society may act only where EVERY member's declared grants include the action; an unusable member contributes an empty grant set, so authority can shrink but never widen";
 
-export type CollectiveAuthorityCode =
-  | "society_not_active"
-  | "action_not_in_intersection";
+export type CollectiveAuthorityCode = "society_not_active" | "action_not_in_intersection";
 
 export type CollectiveAuthorityResult =
   | { readonly ok: true; readonly actionRef: ActionRef; readonly heldBy: readonly ActorRef[] }
@@ -398,7 +410,11 @@ export type CoordinationCode =
   | "recipient_not_participating";
 
 export type CoordinationResult =
-  | { readonly ok: true; readonly message: CoordinationMessage; readonly attributedTo: readonly ActorRef[] }
+  | {
+      readonly ok: true;
+      readonly message: CoordinationMessage;
+      readonly attributedTo: readonly ActorRef[];
+    }
   | {
       readonly ok: false;
       readonly code: CoordinationCode;
@@ -532,7 +548,8 @@ export type CollectiveDecisionResult =
  */
 export function participatingMembers(members: readonly SocietyMember[]): readonly SocietyMember[] {
   return members.filter(
-    (member) => member.role !== "observer" && isIdentityUsable({ lifecycle: member.identityLifecycle }),
+    (member) =>
+      member.role !== "observer" && isIdentityUsable({ lifecycle: member.identityLifecycle }),
   );
 }
 
@@ -621,7 +638,10 @@ export function resolveCollectiveDecision(
   const reject = decision.ballot.filter((entry) => entry.choice === "reject").length;
   let verdict: CollectiveVerdict;
   if (decision.rule === "unanimous") {
-    verdict = castCount === participants.length && reject === 0 && affirm === castCount ? "agreed" : "no_agreement";
+    verdict =
+      castCount === participants.length && reject === 0 && affirm === castCount
+        ? "agreed"
+        : "no_agreement";
   } else {
     verdict = affirm > reject && castCount >= floor ? "agreed" : "no_agreement";
   }
@@ -671,9 +691,7 @@ export function registerCollectiveOutput(output: CollectiveOutput): CollectiveOu
 }
 
 export type OutputValidationCode =
-  | "society_mismatch"
-  | "unknown_validator"
-  | "validator_not_participating";
+  "society_mismatch" | "unknown_validator" | "validator_not_participating";
 
 export type OutputValidationResult =
   | { readonly ok: true; readonly trusted: boolean; readonly validatedBy: ActorRef }
@@ -726,10 +744,7 @@ export const societySuspensionSchema = z.strictObject({
 export type SocietySuspension = z.infer<typeof societySuspensionSchema>;
 
 export type SuspensionCode =
-  | "society_not_active"
-  | "society_mismatch"
-  | "member_required"
-  | "unknown_member";
+  "society_not_active" | "society_mismatch" | "member_required" | "unknown_member";
 
 export type SuspensionResult =
   | { readonly ok: true; readonly scope: "society" | "member"; readonly memberRef: ActorRef | null }
@@ -767,7 +782,8 @@ export function applySocietySuspension(
       return {
         ok: false,
         code: "member_required",
-        detail: "a society-scope suspension must not name a member — use member scope for per-member suspension",
+        detail:
+          "a society-scope suspension must not name a member — use member scope for per-member suspension",
       };
     }
     return { ok: true, scope: "society", memberRef: null };
@@ -818,9 +834,7 @@ export const societyAuditEntrySchema = z.strictObject({
 });
 export type SocietyAuditEntry = z.infer<typeof societyAuditEntrySchema>;
 
-export type SocietyAuditParseFailureReason =
-  | "invalid_shape"
-  | "cross_record_invariant";
+export type SocietyAuditParseFailureReason = "invalid_shape" | "cross_record_invariant";
 
 export type SocietyAuditParseResult =
   | { readonly ok: true; readonly entries: readonly SocietyAuditEntry[] }

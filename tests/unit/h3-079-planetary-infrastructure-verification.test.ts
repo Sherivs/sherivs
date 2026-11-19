@@ -3,7 +3,7 @@
  * (mission G-079, Verifier, phase 44, Squad G).
  *
  * Adversarial verification against the COMPLETED contract module
- * `frontend/src/lib/planetary-infrastructure/contracts.ts` (landed by H3-064).
+ * `frontend/src/lib/_quarantine/planetary-infrastructure/contracts.ts` (landed by H3-064).
  * This suite is READ-ONLY on that module: it deepens, and never duplicates,
  * the H3-064 contract suite. Attack vectors under verification:
  *
@@ -48,7 +48,7 @@ import {
   type AdmissionRequest,
   type NodeLifecycleState,
   type RegionTopology,
-} from "../../frontend/src/lib/planetary-infrastructure/contracts";
+} from "../../frontend/src/lib/_quarantine/planetary-infrastructure/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (typed; parsed through the module's own fail-closed gates)
@@ -86,8 +86,18 @@ function topologyFixture(overrides: Record<string, unknown> = {}): Record<string
       regionFixture({ regionId: "worker_region_1", kind: "worker", tenantDataEligible: false }),
     ],
     links: [
-      { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 10 },
-      { fromRegionId: "core_region_1", toRegionId: "compute_region_1", linkKind: "regional", weight: 20 },
+      {
+        fromRegionId: "core_region_1",
+        toRegionId: "edge_region_1",
+        linkKind: "backbone",
+        weight: 10,
+      },
+      {
+        fromRegionId: "core_region_1",
+        toRegionId: "compute_region_1",
+        linkKind: "regional",
+        weight: 20,
+      },
     ],
     ...overrides,
   };
@@ -178,10 +188,7 @@ function parsedRequest(overrides: Record<string, unknown> = {}): AdmissionReques
 }
 
 /** Asserts a decision is a typed denial with the exact expected reason. */
-function expectDenied(
-  decision: AdmissionDecision,
-  reason: AdmissionDenialReason,
-): void {
+function expectDenied(decision: AdmissionDecision, reason: AdmissionDenialReason): void {
   expect(decision.ok).toBe(false);
   if (decision.ok) {
     throw new Error(`expected a typed denial (${reason}) but the attack was ADMITTED`);
@@ -211,7 +218,9 @@ describe("vector 1: raw-key-material injection", () => {
   it("denies every raw-key-material shape in the fingerprint slot (typed regex denial)", () => {
     for (const raw of RAW_KEY_ATTACKS) {
       const parsed = keyFingerprintSchema.safeParse(raw);
-      expect(parsed.success, `fingerprint slot accepted raw material: ${raw.slice(0, 24)}`).toBe(false);
+      expect(parsed.success, `fingerprint slot accepted raw material: ${raw.slice(0, 24)}`).toBe(
+        false,
+      );
     }
   });
 
@@ -230,13 +239,17 @@ describe("vector 1: raw-key-material injection", () => {
   it("denies raw key material through the full node identity surface", () => {
     for (const raw of RAW_KEY_ATTACKS) {
       const parsed = distributedNodeIdentitySchema.safeParse(nodeFixture({ keyFingerprint: raw }));
-      expect(parsed.success, `node identity accepted raw material: ${raw.slice(0, 24)}`).toBe(false);
+      expect(parsed.success, `node identity accepted raw material: ${raw.slice(0, 24)}`).toBe(
+        false,
+      );
     }
   });
 
   it("denies raw key material smuggled through an admission request's node block, and the parsed result never carries it", () => {
     for (const raw of RAW_KEY_ATTACKS) {
-      const result = parseAdmissionRequest(requestFixture({ node: nodeFixture({ keyFingerprint: raw }) }));
+      const result = parseAdmissionRequest(
+        requestFixture({ node: nodeFixture({ keyFingerprint: raw }) }),
+      );
       expect(result.ok, `admission request accepted raw material: ${raw.slice(0, 24)}`).toBe(false);
       if (!result.ok) {
         expect(result.reason).toBe("invalid_shape");
@@ -333,7 +346,9 @@ describe("vector 2: lifecycle-regression attempts", () => {
   }
 
   it("denies re-entry into an operational state from containment without passing review", () => {
-    expect(decideNodeLifecycleTransition("suspended", "approved", approvalFixture()).ok).toBe(false);
+    expect(decideNodeLifecycleTransition("suspended", "approved", approvalFixture()).ok).toBe(
+      false,
+    );
     expect(decideNodeLifecycleTransition("retired", "reviewed", approvalFixture()).ok).toBe(false);
   });
 
@@ -377,18 +392,35 @@ describe("vector 3: machine-authored deployment approvals", () => {
     ];
     for (const bad of malformed) {
       const deploy = decideNodeLifecycleTransition("approved", "deployed", bad);
-      expect(deploy.ok, `deployment proceeded on malformed approval: ${JSON.stringify(bad)}`).toBe(false);
+      expect(deploy.ok, `deployment proceeded on malformed approval: ${JSON.stringify(bad)}`).toBe(
+        false,
+      );
       if (!deploy.ok) expect(deploy.reason).toBe("human_approval_invalid");
 
       const reactivate = decideNodeLifecycleTransition("suspended", "reviewed", bad);
-      expect(reactivate.ok, `re-activation proceeded on malformed approval: ${JSON.stringify(bad)}`).toBe(false);
+      expect(
+        reactivate.ok,
+        `re-activation proceeded on malformed approval: ${JSON.stringify(bad)}`,
+      ).toBe(false);
       if (!reactivate.ok) expect(reactivate.reason).toBe("human_approval_invalid");
     }
   });
 
   it("respects the bounded statement ceiling on approval reasons", () => {
-    expect(decideNodeLifecycleTransition("approved", "deployed", approvalFixture({ reason: "r".repeat(2000) })).ok).toBe(true);
-    expect(decideNodeLifecycleTransition("approved", "deployed", approvalFixture({ reason: "r".repeat(2001) })).ok).toBe(false);
+    expect(
+      decideNodeLifecycleTransition(
+        "approved",
+        "deployed",
+        approvalFixture({ reason: "r".repeat(2000) }),
+      ).ok,
+    ).toBe(true);
+    expect(
+      decideNodeLifecycleTransition(
+        "approved",
+        "deployed",
+        approvalFixture({ reason: "r".repeat(2001) }),
+      ).ok,
+    ).toBe(false);
   });
 
   it("does not require approvals for non-gated forward transitions", () => {
@@ -436,10 +468,15 @@ describe("vector 4: tenant data on ineligible regions", () => {
 
   it("denies tenant data on an eligible kind whose eligibility was declared false (declaration and kind must agree)", () => {
     const topology = parsedTopology({
-      regions: [regionFixture({ regionId: "storage_locked", kind: "storage", tenantDataEligible: false })],
+      regions: [
+        regionFixture({ regionId: "storage_locked", kind: "storage", tenantDataEligible: false }),
+      ],
       links: [],
     });
-    const request = parsedRequest({ requestedRegionId: "storage_locked", tenantDataIntended: true });
+    const request = parsedRequest({
+      requestedRegionId: "storage_locked",
+      tenantDataIntended: true,
+    });
     const decision = decideRegionAdmission(
       topology,
       parsedPolicy(),
@@ -452,7 +489,9 @@ describe("vector 4: tenant data on ineligible regions", () => {
   it("fails the whole topology parse when an ineligible kind claims tenant-data eligibility — no partial topology escapes", () => {
     const smuggled = parseRegionTopology(
       topologyFixture({
-        regions: [regionFixture({ regionId: "edge_greedy", kind: "edge", tenantDataEligible: true })],
+        regions: [
+          regionFixture({ regionId: "edge_greedy", kind: "edge", tenantDataEligible: true }),
+        ],
       }),
     );
     expect(smuggled.ok).toBe(false);
@@ -484,13 +523,23 @@ describe("vector 4: tenant data on ineligible regions", () => {
       regions: [forgedRegion],
     } as unknown as RegionTopology;
     const request = parsedRequest({ requestedRegionId: "edge_region_1", tenantDataIntended: true });
-    const decision = decideRegionAdmission(forgedTopology, parsedPolicy(), request, trustDecisionFixture());
+    const decision = decideRegionAdmission(
+      forgedTopology,
+      parsedPolicy(),
+      request,
+      trustDecisionFixture(),
+    );
     expectDenied(decision, "region_not_tenant_data_eligible");
   });
 
   it("denies tenant-data intent on unknown regions at the earlier unknown_region gate (deny order is fail-closed)", () => {
     const request = parsedRequest({ requestedRegionId: "ghost_region", tenantDataIntended: true });
-    const decision = decideRegionAdmission(parsedTopology(), parsedPolicy(), request, trustDecisionFixture());
+    const decision = decideRegionAdmission(
+      parsedTopology(),
+      parsedPolicy(),
+      request,
+      trustDecisionFixture(),
+    );
     expectDenied(decision, "unknown_region");
   });
 
@@ -500,7 +549,9 @@ describe("vector 4: tenant data on ineligible regions", () => {
       expect(regionSchema.safeParse(regionFixture({ kind })).success).toBe(true);
     }
     for (const kind of ["compute", "edge", "worker"] as const) {
-      expect(regionSchema.safeParse(regionFixture({ kind, tenantDataEligible: true })).success).toBe(false);
+      expect(
+        regionSchema.safeParse(regionFixture({ kind, tenantDataEligible: true })).success,
+      ).toBe(false);
     }
   });
 });
@@ -523,8 +574,12 @@ describe("vector 5: auto-trust bypass attempts", () => {
       NaN,
     ];
     for (const bypass of bypassAttempts) {
-      const parsed = admissionPolicySchema.safeParse(policyFixture({ requireExplicitTrust: bypass }));
-      expect(parsed.success, `policy accepted requireExplicitTrust = ${String(bypass)}`).toBe(false);
+      const parsed = admissionPolicySchema.safeParse(
+        policyFixture({ requireExplicitTrust: bypass }),
+      );
+      expect(parsed.success, `policy accepted requireExplicitTrust = ${String(bypass)}`).toBe(
+        false,
+      );
     }
     const omitted = { ...policyFixture() } as Record<string, unknown>;
     delete omitted["requireExplicitTrust"];
@@ -532,8 +587,12 @@ describe("vector 5: auto-trust bypass attempts", () => {
   });
 
   it("rejects unknown keys on the policy (no smuggled side-channels past strictObject)", () => {
-    expect(admissionPolicySchema.safeParse(policyFixture({ autoTrustExternalNodes: true })).success).toBe(false);
-    expect(admissionPolicySchema.safeParse(policyFixture({ trustByDefault: "always" })).success).toBe(false);
+    expect(
+      admissionPolicySchema.safeParse(policyFixture({ autoTrustExternalNodes: true })).success,
+    ).toBe(false);
+    expect(
+      admissionPolicySchema.safeParse(policyFixture({ trustByDefault: "always" })).success,
+    ).toBe(false);
   });
 
   it("pins the type-level guarantee: AdmissionPolicy['requireExplicitTrust'] is the literal true, not boolean", () => {
@@ -614,7 +673,11 @@ describe("vector 6: trust-decision replay and mismatch", () => {
     // record parse gate; well-formed-but-different ids reach the mismatch
     // gate. Both are typed denials — neither is ever accepted.
     const schemaInvalidImpersonations: readonly string[] = ["NODE_EXT_1", "node_ext_1 "];
-    const wellFormedImpersonations: readonly string[] = ["node_ext_2", "node_ext_10", "node_ext_11"];
+    const wellFormedImpersonations: readonly string[] = [
+      "node_ext_2",
+      "node_ext_10",
+      "node_ext_11",
+    ];
 
     for (const impersonated of schemaInvalidImpersonations) {
       const decision = decideRegionAdmission(
@@ -702,14 +765,23 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
   it("denies a direct self-link with a typed schema issue at the offending path", () => {
     const selfLink = parseRegionTopology(
       topologyFixture({
-        links: [{ fromRegionId: "core_region_1", toRegionId: "core_region_1", linkKind: "backbone", weight: 1 }],
+        links: [
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "core_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+        ],
       }),
     );
     expect(selfLink.ok).toBe(false);
     if (!selfLink.ok) {
       expect(selfLink.reason).toBe("invalid_shape");
       expect(selfLink.issues.some((issue) => issue.path.includes("toRegionId"))).toBe(true);
-      expect(selfLink.issues.some((issue) => issue.message.includes("attach a region to itself"))).toBe(true);
+      expect(
+        selfLink.issues.some((issue) => issue.message.includes("attach a region to itself")),
+      ).toBe(true);
     }
   });
 
@@ -717,7 +789,9 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
     for (const linkKind of ["backbone", "regional", "edge_uplink"] as const) {
       const disguised = parseRegionTopology(
         topologyFixture({
-          links: [{ fromRegionId: "edge_region_1", toRegionId: "edge_region_1", linkKind, weight: 0 }],
+          links: [
+            { fromRegionId: "edge_region_1", toRegionId: "edge_region_1", linkKind, weight: 0 },
+          ],
         }),
       );
       expect(disguised.ok, `self-link smuggled as linkKind "${linkKind}"`).toBe(false);
@@ -732,8 +806,18 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
     const twoCycle = parseRegionTopology(
       topologyFixture({
         links: [
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 1 },
-          { fromRegionId: "edge_region_1", toRegionId: "core_region_1", linkKind: "backbone", weight: 1 },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+          {
+            fromRegionId: "edge_region_1",
+            toRegionId: "core_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
         ],
       }),
     );
@@ -742,9 +826,24 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
     const threeCycle = parseRegionTopology(
       topologyFixture({
         links: [
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 1 },
-          { fromRegionId: "edge_region_1", toRegionId: "compute_region_1", linkKind: "regional", weight: 1 },
-          { fromRegionId: "compute_region_1", toRegionId: "core_region_1", linkKind: "regional", weight: 1 },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+          {
+            fromRegionId: "edge_region_1",
+            toRegionId: "compute_region_1",
+            linkKind: "regional",
+            weight: 1,
+          },
+          {
+            fromRegionId: "compute_region_1",
+            toRegionId: "core_region_1",
+            linkKind: "regional",
+            weight: 1,
+          },
         ],
       }),
     );
@@ -755,8 +854,18 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
     const duplicated = parseRegionTopology(
       topologyFixture({
         links: [
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 1 },
-          { fromRegionId: "core_region_1", toRegionId: "edge_region_1", linkKind: "backbone", weight: 2 },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 1,
+          },
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "edge_region_1",
+            linkKind: "backbone",
+            weight: 2,
+          },
         ],
       }),
     );
@@ -765,7 +874,14 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
 
     const unresolved = parseRegionTopology(
       topologyFixture({
-        links: [{ fromRegionId: "core_region_1", toRegionId: "ghost_region", linkKind: "backbone", weight: 1 }],
+        links: [
+          {
+            fromRegionId: "core_region_1",
+            toRegionId: "ghost_region",
+            linkKind: "backbone",
+            weight: 1,
+          },
+        ],
       }),
     );
     expect(unresolved.ok).toBe(false);
@@ -779,9 +895,15 @@ describe("vector 7: topology self-link and cycle smuggling", () => {
     const flooded = parseRegionTopology(topologyFixture({ regions: flood, links: [] }));
     expect(flooded.ok).toBe(false);
 
-    const capabilityFlood = Array.from({ length: MAX_CAPABILITIES_PER_NODE + 1 }, (_, index) => `cap_${index}`);
+    const capabilityFlood = Array.from(
+      { length: MAX_CAPABILITIES_PER_NODE + 1 },
+      (_, index) => `cap_${index}`,
+    );
     const overCapability = parseAdmissionRequest(
-      requestFixture({ node: nodeFixture({ capabilities: capabilityFlood.slice(0, MAX_CAPABILITIES_PER_NODE) }), capabilities: capabilityFlood }),
+      requestFixture({
+        node: nodeFixture({ capabilities: capabilityFlood.slice(0, MAX_CAPABILITIES_PER_NODE) }),
+        capabilities: capabilityFlood,
+      }),
     );
     expect(overCapability.ok).toBe(false);
   });
@@ -796,7 +918,11 @@ describe("control: legitimate path is untouched by the adversarial hardening", (
     const decision = decideRegionAdmission(
       parsedTopology(),
       parsedPolicy(),
-      parsedRequest({ requestId: "req_honest", requestedRegionId: "core_region_1", tenantDataIntended: true }),
+      parsedRequest({
+        requestId: "req_honest",
+        requestedRegionId: "core_region_1",
+        tenantDataIntended: true,
+      }),
       trustDecisionFixture(),
     );
     expect(decision.ok).toBe(true);

@@ -120,10 +120,7 @@ function nonEmptyBounded(label: string, maxLength: number) {
     .string()
     .min(1, `${label} must be a non-empty string`)
     .refine((value) => value.trim().length > 0, `${label} must not be blank`)
-    .max(
-      maxLength,
-      `${label} exceeds the bounded maximum of ${maxLength} characters`,
-    );
+    .max(maxLength, `${label} exceeds the bounded maximum of ${maxLength} characters`);
 }
 
 export const timestampSchema = z.string().datetime();
@@ -147,11 +144,7 @@ export const amountMinorUnitsSchema = z
 
 export type AmountMinorUnits = z.infer<typeof amountMinorUnitsSchema>;
 
-export const actorKindSchema = z.enum([
-  "autonomous_agent",
-  "automated_process",
-  "human_initiated",
-]);
+export const actorKindSchema = z.enum(["autonomous_agent", "automated_process", "human_initiated"]);
 
 export type ActorKind = z.infer<typeof actorKindSchema>;
 
@@ -211,7 +204,10 @@ export const marketRuleSchema = z
     provenance: provenanceSchema,
   })
   .superRefine((value, ctx) => {
-    if (value.status === "retired" && (value.retiredReason === undefined || value.retiredReason.trim().length === 0)) {
+    if (
+      value.status === "retired" &&
+      (value.retiredReason === undefined || value.retiredReason.trim().length === 0)
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["retiredReason"],
@@ -373,7 +369,10 @@ export const economicProposalSchema = z
     rationale: nonEmptyBounded("proposal.rationale", STATEMENT_MAX_LENGTH),
     basisRefs: z
       .array(identifierSchema)
-      .min(1, "a proposal requires at least one canonical basis reference — intelligence is derived, never conjured")
+      .min(
+        1,
+        "a proposal requires at least one canonical basis reference — intelligence is derived, never conjured",
+      )
       .max(MAX_REFS_PER_RECORD),
     /** Literal `false`: proposals authorize nothing (AGENTS §21). */
     authorizes: z.literal(false),
@@ -384,11 +383,16 @@ export const economicProposalSchema = z
     humanApproval: humanApprovalSchema.optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.validation?.outcome === "failed" && (value.validation.failureDetail === undefined || value.validation.failureDetail.trim().length === 0)) {
+    if (
+      value.validation?.outcome === "failed" &&
+      (value.validation.failureDetail === undefined ||
+        value.validation.failureDetail.trim().length === 0)
+    ) {
       ctx.addIssue({
         code: "custom",
         path: ["validation", "failureDetail"],
-        message: "a failed validation must name the defect — fail-closed: failures are named, never silent",
+        message:
+          "a failed validation must name the defect — fail-closed: failures are named, never silent",
       });
     }
   });
@@ -452,7 +456,8 @@ export function decideProposalRelease(proposal: EconomicProposal): ProposalRelea
       ok: false,
       proposalId: proposal.proposalId,
       reason: "validation_missing",
-      detail: "release requires a recorded validation — fail-closed: unvalidated proposals are never released",
+      detail:
+        "release requires a recorded validation — fail-closed: unvalidated proposals are never released",
     };
   }
   if (proposal.validation.outcome === "failed") {
@@ -468,7 +473,8 @@ export function decideProposalRelease(proposal: EconomicProposal): ProposalRelea
       ok: false,
       proposalId: proposal.proposalId,
       reason: "policy_check_missing",
-      detail: "release requires a recorded policy check — fail-closed: unchecked proposals are never released",
+      detail:
+        "release requires a recorded policy check — fail-closed: unchecked proposals are never released",
     };
   }
   if (proposal.policyCheck.outcome === "denied") {
@@ -512,11 +518,7 @@ export function decideProposalRelease(proposal: EconomicProposal): ProposalRelea
  * Settlement instructions (AGENTS §36 payment security)
  * ────────────────────────────────────────────────────────────*/
 
-export const signatureAlgorithmSchema = z.enum([
-  "ed25519",
-  "ecdsa_p256",
-  "hmac_sha256",
-]);
+export const signatureAlgorithmSchema = z.enum(["ed25519", "ecdsa_p256", "hmac_sha256"]);
 
 export type SignatureAlgorithm = z.infer<typeof signatureAlgorithmSchema>;
 
@@ -526,24 +528,23 @@ export type SignatureAlgorithm = z.infer<typeof signatureAlgorithmSchema>;
  * embedded key material is rejected — secrets never enter this surface
  * (AGENTS §30, §36).
  */
-export const signatureEnvelopeSchema = z
-  .strictObject({
-    algorithm: signatureAlgorithmSchema,
-    /** Reference to the verifying key held by the key owner — never a key. */
-    keyRef: identifierSchema,
-    /** Opaque verification digest (hex or base64 alphabet only). */
-    digest: z
-      .string()
-      .min(32, "digest must be at least 32 characters")
-      .max(
-        SIGNATURE_DIGEST_MAX_LENGTH,
-        `digest exceeds the bounded maximum of ${SIGNATURE_DIGEST_MAX_LENGTH} characters`,
-      )
-      .regex(
-        /^[A-Za-z0-9+/=]+$/,
-        "digest must contain only hex/base64 alphabet characters — opaque verification artifact",
-      ),
-  });
+export const signatureEnvelopeSchema = z.strictObject({
+  algorithm: signatureAlgorithmSchema,
+  /** Reference to the verifying key held by the key owner — never a key. */
+  keyRef: identifierSchema,
+  /** Opaque verification digest (hex or base64 alphabet only). */
+  digest: z
+    .string()
+    .min(32, "digest must be at least 32 characters")
+    .max(
+      SIGNATURE_DIGEST_MAX_LENGTH,
+      `digest exceeds the bounded maximum of ${SIGNATURE_DIGEST_MAX_LENGTH} characters`,
+    )
+    .regex(
+      /^[A-Za-z0-9+/=]+$/,
+      "digest must contain only hex/base64 alphabet characters — opaque verification artifact",
+    ),
+});
 
 export type SignatureEnvelope = z.infer<typeof signatureEnvelopeSchema>;
 
@@ -773,7 +774,10 @@ export const derivedObservationSchema = z.strictObject({
   confidence: z.number().min(0).max(1),
   basisRefs: z
     .array(identifierSchema)
-    .min(1, "a derived observation requires at least one canonical basis reference — provenance is mandatory (AGENTS §12)")
+    .min(
+      1,
+      "a derived observation requires at least one canonical basis reference — provenance is mandatory (AGENTS §12)",
+    )
     .max(MAX_REFS_PER_RECORD),
   generatedBy: actorSchema,
   generatedAt: timestampSchema,
