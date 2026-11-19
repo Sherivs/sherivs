@@ -3,7 +3,7 @@
   "capturedOn": "2026-11-17",
   "query": "SELECT key, kind, route FROM public.workspace_item_catalog ORDER BY key",
   "rowCount": 107,
-  "md5OfKeyKindRouteRows": "c9d45ba8c47f098596aa8c2df285636a",
+  "md5OfCatalogRouteRows": "c9d45ba8c47f098596aa8c2df285636a",
   "refresh": "Run the query above read-only against production, then regenerate this file with the same key|kind|route rows sorted by key (COLLATE \"C\"); the md5 is of the rows joined by newlines.",
   "items": [
     {
