@@ -222,10 +222,18 @@ async function seedOrganization(client, n, { templateRef, withTemplate, recipien
        VALUES ($1, true, 'act_and_report')`,
       [orgId],
     );
+    // AIN-02: the earned level changes only through the promotion gate. This fixture seeds a level directly, as the
+    // database owner, with the gate switched off for this one statement and back on straight after.
+    await client.query(
+      "ALTER TABLE public.wf_agent_autonomy DISABLE TRIGGER wf_agent_autonomy_05_gate",
+    );
     await client.query(
       `INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
        VALUES ($1, $2, 'act_and_report')`,
       [orgId, agentRef],
+    );
+    await client.query(
+      "ALTER TABLE public.wf_agent_autonomy ENABLE TRIGGER wf_agent_autonomy_05_gate",
     );
     // AIN-01: an agent step needs a registered identity. A throwaway platform agent, granted to this org only.
     await client.query(

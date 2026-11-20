@@ -65,11 +65,11 @@ SELECT wf03t.expect_true('organization settings default off and both tenant tabl
 SELECT wf03t.login_as('service_role');
 INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
 VALUES ('f0300000-0000-4000-8000-0000000000b2', true, 'act_with_approval');
-INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
-VALUES ('f0300000-0000-4000-8000-0000000000b2', 'agent-one', 'act_and_report');
 RESET ROLE;
 \ir ain01-agent-fixture.sql
 SELECT pg_temp.ain01_fixture_agent('f0300000-0000-4000-8000-0000000000b2', 'agent-one');
+\ir ain02-autonomy-fixture.sql
+SELECT pg_temp.ain02_set_level('f0300000-0000-4000-8000-0000000000b2', 'agent-one', 'act_and_report');
 SELECT wf03t.login_as('service_role');
 UPDATE public.wf_template SET autonomy_max = 'act_and_report'
  WHERE template_key = 'payment_due_reminder_ladder' AND version = 1;
@@ -180,14 +180,15 @@ BEGIN
   PERFORM wf03t.pass('duplicate event creates exactly one run');
 END $duplicate_event$;
 
-SELECT wf03t.expect_true('authenticated settings permissions and service-only earned autonomy',
+SELECT wf03t.expect_true('authenticated settings permissions and gate-only earned autonomy (service role reads it, AIN-02)',
   has_table_privilege('authenticated', 'public.wf_org_settings', 'SELECT')
   AND has_table_privilege('authenticated', 'public.wf_org_settings', 'UPDATE')
   AND NOT has_table_privilege('authenticated', 'public.wf_org_settings', 'DELETE')
   AND NOT has_table_privilege('anon', 'public.wf_org_settings', 'SELECT')
   AND NOT has_table_privilege('anon', 'public.wf_agent_autonomy', 'SELECT')
   AND NOT has_table_privilege('authenticated', 'public.wf_agent_autonomy', 'SELECT')
-  AND has_table_privilege('service_role', 'public.wf_agent_autonomy', 'UPDATE')
+  AND has_table_privilege('service_role', 'public.wf_agent_autonomy', 'SELECT')
+  AND NOT has_table_privilege('service_role', 'public.wf_agent_autonomy', 'UPDATE')  -- AIN-02: the gate writes it
   AND NOT has_table_privilege('authenticated', 'public.wf_run', 'INSERT')
   AND NOT has_table_privilege('authenticated', 'public.wf_step_run', 'INSERT')
   AND has_function_privilege('service_role', 'public.wf_claim_due_events(text,integer,integer)', 'EXECUTE')

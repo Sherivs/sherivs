@@ -519,8 +519,8 @@ SELECT ain01t.expect_true('T1 and T2 positive twins were accepted',
   ain01t.steps_of('ain01-t1', 'orgA') = 2 AND ain01t.steps_of('ain01-t2', 'orgA') = 1);
 
 -- 6e. No autonomy promotion: AIN-01 leaves the earned level and the draft cap exactly as WF-03 made them.
-INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
-VALUES (ain01t.id('orgA'), 'ain01-t3', 'act_and_report');
+\ir ain02-autonomy-fixture.sql
+SELECT pg_temp.ain02_set_level(ain01t.id('orgA'), 'ain01-t3', 'act_and_report');
 SELECT ain01t.step('tpl', 'cap-money', 'action', 'money_movement');
 SELECT ain01t.step('tpl', 'cap-internal', 'action', 'internal');
 SELECT ain01t.expect_true('a T3 agent can reach a capped class, but the autonomy guard still caps it at draft',

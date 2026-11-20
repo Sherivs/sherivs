@@ -3,7 +3,7 @@
 -- Run it on a database whose migrator has Supabase's default privileges in force (ALTER DEFAULT PRIVILEGES ... GRANT ALL
 -- ... TO anon, authenticated, service_role), after WF-08 and WF-12 were re-applied under them (see verify.yml, "privileges
 -- under Supabase default privileges"). Under those defaults a function a migration forgets to revoke is executable by
--- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08 and WF-12 alike.
+-- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08, WF-12 and AIN-02 alike.
 -- The list is the set the server legitimately calls; adding a server-called function means adding it here on purpose.
 CREATE TEMP TABLE wf12_priv_allowed (sig text PRIMARY KEY);
 INSERT INTO wf12_priv_allowed VALUES
@@ -13,6 +13,9 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_approved_drafts_ready(p_limit integer)'),
   ('wf_approver_candidates(p_approval uuid, p_limit integer)'),
   ('wf_audit_step_up_failed(p_actor uuid, p_approval uuid, p_reason text)'),
+  ('wf_autonomy_demote(p_actor uuid, p_org uuid, p_agent text, p_to_level text, p_reason text)'),
+  ('wf_autonomy_promote(p_actor uuid, p_org uuid, p_agent text, p_to_level text, p_evidence uuid, p_reason text)'),
+  ('wf_autonomy_record_evidence(p_agent text, p_suite text, p_graded integer, p_passed integer, p_critical_failures integer, p_ungraded integer, p_evaluated_at timestamp with time zone, p_content_sha256 text)'),
   ('wf_block_draft_dispatch(p_org uuid, p_draft uuid, p_code text)'),
   ('wf_can(p_org uuid, p_perm text)'),
   ('wf_claim_due_events(p_worker text, p_limit integer, p_lease_seconds integer)'),

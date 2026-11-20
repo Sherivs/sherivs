@@ -172,10 +172,10 @@ SELECT wf08t.logout();
 INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling) VALUES
   (wf08t.id('orgA'), true, 'act_and_report'),
   (wf08t.id('orgB'), true, 'act_and_report');
-INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
-  (wf08t.id('orgA'), 'wf08-agent', 'act_and_report'),
-  (wf08t.id('orgB'), 'wf08-agent', 'act_and_report');
 \ir ain01-agent-fixture.sql
+\ir ain02-autonomy-fixture.sql
+SELECT pg_temp.ain02_set_level(wf08t.id('orgA'), 'wf08-agent', 'act_and_report');
+SELECT pg_temp.ain02_set_level(wf08t.id('orgB'), 'wf08-agent', 'act_and_report');
 SELECT pg_temp.ain01_fixture_agent(wf08t.id('orgA'), 'wf08-agent');
 SELECT pg_temp.ain01_fixture_agent(wf08t.id('orgB'), 'wf08-agent');
 UPDATE public.wf_template SET autonomy_max = 'suggest'
@@ -527,6 +527,7 @@ SELECT wf08t.expect_true('a repeat cancel writes nothing more',
 SELECT wf08t.expect_true('the cancelled run is visible in history with no cancel right left',
   (SELECT d -> 'run' ->> 'status' = 'cancelled' AND d -> 'permissions' ->> 'can_cancel' = 'false'
      FROM (SELECT wf08t.detail('adminA', 'live') AS d) x));
+SELECT pg_temp.ain02_allow_execution(wf08t.id('step_live_act'));  -- AIN-02: this test is about the run guard, not the step level
 SELECT wf08t.expect_error('a cancelled run cannot record an executed action (dispatch race is closed)',
   format($q$INSERT INTO public.wf_action_sandbox_outbox
       (org_id, run_id, step_run_id, kind, category, template_ref, broker_decision_id, idempotency_key)
@@ -630,6 +631,7 @@ UPDATE public.wf_run SET status = 'failed', finished_at = now(), error_code = 's
 SELECT wf08t.mkstate('r_draft', 'send', 'failed');
 SELECT wf08t.mkrun('r_effect', 'wf08-a', 'running', 'adminA');
 SELECT wf08t.mkstep('r_effect', 'r_effect', 'send', 'action', 'running');
+SELECT pg_temp.ain02_allow_execution(wf08t.id('step_r_effect'));  -- AIN-02: this test is about retry, not the step level
 INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, kind, category, template_ref, broker_decision_id, idempotency_key)
 VALUES (wf08t.id('orgA'), wf08t.id('run_r_effect'), wf08t.id('step_r_effect'), 'in_app', 'communication', 'notice.a',
         wf08t.decision(wf08t.id('orgA'), 'in_app', 'wf08-step-r_effect'), 'wf08-step-r_effect');
@@ -789,8 +791,12 @@ SELECT wf08t.mkfailed('esc', 'wf08-a');
 SELECT wf08t.expect_true('the dead step was created under the low ceiling',
   (SELECT autonomy_level FROM public.wf_step_run WHERE id = wf08t.id('step_esc')) = 'suggest');
 UPDATE public.wf_template SET autonomy_max = 'act_and_report' WHERE template_key = 'paystack_payment_receipt' AND version = 1;
+-- AIN-02 freezes a run's template once set (a run cannot borrow another template's level). This fixture simulates
+-- "the ceiling was raised after the step died" by re-pointing the run as a database owner would: trigger off for one statement.
+ALTER TABLE public.wf_run DISABLE TRIGGER wf_run_08_freeze_actor;
 UPDATE public.wf_run SET template_id = (SELECT id FROM public.wf_template WHERE template_key = 'paystack_payment_receipt' AND version = 1)
  WHERE id = wf08t.id('run_esc');
+ALTER TABLE public.wf_run ENABLE TRIGGER wf_run_08_freeze_actor;
 SELECT wf08t.expect_error('retry refuses when the template ceiling was raised after the step died (never escalate)',
   $q$SELECT wf08t.call_retry('adminA', 'esc')$q$, '42501', 'wf08:autonomy_escalation');
 

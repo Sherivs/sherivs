@@ -219,10 +219,10 @@ SELECT wf07t.logout();
 INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling) VALUES
   (wf07t.id('orgA'), true, 'act_and_report'),
   (wf07t.id('orgB'), true, 'act_and_report');
-INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
-  (wf07t.id('orgA'), 'wf07-agent', 'act_and_report'),
-  (wf07t.id('orgB'), 'wf07-agent', 'act_and_report');
 \ir ain01-agent-fixture.sql
+\ir ain02-autonomy-fixture.sql
+SELECT pg_temp.ain02_set_level(wf07t.id('orgA'), 'wf07-agent', 'act_and_report');
+SELECT pg_temp.ain02_set_level(wf07t.id('orgB'), 'wf07-agent', 'act_and_report');
 SELECT pg_temp.ain01_fixture_agent(wf07t.id('orgA'), 'wf07-agent');
 SELECT pg_temp.ain01_fixture_agent(wf07t.id('orgB'), 'wf07-agent');
 INSERT INTO public.wf_definition (id, org_id, key, name) VALUES
@@ -261,6 +261,9 @@ BEGIN
     autonomy_level, agent_ref, status, resume_at)
   VALUES (v_id, v_run.org_id, v_run.id, 'wf07-' || p_name, 'action', 'wf07-step-' || p_name, p_class,
     'act_and_report', 'wf07-agent', 'waiting', now() + interval '7 days');
+  -- AIN-02: the insert above asks for act_and_report but the step guard computes the level; this harness is about
+  -- approvals and the outbox, so the step is marked as one that may execute (as a database owner would).
+  PERFORM pg_temp.ain02_allow_execution(v_id);
   RETURN wf07t.keep('step_' || p_name, v_id);
 END $$;
 CREATE FUNCTION wf07t.rids(p_n integer) RETURNS uuid[] LANGUAGE sql AS $$
