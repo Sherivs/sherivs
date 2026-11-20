@@ -18,6 +18,9 @@ END $$;
 -- trigger is switched off for the one statement. Called before any SET ROLE; nothing here runs against a hosted database.
 CREATE FUNCTION pg_temp.ain02_allow_execution(p_step uuid) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
+  -- These harnesses test quotas, approvals and history, not the step level. The outbox backstop is switched off for
+  -- the rest of the (rolled-back) harness; ain02-autonomy-gate.local.sql tests it with it switched on.
+  ALTER TABLE public.wf_action_sandbox_outbox DISABLE TRIGGER wf_action_sandbox_outbox_90_autonomy;
   ALTER TABLE public.wf_step_run DISABLE TRIGGER wf_step_run_05_autonomy;
   UPDATE public.wf_step_run SET autonomy_level = 'act_and_report' WHERE id = p_step;
   ALTER TABLE public.wf_step_run ENABLE TRIGGER wf_step_run_05_autonomy;
