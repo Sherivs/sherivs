@@ -123,7 +123,7 @@ CREATE FUNCTION ain03t.facts(p_item uuid) RETURNS jsonb LANGUAGE sql SECURITY DE
   SELECT to_jsonb(i) FROM public.wf_memory_item i WHERE i.id = p_item
 $$;
 CREATE FUNCTION ain03t.live(p_org text) RETURNS bigint LANGUAGE sql SECURITY DEFINER AS $$
-  SELECT count(*) FROM public.wf_memory_item WHERE org_id = ain03t.id(p_org) AND status <> 'retired'
+  SELECT count(*) FROM public.wf_memory_item WHERE org_id = ain03t.id(p_org) AND status = 'active' AND expires_at > now()
 $$;
 -- SQL text for the entry points, so a refused call can be passed to expect_error.
 CREATE FUNCTION ain03t.put(p_who text, p_kind text, p_ref text, p_key text, p_class text, p_value text,
@@ -191,24 +191,24 @@ SELECT ain03t.expect_true('exactly six AIN-03 functions execute for the service 
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_memory_put', 'wf_memory_agent_propose', 'wf_memory_decide', 'wf_memory_retire',
                         'wf_memory_agent_read', 'wf_memory_purge_expired'))
-  AND (SELECT count(*) = 8 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
+  AND (SELECT count(*) = 9 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE') AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
-      AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open',
+      AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_org_proposal_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open',
                         'wf_memory_close', 'wf_memory_item_guard', 'wf_memory_item_delete_guard', 'wf_memory_item_audit')));
 SELECT ain03t.expect_true('PUBLIC can execute no AIN-03 function',
   NOT EXISTS (SELECT 1 FROM pg_proc p, aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
                WHERE p.pronamespace = 'public'::regnamespace AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'
                  AND p.proname LIKE 'wf\_memory\_%'));
 SELECT ain03t.expect_true('every AIN-03 function pins an empty search_path',
-  (SELECT count(*) = 14 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
+  (SELECT count(*) = 15 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
     WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'wf\_memory\_%'));
 SELECT ain03t.expect_true('the entry points and the guards are SECURITY DEFINER; the pure helpers and the window helpers are not',
   (SELECT bool_and(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
     AND p.proname IN ('wf_memory_put', 'wf_memory_agent_propose', 'wf_memory_decide', 'wf_memory_retire', 'wf_memory_agent_read',
                       'wf_memory_purge_expired', 'wf_memory_item_guard', 'wf_memory_item_delete_guard', 'wf_memory_item_audit'))
   AND (SELECT NOT bool_or(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
-    AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open', 'wf_memory_close')));
+    AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_org_proposal_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open', 'wf_memory_close')));
 SELECT ain03t.expect_true('the guards are wired where the design says (insert and update; delete; truncate; audit after every row change)',
   EXISTS (SELECT 1 FROM pg_trigger t WHERE t.tgrelid = 'public.wf_memory_item'::regclass AND t.tgname = 'wf_memory_item_10_guard'
             AND t.tgtype & 2 = 2 AND t.tgtype & 4 = 4 AND t.tgtype & 16 = 16 AND t.tgtype & 1 = 1 AND NOT t.tgisinternal)
@@ -232,7 +232,8 @@ SELECT ain03t.expect_true('four scopes with the reviewed lifetimes and caps; onl
   (SELECT string_agg(kind || ':' || default_ttl_days || ':' || max_ttl_days || ':' || max_items || ':' || agent_may_propose, ',' ORDER BY kind)
      FROM public.wf_memory_scope_kind) = 'agent:90:365:200:true,organization:365:1095:300:false,run:7:30:50:true,workflow:180:730:200:false');
 SELECT ain03t.expect_true('the cross-scope caps are 2000 items per organization and 50 proposals per agent per day',
-  public.wf_memory_org_item_cap() = 2000 AND public.wf_memory_agent_daily_proposals() = 50);
+  public.wf_memory_org_item_cap() = 2000 AND public.wf_memory_agent_daily_proposals() = 50
+  AND public.wf_memory_org_proposal_cap() = 200);
 SELECT ain03t.expect_error('an agent can never be given the organization scope in the data',
   $q$UPDATE public.wf_memory_scope_kind SET agent_may_propose = true WHERE kind = 'organization'$q$, '23514');
 SELECT ain03t.expect_error('an agent can never be given the workflow scope in the data',
@@ -357,10 +358,10 @@ SELECT ain03t.expect_true('a manager writes an organization item: active, versio
           AND data_class = 'reference' AND NOT ai_readable AND org_id = ain03t.id('orgA') AND scope_ref = ''
           AND expires_at = now() + interval '365 days'
      FROM public.wf_memory_item WHERE id = ain03t.id('put1')));
-SELECT ain03t.expect_true('the write left one ledger row (write, person, a hash and no content) and one audit entry',
+SELECT ain03t.expect_true('the write left one ledger row (write, person, no content, and no hash of a reference value) and one audit entry',
   ain03t.ops('orgA', 'write') = 1 AND ain03t.audits('orgA', 'workflow.memory.write') = 1
   AND (SELECT actor_kind = 'person' AND actor_person = ain03t.id('adminA') AND version = 1
-              AND value_sha256 = encode(sha256(convert_to('{"plan_code": "term-1", "term_count": 3}', 'UTF8')), 'hex')
+              AND value_sha256 IS NULL
          FROM public.wf_memory_change WHERE item_id = ain03t.id('put1')));
 SELECT ain03t.login_as('service_role');
 SELECT ain03t.expect_true('writing the same key again replaces it in place: same row, version 2, new value, one live row',
@@ -856,9 +857,8 @@ SELECT ain03t.expect_error('delete: a purge marker from another transaction is n
 SELECT ain03t.expect_true('every ledger row has a matching audit entry (counts agree per operation)',
   NOT EXISTS (SELECT 1 FROM (SELECT op, count(*) c FROM public.wf_memory_change WHERE org_id = ain03t.id('orgA') GROUP BY op) l
                WHERE ain03t.audits('orgA', 'workflow.memory.' || l.op) <> l.c));
-SELECT ain03t.expect_true('the ledger holds the hash of a value and never the value (spot check on one write)',
-  (SELECT value_sha256 = encode(sha256(convert_to((SELECT value::text FROM public.wf_memory_item WHERE id = ain03t.id('ret_live'))::text, 'UTF8')), 'hex')
-     FROM public.wf_memory_change WHERE item_id = ain03t.id('ret_live') AND op = 'write'));
+SELECT ain03t.expect_true('the ledger holds no hash of a reference value and never the value (spot check on one write)',
+  (SELECT value_sha256 IS NULL FROM public.wf_memory_change WHERE item_id = ain03t.id('ret_live') AND op = 'write'));
 SELECT ain03t.expect_true('the audit entries carry no memory content (the action is the operation, the hash is of a hash)',
   NOT EXISTS (SELECT 1 FROM public.audit_chain WHERE org_id = ain03t.id('orgA') AND action LIKE 'workflow.memory.%'
                 AND coalesce(after_hash, '') = ''));

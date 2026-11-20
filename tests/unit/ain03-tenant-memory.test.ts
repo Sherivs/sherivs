@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   MEMORY_AGENT_DAILY_PROPOSALS,
   MEMORY_ORG_ITEM_CAP,
+  MEMORY_ORG_PROPOSAL_CAP,
   MEMORY_SCOPES,
   MEMORY_SCOPE_RULES,
   MEMORY_VALUE_MAX_BYTES,
@@ -44,6 +45,8 @@ describe("AIN-03 memory: the TypeScript restatement matches the migration", () =
   it("the cross-scope caps match the SQL functions", () => {
     expect(migration).toMatch(/wf_memory_org_item_cap\(\)[\s\S]{0,200}SELECT 2000 \$\$/);
     expect(migration).toMatch(/wf_memory_agent_daily_proposals\(\)[\s\S]{0,200}SELECT 50 \$\$/);
+    expect(migration).toMatch(/wf_memory_org_proposal_cap\(\)[\s\S]{0,200}SELECT 200 \$\$/);
+    expect(MEMORY_ORG_PROPOSAL_CAP).toBe(200);
     expect(MEMORY_ORG_ITEM_CAP).toBe(2000);
     expect(MEMORY_AGENT_DAILY_PROPOSALS).toBe(50);
     expect(migration).toContain("octet_length(p_value::text) <= 4096");
