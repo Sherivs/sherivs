@@ -69,6 +69,39 @@ export interface WorkflowActionOutboxInput extends WorkflowActionDraftInput {
   brokerDecisionId: string;
 }
 
+export interface WorkflowQuotaCheckInput {
+  orgId: string;
+  runId: string;
+  kind: string;
+  recipientCount: number;
+  mode: "draft" | "execute";
+}
+
+export interface WorkflowQuotaCheckResult {
+  allowed: boolean;
+  code: string | null;
+}
+
+/** Fail closed: anything but an explicit `allowed: true` from a working port stops the action. */
+export async function enforceWorkflowQuota(
+  ports: Pick<WorkflowActionDispatcherPorts, "quotaCheck">,
+  input: WorkflowQuotaCheckInput,
+): Promise<void> {
+  if (typeof ports.quotaCheck !== "function") throw new Error("workflow_quota_unavailable");
+  let result: WorkflowQuotaCheckResult;
+  try {
+    result = await ports.quotaCheck(input);
+  } catch {
+    throw new Error("workflow_quota_unavailable");
+  }
+  if (!result || result.allowed !== true) {
+    const code = result && typeof result.code === "string" ? result.code : "";
+    throw new Error(
+      /^[a-z_]{3,40}$/.test(code) ? `workflow_quota_${code}` : "workflow_quota_unavailable",
+    );
+  }
+}
+
 export interface WorkflowActionDispatcherPorts {
   readonly env: WorkflowDeliveryEnvironment;
   readonly broker: { readonly authority: AuthorityPort; readonly ledger: LedgerPort };
@@ -91,6 +124,11 @@ export interface WorkflowActionDispatcherPorts {
     targetUrl: string,
   ) => Promise<{ id: string; targetUrl: string } | null>;
   readonly brokerContext: (orgId: string, runId: string) => Promise<string | null>;
+  /**
+   * WF-12: the per-organization quota and wallet-cap pre-check. The database triggers are the authority;
+   * this stops the work before a broker ledger row is written. Required: a missing or failing port refuses.
+   */
+  readonly quotaCheck: (input: WorkflowQuotaCheckInput) => Promise<WorkflowQuotaCheckResult>;
   readonly createDraft: (input: WorkflowActionDraftInput) => Promise<void>;
   readonly createSandboxOutbox: (input: WorkflowActionOutboxInput) => Promise<void>;
 }
@@ -216,6 +254,13 @@ export async function dispatchWorkflowAction(
     actionType.brokerToolId === null ||
     actionType.brokerVersion === null
   ) {
+    await enforceWorkflowQuota(ports, {
+      orgId: input.orgId,
+      runId: input.runId,
+      kind: action.kind,
+      recipientCount: recipients.length,
+      mode: "draft",
+    });
     await ports.createDraft(draftInput);
     return { status: "draft" };
   }
@@ -226,6 +271,14 @@ export async function dispatchWorkflowAction(
     kind: action.kind as Parameters<typeof workflowDeliveryGate>[0]["kind"],
   });
   if (!delivery.allowed) throw new Error("workflow_delivery_refused");
+  // Judged before the broker writes its ledger row, in the stricter mode (spend counts only when it would be sent).
+  await enforceWorkflowQuota(ports, {
+    orgId: input.orgId,
+    runId: input.runId,
+    kind: action.kind,
+    recipientCount: recipients.length,
+    mode: "execute",
+  });
 
   const contextId = await ports.brokerContext(input.orgId, input.runId);
   if (!contextId) throw new Error("workflow_broker_context_unavailable");
@@ -278,6 +331,13 @@ export async function dispatchWorkflowAction(
   });
   if (!decision.ok) throw new Error("workflow_broker_unavailable");
   if (decision.decision.verdict !== "execute") {
+    await enforceWorkflowQuota(ports, {
+      orgId: input.orgId,
+      runId: input.runId,
+      kind: action.kind,
+      recipientCount: recipients.length,
+      mode: "draft",
+    });
     await ports.createDraft(draftInput);
     return { status: "draft" };
   }

@@ -76,6 +76,7 @@ export const RUN_ERROR_CODES = [
   "not_cancellable",
   "actor_required",
   "invalid_request",
+  "quota_runs_per_day",
   "unavailable",
 ] as const;
 export type RunErrorCode = (typeof RUN_ERROR_CODES)[number];
@@ -90,6 +91,8 @@ const SAFE_MESSAGES: Readonly<Record<RunErrorCode, string>> = Object.freeze({
   not_cancellable: "This run has already finished, so it cannot be cancelled.",
   actor_required: "Your session could not be confirmed. Sign in again and retry.",
   invalid_request: "That request was not valid.",
+  quota_runs_per_day:
+    "Your organisation has reached its daily limit on workflow runs. Try again later, or ask an administrator to review the limit.",
   unavailable: "Run history is not available right now. Please try again shortly.",
 });
 
@@ -114,12 +117,12 @@ export class RunHistoryError extends Error {
   }
 }
 
-/** Maps a database error (`wf07:`/`wf08:<code>` in the message) to a safe code. Unknown text never leaks. */
+/** Maps a database error (`wf07:`/`wf08:`/`wf12:<code>` in the message) to a safe code. Unknown text never leaks. */
 export function runErrorFromDatabase(
   error: { message?: unknown; code?: unknown } | null | undefined,
 ): RunHistoryError {
   const message = typeof error?.message === "string" ? error.message : "";
-  const match = /wf0[78]:([a-z_]+)/.exec(message);
+  const match = /wf(?:0[78]|12):([a-z_]+)/.exec(message);
   const c = match?.[1];
   if (c && (RUN_ERROR_CODES as readonly string[]).includes(c)) {
     return new RunHistoryError(c as RunErrorCode);

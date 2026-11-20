@@ -493,6 +493,21 @@ export function createWorkflowActionPorts(
         : null;
     },
     brokerContext: resolveBrokerContext,
+    quotaCheck: async (check) => {
+      const { data, error } = await client.rpc("wf_quota_check_action", {
+        p_org: check.orgId,
+        p_kind: check.kind,
+        p_recipients: check.recipientCount,
+        p_mode: check.mode,
+        p_run: check.runId,
+      });
+      if (error || !data || typeof data !== "object") throw new Error("workflow_quota_unavailable");
+      const result = data as { allowed?: unknown; code?: unknown };
+      return {
+        allowed: result.allowed === true,
+        code: typeof result.code === "string" ? result.code : null,
+      };
+    },
     createDraft: async (draft) => {
       const { error } = await client.from("wf_action_draft").upsert(
         {

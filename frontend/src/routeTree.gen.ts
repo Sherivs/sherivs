@@ -133,6 +133,7 @@ import { Route as ApiPublicCronOrgNotificationsRouteImport } from './routes/api/
 import { Route as ApiPublicCronOrgWeeklyReportsRouteImport } from './routes/api/public/cron/org-weekly-reports'
 import { Route as ApiPublicCronWalletTopupReconcileRouteImport } from './routes/api/public/cron/wallet-topup-reconcile'
 import { Route as ApiPublicCronWhatsappN8nForwardRouteImport } from './routes/api/public/cron/whatsapp-n8n-forward'
+import { Route as ApiPublicCronWorkflowRetentionRouteImport } from './routes/api/public/cron/workflow-retention'
 import { Route as ApiPublicCronWorkflowTickRouteImport } from './routes/api/public/cron/workflow-tick'
 import { Route as ApiPublicWebhooksAfricasTalkingVoiceRouteImport } from './routes/api/public/webhooks/africas-talking-voice'
 import { Route as ApiPublicWebhooksOwnerAlertVoiceRouteImport } from './routes/api/public/webhooks/owner-alert-voice'
@@ -779,6 +780,12 @@ const ApiPublicCronWhatsappN8nForwardRoute =
     path: '/api/public/cron/whatsapp-n8n-forward',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicCronWorkflowRetentionRoute =
+  ApiPublicCronWorkflowRetentionRouteImport.update({
+    id: '/api/public/cron/workflow-retention',
+    path: '/api/public/cron/workflow-retention',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicCronWorkflowTickRoute =
   ApiPublicCronWorkflowTickRouteImport.update({
     id: '/api/public/cron/workflow-tick',
@@ -962,6 +969,7 @@ export interface FileRoutesByFullPath {
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
+  '/api/public/cron/workflow-retention': typeof ApiPublicCronWorkflowRetentionRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
@@ -1084,6 +1092,7 @@ export interface FileRoutesByTo {
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
+  '/api/public/cron/workflow-retention': typeof ApiPublicCronWorkflowRetentionRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
@@ -1221,6 +1230,7 @@ export interface FileRoutesById {
   '/api/public/cron/org-weekly-reports': typeof ApiPublicCronOrgWeeklyReportsRoute
   '/api/public/cron/wallet-topup-reconcile': typeof ApiPublicCronWalletTopupReconcileRoute
   '/api/public/cron/whatsapp-n8n-forward': typeof ApiPublicCronWhatsappN8nForwardRoute
+  '/api/public/cron/workflow-retention': typeof ApiPublicCronWorkflowRetentionRoute
   '/api/public/cron/workflow-tick': typeof ApiPublicCronWorkflowTickRoute
   '/api/public/webhooks/africas-talking-voice': typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   '/api/public/webhooks/owner-alert-voice': typeof ApiPublicWebhooksOwnerAlertVoiceRoute
@@ -1358,6 +1368,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
+    | '/api/public/cron/workflow-retention'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/owner-alert-voice'
@@ -1480,6 +1491,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
+    | '/api/public/cron/workflow-retention'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/owner-alert-voice'
@@ -1616,6 +1628,7 @@ export interface FileRouteTypes {
     | '/api/public/cron/org-weekly-reports'
     | '/api/public/cron/wallet-topup-reconcile'
     | '/api/public/cron/whatsapp-n8n-forward'
+    | '/api/public/cron/workflow-retention'
     | '/api/public/cron/workflow-tick'
     | '/api/public/webhooks/africas-talking-voice'
     | '/api/public/webhooks/owner-alert-voice'
@@ -1658,6 +1671,7 @@ export interface RootRouteChildren {
   ApiPublicCronOrgWeeklyReportsRoute: typeof ApiPublicCronOrgWeeklyReportsRoute
   ApiPublicCronWalletTopupReconcileRoute: typeof ApiPublicCronWalletTopupReconcileRoute
   ApiPublicCronWhatsappN8nForwardRoute: typeof ApiPublicCronWhatsappN8nForwardRoute
+  ApiPublicCronWorkflowRetentionRoute: typeof ApiPublicCronWorkflowRetentionRoute
   ApiPublicCronWorkflowTickRoute: typeof ApiPublicCronWorkflowTickRoute
   ApiPublicWebhooksAfricasTalkingVoiceRoute: typeof ApiPublicWebhooksAfricasTalkingVoiceRoute
   ApiPublicWebhooksOwnerAlertVoiceRoute: typeof ApiPublicWebhooksOwnerAlertVoiceRoute
@@ -2539,6 +2553,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicCronWhatsappN8nForwardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cron/workflow-retention': {
+      id: '/api/public/cron/workflow-retention'
+      path: '/api/public/cron/workflow-retention'
+      fullPath: '/api/public/cron/workflow-retention'
+      preLoaderRoute: typeof ApiPublicCronWorkflowRetentionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cron/workflow-tick': {
       id: '/api/public/cron/workflow-tick'
       path: '/api/public/cron/workflow-tick'
@@ -2981,6 +3002,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicCronWalletTopupReconcileRoute:
     ApiPublicCronWalletTopupReconcileRoute,
   ApiPublicCronWhatsappN8nForwardRoute: ApiPublicCronWhatsappN8nForwardRoute,
+  ApiPublicCronWorkflowRetentionRoute: ApiPublicCronWorkflowRetentionRoute,
   ApiPublicCronWorkflowTickRoute: ApiPublicCronWorkflowTickRoute,
   ApiPublicWebhooksAfricasTalkingVoiceRoute:
     ApiPublicWebhooksAfricasTalkingVoiceRoute,

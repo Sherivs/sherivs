@@ -24,10 +24,11 @@ import { z } from "zod";
 import { brokerToolCall, type AuthorityPort } from "../tool-broker/broker-service.server";
 import { toolById } from "../tool-broker/platform-tools";
 import { workflowDeliveryGate, type WorkflowActionKind } from "./workflow-actions";
-import type {
-  WorkflowActionDispatcherPorts,
-  WorkflowActionDraftInput,
-  WorkflowActionOutboxInput,
+import {
+  enforceWorkflowQuota,
+  type WorkflowActionDispatcherPorts,
+  type WorkflowActionDraftInput,
+  type WorkflowActionOutboxInput,
 } from "./workflow-action-dispatcher.server";
 
 const uuid = z.string().uuid();
@@ -120,6 +121,15 @@ export async function dispatchApprovedWorkflowDraft(
   } else if (draft.webhookTargetId !== null) {
     throw new Error("workflow_webhook_target_unavailable");
   }
+
+  // WF-12: the limits are read again now; an approval does not lift a quota or a wallet cap.
+  await enforceWorkflowQuota(ports, {
+    orgId: draft.orgId,
+    runId: draft.runId,
+    kind: draft.kind,
+    recipientCount: draft.recipientIds.length,
+    mode: "execute",
+  });
 
   const contextId = await ports.brokerContext(draft.orgId, draft.runId);
   if (!contextId) throw new Error("workflow_broker_context_unavailable");

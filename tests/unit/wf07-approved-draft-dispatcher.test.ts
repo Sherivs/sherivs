@@ -107,6 +107,7 @@ function setup(
     resolveRecipients: async (_org, ids) => ids,
     registeredWebhook: async () => null,
     brokerContext: async () => "context",
+    quotaCheck: async () => ({ allowed: true, code: null }),
     createDraft: async () => {
       throw new Error("an approved draft must never create another draft");
     },
