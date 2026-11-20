@@ -106,7 +106,7 @@ So no "blocked on decision N" issue was written.
 
 ## CI evidence
 
-(filled in after the push)
+PR #477, head 169b5989 (includes a merge of AIN-02 review round 1, 638a6ef1; the first push cdac1578 got no CI because the base had moved and the PR was not mergeable). All check runs completed green: Migration dry-run + sim smoke (AIN-03 harness, ACL step and e2e), RLS isolation battery, Unit tests, Typecheck, Lint, Secret scan (gitleaks), Registry/drift/neutrality/secrets guards + build, Mobile typecheck, Workspace shell E2E, Role management UI screenshots, Vercel preview. Skipped by design: Vercel production deploy, Restore/recovery drill, Supabase Preview.
 
 ## Not verified
 
