@@ -120,7 +120,7 @@ const rolePack = (code, role) => ({
  */
 async function seedOrganization(client, n, { action, recipients }) {
   const orgId = id("f0660000", n);
-  const agentRef = `wf06.e2e.agent.${runTag}.${n}`;
+  const agentRef = `wf06-e2e-agent-${runTag}-${n}`;
   const agentIdentity = id("f0661000", n);
   const role = `wf06-e2e-agent-${runTag}-${n}`;
   const packCode = `wf06-e2e-${runTag}-${n}`;
@@ -164,6 +164,21 @@ async function seedOrganization(client, n, { action, recipients }) {
     await client.query(
       `INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
        VALUES ($1, $2, 'act_and_report')`,
+      [orgId, agentRef],
+    );
+    // AIN-01: an agent step needs a registered identity. A throwaway platform agent, granted to this org only.
+    await client.query(
+      `INSERT INTO public.agent_pause_rules (agent_code, tier, kill_scope) VALUES ($1, 'department', 'agent')`,
+      [agentRef],
+    );
+    await client.query(
+      `INSERT INTO public.wf_agent (agent_ref, family, codename, agent_tier, accountable, supervisor, pack_version,
+         max_tier, context_ceiling, daily_actions, daily_model_calls, daily_cost_cap_minor)
+       VALUES ($1, 'platform', 'Fixture', 'department', 'fixture', 'jarvis-executive', '1.0.0', 'T3', 'internal', 100000, 0, 0)`,
+      [agentRef],
+    );
+    await client.query(
+      `INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES ($1, $2)`,
       [orgId, agentRef],
     );
     await client.query(

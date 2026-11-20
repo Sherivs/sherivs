@@ -295,6 +295,13 @@ jobs:
             -f tests/integration/wf12-quotas-retention.local.sql 2>&1 | tee /tmp/wf12-quotas-retention.out
           ! grep -Fq 'WF12 FAIL' /tmp/wf12-quotas-retention.out
           grep -Eq 'WF12 ALL PASS: [0-9]+ checks' /tmp/wf12-quotas-retention.out
+      - name: AIN-01 agents as engine actors (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain01-agent-actors.local.sql 2>&1 | tee /tmp/ain01-agent-actors.out
+          ! grep -Fq 'AIN01 FAIL' /tmp/ain01-agent-actors.out
+          grep -Eq 'AIN01 ALL PASS: [0-9]+ checks' /tmp/ain01-agent-actors.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -336,6 +343,8 @@ jobs:
           grep -Eq 'WF08-E2E RESULT: cancelled_dispatched=0 retried_dispatched=1 retry_runs=1 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf08-e2e.out
           node load/wf12-quota-e2e.mjs 2>&1 | tee /tmp/wf12-e2e.out
           grep -Eq 'WF12-E2E RESULT: hourly_executed=2 daily_runs=2->4 purged_runs=4 kept_pending_approvals=1 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf12-e2e.out
+          node load/ain01-agent-e2e.mjs 2>&1 | tee /tmp/ain01-e2e.out
+          grep -Eq 'AIN01-E2E RESULT: budget=5 concurrent=20 inserted=5 refused=15 over_budget=0 replay_refused=0 paused_inserted=0 ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_live=0 dup=0$' /tmp/ain01-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

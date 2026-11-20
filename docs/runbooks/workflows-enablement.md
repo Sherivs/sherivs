@@ -209,6 +209,38 @@ Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
 Rollback: `database/supabase/rollbacks/20261117000960_...sql` refuses once a purge was logged or a cost was
 recorded. Apply it after the kill switch and before the WF-08 rollback.
 
+## Agents as engine actors (AIN-01)
+
+Origin: `database/supabase/migrations/20261117000970_sherivs_ain01_agents_as_engine_actors.sql` and
+`architecture/adr/ADR-125_AIN01_AGENTS_AS_ENGINE_ACTORS.md`. Not applied to any hosted database by the mission
+that wrote it; the lead applies it to staging after WF-12. The number `20261117000970` is free on every branch
+checked; `..001000` is used by other PRs.
+
+Every workflow step that runs under an agent must now name a registered agent (42 are seeded: 25 Sherivs-internal
+and 17 organization agents). A new step is refused, with a code, when the agent is unknown, not granted to the
+organization, not enabled, paused, not allowed that class of action for its tier, or past its daily action
+budget. Existing steps are never stopped by a later pause; the pause stops new work.
+
+- **Organization agents** are switched on and paused where they already are (the organization add-on state). If
+  that state is missing from the database the step is refused (`ain01:org_state_unavailable`).
+- **Internal agents** run in no organization until a reviewed migration grants them (`wf_agent_platform_grant`).
+  No administrator, screen or server call can grant one.
+- **AI steps** (kind `ai`) cannot be created for anyone while founder decision 3 (AI route) is open.
+  `wf_ai_route_approved()` returns false; replacing it is a reviewed migration.
+- **Autonomy** is not changed by any of this: an agent without an earned level stays at suggest.
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
+
+1. Read the registry for a pilot organization through `wf_agent_registry_get` (service role, with a person who has
+   `workflows.view`): organization agents are listed with their state; no internal agent is listed.
+2. Start a run under an organization agent that the organization has not enabled: the event is retried and the step
+   is never created (`ain01:agent_not_enabled`). Enable the agent in the add-on state and retry: the step is created.
+3. Pause the agent and start another run: refused (`ain01:agent_paused`); a step already running finishes.
+4. Confirm no step of kind `ai` exists: `SELECT count(*) FROM public.wf_step_run WHERE kind = 'ai'` is 0.
+
+Rollback: `database/supabase/rollbacks/20261117000970_...sql` refuses while a platform grant exists. Apply it after
+the kill switch and before the WF-12 rollback.
+
 ## Kill switch and rollback
 
 To stop new emission and processing, set `WORKFLOW_DELIVERY_MODE=off` first, then set the pilot

@@ -197,6 +197,9 @@ INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
 INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
   (wf12t.id('orgA'), 'wf12-agent', 'act_and_report'),
   (wf12t.id('orgB'), 'wf12-agent', 'act_and_report');
+\ir ain01-agent-fixture.sql
+SELECT pg_temp.ain01_fixture_agent(wf12t.id('orgA'), 'wf12-agent');
+SELECT pg_temp.ain01_fixture_agent(wf12t.id('orgB'), 'wf12-agent');
 
 CREATE FUNCTION wf12t.mkdef(p_key text, p_org text, p_max_steps integer DEFAULT NULL) RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE v_def uuid := gen_random_uuid(); v_ver uuid := gen_random_uuid();
