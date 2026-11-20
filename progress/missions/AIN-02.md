@@ -69,9 +69,9 @@ So no "blocked on decision N" issue was written. The founder is asked to ratify 
 
 ## Evidence (20 Nov 2026, local PostgreSQL 16, every migration applied as a non-superuser migrator)
 
-- `AIN02 ALL PASS: 184 checks` (also after re-applying AIN-02 under Supabase default privileges).
+- `AIN02 ALL PASS: 193 checks` (also after re-applying AIN-02 under Supabase default privileges).
 - `AIN02-PRIV ALL PASS: 241 checks`.
-- `AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0` (over plain `pg`; no PostgREST).
+- `AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0` (over plain `pg`; no PostgREST).
 - Earlier suites with AIN-02 applied: `WF06 ALL PASS: 29 checks`, `WF07 ALL PASS: 96 checks`, `WF08 ALL PASS: 113 checks`, `WF12 ALL PASS: 213 checks`, `WF03 ALL PASS`, `WF05 ALL PASS: 23 checks`, `AIN01 ALL PASS: 136 checks` (the AIN-01 count is from the clean run before any e2e).
 - Unit: `ain02-autonomy-scale.test.ts` 18 passed; `tsc --noEmit`, eslint and prettier clean on the new files.
 - Guards: `verify-domain-neutrality` PASS, `verify-migration-grants` PASS, `verify-provenance-metadata` PASS.
@@ -80,12 +80,31 @@ So no "blocked on decision N" issue was written. The founder is asked to ratify 
 ## CI evidence
 
 Head `602bb1fe` (PR #475): every check green (Migration dry-run + sim smoke, Secret scan, Typecheck, Unit tests,
-Lint, guards and build, RLS battery, E2E); the Vercel preview is not a CI gate. In the CI log: `AIN02 ALL PASS: 184 checks`
+Lint, guards and build, RLS battery, E2E); the Vercel preview is not a CI gate. In the CI log: `AIN02 ALL PASS: 193 checks`
 (twice: default-privileges scratch database and main), `AIN02-PRIV ALL PASS: 241 checks`, `AIN01 ALL PASS: 136 checks`,
 `WF12 ALL PASS: 213 checks`, and the `AIN02-E2E RESULT` line above. The four modified WF e2e scripts ran green on
 PostgREST. The first CI run failed twice and was fixed: gitleaks flagged two idempotency-key literals in the harness,
 and `wf12-default-privileges.local.sql` (which lists every function the service role may execute) needed the three
 new entry points added.
+
+## Review round 1 (coordinator review of head cb9b7ec8)
+
+Fixed in new commits (history kept):
+
+1. Superseded evidence: a promotion is refused (`ain02:evidence_superseded`) when the agent has later evidence or
+   the organization has a later demotion; the ledger guard repeats it. Harness section 10b; earlier harness
+   promotions after a demotion now use evidence from after it.
+2. Race in `wf_autonomy_record_evidence`: `wf_autonomy_apply` now takes only the kind for `auto_demote` and derives
+   the target from the level re-read under the lock (a level of `suggest` is skipped). New e2e scenario G holds an
+   uncommitted promotion while a regression is recorded: the regression is recorded and lowers one rung from the
+   committed level (`race_demoted=1 race_level=draft`).
+3. Stale in-flight level: the outbox guard uses the lower of the stored level and the current
+   `wf_effective_autonomy` for the step's run, template and class. Harness case: step at act_and_report, agent
+   demoted, executed record refused. The WF-07/08/12 fixtures that mark steps executable now also switch the
+   outbox backstop off for that rolled-back harness (they test quotas, approvals and history).
+4. ADR-126 now has a plain trust model section; the tier-cap comment says "engineering default for the founder to
+   ratify"; a demotion that lowers nothing (including an org administrator on an agent with no row) fails with
+   `ain02:nothing_to_lower`.
 
 ## Not verified
 

@@ -9,7 +9,9 @@
 //   D  the service role cannot write the earned level directly (insert, update, delete, truncate): all refused;
 //   E  a regression recorded as evidence lowers the agent in every organization it holds a level in, once, and a
 //      replay of that evidence lowers nothing more;
-//   F  new steps follow the level: draft after the promotion, suggest after the automatic demotion.
+//   F  new steps follow the level: draft after the promotion, suggest after the automatic demotion;
+//   G  a promotion that commits while a regression is being recorded does not make the regression call abort: the
+//      regression is recorded and lowers the level that was committed, one rung from where it stands.
 //
 // Nothing here calls a model, sends a message or reaches a network other than loopback. `sent_live` counts rows in the
 // outbound tables for these organizations (this scenario creates none) and `dup` is computed from SQL.
@@ -151,7 +153,7 @@ async function asServiceRole(sql, params = []) {
 
 const recordEvidence = async (label, graded, passed, critical = 0) => {
   const r = await asServiceRole(
-    `SELECT public.wf_autonomy_record_evidence($1, $2, $3, $4, $5, 0, now() - interval '1 minute', $6) AS v`,
+    `SELECT public.wf_autonomy_record_evidence($1, $2, $3, $4, $5, 0, now(), $6) AS v`,
     [agent, `suite-${label}`, graded, passed, critical, sha(label)],
   );
   if (r.outcome !== "ok") throw new Error(`record evidence ${label}: ${r.message}`);
@@ -270,6 +272,29 @@ async function main() {
   const stepAtFloor = await newStepLevel(admin, "after-demote");
   const levelFloor = await levelOf(admin, orgA);
 
+  // G. a promotion that commits while a regression is being recorded must not make the regression call abort
+  const evG1 = (await recordEvidence("g1", 25, 25)).evidence_id;
+  const g1 = await promote(founder, orgB, "draft", evG1);
+  const evG2 = (await recordEvidence("g2", 60, 60)).evidence_id;
+  const holder = await connect();
+  await holder.query("BEGIN");
+  await holder.query("SET LOCAL ROLE service_role");
+  // Holds the per-agent lock and an uncommitted rise to act_with_approval in orgB.
+  await holder.query(
+    `SELECT public.wf_autonomy_promote($1, $2, $3, 'act_with_approval', $4, 'AIN02 e2e race promotion')`,
+    [founder, orgB, agent, evG2],
+  );
+  const racing = asServiceRole(
+    `SELECT public.wf_autonomy_record_evidence($1, 'suite-g3', 100, 50, 0, 0, now(), $2) AS v`,
+    [agent, sha("g3")],
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await holder.query("COMMIT");
+  await holder.end();
+  const raced = await racing;
+  const raceV = raced.rows?.[0]?.v;
+  const levelAfterG = await levelOf(admin, orgB);
+
   const sentLive = await count(
     admin,
     `SELECT (SELECT count(*) FROM public.wf_action_sandbox_outbox WHERE org_id = ANY($1))
@@ -309,11 +334,23 @@ async function main() {
     failures.push(`E replay rows=${autoRows}`);
   if (stepAtFloor !== "suggest" || levelFloor !== "suggest")
     failures.push(`F floor step=${stepAtFloor} level=${levelFloor}`);
+  if (g1.outcome !== "ok") failures.push("G setup");
+  if (
+    raced.outcome !== "ok" ||
+    !raceV?.recorded ||
+    !raceV?.regression ||
+    raceV.demoted !== 1 ||
+    levelAfterG !== "draft"
+  ) {
+    failures.push(
+      `G race outcome=${raced.outcome} ${raced.message ?? ""} demoted=${raceV?.demoted} level=${levelAfterG}`,
+    );
+  }
   if (sentLive !== 0 || dup !== 0) failures.push("sent_or_dup");
   const line =
     `AIN02-E2E RESULT: concurrent=${CONCURRENT} promoted=${promoted} refused=${refused} ledger_rows=${ledgerA} ` +
     `rivals=${RIVALS} rivals_promoted=${rivalsPromoted} nonfounder_promoted=${nonFounderPromoted} ` +
-    `direct_write_refused=${directRefused} auto_demoted=${regression.demoted} replay_demoted=${replay.demoted} ` +
+    `direct_write_refused=${directRefused} auto_demoted=${regression.demoted} replay_demoted=${replay.demoted} race_demoted=${raceV?.demoted} race_level=${levelAfterG} ` +
     `step_after_promote=${stepAtApproval} step_after_demote=${stepAtFloor} sent_live=${sentLive} dup=${dup}`;
   console.log(line);
   if (failures.length) {

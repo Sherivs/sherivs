@@ -757,7 +757,7 @@ SELECT ain02t.expect_true('the founder can demote in any organization (and to th
   AND ain02t.lvl('orgA', 'ain02-dept') = 'suggest');
 SELECT ain02t.expect_true('a demotion does not use up any evidence: a fresh promotion needs fresh evidence, never the earlier piece',
   (SELECT count(*) = 3 FROM public.wf_autonomy_change WHERE kind = 'promote' AND agent_ref = 'ain02-dept'));
-SELECT ain02t.ev('d2', 'ain02-dept', 30, 30);
+SELECT ain02t.ev('d2', 'ain02-dept', 30, 30, 0, 0, interval '0');
 SELECT ain02t.expect_true('after a demotion the agent starts the climb again from the floor, one rung',
   (SELECT v ->> 'from' = 'suggest' AND v ->> 'to' = 'draft' FROM (SELECT ain02t.promote('founder', 'orgA', 'ain02-dept', 'draft', 'd2') v) x));
 SELECT ain02t.logout();
@@ -766,11 +766,11 @@ SELECT ain02t.logout();
 -- 10. A regression lowers the agent at once, everywhere, without a person
 -- ---------------------------------------------------------------------------------------------
 SELECT ain02t.login_as('service_role');
-SELECT ain02t.ev('x_b1', 'ain02-dept', 25, 25);
+SELECT ain02t.ev('x_b1', 'ain02-dept', 25, 25, 0, 0, interval '0');
 SELECT ain02t.promote('founder', 'orgB', 'ain02-dept', 'draft', 'x_b1');
-SELECT ain02t.ev('x_b2', 'ain02-dept', 60, 60);
+SELECT ain02t.ev('x_b2', 'ain02-dept', 60, 60, 0, 0, interval '0');
 SELECT ain02t.promote('founder', 'orgB', 'ain02-dept', 'act_with_approval', 'x_b2');
-SELECT ain02t.ev('x_a2', 'ain02-dept', 60, 59);
+SELECT ain02t.ev('x_a2', 'ain02-dept', 60, 59, 0, 0, interval '0');
 SELECT ain02t.promote('founder', 'orgA', 'ain02-dept', 'act_with_approval', 'x_a2');
 SELECT ain02t.expect_true('before the regression: orgA at act_with_approval, orgB at act_with_approval, the other agents untouched',
   ain02t.lvl('orgA', 'ain02-dept') = 'act_with_approval' AND ain02t.lvl('orgB', 'ain02-dept') = 'act_with_approval'
@@ -807,14 +807,46 @@ SELECT ain02t.expect_true('a regression that is replayed (same result recorded a
   AND ain02t.lvl('orgA', 'ain02-exec') = 'draft');
 SELECT ain02t.logout();
 
+
+-- ---------------------------------------------------------------------------------------------
+-- 10b. Evidence is superseded by anything newer (a later piece of evidence, or a later demotion)
+-- ---------------------------------------------------------------------------------------------
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.ev('sup_g', 'ain02-extra', 40, 40, 0, 0, interval '3 hours');
+SELECT ain02t.ev('sup_r', 'ain02-extra', 100, 50, 0, 0, interval '1 hour');
+SELECT ain02t.expect_error('good evidence followed by regression evidence cannot be used to promote (superseded)',
+  ain02t.promote_sql('founder', 'orgA', 'ain02-extra', 'draft', 'sup_g'), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.ev('sup_n', 'ain02-extra', 40, 40, 0, 0, interval '0');
+SELECT ain02t.expect_error('older good evidence cannot be used once newer good evidence exists',
+  ain02t.promote_sql('founder', 'orgA', 'ain02-extra', 'draft', 'sup_g'), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.expect_true('the newest evidence promotes (positive twin)',
+  (SELECT v ->> 'to' = 'draft' FROM (SELECT ain02t.promote('founder', 'orgA', 'ain02-extra', 'draft', 'sup_n') v) x));
+-- A later demotion in the same organization also supersedes older evidence. ain02-dept2 holds 'draft' in orgA.
+SELECT public.wf_autonomy_demote(ain02t.id('founder'), ain02t.id('orgA'), 'ain02-dept2', 'suggest', 'AIN02 harness demotion for supersede');
+SELECT ain02t.ev('sup_d', 'ain02-dept2', 40, 40, 0, 0, interval '30 minutes');
+SELECT ain02t.expect_error('evidence older than a later demotion in the organization cannot promote (superseded)',
+  ain02t.promote_sql('founder', 'orgA', 'ain02-dept2', 'draft', 'sup_d'), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.ev('sup_d2', 'ain02-dept2', 40, 40, 0, 0, interval '0');
+SELECT ain02t.expect_true('evidence from after the demotion promotes (positive twin)',
+  (SELECT v ->> 'to' = 'draft' FROM (SELECT ain02t.promote('founder', 'orgA', 'ain02-dept2', 'draft', 'sup_d2') v) x));
+SELECT ain02t.logout();
+SELECT ain02t.expect_error('the ledger guard holds the same rule for a hand-written row',
+  format($q$INSERT INTO public.wf_autonomy_change (org_id, agent_ref, kind, from_level, to_level, evidence_id, decided_by, reason)
+     VALUES (%L, 'ain02-extra', 'promote', 'draft', 'act_with_approval', %L, %L, 'AIN02 backstop superseded evidence')$q$,
+     ain02t.id('orgA'), ain02t.id('ev_sup_g'), ain02t.id('founder')), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.expect_error('an organization administrator lowering an agent that holds no level there is told so plainly',
+  format($q$SELECT public.wf_autonomy_demote(%L, %L, 'ain02-extra', 'suggest', 'AIN02 harness nothing to lower')$q$,
+     ain02t.id('adminB'), ain02t.id('orgB')), '23514', 'ain02:nothing_to_lower');
+SELECT ain02t.logout();
+
 -- ---------------------------------------------------------------------------------------------
 -- 11. Per-step enforcement: the step guard over the one scale
 -- ---------------------------------------------------------------------------------------------
 -- Put ain02-dept back at act_and_report in orgA through the gate (a fresh climb), so steps have a real level to test.
 SELECT ain02t.login_as('service_role');
-SELECT ain02t.ev('c_d', 'ain02-dept', 30, 30);
-SELECT ain02t.ev('c_a', 'ain02-dept', 60, 60);
-SELECT ain02t.ev('c_r', 'ain02-dept', 250, 250);
+SELECT ain02t.ev('c_d', 'ain02-dept', 30, 30, 0, 0, interval '0');
+SELECT ain02t.ev('c_a', 'ain02-dept', 60, 60, 0, 0, interval '0');
+SELECT ain02t.ev('c_r', 'ain02-dept', 250, 250, 0, 0, interval '0');
 SELECT ain02t.promote('founder', 'orgA', 'ain02-dept', 'draft', 'c_d');
 SELECT ain02t.promote('founder', 'orgA', 'ain02-dept', 'act_with_approval', 'c_a');
 SELECT ain02t.logout();
@@ -886,7 +918,7 @@ SELECT ain02t.expect_true('and new steps are made at the new level',
 -- The other BEFORE triggers and the broker-decision foreign key are switched off for these inserts, so only the AIN-02
 -- trigger is under test; they are switched back on before the next section.
 SELECT ain02t.login_as('service_role');
-SELECT ain02t.ev('c_r2', 'ain02-dept', 300, 300);
+SELECT ain02t.ev('c_r2', 'ain02-dept', 300, 300, 0, 0, interval '0');
 SELECT ain02t.promote('founder', 'orgA', 'ain02-dept', 'act_and_report', 'c_r2');
 SELECT ain02t.logout();
 SELECT ain02t.mkrun('ob', 'ain02-a', 'ain02-dept');
@@ -910,6 +942,11 @@ SELECT ain02t.expect_true('the step at act_and_report may record an executed act
 DO $do$ BEGIN EXECUTE ain02t.outbox_sql('high', 'ain02-ob-high-rec1'); END $do$;
 SELECT ain02t.expect_true('the executed record exists for the high step',
   (SELECT count(*) = 1 FROM public.wf_action_sandbox_outbox WHERE idempotency_key = 'ain02-ob-high-rec1'));
+SELECT public.wf_autonomy_demote(ain02t.id('founder'), ain02t.id('orgA'), 'ain02-dept', 'act_with_approval', 'AIN02 harness demotion of an in-flight step');
+SELECT ain02t.expect_true('the in-flight step is still stored at act_and_report after the demotion',
+  (SELECT autonomy_level = 'act_and_report' FROM public.wf_step_run WHERE idempotency_key = 'ain02-step-ob-high'));
+SELECT ain02t.expect_error('a stored act_and_report level that is stale after a demotion no longer authorizes an executed record',
+  ain02t.outbox_sql('high', 'ain02-ob-high-rec9'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
 SELECT ain02t.expect_error('a draft-level step (capped class) cannot record an executed action without an approved draft',
   ain02t.outbox_sql('low', 'ain02-ob-low-rec1'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
 SELECT ain02t.expect_error('an unclassified step cannot either',

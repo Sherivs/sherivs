@@ -430,7 +430,7 @@ jobs:
           node load/ain01-agent-e2e.mjs 2>&1 | tee /tmp/ain01-e2e.out
           grep -Eq 'AIN01-E2E RESULT: budget=5 concurrent=20 inserted=5 refused=15 over_budget=0 replay_refused=0 paused_inserted=0 ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_live=0 dup=0$' /tmp/ain01-e2e.out
           node load/ain02-autonomy-e2e.mjs 2>&1 | tee /tmp/ain02-e2e.out
-          grep -Eq 'AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0$' /tmp/ain02-e2e.out
+          grep -Eq 'AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0$' /tmp/ain02-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

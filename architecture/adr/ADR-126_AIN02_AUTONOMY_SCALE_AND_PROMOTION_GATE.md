@@ -41,7 +41,8 @@ enforcement stopped at the dispatcher in TypeScript.
 3. **Where an effect is recorded.** `wf_action_sandbox_outbox_90_autonomy` (insert and update) refuses an executed
    record unless the step is at `act_and_report` or a person approved a draft for this very step and idempotency key.
    It is ordered after the other outbox guards so their error codes are unchanged. This is the SQL backstop for the
-   dispatcher's rule.
+   dispatcher's rule. It uses the lower of the step's stored level and its current effective level, so a step made
+   before a demotion cannot execute at its old level.
 4. **The earned level changes only through the gate.** `wf_agent_autonomy` is no longer writable by the service role
    (SELECT only). A trigger on insert, update and delete accepts a rise only when a matching ledger row exists from
    the same transaction (`txid_current()`), a fall only with a ledger row, never a delete or a key change, and never
@@ -50,7 +51,9 @@ enforcement stopped at the dispatcher in TypeScript.
    verified person, SQL binds it (`wf_act_as`) and the person must be an active super admin. One rung at a time, with
    the agent usable in that organization (AIN-01 state), a reason of at least ten characters, and evidence that is
    for this agent, no older than 30 days, free of critical failures, at or over the bar for the target level and,
-   above `draft`, free of ungraded model cases. Each piece of evidence promotes once (unique index). An advisory lock
+   above `draft`, free of ungraded model cases. Each piece of evidence promotes once (unique index). Evidence is also superseded by anything newer: a promotion is
+   refused when the agent has later evidence (good or bad) or the organization has a later demotion of it, so good
+   evidence cannot be used after a regression was recorded (`ain02:evidence_superseded`; the ledger guard repeats it). An advisory lock
    per organization and agent serializes concurrent promotions.
 6. **The ledger restates every rule.** `wf_autonomy_change` is append-only and its guard re-checks the founder, the
    ceiling, the bar, the age, the critical failures, the ungraded cases and the `from` level, so a direct insert by
@@ -58,7 +61,9 @@ enforcement stopped at the dispatcher in TypeScript.
 7. **Evidence and automatic demotion.** `wf_autonomy_record_evidence` (service role) stores numbers only: counts, a
    suite id, a time and a content hash (no content, no tenant data). A pass rate below 0.90, any critical failure
    or nothing graded is a regression and lowers the agent one rung in every organization that holds a level for it,
-   with a ledger row, without a person. A replay of the same result lowers nothing a second time.
+   with a ledger row, without a person. A replay of the same result lowers nothing a second time. The target level is derived inside
+   `wf_autonomy_apply` from the level re-read under the per-agent lock, so a promotion that commits concurrently
+   cannot make the regression call abort and lose its evidence.
 8. **Demotion by people.** `wf_autonomy_demote` lowers (never raises) to any lower level. The founder may do it
    anywhere; an administrator of the organization (`workflows.manage`) may do it for their own organization. A
    demotion uses up no evidence, and the climb starts again one rung from where it landed.
@@ -66,6 +71,19 @@ enforcement stopped at the dispatcher in TypeScript.
    including the update half of an upsert, closing the WF-03 follow-up noted in ADR-125.
 10. **Audit.** Every ledger row writes `workflow.autonomy.promote`, `.demote` or `.auto_demote` through
     `wf_audit_append`; the level change itself is audited by the existing table audit.
+
+## Trust model (read this before relying on the gate)
+
+- The gate defends against tenants and against bugs in the runtime. It does **not** defend against the service key.
+- `service_role` can SELECT `super_admins` (and holds a pre-existing GRANT ALL on it from before AIN-02), so it can
+  learn a real founder id.
+- The numbers passed to `wf_autonomy_record_evidence` are asserted by its caller; SQL cannot check that an
+  evaluation happened. A holder of the service key can mint evidence, promote with a real founder id (the person is
+  trusted exactly as in WF-07), or demote any agent in every organization.
+- What the gate does guarantee: no tenant role, no direct table write and no runtime bug can raise a level; every
+  change leaves an append-only ledger row and an audit-chain entry, so misuse is visible after the fact.
+- Pre-production follow-up: a passkey step-up on promotion, and an evaluation runner whose evidence is signed or
+  produced inside the database boundary.
 
 ## Ceilings (engineering defaults for the founder to ratify)
 

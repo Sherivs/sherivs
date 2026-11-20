@@ -411,6 +411,14 @@ BEGIN
   IF v_ev.evaluated_at > now() OR v_ev.evaluated_at < now() - make_interval(days => v_bar.max_age_days) THEN
     RAISE EXCEPTION 'ain02:evidence_stale_or_invalid' USING ERRCODE = '23514';
   END IF;
+  -- Evidence is superseded by anything newer: later evidence for this agent (good or bad) or a later demotion here.
+  IF EXISTS (SELECT 1 FROM public.wf_autonomy_evidence e2
+              WHERE e2.agent_ref = NEW.agent_ref AND e2.evaluated_at > v_ev.evaluated_at)
+     OR EXISTS (SELECT 1 FROM public.wf_autonomy_change c
+                 WHERE c.org_id = NEW.org_id AND c.agent_ref = NEW.agent_ref
+                   AND c.kind IN ('demote', 'auto_demote') AND c.created_at > v_ev.evaluated_at) THEN
+    RAISE EXCEPTION 'ain02:evidence_superseded' USING ERRCODE = '23514';
+  END IF;
   IF v_ev.critical_failures > 0 THEN
     RAISE EXCEPTION 'ain02:evidence_has_critical_failures' USING ERRCODE = '23514';
   END IF;
@@ -451,15 +459,27 @@ RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
   v_from text;
+  v_to text;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('ain02:' || p_org::text || ':' || p_agent, 7126));
   SELECT a.earned_level INTO v_from FROM public.wf_agent_autonomy a
    WHERE a.org_id = p_org AND a.agent_ref = p_agent;
   v_from := coalesce(v_from, 'suggest');
+  v_to := p_to;
+  IF p_kind = 'auto_demote' THEN
+    -- The target is derived from the level read under the lock, never from a caller's stale value.
+    IF public.wf_autonomy_rank(v_from) = 0 THEN
+      RETURN v_from;
+    END IF;
+    v_to := public.wf_autonomy_level_of(public.wf_autonomy_rank(v_from) - 1);
+  ELSIF p_kind = 'demote' AND public.wf_autonomy_rank(v_to) >= public.wf_autonomy_rank(v_from) THEN
+    RAISE EXCEPTION 'ain02:nothing_to_lower' USING ERRCODE = '23514',
+      DETAIL = 'the agent is already at or below the requested level in this organization';
+  END IF;
   INSERT INTO public.wf_autonomy_change (org_id, agent_ref, kind, from_level, to_level, evidence_id, decided_by, reason)
-  VALUES (p_org, p_agent, p_kind, v_from, p_to, p_evidence, p_by, p_reason);
+  VALUES (p_org, p_agent, p_kind, v_from, v_to, p_evidence, p_by, p_reason);
   INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level)
-  VALUES (p_org, p_agent, p_to)
+  VALUES (p_org, p_agent, v_to)
   ON CONFLICT (org_id, agent_ref) DO UPDATE SET earned_level = EXCLUDED.earned_level, updated_at = now();
   RETURN v_from;
 END
@@ -506,10 +526,12 @@ BEGIN
     FOR r IN SELECT a.org_id, a.earned_level FROM public.wf_agent_autonomy a
               WHERE a.agent_ref = p_agent AND public.wf_autonomy_rank(a.earned_level) > 0
               ORDER BY a.org_id LOOP
-      PERFORM public.wf_autonomy_apply(r.org_id, p_agent, 'auto_demote',
-        public.wf_autonomy_level_of(public.wf_autonomy_rank(r.earned_level) - 1), v_id, NULL,
-        'Automatic: evaluation evidence shows a regression');
-      v_demoted := v_demoted + 1;
+      -- Only the kind is passed: the target is derived from the level re-read under the lock, so a promotion that
+      -- commits between this loop's read and the lock cannot make the call abort and lose the evidence.
+      IF public.wf_autonomy_rank(public.wf_autonomy_apply(r.org_id, p_agent, 'auto_demote', NULL, v_id, NULL,
+           'Automatic: evaluation evidence shows a regression')) > 0 THEN
+        v_demoted := v_demoted + 1;
+      END IF;
     END LOOP;
   END IF;
   RETURN jsonb_build_object('evidence_id', v_id, 'recorded', true, 'regression', v_regression, 'demoted', v_demoted);
@@ -578,9 +600,31 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
   v_level text;
+  v_agent text;
+  v_step_agent text;
+  v_template_id uuid;
+  v_template_level text;
+  v_template_agent text;
+  v_class text;
 BEGIN
-  SELECT s.autonomy_level INTO v_level FROM public.wf_step_run s
+  SELECT s.autonomy_level, r.agent_ref, r.template_id, s.action_class, s.agent_ref
+    INTO v_level, v_agent, v_template_id, v_class, v_step_agent
+    FROM public.wf_step_run s LEFT JOIN public.wf_run r ON r.org_id = s.org_id AND r.id = s.run_id
    WHERE s.org_id = NEW.org_id AND s.id = NEW.step_run_id;
+  v_agent := coalesce(v_agent, v_step_agent);
+  v_template_level := 'suggest';
+  IF v_template_id IS NOT NULL THEN
+    SELECT t.autonomy_max, t.agent_ref INTO v_template_level, v_template_agent
+      FROM public.wf_template t WHERE t.id = v_template_id;
+    v_template_level := coalesce(v_template_level, 'suggest');
+    v_agent := coalesce(v_agent, v_template_agent);
+  END IF;
+  -- A stored level can be stale (the agent was demoted, a ceiling lowered, after the step was made): the lower of the
+  -- stored and the current effective level decides.
+  IF v_level IS NOT NULL THEN
+    v_level := public.wf_autonomy_level_of(least(public.wf_autonomy_rank(v_level),
+      public.wf_autonomy_rank(public.wf_effective_autonomy(NEW.org_id, v_agent, v_template_level, v_class))));
+  END IF;
   IF v_level = 'act_and_report' THEN
     RETURN NEW;
   END IF;

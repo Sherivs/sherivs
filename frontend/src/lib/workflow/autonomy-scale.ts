@@ -33,7 +33,7 @@ export const AUTONOMY_RANK: Readonly<Record<AutonomyLevel, number>> = Object.fre
 
 export type AgentTier = "executive" | "department" | "assurance" | "organization";
 
-/** The highest level an agent of this tier can ever hold (wf_autonomy_agent_tier_cap). Ratified by the founder. */
+/** The highest level an agent of this tier can ever hold (wf_autonomy_agent_tier_cap). An engineering default for the founder to ratify. */
 export const AGENT_TIER_CAP: Readonly<Record<AgentTier, AutonomyLevel>> = Object.freeze({
   executive: "act_with_approval",
   department: "act_and_report",
