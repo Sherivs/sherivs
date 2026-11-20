@@ -23,6 +23,27 @@ BEGIN
 END
 $prereq$;
 
+-- Restore the WF-07 work list (same name and signature as ADR-122 defined it).
+DROP FUNCTION public.wf_note_draft_dispatch_failure(uuid, uuid);
+DROP FUNCTION public.wf_approved_drafts_ready(integer);
+CREATE FUNCTION public.wf_approved_drafts_ready(p_limit integer DEFAULT 50)
+RETURNS TABLE (org_id uuid, draft_id uuid)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT d.org_id, d.id
+    FROM public.wf_action_draft d
+   WHERE d.status = 'approved'
+     AND NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                      WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+     AND EXISTS (SELECT 1 FROM public.wf_run r
+                  WHERE r.org_id = d.org_id AND r.id = d.run_id
+                    AND r.status IN ('waiting', 'running'))
+   ORDER BY d.updated_at
+   LIMIT least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+REVOKE ALL ON FUNCTION public.wf_approved_drafts_ready(integer) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.wf_approved_drafts_ready(integer) TO service_role;
+
 DROP FUNCTION public.wf_run_history_detail(uuid, uuid);
 DROP FUNCTION public.wf_run_history_list(uuid, text, text, timestamptz, integer);
 DROP FUNCTION public.wf_run_retry(uuid, uuid, text);

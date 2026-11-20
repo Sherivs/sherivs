@@ -850,9 +850,11 @@ SELECT wf07t.expect_error('N2: a webhook outbox record must carry its registered
         wf07t.decision(wf07t.id('orgA'), 'webhook', 'wf07-hook-no-target'), 'wf07-hook-no-target')$q$, '23514');
 
 SELECT wf07t.login_as('service_role');
-SELECT wf07t.expect_true('approved drafts without an outbox record are listed for dispatch, others are not',
-  (SELECT count(*) = 0 FROM public.wf_approved_drafts_ready(100) r WHERE r.draft_id = wf07t.id('draft_m'))
-  AND (SELECT count(*) = 1 FROM public.wf_approved_drafts_ready(100) r WHERE r.draft_id = wf07t.id('draft_c'))
+-- WF-08 follow-up (WF-07 review): an approved draft whose outbox record exists but whose step still waits is
+-- listed too, marked needs_dispatch = false, so the sweep resumes it and never dispatches it twice.
+SELECT wf07t.expect_true('approved drafts are listed for dispatch (no outbox record) or for resume (record, step waiting); rejected ones are not',
+  (SELECT count(*) = 1 AND bool_and(NOT r.needs_dispatch) FROM public.wf_approved_drafts_ready(100) r WHERE r.draft_id = wf07t.id('draft_m'))
+  AND (SELECT count(*) = 1 AND bool_and(r.needs_dispatch) FROM public.wf_approved_drafts_ready(100) r WHERE r.draft_id = wf07t.id('draft_c'))
   AND (SELECT count(*) = 0 FROM public.wf_approved_drafts_ready(100) r WHERE r.draft_id = wf07t.id('draft_rj')));
 SELECT public.wf_resume_after_dispatch(wf07t.id('orgA'), wf07t.id('draft_m')) AS resumed_m,
        public.wf_resume_after_dispatch(wf07t.id('orgA'), wf07t.id('draft_c')) AS resumed_c \gset

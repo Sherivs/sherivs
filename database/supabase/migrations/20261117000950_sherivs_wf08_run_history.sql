@@ -616,6 +616,64 @@ GRANT EXECUTE ON FUNCTION
   public.wf_run_history_detail(uuid, uuid)
   TO service_role;
 
+-- -----------------------------------------------------------------------------
+-- 9. WF-07 review follow-up: the approval sweep's work list
+-- -----------------------------------------------------------------------------
+-- (a) An approved draft whose executed record exists but whose step is still waiting (the dispatch was
+--     recorded, then the resume failed or the process stopped) was never listed again, so its run waited
+--     for ever. It is now listed with needs_dispatch = false: the sweep resumes it and does not dispatch twice.
+-- (b) A draft whose dispatch keeps failing sat at the front of the list (oldest first) and, with a full
+--     page of them, starved every newer draft. A failure is now noted as a timeline event and the list is
+--     ordered by last failure (never failed first), then by age. Notes are throttled to one per five minutes
+--     per draft, so a draft that never succeeds cannot flood the timeline.
+DROP FUNCTION public.wf_approved_drafts_ready(integer);
+CREATE FUNCTION public.wf_approved_drafts_ready(p_limit integer DEFAULT 50)
+RETURNS TABLE (org_id uuid, draft_id uuid, needs_dispatch boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT d.org_id, d.id,
+         NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                      WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+    FROM public.wf_action_draft d
+   WHERE d.status = 'approved'
+     AND EXISTS (SELECT 1 FROM public.wf_run r
+                  WHERE r.org_id = d.org_id AND r.id = d.run_id
+                    AND r.status IN ('waiting', 'running'))
+     AND (NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                       WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+          OR EXISTS (SELECT 1 FROM public.wf_step_run s
+                      WHERE s.org_id = d.org_id AND s.id = d.step_run_id AND s.status = 'waiting'))
+   ORDER BY (SELECT max(e.at) FROM public.wf_run_event e
+              WHERE e.org_id = d.org_id AND e.run_id = d.run_id AND e.kind = 'draft.dispatch_failed'
+                AND e.detail ->> 'draft_id' = d.id::text) NULLS FIRST,
+            d.updated_at, d.id
+   LIMIT least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+
+CREATE FUNCTION public.wf_note_draft_dispatch_failure(p_org uuid, p_draft uuid)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_d public.wf_action_draft%ROWTYPE;
+BEGIN
+  SELECT * INTO v_d FROM public.wf_action_draft WHERE org_id = p_org AND id = p_draft;
+  IF NOT FOUND OR v_d.status <> 'approved' THEN RETURN false; END IF;
+  IF EXISTS (SELECT 1 FROM public.wf_run_event e
+              WHERE e.org_id = p_org AND e.run_id = v_d.run_id AND e.kind = 'draft.dispatch_failed'
+                AND e.detail ->> 'draft_id' = p_draft::text AND e.at > now() - interval '5 minutes') THEN
+    RETURN false;
+  END IF;
+  INSERT INTO public.wf_run_event (org_id, run_id, step_run_id, kind, actor_kind, actor_ref, detail)
+  VALUES (p_org, v_d.run_id, v_d.step_run_id, 'draft.dispatch_failed', 'system', 'workflow-approval-sweep',
+          jsonb_build_object('draft_id', p_draft));
+  RETURN true;
+END
+$$;
+
+REVOKE ALL ON FUNCTION public.wf_approved_drafts_ready(integer), public.wf_note_draft_dispatch_failure(uuid, uuid)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.wf_approved_drafts_ready(integer), public.wf_note_draft_dispatch_failure(uuid, uuid)
+  TO service_role;
+
 COMMENT ON FUNCTION public.wf_run_cancel(uuid, uuid, text) IS
   'WF-08 / ADR-123: stop a queued, running or waiting run. Service role only; the signed-in actor is bound and checked in SQL. Idempotent; audited.';
 COMMENT ON FUNCTION public.wf_run_retry(uuid, uuid, text) IS

@@ -791,6 +791,70 @@ UPDATE public.wf_run SET template_id = (SELECT id FROM public.wf_template WHERE 
 SELECT wf08t.expect_error('retry refuses when the template ceiling was raised after the step died (never escalate)',
   $q$SELECT wf08t.call_retry('adminA', 'esc')$q$, '42501', 'wf08:autonomy_escalation');
 
+-- ---------------------------------------------------------------------------------------------
+-- 9. WF-07 review follow-up: the sweep's work list
+-- ---------------------------------------------------------------------------------------------
+SELECT wf08t.expect_true('the sweep work list and failure note execute for the service role only',
+  (SELECT count(*) = 2 AND bool_and(has_function_privilege('service_role', p.oid, 'EXECUTE')
+      AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
+      AND NOT has_function_privilege('anon', p.oid, 'EXECUTE') AND p.prosecdef
+      AND p.proconfig @> ARRAY['search_path=""'])
+     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
+      AND p.proname IN ('wf_approved_drafts_ready', 'wf_note_draft_dispatch_failure')));
+-- Three approved drafts of three waiting runs. Fixture rows are written with triggers skipped (as the e2e does).
+CREATE FUNCTION wf08t.mkapproved(p_name text, p_outbox boolean, p_age integer) RETURNS uuid LANGUAGE plpgsql AS $$
+DECLARE v_d uuid := gen_random_uuid(); v_a uuid := gen_random_uuid();
+BEGIN
+  PERFORM wf08t.mkrun('sw_' || p_name, 'wf08-a', 'waiting', 'adminA');
+  PERFORM wf08t.mkstep('sw_' || p_name, 'sw_' || p_name, 'send', 'action', 'waiting', 'communication');
+  SET LOCAL session_replication_role = replica;
+  INSERT INTO public.wf_approval (id, org_id, run_id, step_run_id, risk, summary, requested_by_kind, requested_by_ref, expires_at, status, decided_by, decided_at, decision_channel)
+  VALUES (v_a, wf08t.id('orgA'), wf08t.id('run_sw_' || p_name), wf08t.id('step_sw_' || p_name), 'normal', 'sweep fixture',
+          'system', 'workflow-runtime', now() + interval '1 day', 'approved', wf08t.id('adminA'), now(), 'console');
+  INSERT INTO public.wf_action_draft (id, org_id, run_id, step_run_id, kind, category, template_ref, idempotency_key, status, approval_id, created_at, updated_at)
+  VALUES (v_d, wf08t.id('orgA'), wf08t.id('run_sw_' || p_name), wf08t.id('step_sw_' || p_name), 'in_app', 'communication',
+          'notice.a', 'wf08-sw-' || p_name, 'approved', v_a, now() - make_interval(secs => p_age), now() - make_interval(secs => p_age));
+  IF p_outbox THEN
+    INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, draft_id, kind, category, template_ref, broker_decision_id, idempotency_key)
+    VALUES (wf08t.id('orgA'), wf08t.id('run_sw_' || p_name), wf08t.id('step_sw_' || p_name), v_d, 'in_app', 'communication', 'notice.a',
+            wf08t.decision(wf08t.id('orgA'), 'in_app', 'wf08-sw-' || p_name), 'wf08-sw-' || p_name);
+  END IF;
+  SET LOCAL session_replication_role = origin;
+  RETURN wf08t.keep('draft_sw_' || p_name, v_d);
+END $$;
+GRANT EXECUTE ON FUNCTION wf08t.mkapproved(text, boolean, integer) TO anon, authenticated, service_role;
+CREATE FUNCTION wf08t.ready_order() RETURNS uuid[] LANGUAGE sql AS $$
+  SELECT coalesce(array_agg(draft_id ORDER BY n), '{}') FROM (
+    SELECT draft_id, row_number() OVER () AS n FROM public.wf_approved_drafts_ready(200) WHERE org_id = wf08t.id('orgA')) x
+$$;
+GRANT EXECUTE ON FUNCTION wf08t.ready_order() TO anon, authenticated, service_role;
+SELECT wf08t.mkapproved('recorded', true, 300);
+SELECT wf08t.mkapproved('old', false, 200);
+SELECT wf08t.mkapproved('new', false, 100);
+SELECT wf08t.expect_true('an approved draft with an executed record and a still-waiting step is listed again, marked as needing no dispatch',
+  EXISTS (SELECT 1 FROM public.wf_approved_drafts_ready(200) r
+           WHERE r.draft_id = wf08t.id('draft_sw_recorded') AND NOT r.needs_dispatch)
+  AND EXISTS (SELECT 1 FROM public.wf_approved_drafts_ready(200) r
+               WHERE r.draft_id = wf08t.id('draft_sw_old') AND r.needs_dispatch));
+SELECT wf08t.expect_true('with no failures the list is oldest first',
+  wf08t.ready_order() = ARRAY[wf08t.id('draft_sw_recorded'), wf08t.id('draft_sw_old'), wf08t.id('draft_sw_new')]);
+SELECT wf08t.expect_true('noting a failure for the oldest undispatched draft succeeds once and is throttled after',
+  public.wf_note_draft_dispatch_failure(wf08t.id('orgA'), wf08t.id('draft_sw_old')));
+SELECT wf08t.expect_true('a second note within five minutes writes nothing',
+  NOT public.wf_note_draft_dispatch_failure(wf08t.id('orgA'), wf08t.id('draft_sw_old'))
+  AND (SELECT count(*) = 1 FROM public.wf_run_event WHERE kind = 'draft.dispatch_failed' AND run_id = wf08t.id('run_sw_old')));
+SELECT wf08t.expect_true('a draft that failed is listed after drafts that have not (no starvation)',
+  wf08t.ready_order() = ARRAY[wf08t.id('draft_sw_recorded'), wf08t.id('draft_sw_new'), wf08t.id('draft_sw_old')]);
+SELECT wf08t.expect_true('a failure note for a draft that is not approved is refused quietly',
+  NOT public.wf_note_draft_dispatch_failure(wf08t.id('orgA'), gen_random_uuid()));
+SELECT wf08t.expect_true('the failure shows in the redacted timeline as a code and an id only',
+  EXISTS (SELECT 1 FROM jsonb_array_elements(wf08t.detail('adminA', 'sw_old') -> 'events') e
+           WHERE e ->> 'kind' = 'draft.dispatch_failed' AND (e -> 'detail') = jsonb_build_object('draft_id', wf08t.id('draft_sw_old'))));
+SELECT wf08t.expect_true('resuming the recorded draft restarts its step and drops it from the list',
+  public.wf_resume_after_dispatch(wf08t.id('orgA'), wf08t.id('draft_sw_recorded')));
+SELECT wf08t.expect_true('after the resume the recorded draft is no longer listed',
+  NOT (wf08t.id('draft_sw_recorded') = ANY (wf08t.ready_order())));
+
 SELECT wf08t.logout();
 SELECT 'WF08 ALL PASS: ' || count(*) || ' checks' FROM wf08t.passed;
 ROLLBACK;

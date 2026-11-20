@@ -8,7 +8,10 @@
  *     ends and its drafts become `expired`. Time is the database clock (`now()`), not this host's.
  *  3. Dispatches drafts whose approvals completed, then lets the waiting step continue. A dispatch
  *     that is refused (kill switch, live mode, a recipient who left, a template pulled) is counted
- *     and retried on the next pass; it is never forced.
+ *     and retried on the next pass; it is never forced. A draft whose executed record already exists
+ *     but whose step is still waiting is only resumed (WF-08 follow-up: never dispatched twice). A
+ *     failed dispatch is noted so the database lists that draft after the ones that have not failed,
+ *     and a run of failing drafts cannot starve newer ones.
  *
  * No notification is sent from here. The inbox is pull-based in v1 (ADR-122), so the sweep sends
  * no message and calls no provider.
@@ -59,14 +62,20 @@ export async function runWorkflowApprovalSweep(
     failed += 1;
   }
 
-  let ready: { org_id: string; draft_id: string }[] = [];
+  let ready: { org_id: string; draft_id: string; needs_dispatch: boolean }[] = [];
   try {
     const r = await ports.rpc("wf_approved_drafts_ready", { p_limit: limit });
     if (r.error || !Array.isArray(r.data)) failed += 1;
     else {
       ready = (r.data as Record<string, unknown>[]).flatMap((row) =>
         typeof row.org_id === "string" && typeof row.draft_id === "string"
-          ? [{ org_id: row.org_id, draft_id: row.draft_id }]
+          ? [
+              {
+                org_id: row.org_id,
+                draft_id: row.draft_id,
+                needs_dispatch: row.needs_dispatch !== false,
+              },
+            ]
           : [],
       );
     }
@@ -75,8 +84,10 @@ export async function runWorkflowApprovalSweep(
   }
 
   for (const item of ready) {
+    let dispatching = item.needs_dispatch;
     try {
-      await ports.dispatchApprovedDraft(item.org_id, item.draft_id);
+      if (item.needs_dispatch) await ports.dispatchApprovedDraft(item.org_id, item.draft_id);
+      dispatching = false;
       const resumed = await ports.rpc("wf_resume_after_dispatch", {
         p_org: item.org_id,
         p_draft: item.draft_id,
@@ -85,6 +96,16 @@ export async function runWorkflowApprovalSweep(
       else dispatched += 1;
     } catch {
       failed += 1;
+      if (dispatching) {
+        try {
+          await ports.rpc("wf_note_draft_dispatch_failure", {
+            p_org: item.org_id,
+            p_draft: item.draft_id,
+          });
+        } catch {
+          /* best effort: the draft is retried on the next pass either way */
+        }
+      }
     }
   }
   return { requested, expired, dispatched, failed };

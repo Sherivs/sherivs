@@ -74,6 +74,15 @@ immutable on purpose, so a retry cannot reopen them.
    failure cannot leave it half applied (the reviewed WF-06 and WF-07 migrations follow the repository's
    existing shape; this one adds the transaction deliberately).
 
+8. **WF-07 review follow-up (approval sweep work list).** `wf_approved_drafts_ready` now also lists an
+   approved draft whose executed record exists while its step is still waiting (a recorded dispatch whose
+   resume was lost), with `needs_dispatch = false`, so the sweep only resumes it and never dispatches twice.
+   A failed dispatch is noted by `wf_note_draft_dispatch_failure` (a `draft.dispatch_failed` timeline event,
+   at most one per five minutes per draft), and the list orders never-failed drafts first, so a page of
+   failing drafts cannot starve newer ones. The function's return type gains a column, so the migration
+   drops and recreates it; the rollback restores the ADR-122 definition. The WF-07 harness assertion that
+   expected such a draft NOT to be listed was updated on this branch.
+
 ## Assumptions (open)
 
 - Retry is refused while workflows are disabled for the organization; cancel and history still work.
