@@ -161,7 +161,12 @@ describe("AIN-01 engine actors (ADR-125): migration", () => {
     expect(migration).toMatch(
       /CREATE FUNCTION public\.wf_ai_route_approved\(\)\s+RETURNS boolean LANGUAGE sql IMMUTABLE SECURITY INVOKER SET search_path = ''\s+AS \$\$ SELECT false \$\$;/,
     );
-    expect(migration).toContain("NEW.kind = 'ai' AND NOT public.wf_ai_route_approved()");
+    expect(migration).toContain(
+      "(NEW.kind = 'ai' OR NEW.action_class = 'ai_model') AND NOT public.wf_ai_route_approved()",
+    );
+    expect(migration).toContain(
+      "BEFORE UPDATE OF action_class, kind, agent_ref ON public.wf_step_run",
+    );
   });
 
   it("every function pins an empty search_path", () => {

@@ -14,7 +14,8 @@
 --   quota enforcement          BEFORE INSERT triggers on wf_run, wf_action_draft, wf_action_sandbox_outbox (the authority),
 --                              wf_quota_check_action() for the runtime pre-check, wf_create_event_run() defers instead of failing
 --   wf_limits_get() / wf_limits_update()                 admin settings surface (service role, actor bound in SQL)
---   wf_retention_run_manual() / wf_retention_run_scheduled()   dry run and purge
+--   wf_retention_run_manual() / wf_retention_run_scheduled()   dry run and purge (a purge consumes one dry run, once)
+--   wf_block_draft_dispatch()  an approved draft that can never execute (no price decided) stops being retried
 --   deletion carve-out for the three append-only tables the purge must reach (run events, approval decisions,
 --   step-up evidence): DELETE only inside the purge, only for its organization, never for a client role
 --
@@ -25,9 +26,12 @@
 -- ceiling for wallet caps is 0 (wf_wallet_cap_ceiling_kobo), and SMS/WhatsApp have no rate (founder decision 2),
 -- so no workflow can spend anything until the founder changes both in a reviewed migration.
 --
--- Authority model (same as WF-07 and WF-08): SECURITY DEFINER, empty search_path, EXECUTE only to service_role
--- for the functions the server calls; the server passes the verified person, SQL binds it and derives the
--- organization from it (never from a parameter).
+-- Authority model (same as WF-07 and WF-08): SECURITY DEFINER, empty search_path. Every function and table is
+-- revoked from PUBLIC, anon, authenticated AND service_role (Supabase's default privileges would otherwise hand
+-- service_role everything the migrator creates), then EXECUTE is granted back only on the functions the server or
+-- wf_create_event_run calls, and SELECT only on the tables. No client or service-role session can call the purge
+-- passes directly or write a limits, spend-rate, counter or log table; the SECURITY DEFINER functions do the writes.
+-- The server passes the verified person, SQL binds it and derives the organization from it (never from a parameter).
 --   view limits and usage     workflows.view
 --   change limits             workflows.manage
 --   dry run / purge (manual)  workflows.manage
@@ -181,11 +185,16 @@ CREATE TABLE public.wf_retention_run (
   windows       jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(windows) = 'object' AND pg_column_size(windows) <= 2048),
   counts        jsonb NOT NULL DEFAULT '{}'::jsonb CHECK (jsonb_typeof(counts) = 'object' AND pg_column_size(counts) <= 4096),
   truncated     boolean NOT NULL DEFAULT false,
+  dry_run_id    uuid REFERENCES public.wf_retention_run (id) ON DELETE RESTRICT,
   created_at    timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT wf_retention_run_dry_link CHECK (dry_run_id IS NULL OR (mode = 'purge' AND trigger_kind = 'manual')),
   CONSTRAINT wf_retention_run_refusal CHECK ((outcome = 'refused') = (refusal_code IS NOT NULL)),
   CONSTRAINT wf_retention_run_actor CHECK ((trigger_kind = 'manual') = (actor_id IS NOT NULL))
 );
 CREATE INDEX wf_retention_run_org_idx ON public.wf_retention_run (org_id, created_at DESC);
+-- A dry run authorizes one purge, once.
+CREATE UNIQUE INDEX wf_retention_run_one_purge_per_dry ON public.wf_retention_run (dry_run_id)
+  WHERE dry_run_id IS NOT NULL AND outcome = 'completed';
 CREATE INDEX wf_quota_denial_org_idx ON public.wf_quota_denial (org_id, bucket DESC);
 
 ALTER TABLE public.wf_action_sandbox_outbox
@@ -201,7 +210,7 @@ ALTER TABLE public.wf_retention_run ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wf_retention_run FORCE ROW LEVEL SECURITY;
 
 REVOKE ALL ON public.wf_org_limits, public.wf_quota_denial, public.wf_action_spend_rate, public.wf_retention_run
-  FROM PUBLIC, anon, authenticated;
+  FROM PUBLIC, anon, authenticated, service_role;
 -- Members read through RLS. Nobody writes these tables directly: every write goes through a SECURITY DEFINER
 -- function in this migration (limits, counters, retention log) or a reviewed migration (spend rates).
 GRANT SELECT ON public.wf_org_limits, public.wf_quota_denial, public.wf_retention_run TO authenticated;
@@ -414,6 +423,8 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE v_lim jsonb;
 BEGIN
+  -- The quota windows count created_at, so a caller cannot choose it.
+  NEW.created_at := now();
   IF EXISTS (SELECT 1 FROM public.wf_run r WHERE r.org_id = NEW.org_id AND r.idempotency_key = NEW.idempotency_key) THEN
     RETURN NEW;
   END IF;
@@ -435,6 +446,7 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE v_code text;
 BEGIN
+  NEW.created_at := now();
   IF EXISTS (SELECT 1 FROM public.wf_action_draft d WHERE d.org_id = NEW.org_id AND d.idempotency_key = NEW.idempotency_key) THEN
     RETURN NEW;
   END IF;
@@ -456,11 +468,12 @@ AS $$
 DECLARE v_code text;
 BEGIN
   IF TG_OP = 'UPDATE' THEN
-    IF NEW.cost_kobo IS DISTINCT FROM OLD.cost_kobo THEN
-      RAISE EXCEPTION 'wf_action_sandbox_outbox: cost_kobo is immutable' USING ERRCODE = '42501';
+    IF NEW.cost_kobo IS DISTINCT FROM OLD.cost_kobo OR NEW.created_at IS DISTINCT FROM OLD.created_at THEN
+      RAISE EXCEPTION 'wf_action_sandbox_outbox: cost_kobo and created_at are immutable' USING ERRCODE = '42501';
     END IF;
     RETURN NEW;
   END IF;
+  NEW.created_at := now();
   IF EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
               WHERE o.org_id = NEW.org_id AND o.idempotency_key = NEW.idempotency_key) THEN
     NEW.cost_kobo := 0;
@@ -944,9 +957,19 @@ BEGIN
 END
 $$;
 
+-- The windows a dry run reports and a purge must still match.
+CREATE FUNCTION public.wf_retention_windows(p_lim jsonb)
+RETURNS jsonb LANGUAGE sql STABLE SET search_path = ''
+AS $$
+  SELECT jsonb_build_object(
+    'outbox_days', p_lim -> 'retention_outbox_days', 'draft_days', p_lim -> 'retention_draft_days',
+    'event_days', p_lim -> 'retention_event_days', 'run_days', p_lim -> 'retention_run_days',
+    'stepup_days', p_lim -> 'retention_stepup_days', 'evidence_days', p_lim -> 'retention_evidence_days')
+$$;
+
 -- Dry run and purge share the same code. A dry run does the whole pass inside a subtransaction that it then
 -- rolls back, so its counts are exactly what a purge would delete right now.
-CREATE FUNCTION public.wf_retention_execute(p_org uuid, p_dry boolean, p_actor uuid, p_trigger text)
+CREATE FUNCTION public.wf_retention_execute(p_org uuid, p_dry boolean, p_actor uuid, p_trigger text, p_dry_run_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
@@ -959,10 +982,7 @@ DECLARE
   v_trunc boolean;
 BEGIN
   PERFORM pg_advisory_xact_lock(hashtextextended('wf12:retention:' || p_org::text, 7112));
-  v_windows := jsonb_build_object(
-    'outbox_days', v_lim -> 'retention_outbox_days', 'draft_days', v_lim -> 'retention_draft_days',
-    'event_days', v_lim -> 'retention_event_days', 'run_days', v_lim -> 'retention_run_days',
-    'stepup_days', v_lim -> 'retention_stepup_days', 'evidence_days', v_lim -> 'retention_evidence_days');
+  v_windows := public.wf_retention_windows(v_lim);
 
   IF public.wf_retention_legal_hold(p_org) THEN
     INSERT INTO public.wf_retention_run (id, org_id, mode, trigger_kind, actor_id, outcome, refusal_code, windows)
@@ -989,9 +1009,9 @@ BEGIN
 
   SELECT coalesce(sum(value::bigint), 0), coalesce(bool_or(value::bigint >= v_batch), false)
     INTO v_total, v_trunc FROM jsonb_each_text(v_counts);
-  INSERT INTO public.wf_retention_run (id, org_id, mode, trigger_kind, actor_id, outcome, windows, counts, truncated)
+  INSERT INTO public.wf_retention_run (id, org_id, mode, trigger_kind, actor_id, outcome, windows, counts, truncated, dry_run_id)
   VALUES (v_id, p_org, CASE WHEN p_dry THEN 'dry_run' ELSE 'purge' END, p_trigger, p_actor, 'completed',
-          v_windows, v_counts, v_trunc);
+          v_windows, v_counts, v_trunc, CASE WHEN p_dry THEN NULL ELSE p_dry_run_id END);
   PERFORM public.wf_audit_append(p_org,
     CASE WHEN p_dry THEN 'workflow.retention.dry_run' ELSE 'workflow.retention.purge' END,
     'wf_retention_run', v_id::text, NULL,
@@ -1003,7 +1023,8 @@ END
 $$;
 
 -- Manual: needs workflows.manage. A real purge must name a dry run of this organization from the last 24 hours,
--- so a person always looks at the counts before anything is deleted.
+-- made with the windows still in force, and not used before: a person always looks at the counts for THESE
+-- windows before anything is deleted, and one look authorizes one purge.
 CREATE FUNCTION public.wf_retention_run_manual(p_actor uuid, p_dry_run boolean DEFAULT true, p_dry_run_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -1021,13 +1042,19 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.wf_org_settings s WHERE s.org_id = v_org) THEN
     RAISE EXCEPTION 'wf12:settings_missing' USING ERRCODE = 'P0002';
   END IF;
+  -- Same lock the pass takes, so two purges naming one dry run cannot both pass the check.
+  PERFORM pg_advisory_xact_lock(hashtextextended('wf12:retention:' || v_org::text, 7112));
+  -- The dry run must be this organization's, completed, recent, made with the windows now in force, and unused.
   IF NOT p_dry_run AND NOT EXISTS (
        SELECT 1 FROM public.wf_retention_run r
         WHERE r.org_id = v_org AND r.id = p_dry_run_id AND r.mode = 'dry_run' AND r.outcome = 'completed'
-          AND r.created_at >= now() - interval '24 hours') THEN
+          AND r.created_at >= now() - interval '24 hours'
+          AND r.windows = public.wf_retention_windows(public.wf_org_limits_effective(v_org))
+          AND NOT EXISTS (SELECT 1 FROM public.wf_retention_run u
+                           WHERE u.dry_run_id = r.id AND u.outcome = 'completed')) THEN
     RAISE EXCEPTION 'wf12:dry_run_required' USING ERRCODE = '42501';
   END IF;
-  v_out := public.wf_retention_execute(v_org, p_dry_run, p_actor, 'manual');
+  v_out := public.wf_retention_execute(v_org, p_dry_run, p_actor, 'manual', CASE WHEN p_dry_run THEN NULL ELSE p_dry_run_id END);
   PERFORM public.wf_act_restore(v_prev);
   RETURN v_out;
 END
@@ -1042,6 +1069,7 @@ DECLARE
   v_org uuid;
   v_out jsonb := '[]'::jsonb;
   v_res jsonb;
+  v_state text;
 BEGIN
   FOR v_org IN
     SELECT l.org_id FROM public.wf_org_limits l
@@ -1052,13 +1080,84 @@ BEGIN
      ORDER BY l.org_id
      LIMIT least(greatest(coalesce(p_max_orgs, 20), 1), 100)
   LOOP
-    v_res := public.wf_retention_execute(v_org, false, NULL, 'scheduler');
-    v_out := v_out || jsonb_build_array(jsonb_build_object(
-      'org_id', v_org, 'outcome', v_res ->> 'outcome', 'refusal_code', v_res ->> 'refusal_code',
-      'total', coalesce((v_res ->> 'total')::bigint, 0)));
+    -- One organization failing must not stop the others. Its work rolls back, the failure is audited by code only,
+    -- and it is tried again on the next call (it has no log row, so the once-a-day rule does not skip it).
+    BEGIN
+      v_res := public.wf_retention_execute(v_org, false, NULL, 'scheduler');
+      v_out := v_out || jsonb_build_array(jsonb_build_object(
+        'org_id', v_org, 'outcome', v_res ->> 'outcome', 'refusal_code', v_res ->> 'refusal_code',
+        'total', coalesce((v_res ->> 'total')::bigint, 0)));
+    EXCEPTION WHEN OTHERS THEN
+      v_state := SQLSTATE;
+      PERFORM set_config('wf.retention_purge', '', true);
+      v_out := v_out || jsonb_build_array(jsonb_build_object(
+        'org_id', v_org, 'outcome', 'failed', 'refusal_code', NULL, 'total', 0, 'sqlstate', v_state));
+      BEGIN
+        PERFORM public.wf_audit_append(v_org, 'workflow.retention.failed', 'organization', v_org::text, NULL,
+          jsonb_build_object('sqlstate', v_state, 'trigger', 'scheduler'));
+      EXCEPTION WHEN OTHERS THEN
+        NULL;
+      END;
+    END;
   END LOOP;
   RETURN jsonb_build_object('orgs', v_out);
 END
+$$;
+
+-- -----------------------------------------------------------------------------
+-- 6b. An approved draft that cannot ever execute is parked, not retried every pass
+-- -----------------------------------------------------------------------------
+-- An approved SMS or WhatsApp draft whose rate is still undecided (or whose kind is unknown) would be dispatched, refused
+-- and noted on every sweep. The sweep calls this with the refusal code; the draft then leaves the work list for 24
+-- hours, with one clear `draft.dispatch_blocked` timeline event, and is looked at again after that so a decided
+-- price releases it without anyone touching the draft. Only the two codes that cannot clear on their own are accepted.
+CREATE FUNCTION public.wf_block_draft_dispatch(p_org uuid, p_draft uuid, p_code text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+DECLARE v_d public.wf_action_draft%ROWTYPE;
+BEGIN
+  IF p_code IS NULL OR p_code NOT IN ('spend_rate_unknown', 'kind_unknown') THEN
+    RAISE EXCEPTION 'wf12:invalid_request' USING ERRCODE = '22023';
+  END IF;
+  SELECT * INTO v_d FROM public.wf_action_draft WHERE org_id = p_org AND id = p_draft;
+  IF NOT FOUND OR v_d.status <> 'approved' THEN RETURN false; END IF;
+  IF EXISTS (SELECT 1 FROM public.wf_run_event e
+              WHERE e.org_id = p_org AND e.run_id = v_d.run_id AND e.kind = 'draft.dispatch_blocked'
+                AND e.detail ->> 'draft_id' = p_draft::text AND e.at > now() - interval '24 hours') THEN
+    RETURN false;
+  END IF;
+  INSERT INTO public.wf_run_event (org_id, run_id, step_run_id, kind, actor_kind, actor_ref, detail)
+  VALUES (p_org, v_d.run_id, v_d.step_run_id, 'draft.dispatch_blocked', 'system', 'workflow-approval-sweep',
+          jsonb_build_object('draft_id', p_draft, 'code', p_code));
+  RETURN true;
+END
+$$;
+
+-- Same signature and body as WF-08's, plus: not while a block is in force.
+CREATE OR REPLACE FUNCTION public.wf_approved_drafts_ready(p_limit integer DEFAULT 50)
+RETURNS TABLE (org_id uuid, draft_id uuid, needs_dispatch boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT d.org_id, d.id,
+         NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                      WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+    FROM public.wf_action_draft d
+   WHERE d.status = 'approved'
+     AND EXISTS (SELECT 1 FROM public.wf_run r
+                  WHERE r.org_id = d.org_id AND r.id = d.run_id
+                    AND r.status IN ('waiting', 'running'))
+     AND (NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                       WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+          OR EXISTS (SELECT 1 FROM public.wf_step_run s
+                      WHERE s.org_id = d.org_id AND s.id = d.step_run_id AND s.status = 'waiting'))
+     AND NOT EXISTS (SELECT 1 FROM public.wf_run_event b
+                      WHERE b.org_id = d.org_id AND b.run_id = d.run_id AND b.kind = 'draft.dispatch_blocked'
+                        AND b.detail ->> 'draft_id' = d.id::text AND b.at > now() - interval '24 hours')
+   ORDER BY (SELECT max(e.at) FROM public.wf_run_event e
+              WHERE e.org_id = d.org_id AND e.run_id = d.run_id AND e.kind = 'draft.dispatch_failed'
+                AND e.detail ->> 'draft_id' = d.id::text) NULLS FIRST,
+            d.updated_at, d.id
+   LIMIT least(greatest(coalesce(p_limit, 50), 1), 200)
 $$;
 
 -- -----------------------------------------------------------------------------
@@ -1073,16 +1172,19 @@ REVOKE ALL ON FUNCTION
   public.wf_org_limits_guard(), public.wf_run_quota_guard(), public.wf_action_draft_quota_guard(),
   public.wf_action_sandbox_outbox_quota_guard(), public.wf_retention_delete_allowed(uuid),
   public.wf_retention_delete_guard(), public.wf_retention_legal_hold(uuid),
-  public.wf_retention_pass(uuid, jsonb, integer), public.wf_retention_execute(uuid, boolean, uuid, text),
+  public.wf_retention_pass(uuid, jsonb, integer), public.wf_retention_windows(jsonb),
+  public.wf_retention_execute(uuid, boolean, uuid, text, uuid),
   public.wf_limits_get(uuid), public.wf_limits_update(uuid, jsonb),
-  public.wf_retention_run_manual(uuid, boolean, uuid), public.wf_retention_run_scheduled(integer)
-  FROM PUBLIC, anon, authenticated;
+  public.wf_retention_run_manual(uuid, boolean, uuid), public.wf_retention_run_scheduled(integer),
+  public.wf_block_draft_dispatch(uuid, uuid, text), public.wf_approved_drafts_ready(integer)
+  FROM PUBLIC, anon, authenticated, service_role;
 -- What the server calls, and what wf_create_event_run (service role, SECURITY INVOKER) calls.
 GRANT EXECUTE ON FUNCTION
   public.wf_limits_get(uuid), public.wf_limits_update(uuid, jsonb),
   public.wf_retention_run_manual(uuid, boolean, uuid), public.wf_retention_run_scheduled(integer),
   public.wf_quota_check_action(uuid, text, integer, text, uuid),
-  public.wf_quota_runs_exceeded(uuid), public.wf_quota_note_denial(uuid, text, text)
+  public.wf_quota_runs_exceeded(uuid), public.wf_quota_note_denial(uuid, text, text),
+  public.wf_block_draft_dispatch(uuid, uuid, text), public.wf_approved_drafts_ready(integer)
   TO service_role;
 
 COMMENT ON TABLE public.wf_org_limits IS

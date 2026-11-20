@@ -97,23 +97,61 @@ SELECT wf12t.expect_true('no client role can write any WF-12 table; anon reads n
   NOT EXISTS (SELECT 1 FROM (VALUES ('public.wf_org_limits'), ('public.wf_quota_denial'),
                 ('public.wf_action_spend_rate'), ('public.wf_retention_run')) t(n)
                WHERE has_table_privilege('anon', t.n, 'SELECT,INSERT,UPDATE,DELETE')
-                  OR has_table_privilege('authenticated', t.n, 'INSERT,UPDATE,DELETE,TRUNCATE')
-                  OR has_table_privilege('service_role', t.n, 'INSERT,UPDATE,DELETE,TRUNCATE'))
+                  OR has_table_privilege('authenticated', t.n, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+                  OR has_table_privilege('service_role', t.n, 'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER'))
   AND has_table_privilege('authenticated', 'public.wf_org_limits', 'SELECT')
   AND has_table_privilege('authenticated', 'public.wf_quota_denial', 'SELECT')
   AND has_table_privilege('authenticated', 'public.wf_retention_run', 'SELECT')
   AND NOT has_table_privilege('authenticated', 'public.wf_action_spend_rate', 'SELECT'));
-SELECT wf12t.expect_true('the seven functions the server and the event run call execute for the service role only',
-  (SELECT count(*) = 7 AND bool_and(
+-- Exact ACLs, read from the catalog: this holds whether or not the database hands service_role default privileges
+-- to what the migrator creates (the CI step that runs this file again under those defaults is "privileges under
+-- Supabase default privileges" in verify.yml).
+SELECT wf12t.expect_true('the four tables carry exactly these grants: authenticated SELECT on three, service_role SELECT on all four, nobody else',
+  (SELECT array_agg(g ORDER BY g) FROM (
+     SELECT c.relname || ':' || coalesce(NULLIF(a.grantee::regrole::text, '-'), 'PUBLIC') || ':' || a.privilege_type AS g
+       FROM pg_class c, LATERAL aclexplode(coalesce(c.relacl, acldefault('r', c.relowner))) a
+      WHERE c.oid IN ('public.wf_org_limits'::regclass, 'public.wf_quota_denial'::regclass,
+                      'public.wf_action_spend_rate'::regclass, 'public.wf_retention_run'::regclass)
+        AND a.grantee <> c.relowner) x)
+  = ARRAY['wf_action_spend_rate:service_role:SELECT', 'wf_org_limits:authenticated:SELECT', 'wf_org_limits:service_role:SELECT',
+          'wf_quota_denial:authenticated:SELECT', 'wf_quota_denial:service_role:SELECT',
+          'wf_retention_run:authenticated:SELECT', 'wf_retention_run:service_role:SELECT']);
+SELECT wf12t.expect_true('no WF-12 function has a PUBLIC grant, and the only roles granted EXECUTE are the owner and service_role (on nine of them)',
+  (SELECT count(*) FILTER (WHERE a.grantee = 0) = 0
+          AND count(*) FILTER (WHERE a.grantee NOT IN (p.proowner, 0) AND a.grantee::regrole::text <> 'service_role') = 0
+          AND count(DISTINCT p.oid) FILTER (WHERE a.grantee::regrole::text = 'service_role') = 9
+     FROM pg_proc p LEFT JOIN LATERAL aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a ON true
+    WHERE p.pronamespace = 'public'::regnamespace
+      AND (p.proname LIKE 'wf\_quota\_%' OR p.proname LIKE 'wf\_retention\_%' OR p.proname LIKE 'wf\_limit%'
+           OR p.proname IN ('wf_wallet_cap_ceiling_kobo', 'wf_default_actions_per_hour', 'wf_org_limits_effective',
+                            'wf_usage_snapshot', 'wf_action_cost_kobo', 'wf_org_limits_guard', 'wf_run_quota_guard',
+                            'wf_action_draft_quota_guard', 'wf_action_sandbox_outbox_quota_guard',
+                            'wf_block_draft_dispatch', 'wf_approved_drafts_ready'))));
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.expect_error('the service role cannot call the purge pass directly',
+  format($q$SELECT public.wf_retention_pass(%L, '{}'::jsonb, 5000)$q$, wf12t.id('orgA')), '42501');
+SELECT wf12t.expect_error('the service role cannot call the purge execute directly (no legal-hold, dry-run or opt-in bypass)',
+  format($q$SELECT public.wf_retention_execute(%L, false, NULL, 'scheduler')$q$, wf12t.id('orgA')), '42501');
+SELECT wf12t.expect_error('the service role cannot reprice SMS', $q$UPDATE public.wf_action_spend_rate SET unit_kobo = 0 WHERE kind = 'sms'$q$, '42501');
+SELECT wf12t.expect_error('the service role cannot write limits directly',
+  format($q$INSERT INTO public.wf_org_limits (org_id) VALUES (%L)$q$, wf12t.id('orgA')), '42501');
+SELECT wf12t.expect_error('the service role cannot reset a denial counter', $q$DELETE FROM public.wf_quota_denial$q$, '42501');
+SELECT wf12t.expect_error('the service role cannot edit the retention log', $q$UPDATE public.wf_retention_run SET truncated = true$q$, '42501');
+SELECT wf12t.expect_error('the service role cannot read the limits through the helper',
+  format($q$SELECT public.wf_org_limits_effective(%L)$q$, wf12t.id('orgA')), '42501');
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('the nine functions the server and the event run call execute for the service role only',
+  (SELECT count(*) = 9 AND bool_and(
       has_function_privilege('service_role', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
      FROM pg_proc p
     WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_limits_get', 'wf_limits_update', 'wf_retention_run_manual', 'wf_retention_run_scheduled',
-                        'wf_quota_check_action', 'wf_quota_runs_exceeded', 'wf_quota_note_denial')));
+                        'wf_quota_check_action', 'wf_quota_runs_exceeded', 'wf_quota_note_denial',
+                        'wf_block_draft_dispatch', 'wf_approved_drafts_ready')));
 SELECT wf12t.expect_true('every other WF-12 helper and trigger function executes for no client role',
-  (SELECT count(*) = 17 AND bool_and(
+  (SELECT count(*) = 18 AND bool_and(
       NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
@@ -124,9 +162,9 @@ SELECT wf12t.expect_true('every other WF-12 helper and trigger function executes
                         'wf_org_limits_guard', 'wf_run_quota_guard', 'wf_action_draft_quota_guard',
                         'wf_action_sandbox_outbox_quota_guard', 'wf_retention_delete_allowed',
                         'wf_retention_delete_guard', 'wf_retention_legal_hold', 'wf_retention_pass',
-                        'wf_retention_execute')));
+                        'wf_retention_execute', 'wf_retention_windows')));
 SELECT wf12t.expect_true('every WF-12 function pins an empty search_path',
-  (SELECT count(*) = 24 AND bool_and(p.proconfig @> ARRAY['search_path=""'])
+  (SELECT count(*) = 27 AND bool_and(p.proconfig @> ARRAY['search_path=""'])
      FROM pg_proc p
     WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_limits_get', 'wf_limits_update', 'wf_retention_run_manual', 'wf_retention_run_scheduled',
@@ -136,7 +174,8 @@ SELECT wf12t.expect_true('every WF-12 function pins an empty search_path',
                         'wf_org_limits_guard', 'wf_run_quota_guard', 'wf_action_draft_quota_guard',
                         'wf_action_sandbox_outbox_quota_guard', 'wf_retention_delete_allowed',
                         'wf_retention_delete_guard', 'wf_retention_legal_hold', 'wf_retention_pass',
-                        'wf_retention_execute')));
+                        'wf_retention_execute', 'wf_retention_windows', 'wf_block_draft_dispatch',
+                        'wf_approved_drafts_ready')));
 SELECT wf12t.expect_true('the limits, draft, run and executed-record guards are BEFORE INSERT triggers after the earlier guards',
   EXISTS (SELECT 1 FROM pg_trigger t WHERE t.tgrelid = 'public.wf_run'::regclass AND t.tgname = 'wf_run_15_quota'
             AND t.tgtype & 2 = 2 AND t.tgtype & 4 = 4)
@@ -765,9 +804,9 @@ SELECT wf12t.expect_true('the day total is 2000 after four SMS', (wf12t.usage('o
 SELECT wf12t.expect_error('the day cap stops a new run at the cap',
   $q$SELECT wf12t.mkoutbox('orgA', 'sms', 'w3', 'wf12-sms-6')$q$, '54000', 'wf12:quota_spend_cap_day');
 SELECT wf12t.expect_error('the cost of a stored record cannot be changed',
-  $q$UPDATE public.wf_action_sandbox_outbox SET cost_kobo = 0 WHERE idempotency_key = 'wf12-sms-1'$q$, '42501', 'cost_kobo is immutable');
+  $q$UPDATE public.wf_action_sandbox_outbox SET cost_kobo = 0 WHERE idempotency_key = 'wf12-sms-1'$q$, '42501', 'created_at are immutable');
 SELECT wf12t.expect_error('a free kind''s cost cannot be set either',
-  $q$UPDATE public.wf_action_sandbox_outbox SET cost_kobo = 7 WHERE idempotency_key = 'wf12-free-e1'$q$, '42501', 'cost_kobo is immutable');
+  $q$UPDATE public.wf_action_sandbox_outbox SET cost_kobo = 7 WHERE idempotency_key = 'wf12-free-e1'$q$, '42501', 'created_at are immutable');
 SELECT wf12t.login_as('service_role');
 SELECT wf12t.setlimits('adminA', '{"wallet_cap_kobo_per_day": 1000000, "wallet_cap_kobo_per_run": 1000000}');
 SELECT wf12t.logout();
@@ -1026,6 +1065,15 @@ SELECT wf12t.expect_true('the audit entry for a dry run carries no identifier of
 SELECT wf12t.expect_error('another organization''s admin cannot use this dry run to purge',
   format($q$SELECT public.wf_retention_run_manual(%L, false, %L)$q$, wf12t.id('adminB'), wf12t.id('dry_a')), '42501', 'wf12:dry_run_required');
 
+-- The windows are part of what a person looked at: changing one after the dry run makes that dry run void.
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.setlimits('adminA', '{"retention_evidence_days": 2000}');
+SELECT wf12t.expect_error('a purge naming a dry run made with other windows is refused',
+  format($q$SELECT public.wf_retention_run_manual(%L, false, %L)$q$, wf12t.id('adminA'), wf12t.id('dry_a')), '42501', 'wf12:dry_run_required');
+SELECT wf12t.setlimits('adminA', '{"retention_evidence_days": 2555}');
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('nothing was deleted by the refused purge', wf12t.snapshot_counts('orgA') = (SELECT a FROM wf12_before));
+
 -- Phase A: purge.
 SELECT wf12t.login_as('service_role');
 SELECT public.wf_retention_run_manual(wf12t.id('adminA'), false, wf12t.id('dry_a')) AS purge \gset phaseA_
@@ -1091,13 +1139,19 @@ SELECT wf12t.expect_true('the other organization''s rows were not touched by thi
   wf12t.snapshot_counts('orgB') = (SELECT b FROM wf12_before));
 SELECT wf12t.expect_true('the audit chain lost nothing and the broker ledger lost nothing',
   (SELECT count(*) FROM public.audit_chain WHERE org_id = wf12t.id('orgA') AND action NOT LIKE 'workflow.retention.%')
-    = (SELECT audit_a FROM wf12_before)
+    >= (SELECT audit_a FROM wf12_before)
   AND (SELECT count(*) FROM public.cg_tool_call_ledger) = (SELECT ledger FROM wf12_before));
 SELECT wf12t.expect_true('the purge is logged and audited with counts only',
   (SELECT mode = 'purge' AND outcome = 'completed' AND counts = (:'phaseA_dry'::jsonb -> 'counts')
      FROM public.wf_retention_run WHERE id = wf12t.id('purge_a'))
   AND wf12t.audits('orgA', 'workflow.retention.purge') = 1);
-SELECT wf12t.expect_error('a dry run id can be used to purge, but the log is append-only (no update)',
+SELECT wf12t.expect_true('the purge records which dry run authorized it',
+  (SELECT dry_run_id = wf12t.id('dry_a') FROM public.wf_retention_run WHERE id = wf12t.id('purge_a')));
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.expect_error('a dry run authorizes one purge, once: naming it again is refused',
+  format($q$SELECT public.wf_retention_run_manual(%L, false, %L)$q$, wf12t.id('adminA'), wf12t.id('dry_a')), '42501', 'wf12:dry_run_required');
+SELECT wf12t.logout();
+SELECT wf12t.expect_error('the log is append-only (no update)',
   $q$UPDATE public.wf_retention_run SET truncated = true$q$, '42501');
 SELECT wf12t.expect_error('the retention log cannot be deleted from', $q$DELETE FROM public.wf_retention_run$q$, '42501');
 SELECT wf12t.login_as('service_role');
@@ -1212,6 +1266,88 @@ SELECT wf12t.logout();
 SELECT wf12t.login_as('authenticated');
 SELECT wf12t.expect_error('a client cannot call the scheduler', $q$SELECT public.wf_retention_run_scheduled(20)$q$, '42501');
 SELECT wf12t.logout();
+
+-- One organization failing does not stop the others. Organization B opts in and gets a failing insert on its log;
+-- both organizations are made eligible again (their earlier scheduler rows are removed with triggers skipped).
+SELECT wf12t.mkrun('r12', 'wf12-a', 'succeeded', 400);
+SELECT wf12t.mkstep('r12_s', 'r12', 'send', 'action', 'succeeded');
+SET LOCAL session_replication_role = replica;
+DELETE FROM public.wf_retention_run WHERE org_id IN (wf12t.id('orgA'), wf12t.id('orgB')) AND trigger_kind = 'scheduler';
+SET LOCAL session_replication_role = origin;
+CREATE FUNCTION wf12t.fail_orgb() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN IF NEW.org_id = wf12t.id('orgB') THEN RAISE EXCEPTION 'fixture failure'; END IF; RETURN NEW; END $$;
+CREATE TRIGGER wf12_fail_orgb BEFORE INSERT ON public.wf_retention_run FOR EACH ROW EXECUTE FUNCTION wf12t.fail_orgb();
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.setlimits('adminB', '{"retention_auto_purge": true}');
+SELECT public.wf_retention_run_scheduled(20) AS sched \gset s3_
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('the scheduler reported organization B as failed (by code only) and still purged organization A',
+  jsonb_array_length(:'s3_sched'::jsonb -> 'orgs') = 2
+  AND EXISTS (SELECT 1 FROM jsonb_array_elements(:'s3_sched'::jsonb -> 'orgs') o
+               WHERE o ->> 'org_id' = wf12t.id('orgB')::text AND o ->> 'outcome' = 'failed' AND o ->> 'sqlstate' = 'P0001')
+  AND EXISTS (SELECT 1 FROM jsonb_array_elements(:'s3_sched'::jsonb -> 'orgs') o
+               WHERE o ->> 'org_id' = wf12t.id('orgA')::text AND o ->> 'outcome' = 'completed')
+  AND NOT EXISTS (SELECT 1 FROM public.wf_run WHERE id = wf12t.id('run_r12'))
+  AND wf12t.snapshot_counts('orgB') = (SELECT b FROM wf12_before));
+SELECT wf12t.expect_true('the failure is audited and left no log row (the audit entry holds hashes, never the error text)',
+  wf12t.audits('orgB', 'workflow.retention.failed') = 1
+  AND NOT EXISTS (SELECT 1 FROM public.wf_retention_run WHERE org_id = wf12t.id('orgB') AND trigger_kind = 'scheduler'));
+DROP TRIGGER wf12_fail_orgb ON public.wf_retention_run;
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.setlimits('adminB', '{"retention_auto_purge": false}');
+SELECT wf12t.logout();
+
+-- The quota windows count created_at, so a caller cannot choose it (all triggers on).
+SELECT wf12t.mkrun('forge', 'wf12-a', 'running', 0);
+SELECT wf12t.mkstep('forge_s', 'forge', 'send', 'action', 'waiting');
+CREATE FUNCTION wf12t.forge_created() RETURNS void LANGUAGE plpgsql AS $$
+DECLARE v_ver public.wf_version%ROWTYPE; v_run public.wf_run%ROWTYPE;
+BEGIN
+  SELECT * INTO v_ver FROM public.wf_version WHERE id = wf12t.id('ver_wf12-a');
+  INSERT INTO public.wf_run (id, org_id, definition_id, version_id, idempotency_key, status, max_depth, max_steps,
+    step_count, started_by, deadline_at, started_at, agent_ref, created_at)
+  VALUES (wf12t.keep('run_forged', gen_random_uuid()), v_ver.org_id, v_ver.definition_id, v_ver.id, 'wf12-forged-run', 'running',
+    3, 20, 0, wf12t.id('adminA'), now() + interval '1 hour', now(), 'wf12-agent', now() - interval '3 days');
+  SELECT * INTO v_run FROM public.wf_run WHERE id = wf12t.id('run_forge');
+  INSERT INTO public.wf_action_draft (org_id, run_id, step_run_id, kind, category, template_ref, recipient_ids, idempotency_key, created_at)
+  VALUES (v_run.org_id, v_run.id, wf12t.id('step_forge_s'), 'email', 'communication', 'notice.a', wf12t.rids(1), 'wf12-forged-d1', now() - interval '3 days');
+  INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, kind, category, template_ref, recipient_ids,
+    broker_decision_id, idempotency_key, created_at)
+  VALUES (v_run.org_id, v_run.id, wf12t.id('step_forge_s'), 'email', 'communication', 'notice.a', wf12t.rids(1),
+    wf12t.decision(v_run.org_id, 'email', 'wf12-forged-o1'), 'wf12-forged-o1', now() - interval '3 days');
+END $$;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA wf12t TO anon, authenticated, service_role;
+SELECT wf12t.forge_created();
+SELECT wf12t.expect_true('a run, a draft and an executed record inserted with a created_at three days ago are stamped with now',
+  (SELECT created_at > now() - interval '1 minute' FROM public.wf_run WHERE id = wf12t.id('run_forged'))
+  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_draft WHERE idempotency_key = 'wf12-forged-d1')
+  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_sandbox_outbox WHERE idempotency_key = 'wf12-forged-o1'));
+SELECT wf12t.expect_error('the stamp of an executed record cannot be moved later',
+  $q$UPDATE public.wf_action_sandbox_outbox SET created_at = created_at - interval '3 days' WHERE idempotency_key = 'wf12-forged-o1'$q$, '42501', 'immutable');
+
+-- An approved draft that can never execute is parked once a day, with a clear code, and re-listed after that.
+SELECT wf12t.old_approval('pk', 'forge', 'forge_s', 'approved', 0);
+SELECT wf12t.old_draft('park', 'forge', 'forge_s', 'approved', 'pk', 0);
+SELECT wf12t.expect_true('the approved draft is on the sweep''s work list',
+  EXISTS (SELECT 1 FROM public.wf_approved_drafts_ready(200) w WHERE w.draft_id = (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park')));
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.expect_error('only the two codes that cannot clear by themselves can park a draft',
+  format($q$SELECT public.wf_block_draft_dispatch(%L, %L, 'spend_cap_day')$q$, wf12t.id('orgA'),
+         (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park')), '22023');
+SELECT public.wf_block_draft_dispatch(wf12t.id('orgA'), (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park'), 'spend_rate_unknown') AS first \gset park_
+SELECT public.wf_block_draft_dispatch(wf12t.id('orgA'), (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park'), 'spend_rate_unknown') AS again \gset park_
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('parking writes one clear timeline event, and a second call within the day writes nothing more',
+  :'park_first' = 't' AND :'park_again' = 'f'
+  AND (SELECT count(*) = 1 AND bool_and(detail ->> 'code' = 'spend_rate_unknown') FROM public.wf_run_event
+        WHERE kind = 'draft.dispatch_blocked' AND detail ->> 'draft_id' = (SELECT id::text FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park')));
+SELECT wf12t.expect_true('a parked draft leaves the work list',
+  NOT EXISTS (SELECT 1 FROM public.wf_approved_drafts_ready(200) w WHERE w.draft_id = (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park')));
+SET LOCAL session_replication_role = replica;
+UPDATE public.wf_run_event SET at = at - interval '2 days' WHERE kind = 'draft.dispatch_blocked';
+SET LOCAL session_replication_role = origin;
+SELECT wf12t.expect_true('after a day it is listed again, so a decided price releases it without anyone touching the draft',
+  EXISTS (SELECT 1 FROM public.wf_approved_drafts_ready(200) w WHERE w.draft_id = (SELECT id FROM public.wf_action_draft WHERE idempotency_key = 'wf12-old-draft-park')));
 
 -- The append-only locks stay shut for everybody who is not the purge.
 SELECT wf12t.login_as('service_role');

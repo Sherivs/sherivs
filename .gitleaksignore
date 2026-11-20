@@ -1,0 +1,5 @@
+# WF-12 harness: SQL idempotency-key labels ('wf12-forged-...') in commit 764fbd6c matched generic-api-key.
+# They are test labels, not secrets; the next commit renamed them. History is not rewritten, so the two
+# findings are ignored by exact fingerprint.
+764fbd6cad9a8ec742c13dc1a0e4aca2b6be5f00:tests/integration/wf12-quotas-retention.local.sql:generic-api-key:1321
+764fbd6cad9a8ec742c13dc1a0e4aca2b6be5f00:tests/integration/wf12-quotas-retention.local.sql:generic-api-key:1323

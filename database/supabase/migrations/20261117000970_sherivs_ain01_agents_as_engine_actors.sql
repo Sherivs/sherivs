@@ -14,6 +14,7 @@
 --                                 empty on purpose, written only by a reviewed migration until WF-13
 --   wf_ai_route_approved()        false. Founder decision 3 (AI route) is open: no step of kind 'ai' can exist yet
 --   wf_agent_step_guard()         BEFORE INSERT on wf_step_run (fail closed) for any step with an effective agent
+--   wf_agent_step_immutable()     BEFORE UPDATE OF action_class, kind, agent_ref: an existing step cannot be reclassified
 --   wf_agent_registry_get()       read surface for one organization (needs workflows.view)
 --
 -- What this does NOT do: no model call, no tenant data to any AI, no send, no change to the autonomy scale
@@ -547,7 +548,9 @@ BEGIN
               WHERE s.org_id = NEW.org_id AND s.idempotency_key = NEW.idempotency_key) THEN
     RETURN NEW;
   END IF;
-  IF NEW.kind = 'ai' AND NOT public.wf_ai_route_approved() THEN
+  -- The AI tripwire covers both ways to reach a model: kind 'ai' and the class 'ai_model' (a kind 'action' step
+  -- of that class would otherwise reach WF-11 without being an 'ai' step).
+  IF (NEW.kind = 'ai' OR NEW.action_class = 'ai_model') AND NOT public.wf_ai_route_approved() THEN
     RAISE EXCEPTION 'ain01:ai_route_undecided' USING ERRCODE = '42501';
   END IF;
   SELECT r.agent_ref, r.template_id INTO v_run_agent, v_template
@@ -583,6 +586,25 @@ END
 $$;
 CREATE TRIGGER wf_step_run_07_agent BEFORE INSERT ON public.wf_step_run
   FOR EACH ROW EXECUTE FUNCTION public.wf_agent_step_guard();
+
+-- The class, kind and agent of an existing step are fixed at insert. The insert guard classifies the step once;
+-- without this a step inserted as 'internal' could be updated to 'money_movement' (a plain UPDATE, or
+-- INSERT ... ON CONFLICT (org_id, idempotency_key) DO UPDATE, whose insert half the replay rule lets through).
+-- Setting a column to the value it already has is allowed, so a harmless upsert still works.
+CREATE FUNCTION public.wf_agent_step_immutable()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF NEW.action_class IS DISTINCT FROM OLD.action_class
+     OR NEW.kind IS DISTINCT FROM OLD.kind
+     OR NEW.agent_ref IS DISTINCT FROM OLD.agent_ref THEN
+    RAISE EXCEPTION 'ain01:step_identity_immutable' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER wf_step_run_07_agent_immutable BEFORE UPDATE OF action_class, kind, agent_ref ON public.wf_step_run
+  FOR EACH ROW EXECUTE FUNCTION public.wf_agent_step_immutable();
 
 -- -----------------------------------------------------------------------------
 -- 6. Read surface for one organization
@@ -641,7 +663,7 @@ $$;
 -- -----------------------------------------------------------------------------
 REVOKE ALL ON FUNCTION
   public.wf_ai_route_approved(), public.wf_agent_state_code(uuid, text), public.wf_agent_class_allowed(text, text),
-  public.wf_agent_step_guard(), public.wf_agent_capability_guard(), public.wf_agent_platform_grant_guard(),
+  public.wf_agent_step_guard(), public.wf_agent_step_immutable(), public.wf_agent_capability_guard(), public.wf_agent_platform_grant_guard(),
   public.wf_agent_platform_grant_audit(), public.wf_agent_registry_get(uuid)
   FROM PUBLIC, anon, authenticated, service_role;
 -- WF-11 will call the route check from the server; the server reads the registry for a person.

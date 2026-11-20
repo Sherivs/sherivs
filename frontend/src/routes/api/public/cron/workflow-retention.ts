@@ -54,6 +54,7 @@ export function createWorkflowRetentionHandler(dependencies: {
         ok: true,
         organisations: orgs.length,
         refused: orgs.filter((o) => o?.outcome === "refused").length,
+        failed: orgs.filter((o) => o?.outcome === "failed").length,
       });
     } catch {
       return Response.json({ ok: false, error: "workflow_retention_failed" }, { status: 500 });

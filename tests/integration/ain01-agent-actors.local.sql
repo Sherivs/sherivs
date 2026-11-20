@@ -589,6 +589,54 @@ SELECT ain01t.expect_error('the service role is refused beyond the daily budget'
   ain01t.stepsql('smallb', 's5', 'action', 'internal'), '54000', 'ain01:budget_daily_actions');
 SELECT ain01t.logout();
 
+-- 6g2. An existing step cannot be reclassified (review B1; agent_ref was already frozen by wf_step_run_guard, whose
+-- message is accepted for those two cases): not by UPDATE, not by the upsert half of
+-- INSERT ... ON CONFLICT DO UPDATE, for an agent step or an agentless one, as the service role.
+SELECT ain01t.login_as('service_role');
+SELECT ain01t.expect_error('a plain UPDATE cannot raise an observe-only agent step to money_movement',
+  $q$UPDATE public.wf_step_run SET action_class = 'money_movement' WHERE idempotency_key = 'ain01-step-t0-internal'$q$,
+  '42501', 'ain01:step_identity_immutable');
+SELECT ain01t.expect_error('the upsert path cannot raise it either (replayed insert, DO UPDATE SET action_class)',
+  ain01t.stepsql('t0', 'internal', 'action', 'money_movement')
+    || ' ON CONFLICT (org_id, idempotency_key) DO UPDATE SET action_class = EXCLUDED.action_class',
+  '42501', 'ain01:step_identity_immutable');
+SELECT ain01t.expect_error('an UPDATE cannot turn an agent step into kind ai',
+  $q$UPDATE public.wf_step_run SET kind = 'ai' WHERE idempotency_key = 'ain01-step-t0-internal'$q$,
+  '42501', 'ain01:step_identity_immutable');
+SELECT ain01t.expect_error('an UPDATE cannot move a step to another agent',
+  $q$UPDATE public.wf_step_run SET agent_ref = 'ain01-t3' WHERE idempotency_key = 'ain01-step-t0-internal'$q$,
+  '42501', 'immutable');
+SELECT ain01t.expect_error('an UPDATE cannot strip the agent from a step',
+  $q$UPDATE public.wf_step_run SET agent_ref = NULL WHERE idempotency_key = 'ain01-step-t0-internal'$q$,
+  '42501', 'immutable');
+SELECT ain01t.expect_error('an agentless step cannot be reclassified either',
+  $q$UPDATE public.wf_step_run SET action_class = 'money_movement' WHERE idempotency_key = 'ain01-step-none-plain-action'$q$,
+  '42501', 'ain01:step_identity_immutable');
+SELECT ain01t.expect_error('nor can an agentless step be moved to the ai_model class',
+  ain01t.stepsql('none', 'plain-action', 'action', 'ai_model')
+    || ' ON CONFLICT (org_id, idempotency_key) DO UPDATE SET action_class = EXCLUDED.action_class',
+  '42501', 'ain01:step_identity_immutable');
+SELECT ain01t.logout();
+SELECT ain01t.expect_true('the refused changes left the step as it was',
+  (SELECT action_class = 'internal' AND kind = 'action' AND agent_ref = 'ain01-t0'
+     FROM public.wf_step_run WHERE idempotency_key = 'ain01-step-t0-internal')
+  AND (SELECT action_class = 'communication' AND agent_ref IS NULL
+         FROM public.wf_step_run WHERE idempotency_key = 'ain01-step-none-plain-action'));
+-- Positive twins: the same values, and ordinary bookkeeping, still work.
+SELECT ain01t.login_as('service_role');
+UPDATE public.wf_step_run SET action_class = action_class, kind = kind, agent_ref = agent_ref
+ WHERE idempotency_key = 'ain01-step-t0-internal';
+UPDATE public.wf_step_run SET status = status, attempt = attempt WHERE idempotency_key = 'ain01-step-t0-internal';
+DO $q$ BEGIN
+  EXECUTE ain01t.stepsql('t0', 'internal', 'action', 'internal')
+    || ' ON CONFLICT (org_id, idempotency_key) DO UPDATE SET action_class = EXCLUDED.action_class';
+  EXECUTE ain01t.stepsql('t0', 'internal', 'action', 'money_movement') || ' ON CONFLICT DO NOTHING';
+END $q$;
+SELECT ain01t.logout();
+SELECT ain01t.expect_true('same-value updates, an identical upsert and a DO NOTHING replay all work and change nothing',
+  (SELECT action_class = 'internal' FROM public.wf_step_run WHERE idempotency_key = 'ain01-step-t0-internal')
+  AND ain01t.steps_of('ain01-t0', 'orgA') = 3);
+
 -- 6h. The AI-route tripwire: no step of kind ai while decision 3 is open.
 SELECT ain01t.expect_error('an ai step by an agent is refused while the AI route is undecided',
   ain01t.stepsql('t2', 'ai1', 'ai', 'ai_model'), '42501', 'ain01:ai_route_undecided');
@@ -596,13 +644,20 @@ SELECT ain01t.expect_error('an ai step with no agent is refused too',
   ain01t.stepsql('none', 'ai2', 'ai', 'ai_model'), '42501', 'ain01:ai_route_undecided');
 SELECT ain01t.expect_error('an ai step is refused for the registered organization agent as well',
   ain01t.stepsql('orgag', 'ai3', 'ai', 'ai_model'), '42501', 'ain01:ai_route_undecided');
+SELECT ain01t.expect_error('a kind action step of class ai_model is refused too (WF-11 is not reachable as an action)',
+  ain01t.stepsql('t2', 'ai7', 'action', 'ai_model'), '42501', 'ain01:ai_route_undecided');
+SELECT ain01t.expect_error('a notify step of class ai_model is refused as well',
+  ain01t.stepsql('t2', 'ai8', 'notify', 'ai_model'), '42501', 'ain01:ai_route_undecided');
+SELECT ain01t.expect_error('and so is an agentless action step of class ai_model',
+  ain01t.stepsql('none', 'ai9', 'action', 'ai_model'), '42501', 'ain01:ai_route_undecided');
 -- Simulate the reviewed migration that approves the route, inside this rolled-back transaction only.
 CREATE OR REPLACE FUNCTION public.wf_ai_route_approved() RETURNS boolean LANGUAGE sql IMMUTABLE SECURITY INVOKER
   SET search_path = '' AS $$ SELECT true $$;
 SELECT ain01t.step('t2', 'ai1', 'ai', 'ai_model');
 SELECT ain01t.step('none', 'ai2', 'ai', 'ai_model');
+SELECT ain01t.step('t2', 'ai7', 'action', 'ai_model');
 SELECT ain01t.expect_true('once the route is approved an ai step is allowed for a capable agent and for no agent',
-  ain01t.steps_of('ain01-t2', 'orgA') = 2
+  ain01t.steps_of('ain01-t2', 'orgA') = 3
   AND (SELECT count(*) = 1 FROM public.wf_step_run WHERE idempotency_key = 'ain01-step-none-ai2'));
 SELECT ain01t.expect_error('approving the route does not widen an observe-only agent: it still has no ai_model class',
   ain01t.stepsql('t0', 'ai4', 'ai', 'ai_model'), '42501', 'ain01:class_not_allowed');

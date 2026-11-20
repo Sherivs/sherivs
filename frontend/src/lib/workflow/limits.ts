@@ -70,7 +70,7 @@ const SAFE_MESSAGES: Readonly<Record<LimitErrorCode, string>> = Object.freeze({
     "That value is outside the allowed range, or breaks the order the windows must keep. Nothing was changed.",
   settings_missing: "Workflows have not been set up for this organisation yet.",
   dry_run_required:
-    "Run a dry run first, then purge within 24 hours using that dry run. Nothing was deleted.",
+    "Run a new dry run first, then purge within 24 hours. A dry run works for one purge and only while the windows are unchanged. Nothing was deleted.",
   invalid_request: "That request was not valid.",
   wallet_cap_above_ceiling:
     "Spend caps stay at zero until a spend ceiling is decided. Nothing was changed.",

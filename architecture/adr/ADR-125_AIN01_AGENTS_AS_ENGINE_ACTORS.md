@@ -55,7 +55,13 @@ engine needs the same answers in the database, where a bug in a runtime, a templ
    `class_not_allowed`, `budget_daily_actions`. It writes the effective agent onto the step. It applies to new
    steps only: a pause stops new work and does not strand a step that already exists. A replay of an existing
    idempotency key is neither counted nor refused. A per-organization-and-agent advisory lock serializes the count
-   and the insert; a concurrency test (20 connections, budget 5) gets exactly 5.
+   and the insert; a concurrency test (20 connections, budget 5) gets exactly 5. A second trigger,
+   `wf_step_run_07_agent_immutable` (BEFORE UPDATE OF `action_class`, `kind`, `agent_ref`), rejects any change to
+   those columns of an existing step, so a step classified at insert cannot be reclassified by a plain UPDATE or by
+   the update half of `INSERT ... ON CONFLICT (org_id, idempotency_key) DO UPDATE` (review B1; setting a column to
+   the value it already has is allowed). The AI tripwire refuses both `kind = 'ai'` and `action_class = 'ai_model'`
+   while `wf_ai_route_approved()` is false, for steps with or without an agent, so WF-11 cannot be reached as a
+   `kind = 'action'` step.
 5. **Capabilities bound action classes.** `wf_agent_tier_action_class` says which engine action classes a tier may
    use: T0 internal and waits; T1 adds tasks, unclassified actions and the reserved `ai_model` class; T2 adds
    communications; T3 adds the six capped classes (money, safeguarding, credentials, publishing, mass messages,
@@ -86,6 +92,20 @@ engine needs the same answers in the database, where a bug in a runtime, a templ
 - Organization agents carry no charter; their supervisor is null and their accountable role comes from ADR-095.
 - The add-on state shape was checked against the reviewed source (`database/proposals/ENGINE-20_...sql`), not
   against production.
+
+## Accepted limitations and follow-ups (review notes)
+
+- A pause blocks new steps only (a step that already exists finishes, retries or is cancelled). Stopping in-flight
+  work is a separate, deliberate action (cancel the run).
+- `wf_run.agent_ref` can still be changed by the service role. That was true before AIN-01 and is not widened by it;
+  the guard resolves the agent from the run first, so a follow-up should freeze the column after the first step.
+- The daily budget is per organization and agent (the count and the lock are scoped that way), not a global cap per
+  agent across organizations.
+- Capability rows (`connector`, `approver`, `requires_permission`, `autonomy_mode`) are informational in this
+  slice. Only the tier of the agent drives enforcement; per-capability enforcement is a follow-up.
+- Organization add-on state is written by the ENGINE-20 objects, which are applied outside the migrations folder
+  and can be written by the service role. AIN-01 reads that state and fails closed; it does not own or harden it.
+- A plan downgrade or a removed add-on is read at the next new step; steps already created are not revoked.
 
 ## Consequences
 
