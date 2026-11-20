@@ -350,3 +350,36 @@ rows, RLS, or grants. Pause the route and disable the pilot organization before 
 - Verify events remain isolated to the approved org and duplicate count stays zero. Disable the
   org immediately if events appear for another tenant, PII appears in payloads, or the failure
   alert fires repeatedly.
+
+## Evaluation and guardrail layer (AIN-04)
+
+Origin: `database/supabase/migrations/20261117000995_sherivs_ain04_evaluation_guardrail_layer.sql` and
+`architecture/adr/ADR-128_AIN04_EVALUATION_AND_GUARDRAIL_LAYER.md`. Not applied to any hosted database by the mission
+that wrote it; the lead applies it to staging after AIN-03. The number `20261117000995` is free on every branch checked.
+
+This layer screens text that the engine submits (retrieved text on its way to a model, or output from one) with a
+reviewed corpus of patterns, proves the corpus with an eval suite, and records each screened text. It calls no model.
+
+- **Fail closed.** If a pattern or a case is edited and the suite is not run again, `wf_safety_verified()` is false and
+  every check returns `blocked` with the code `guard.unverified`. After any corpus change, run `wf_safety_run_eval()` as
+  the service role and read the result: `status` must be `passed`. A `failed` run lists the failing cases in
+  `wf_safety_eval_run.failed_checks`.
+- **Output is untrusted.** Only a `clean` verdict is usable. A `flagged` one needs a person with `workflows.approve`
+  who did not start the run (`wf_safety_review_check`); a `blocked` one can never be cleared.
+- **Nothing stores the text.** The ledger holds the SHA-256, the length, the verdict and the codes. To use an output,
+  pass the hash of the exact text to `wf_safety_check_usable`.
+- **Do not treat this as complete protection.** It catches known shapes only. It is one layer, not a promise.
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the organization switched on for the test:
+
+1. As the service role: an INSERT into `wf_safety_check` and an UPDATE of `wf_safety_pattern` are both refused (`42501`).
+2. `SELECT public.wf_safety_run_eval()` returns `status: passed` (or the migration's own run, reused).
+3. Screen a clean sentence and an injected one for an active run; confirm `clean` and `blocked`, one ledger row each and
+   one audit entry each, and that `wf_safety_check_usable` is true only for the clean text's exact hash.
+4. Screen a sentence with an email address (flagged); try to clear it as the person who started the run (refused), then
+   as another approver (accepted); a second decision is refused.
+5. Change one pattern in the staging database only; confirm checks now return `guard.unverified`; restore it.
+6. Confirm nothing was sent and no model was called.
+
+Rollback: `database/supabase/rollbacks/20261117000995_...sql` refuses while a check or review row exists (export and
+remove them deliberately first). It does not touch AIN-01 to AIN-03.

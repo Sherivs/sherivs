@@ -3,7 +3,7 @@
 -- Run it on a database whose migrator has Supabase's default privileges in force (ALTER DEFAULT PRIVILEGES ... GRANT ALL
 -- ... TO anon, authenticated, service_role), after WF-08 and WF-12 were re-applied under them (see verify.yml, "privileges
 -- under Supabase default privileges"). Under those defaults a function a migration forgets to revoke is executable by
--- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08, WF-12, AIN-01, AIN-02 and AIN-03 alike.
+-- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08, WF-12, AIN-01, AIN-02, AIN-03 and AIN-04 alike.
 -- The list is the set the server legitimately calls; adding a server-called function means adding it here on purpose.
 CREATE TEMP TABLE wf12_priv_allowed (sig text PRIMARY KEY);
 INSERT INTO wf12_priv_allowed VALUES
@@ -46,6 +46,10 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_retention_run_scheduled(p_max_orgs integer)'),
   ('wf_run_cancel(p_actor uuid, p_run uuid, p_reason text)'),
   ('wf_run_history_detail(p_actor uuid, p_run uuid)'),
+  ('wf_safety_check_text(p_run uuid, p_step text, p_direction text, p_text text)'),
+  ('wf_safety_check_usable(p_check uuid, p_text_sha256 text)'),
+  ('wf_safety_review_check(p_actor uuid, p_check uuid, p_decision text, p_reason text)'),
+  ('wf_safety_run_eval()'),
   ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer)'),
   ('wf_run_retry(p_actor uuid, p_step uuid, p_reason text)');
 DO $$
