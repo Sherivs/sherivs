@@ -97,6 +97,10 @@ ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_
 - `tsc --noEmit`, ESLint and Prettier on every changed ts/mjs/md file: clean.
 - Guards: `verify-domain-neutrality` PASS (after the quarantine above), `verify-provenance-metadata` PASS,
   `verify-migration-grants` PASS.
+- CI on PR #473, head `7303497ebc4f9e4eb28acfed65ac2f543fed1321` (PostgreSQL 17, CI sim DB): Unit tests, Typecheck,
+  Lint, Registry/drift/neutrality/secrets guards + build, Migration dry-run + sim smoke (includes the AIN-01 harness
+  and e2e steps), RLS isolation battery, Secret scan, Mobile typecheck, Workspace shell E2E, Role management UI
+  screenshots, Vercel preview: all success. Production deploy, Supabase Preview, restore drill: skipped.
 
 ## Not verified
 
