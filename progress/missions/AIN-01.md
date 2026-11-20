@@ -124,6 +124,11 @@ ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_
   fields are informational (6); ENGINE-20 state is service-role writable and outside the migrations folder (7); a plan
   downgrade is read at the next new step (8).
 
+- CI on PR #473 after review round 1, head `ef7e82df9fb8db971c2137308bc8fd9252144319` (merge of WF-12 `1b998f41`):
+  Unit tests, Typecheck, Lint, guards + build, Migration dry-run + sim smoke (includes the AIN-01 harness, e2e and the
+  new default-privileges step), RLS isolation battery, Secret scan, Mobile typecheck, Workspace shell E2E, role UI
+  screenshots, Vercel preview: all success; production deploy, Supabase Preview, restore drill skipped.
+
 ## Not verified
 
 - A hosted Supabase, including PostgREST exposure of the new functions and the apply as the `postgres` role (the
