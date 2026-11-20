@@ -58,7 +58,7 @@ So no "blocked on decision N" issue was written. The founder is asked to ratify 
 
 - `tests/integration/wf03-workflow-runtime.local.sql`: the autonomy insert goes through the fixture, and the pinned
   service-role privilege on `wf_agent_autonomy` is now SELECT only (that is the new truth).
-- `wf06-actions`, `wf07-approval-inbox`, `wf08-run-history`, `wf12-quotas-retention`, `ain01-agent-actors`
+- `wf12-default-privileges` (three entry points added to its list), `wf06-actions`, `wf07-approval-inbox`, `wf08-run-history`, `wf12-quotas-retention`, `ain01-agent-actors`
   (harnesses): earned levels are seeded with `ain02_set_level` (gate off for one statement as the owner, back on
   straight after); steps that must record an executed action are marked with `ain02_allow_execution`; WF-08's one
   re-pointing of a run's template is wrapped in a disable and enable of `wf_run_08_freeze_actor`. The shared helper is
@@ -77,13 +77,20 @@ So no "blocked on decision N" issue was written. The founder is asked to ratify 
 - Guards: `verify-domain-neutrality` PASS, `verify-migration-grants` PASS, `verify-provenance-metadata` PASS.
 - The rollback was exercised against the applied migration and the migration applied again.
 
+## CI evidence
+
+Head `602bb1fe` (PR #475): every check green (Migration dry-run + sim smoke, Secret scan, Typecheck, Unit tests,
+Lint, guards and build, RLS battery, E2E); the Vercel preview is not a CI gate. In the CI log: `AIN02 ALL PASS: 184 checks`
+(twice: default-privileges scratch database and main), `AIN02-PRIV ALL PASS: 241 checks`, `AIN01 ALL PASS: 136 checks`,
+`WF12 ALL PASS: 213 checks`, and the `AIN02-E2E RESULT` line above. The four modified WF e2e scripts ran green on
+PostgREST. The first CI run failed twice and was fixed: gitleaks flagged two idempotency-key literals in the harness,
+and `wf12-default-privileges.local.sql` (which lists every function the service role may execute) needed the three
+new entry points added.
+
 ## Not verified
 
-- CI on the pushed head: see the PR checks (recorded below when green).
-- The four modified e2e scripts (WF-06, 07, 08, 12) need PostgREST and were not run locally; CI runs them. If a
-  step in them must record an executed action while its level is below `act_and_report`, the outbox backstop will
-  refuse it and CI will show it.
-- PostgreSQL 17 (CI) was not used locally; PostgreSQL 16 was.
+- The four modified e2e scripts (WF-06, 07, 08, 12) need PostgREST and were not run locally; they ran green in CI.
+- PostgreSQL 17 was used only in CI; locally PostgreSQL 16.
 - The organization add-on state is a stub of the reviewed ENGINE-20 shape; the real objects were not available.
 - Promotion trusts the identity the server passes, as WF-07 does. There is no passkey step-up and no UI.
 - Nothing ran against a hosted database.
