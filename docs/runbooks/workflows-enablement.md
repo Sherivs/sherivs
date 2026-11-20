@@ -241,6 +241,46 @@ Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
 Rollback: `database/supabase/rollbacks/20261117000970_...sql` refuses while a platform grant exists. Apply it after
 the kill switch and before the WF-12 rollback.
 
+## Autonomy scale and promotion gate (AIN-02)
+
+Origin: `database/supabase/migrations/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql` and
+`architecture/adr/ADR-126_AIN02_AUTONOMY_SCALE_AND_PROMOTION_GATE.md`. Not applied to any hosted database by the
+mission that wrote it; the lead applies it to staging after AIN-01. The number `20261117000980` is free on every
+branch checked; `..001000` is used by other PRs.
+
+There is one scale, `suggest < draft < act_with_approval < act_and_report`, mapped to the earned-autonomy ladder
+(shadow, propose, assist, autonomous). A step runs at the lowest of: its template, the organization ceiling, the
+level the agent has earned, the ceiling for the agent's tier (executive: act_with_approval; assurance: draft) and
+the cap for its action class (the six capped classes and unclassified actions: draft; model steps: suggest).
+
+- **Nobody sets an earned level directly.** The service role can read `wf_agent_autonomy` and cannot write it. A
+  level rises only through `wf_autonomy_promote`: the server passes the verified person, who must be an active
+  super admin (the founder), one rung at a time, with fresh evidence that clears the bar and a written reason.
+  Each piece of evidence promotes once.
+- **Evidence** is numbers only (counts, suite id, time, content hash), recorded with `wf_autonomy_record_evidence`.
+  A pass rate below 0.90, any critical failure or nothing graded lowers the agent one rung in every organization,
+  automatically, and writes a ledger row.
+- **Demotion** by a person (`wf_autonomy_demote`) is open to the founder and to an administrator of the same
+  organization, and can only lower.
+- The ledger (`wf_autonomy_change`) and the evidence table are append-only and are the record of why an agent has
+  its level; every change also writes the audit chain.
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
+
+1. As the service role, try `UPDATE public.wf_agent_autonomy SET earned_level = 'act_and_report'`: it is refused
+   (`42501`).
+2. Record evidence of 20 graded cases with 18 passed for a granted agent and promote it with a person who is not a
+   super admin: refused (`ain02:only_the_founder_promotes`). Promote with the founder: the agent moves one rung and
+   one row appears in `wf_autonomy_change`.
+3. Try the same evidence again for another rung: refused. Try to skip a rung: refused.
+4. Record a result with a pass rate of 0.89: the agent drops one rung in each organization and the ledger shows
+   `auto_demote` rows with no person.
+5. Confirm nothing was sent: `SELECT count(*) FROM public.wf_action_sandbox_outbox` is unchanged.
+
+Rollback: `database/supabase/rollbacks/20261117000980_...sql` refuses while the ledger or the evidence table holds a
+row (export them first) and leaves every earned level as it is. Apply it after the kill switch and before the
+AIN-01 rollback.
+
 ## Kill switch and rollback
 
 To stop new emission and processing, set `WORKFLOW_DELIVERY_MODE=off` first, then set the pilot

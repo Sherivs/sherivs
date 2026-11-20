@@ -233,10 +233,10 @@ SELECT wf12t.logout();
 INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling) VALUES
   (wf12t.id('orgA'), true, 'act_and_report'),
   (wf12t.id('orgB'), true, 'act_and_report');
-INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
-  (wf12t.id('orgA'), 'wf12-agent', 'act_and_report'),
-  (wf12t.id('orgB'), 'wf12-agent', 'act_and_report');
 \ir ain01-agent-fixture.sql
+\ir ain02-autonomy-fixture.sql
+SELECT pg_temp.ain02_set_level(wf12t.id('orgA'), 'wf12-agent', 'act_and_report');
+SELECT pg_temp.ain02_set_level(wf12t.id('orgB'), 'wf12-agent', 'act_and_report');
 SELECT pg_temp.ain01_fixture_agent(wf12t.id('orgA'), 'wf12-agent');
 SELECT pg_temp.ain01_fixture_agent(wf12t.id('orgB'), 'wf12-agent');
 
@@ -296,6 +296,7 @@ BEGIN
     CASE WHEN p_status IN ('claimed', 'running') THEN now() + interval '5 minutes' END,
     CASE WHEN p_status IN ('succeeded', 'dead', 'skipped', 'cancelled') THEN now() END,
     CASE WHEN p_status = 'dead' THEN 'step.failed' END);
+  PERFORM pg_temp.ain02_allow_execution(v_id);  -- AIN-02: these tests are about quotas, not the step level
   RETURN wf12t.keep('step_' || p_name, v_id);
 END $$;
 -- Rows that only a backdated fixture can make (triggers and constraints are skipped on purpose; the purge itself runs
