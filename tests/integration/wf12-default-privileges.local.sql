@@ -7,6 +7,8 @@
 -- The list is the set the server legitimately calls; adding a server-called function means adding it here on purpose.
 CREATE TEMP TABLE wf12_priv_allowed (sig text PRIMARY KEY);
 INSERT INTO wf12_priv_allowed VALUES
+  ('wf_agent_registry_get(p_actor uuid)'),
+  ('wf_ai_route_approved()'),
   ('wf_approval_view(p_actor uuid, p_approval uuid)'),
   ('wf_approved_drafts_ready(p_limit integer)'),
   ('wf_approver_candidates(p_approval uuid, p_limit integer)'),

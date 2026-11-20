@@ -175,6 +175,9 @@ INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
 INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
   (wf08t.id('orgA'), 'wf08-agent', 'act_and_report'),
   (wf08t.id('orgB'), 'wf08-agent', 'act_and_report');
+\ir ain01-agent-fixture.sql
+SELECT pg_temp.ain01_fixture_agent(wf08t.id('orgA'), 'wf08-agent');
+SELECT pg_temp.ain01_fixture_agent(wf08t.id('orgB'), 'wf08-agent');
 UPDATE public.wf_template SET autonomy_max = 'suggest'
  WHERE template_key = 'payment_due_reminder_ladder' AND version = 1;
 

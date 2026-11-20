@@ -222,6 +222,9 @@ INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
 INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES
   (wf07t.id('orgA'), 'wf07-agent', 'act_and_report'),
   (wf07t.id('orgB'), 'wf07-agent', 'act_and_report');
+\ir ain01-agent-fixture.sql
+SELECT pg_temp.ain01_fixture_agent(wf07t.id('orgA'), 'wf07-agent');
+SELECT pg_temp.ain01_fixture_agent(wf07t.id('orgB'), 'wf07-agent');
 INSERT INTO public.wf_definition (id, org_id, key, name) VALUES
   ('f0710000-0000-4000-8000-0000000000a1', wf07t.id('orgA'), 'wf07-a', 'WF07 A'),
   ('f0710000-0000-4000-8000-0000000000a2', wf07t.id('orgA'), 'wf07-a-author-ap3', 'WF07 A2'),
