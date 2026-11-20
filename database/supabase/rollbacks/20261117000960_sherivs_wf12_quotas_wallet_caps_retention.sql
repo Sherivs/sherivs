@@ -181,12 +181,37 @@ BEGIN
 END
 $$;
 
+-- Restore WF-08's work list (same signature; WF-12 only added the "not while blocked" condition), then drop the block function.
+CREATE OR REPLACE FUNCTION public.wf_approved_drafts_ready(p_limit integer DEFAULT 50)
+RETURNS TABLE (org_id uuid, draft_id uuid, needs_dispatch boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = ''
+AS $$
+  SELECT d.org_id, d.id,
+         NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                      WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+    FROM public.wf_action_draft d
+   WHERE d.status = 'approved'
+     AND EXISTS (SELECT 1 FROM public.wf_run r
+                  WHERE r.org_id = d.org_id AND r.id = d.run_id
+                    AND r.status IN ('waiting', 'running'))
+     AND (NOT EXISTS (SELECT 1 FROM public.wf_action_sandbox_outbox o
+                       WHERE o.org_id = d.org_id AND o.draft_id = d.id)
+          OR EXISTS (SELECT 1 FROM public.wf_step_run s
+                      WHERE s.org_id = d.org_id AND s.id = d.step_run_id AND s.status = 'waiting'))
+   ORDER BY (SELECT max(e.at) FROM public.wf_run_event e
+              WHERE e.org_id = d.org_id AND e.run_id = d.run_id AND e.kind = 'draft.dispatch_failed'
+                AND e.detail ->> 'draft_id' = d.id::text) NULLS FIRST,
+            d.updated_at, d.id
+   LIMIT least(greatest(coalesce(p_limit, 50), 1), 200)
+$$;
+DROP FUNCTION public.wf_block_draft_dispatch(uuid, uuid, text);
 DROP FUNCTION public.wf_retention_delete_guard();
 DROP FUNCTION public.wf_retention_delete_allowed(uuid);
 
 DROP FUNCTION public.wf_retention_run_scheduled(integer);
 DROP FUNCTION public.wf_retention_run_manual(uuid, boolean, uuid);
-DROP FUNCTION public.wf_retention_execute(uuid, boolean, uuid, text);
+DROP FUNCTION public.wf_retention_execute(uuid, boolean, uuid, text, uuid);
+DROP FUNCTION public.wf_retention_windows(jsonb);
 DROP FUNCTION public.wf_retention_pass(uuid, jsonb, integer);
 DROP FUNCTION public.wf_retention_legal_hold(uuid);
 DROP FUNCTION public.wf_limits_update(uuid, jsonb);

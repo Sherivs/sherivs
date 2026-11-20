@@ -191,7 +191,7 @@ WhatsApp 0.
   ceiling function is replaced. SMS and WhatsApp executed records are refused while no rate is decided.
   Email and in-app cost nothing. Nothing here moves money.
 - **Retention** removes history past its window. Run a dry run first: it counts what a purge would remove and
-  deletes nothing. A purge must name a dry run from the last 24 hours. Pending approvals, active runs, audit
+  deletes nothing. A purge must name a dry run from the last 24 hours, made with the windows still in force; each dry run authorizes one purge. Pending approvals, active runs, audit
   records and the broker ledger are never removed, and an active legal hold refuses the purge.
 - **Automatic purge** is off. To enable it for an organization turn on "Purge automatically" in the screen;
   it runs only when `/api/public/cron/workflow-retention` is called. The Cloudflare cron worker does not

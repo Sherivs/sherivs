@@ -47,12 +47,13 @@ describe("workflow retention route guards", () => {
           orgs: [
             { org_id: "f1200000-0000-4000-8000-000000000001", outcome: "completed" },
             { org_id: "f1200000-0000-4000-8000-000000000002", outcome: "refused" },
+            { org_id: "f1200000-0000-4000-8000-000000000003", outcome: "failed" },
           ],
         };
       },
     });
     const body = await (await handler(new Request(url, auth("test-key")))).json();
-    expect(body).toEqual({ ok: true, organisations: 2, refused: 1 });
+    expect(body).toEqual({ ok: true, organisations: 3, refused: 1, failed: 1 });
   });
 
   it("returns a generic 500 without detail when the database call fails", async () => {

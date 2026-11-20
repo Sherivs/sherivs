@@ -94,10 +94,22 @@ export async function runWorkflowApprovalSweep(
       });
       if (resumed.error) failed += 1;
       else dispatched += 1;
-    } catch {
+    } catch (error) {
       failed += 1;
       if (dispatching) {
         try {
+          // WF-12: a refusal that cannot clear by itself (no price decided for SMS or WhatsApp, an unknown
+          // kind) parks the draft for a day with one clear timeline event instead of being retried every pass.
+          const message = error instanceof Error ? error.message : "";
+          const parked = /^workflow_quota_(spend_rate_unknown|kind_unknown)$/.exec(message);
+          if (parked) {
+            await ports.rpc("wf_block_draft_dispatch", {
+              p_org: item.org_id,
+              p_draft: item.draft_id,
+              p_code: parked[1],
+            });
+            continue;
+          }
           await ports.rpc("wf_note_draft_dispatch_failure", {
             p_org: item.org_id,
             p_draft: item.draft_id,

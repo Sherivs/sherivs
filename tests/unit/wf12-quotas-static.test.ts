@@ -28,6 +28,28 @@ describe("WF-12 migration (static)", () => {
     expect(up).not.toMatch(/DROP POLICY/i);
   });
 
+  it("every REVOKE names service_role too (Supabase default privileges hand it everything a migrator creates)", () => {
+    const revokes = [...up.matchAll(/REVOKE ALL ON[\s\S]*?;/g)].map((m) => m[0]);
+    expect(revokes.length).toBeGreaterThanOrEqual(2);
+    for (const r of revokes)
+      expect(r, r.slice(0, 80)).toMatch(/FROM PUBLIC, anon, authenticated, service_role;/);
+    // The only service_role grants are EXECUTE on the nine server-called functions and SELECT on the tables.
+    const grants = [...up.matchAll(/GRANT[^;]*TO service_role;/g)].map((m) => m[0]);
+    for (const g of grants) expect(g).toMatch(/^GRANT (EXECUTE ON FUNCTION|SELECT ON)/);
+    expect(up).not.toMatch(/GRANT[^;]*(INSERT|UPDATE|DELETE|TRUNCATE|ALL)[^;]*TO service_role/);
+  });
+
+  it("the quota windows count a timestamp the caller cannot choose", () => {
+    expect((up.match(/NEW\.created_at := now\(\);/g) ?? []).length).toBe(3);
+  });
+
+  it("a purge consumes its dry run once and only with the windows it reported", () => {
+    expect(up).toMatch(/wf_retention_run_one_purge_per_dry/);
+    expect(up).toMatch(
+      /r\.windows = public\.wf_retention_windows\(public\.wf_org_limits_effective\(v_org\)\)/,
+    );
+  });
+
   it("every new table has forced row security", () => {
     const tables = [...up.matchAll(/CREATE TABLE public\.(\w+)/g)].map((m) => m[1]);
     expect(tables.sort()).toEqual(

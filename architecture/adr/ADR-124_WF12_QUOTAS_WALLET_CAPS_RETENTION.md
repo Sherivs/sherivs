@@ -99,15 +99,42 @@ WF-08 deferred retention to this mission.
     that moment. Each pass takes at most 5,000 rows per class and says when it was cut short.
 13. **A person sees counts before anything is deleted.** `wf_retention_run_manual` (needs `workflows.manage`)
     defaults to a dry run. A purge must name a completed dry run of the same organization from the last 24
-    hours, or it is refused (`wf12:dry_run_required`).
+    hours, made with the windows still in force, and not used before, or it is refused
+    (`wf12:dry_run_required`). The purge row records `dry_run_id` and a unique index lets one dry run
+    authorize one purge; the check runs under the organization's retention lock.
 14. **Scheduled purge is opt-in.** `wf_retention_run_scheduled` only touches organizations with
-    `retention_auto_purge` on, at most once a day each, with no person as actor. It is called by
+    `retention_auto_purge` on, at most once a day each, with no person as actor. One organization failing rolls
+    only that organization back; it is reported as `failed` with its SQLSTATE only, audited as
+    `workflow.retention.failed`, and the others still run (a failed organization has no log row, so the next
+    call tries it again). It is called by
     `/api/public/cron/workflow-retention` (bearer `CRON_SECRET`, `WORKFLOWS_ENABLED` gate). The Cloudflare
     cron worker is NOT changed here; scheduling it is a founder decision.
 15. **Audit.** Every dry run, purge and refusal writes `workflow.retention.dry_run`, `.purge` or `.refused`
     with counts and windows only, no row content or identifiers. Every limit change writes
     `workflow.wf_org_limits.changed` through the existing settings audit helper. `wf_retention_run` is an
     append-only log of the same.
+
+### Privileges
+
+16a. **Revoked from the service role too.** Supabase's default privileges grant everything a migrator creates to
+`anon`, `authenticated` and `service_role`, so every function and table here is revoked from
+`PUBLIC, anon, authenticated, service_role`, and only then granted back: EXECUTE on the nine functions the
+server or the event run calls (`wf_limits_get`, `wf_limits_update`, `wf_retention_run_manual`,
+`wf_retention_run_scheduled`, `wf_quota_check_action`, `wf_quota_runs_exceeded`, `wf_quota_note_denial`,
+`wf_block_draft_dispatch`, `wf_approved_drafts_ready`) and SELECT on the four tables to the service role.
+The purge passes, the settings helpers and the trigger functions are not callable by any client or
+service-role session; the writes happen inside the `SECURITY DEFINER` functions. The harness reads the ACLs
+from the catalog and CI re-applies WF-08 and WF-12 under those default privileges.
+16b. **Quota timestamps are stamped by the database.** The triggers on runs, drafts and executed records set
+`created_at := now()` on insert, and an executed record's `created_at` cannot be updated, so a caller
+cannot back-date a row out of the quota window.
+16c. **An approved draft that cannot ever execute is parked.** An approved SMS or WhatsApp draft whose rate is
+still undecided (or whose kind is unknown) was dispatched, refused and noted on every sweep.
+`wf_block_draft_dispatch` (only for `spend_rate_unknown` and `kind_unknown`) writes one
+`draft.dispatch_blocked` timeline event with the code and takes the draft off the sweep's work list
+(`wf_approved_drafts_ready`, replaced with WF-08's body plus that condition) for 24 hours. After a day it is
+looked at once more, so a decided price releases it without anyone touching the draft. The run's own
+deadline still ends a run whose draft stays parked.
 
 ### Surface and authority
 
@@ -130,6 +157,8 @@ WF-08 deferred retention to this mission.
 
 ## Consequences
 
+- Parked drafts are re-checked once a day rather than being terminal; a terminal state would need a new draft
+  status and a change to WF-06's constraints, which this mission does not make.
 - Old inbound events lose their dedupe keys after the event window; the same source event arriving later
   would be treated as new. Windows are therefore much longer than any source's retry horizon.
 - A dry run reports what is eligible now. Rows become eligible in chains (events, then run, then step), and a
