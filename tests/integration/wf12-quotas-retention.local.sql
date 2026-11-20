@@ -1307,20 +1307,20 @@ BEGIN
     3, 20, 0, wf12t.id('adminA'), now() + interval '1 hour', now(), 'wf12-agent', now() - interval '3 days');
   SELECT * INTO v_run FROM public.wf_run WHERE id = wf12t.id('run_forge');
   INSERT INTO public.wf_action_draft (org_id, run_id, step_run_id, kind, category, template_ref, recipient_ids, idempotency_key, created_at)
-  VALUES (v_run.org_id, v_run.id, wf12t.id('step_forge_s'), 'email', 'communication', 'notice.a', wf12t.rids(1), 'wf12-forged-draft', now() - interval '3 days');
+  VALUES (v_run.org_id, v_run.id, wf12t.id('step_forge_s'), 'email', 'communication', 'notice.a', wf12t.rids(1), 'wf12-forged-d1', now() - interval '3 days');
   INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, kind, category, template_ref, recipient_ids,
     broker_decision_id, idempotency_key, created_at)
   VALUES (v_run.org_id, v_run.id, wf12t.id('step_forge_s'), 'email', 'communication', 'notice.a', wf12t.rids(1),
-    wf12t.decision(v_run.org_id, 'email', 'wf12-forged-out'), 'wf12-forged-out', now() - interval '3 days');
+    wf12t.decision(v_run.org_id, 'email', 'wf12-forged-o1'), 'wf12-forged-o1', now() - interval '3 days');
 END $$;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA wf12t TO anon, authenticated, service_role;
 SELECT wf12t.forge_created();
 SELECT wf12t.expect_true('a run, a draft and an executed record inserted with a created_at three days ago are stamped with now',
   (SELECT created_at > now() - interval '1 minute' FROM public.wf_run WHERE id = wf12t.id('run_forged'))
-  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_draft WHERE idempotency_key = 'wf12-forged-draft')
-  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_sandbox_outbox WHERE idempotency_key = 'wf12-forged-out'));
+  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_draft WHERE idempotency_key = 'wf12-forged-d1')
+  AND (SELECT created_at > now() - interval '1 minute' FROM public.wf_action_sandbox_outbox WHERE idempotency_key = 'wf12-forged-o1'));
 SELECT wf12t.expect_error('the stamp of an executed record cannot be moved later',
-  $q$UPDATE public.wf_action_sandbox_outbox SET created_at = created_at - interval '3 days' WHERE idempotency_key = 'wf12-forged-out'$q$, '42501', 'immutable');
+  $q$UPDATE public.wf_action_sandbox_outbox SET created_at = created_at - interval '3 days' WHERE idempotency_key = 'wf12-forged-o1'$q$, '42501', 'immutable');
 
 -- An approved draft that can never execute is parked once a day, with a clear code, and re-listed after that.
 SELECT wf12t.old_approval('pk', 'forge', 'forge_s', 'approved', 0);
