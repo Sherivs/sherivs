@@ -1,6 +1,15 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
-import { Bell, ClipboardCheck, History, LogOut, Menu, Settings2, Sparkles } from "lucide-react";
+import {
+  Bell,
+  ClipboardCheck,
+  Gauge,
+  History,
+  LogOut,
+  Menu,
+  Settings2,
+  Sparkles,
+} from "lucide-react";
 import { useApp } from "@/contexts/app-context";
 import { refreshPushTokenIfGranted, registerOfflineServiceWorker } from "@/lib/push-client";
 import { SHELL_ACCOUNT_NAV } from "@/lib/shell/account";
@@ -10,6 +19,7 @@ import {
   APP_SHELL_HOME,
   APP_SHELL_NOTIFICATIONS,
   APP_SHELL_PROFILE,
+  APP_SHELL_WORKFLOW_LIMITS,
   APP_SHELL_WORKFLOW_RUNS,
 } from "@/lib/shell/paths";
 import {
@@ -362,6 +372,19 @@ function ShellChrome({ children }: { children: ReactNode }) {
                   <History />
                 </ShellGlassIcon>
                 Workflow runs
+              </button>
+            ) : null}
+            {app.profile ? (
+              <button
+                type="button"
+                className={`app-shell-drawer-item${path === APP_SHELL_WORKFLOW_LIMITS ? " is-active" : ""}`}
+                onClick={() => go(APP_SHELL_WORKFLOW_LIMITS, "workflow-limits")}
+                data-testid="workflow-limits-link"
+              >
+                <ShellGlassIcon active={path === APP_SHELL_WORKFLOW_LIMITS}>
+                  <Gauge />
+                </ShellGlassIcon>
+                Workflow limits
               </button>
             ) : null}
             {app.profile ? (

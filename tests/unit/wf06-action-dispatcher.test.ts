@@ -84,6 +84,7 @@ function dispatcher(overrides: Partial<WorkflowActionDispatcherPorts> = {}, hasB
     resolveRecipients: async (_org, ids) => ids,
     registeredWebhook: async () => null,
     brokerContext: async () => "context",
+    quotaCheck: async () => ({ allowed: true, code: null }),
     createDraft: async (input) => {
       drafts.push(input);
     },

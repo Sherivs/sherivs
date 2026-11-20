@@ -334,7 +334,7 @@ SELECT wf07t.mkdraft('rj', 'rj', 'in_app', 'safeguarding', 'notice.a');
 SELECT wf07t.mkdraft('ex', 'ex', 'in_app', 'communication', 'notice.a');
 SELECT wf07t.mkdraft('rc', 'rc', 'in_app', 'communication', 'notice.a');
 SELECT wf07t.mkdraft('cp', 'cp', 'in_app', 'money_movement', 'notice.a');
-SELECT wf07t.mkdraft('ms', 'ms', 'sms', 'mass_message', 'attendance.notice', 26, NULL, 'minor_sensitive');
+SELECT wf07t.mkdraft('ms', 'ms', 'email', 'mass_message', 'attendance.notice', 26, NULL, 'minor_sensitive');
 SELECT wf07t.mkdraft('tm', 'tm', 'in_app', 'communication', 'missing.tpl');
 SELECT wf07t.mkdraft('cr', 'cr', 'in_app', 'credential_change', 'notice.a');
 SELECT wf07t.mkdraft('ob', 'ob', 'in_app', 'communication', 'notice.a');

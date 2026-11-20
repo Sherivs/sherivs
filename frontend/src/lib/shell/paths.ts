@@ -16,6 +16,7 @@ export const APP_SHELL_NOTIFICATIONS = "/home/notifications";
 export const APP_SHELL_COMMUNICATIONS = "/home/s/communications";
 export const APP_SHELL_APPROVALS = "/home/s/approvals";
 export const APP_SHELL_WORKFLOW_RUNS = "/home/s/workflow-runs";
+export const APP_SHELL_WORKFLOW_LIMITS = "/home/s/workflow-limits";
 
 export function appShellSectionPath(key: string): string {
   return `${APP_SHELL_HOME}/s/${encodeURIComponent(key)}`;

@@ -86,6 +86,8 @@ const DOCUMENTED_EXEMPT: Readonly<Record<string, string>> = {
     "permission-based, not role-name-based (WF-07, ADR-122): every call passes the verified session user to SECURITY DEFINER functions that check workflows.approve, requester and author separation, one vote each and the content digest; there is no school-admin role check and none is wanted",
   "workflow-run-history.functions.ts":
     "permission-based, not role-name-based (WF-08, ADR-123): every call passes the verified session user to SECURITY DEFINER functions that check workflows.view, workflows.run or workflows.manage for that person's own organisation, redact by allow-list, and make retry and cancel idempotent and audited; there is no school-admin role check and none is wanted",
+  "workflow-limits.functions.ts":
+    "permission-based, not role-name-based (WF-12, ADR-124): every call passes the verified session user to SECURITY DEFINER functions that check workflows.view or workflows.manage for that person's own organisation, validate against fixed safe bounds, require a dry run before a purge and audit every change; there is no school-admin role check and none is wanted",
 };
 
 /** Inline pure school-admin gate detectors (both dialects in use). */

@@ -171,6 +171,44 @@ If a retry misbehaves, the existing kill switch applies unchanged. For schema ro
 rollback after the kill switch; it refuses to run while any retry run exists (cancel or leave them, they
 are history) and must be applied before the WF-07 rollback.
 
+## Limits, wallet caps and retention (WF-12)
+
+Origin: `database/supabase/migrations/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql` and
+`architecture/adr/ADR-124_WF12_QUOTAS_WALLET_CAPS_RETENTION.md`. Not applied to any hosted database by the
+mission that wrote it; the lead applies it to staging after WF-08. The number `20261117000960` is free on
+every branch checked; `..001000` is used by other PRs.
+
+People with `workflows.view` open **Workflow limits** (`/home/s/workflow-limits`) to see usage against the
+limits, what was refused in the last 24 hours and the retention windows. Changing anything needs
+`workflows.manage`. An organization with no saved settings uses the platform defaults: 500 runs a day, 100
+steps a run, 200 drafts waiting, and per hour email 100, in-app 300, task 300, wait 300, webhook 60, SMS 0,
+WhatsApp 0.
+
+- **Over a quota** the action or run waits or is refused; nothing is dropped. An event over the daily run
+  quota stays pending and is retried every five minutes. An action over the hourly quota fails its step
+  with `workflow_quota_actions_per_hour` and follows the normal step retry rules.
+- **Spend caps stay at zero** and cannot be raised until the SMS and WhatsApp rates are decided and the
+  ceiling function is replaced. SMS and WhatsApp executed records are refused while no rate is decided.
+  Email and in-app cost nothing. Nothing here moves money.
+- **Retention** removes history past its window. Run a dry run first: it counts what a purge would remove and
+  deletes nothing. A purge must name a dry run from the last 24 hours. Pending approvals, active runs, audit
+  records and the broker ledger are never removed, and an active legal hold refuses the purge.
+- **Automatic purge** is off. To enable it for an organization turn on "Purge automatically" in the screen;
+  it runs only when `/api/public/cron/workflow-retention` is called. The Cloudflare cron worker does not
+  call it yet (founder decision).
+
+Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox`:
+
+1. As a person with `workflows.view` only, open the screen: the fields are disabled and there is no Save.
+2. As a person with `workflows.manage`, set runs per day to 2 and emit three events: two runs start, the
+   third event stays `pending` with `attempts` unchanged, and starts after the limit is raised.
+3. Run a dry run on an organization with old history. Check the counts, confirm nothing was deleted, then
+   purge. The audit chain holds `workflow.retention.dry_run` and `workflow.retention.purge` with counts only.
+4. Confirm a draft waiting for approval and its run were not touched, however old.
+
+Rollback: `database/supabase/rollbacks/20261117000960_...sql` refuses once a purge was logged or a cost was
+recorded. Apply it after the kill switch and before the WF-08 rollback.
+
 ## Kill switch and rollback
 
 To stop new emission and processing, set `WORKFLOW_DELIVERY_MODE=off` first, then set the pilot
