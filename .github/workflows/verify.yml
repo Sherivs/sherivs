@@ -335,7 +335,9 @@ jobs:
           psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ainpriv"
           psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ainpriv TEMPLATE postgres"
           psql "$SU/ainpriv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ainpriv SET search_path = public, extensions"
-          # AIN-02 sits on top of AIN-01, so it is undone first and applied again last.
+          # AIN-02 and AIN-03 sit on top of AIN-01 (AIN-03 has a foreign key to wf_agent), so they are undone first and
+          # applied again last.
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
           psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
           psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000970_sherivs_ain01_agents_as_engine_actors.sql
           for kind in TABLES FUNCTIONS SEQUENCES; do
@@ -343,6 +345,7 @@ jobs:
           done
           psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000970_sherivs_ain01_agents_as_engine_actors.sql
           psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
           psql "$SU/ainpriv" -v ON_ERROR_STOP=1 -f tests/integration/ain01-agent-actors.local.sql 2>&1 | tee /tmp/ain01-priv.out
           ! grep -Fq 'AIN01 FAIL' /tmp/ain01-priv.out
           grep -Eq 'AIN01 ALL PASS: [0-9]+ checks' /tmp/ain01-priv.out
@@ -386,6 +389,37 @@ jobs:
             -f tests/integration/ain02-autonomy-gate.local.sql 2>&1 | tee /tmp/ain02-autonomy-gate.out
           ! grep -Fq 'AIN02 FAIL' /tmp/ain02-autonomy-gate.out
           grep -Eq 'AIN02 ALL PASS: [0-9]+ checks' /tmp/ain02-autonomy-gate.out
+      - name: AIN-03 privileges under Supabase default privileges (scratch database, AIN-03 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01 and AIN-02: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-03, switch those defaults on for the migrator, apply
+          # AIN-03 again, run its harness and assert the exact ACLs (the service role may call six functions and has no
+          # privilege at all on wf_memory_item).
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain3priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain3priv TEMPLATE postgres"
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain3priv SET search_path = public, extensions"
+          psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -f tests/integration/ain03-tenant-memory.local.sql 2>&1 | tee /tmp/ain03-priv.out
+          ! grep -Fq 'AIN03 FAIL' /tmp/ain03-priv.out
+          grep -Eq 'AIN03 ALL PASS: [0-9]+ checks' /tmp/ain03-priv.out
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -f tests/integration/ain03-default-privileges.local.sql 2>&1 | tee /tmp/ain03-privacl.out
+          grep -Eq 'AIN03-PRIV ALL PASS: [0-9]+ checks' /tmp/ain03-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain3priv"
+      - name: AIN-03 tenant memory and context scopes (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain03-tenant-memory.local.sql 2>&1 | tee /tmp/ain03-tenant-memory.out
+          ! grep -Fq 'AIN03 FAIL' /tmp/ain03-tenant-memory.out
+          grep -Eq 'AIN03 ALL PASS: [0-9]+ checks' /tmp/ain03-tenant-memory.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -431,6 +465,8 @@ jobs:
           grep -Eq 'AIN01-E2E RESULT: budget=5 concurrent=20 inserted=5 refused=15 over_budget=0 replay_refused=0 paused_inserted=0 ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_live=0 dup=0$' /tmp/ain01-e2e.out
           node load/ain02-autonomy-e2e.mjs 2>&1 | tee /tmp/ain02-e2e.out
           grep -Eq 'AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0$' /tmp/ain02-e2e.out
+          node load/ain03-memory-e2e.mjs 2>&1 | tee /tmp/ain03-e2e.out
+          grep -Eq 'AIN03-E2E RESULT: proposals=60 proposed=50 refused=10 over_cap=0 same_key=30 same_key_inserted=1 puts=20 live_after_puts=1 version_after_puts=20 org_scope_writes=320 org_scope_inserted=300 org_scope_refused=20 accepts=10 accepted=1 mixed_winners=1 purged=10 writes_during_purge=15 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0$' /tmp/ain03-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

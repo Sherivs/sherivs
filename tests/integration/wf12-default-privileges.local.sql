@@ -3,7 +3,7 @@
 -- Run it on a database whose migrator has Supabase's default privileges in force (ALTER DEFAULT PRIVILEGES ... GRANT ALL
 -- ... TO anon, authenticated, service_role), after WF-08 and WF-12 were re-applied under them (see verify.yml, "privileges
 -- under Supabase default privileges"). Under those defaults a function a migration forgets to revoke is executable by
--- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08, WF-12 and AIN-02 alike.
+-- service_role; this file turns that into a failure, for WF-03, WF-05, WF-06, WF-07, WF-08, WF-12, AIN-01, AIN-02 and AIN-03 alike.
 -- The list is the set the server legitimately calls; adding a server-called function means adding it here on purpose.
 CREATE TEMP TABLE wf12_priv_allowed (sig text PRIMARY KEY);
 INSERT INTO wf12_priv_allowed VALUES
@@ -27,6 +27,12 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_inbox_list(p_actor uuid, p_status text, p_limit integer)'),
   ('wf_limits_get(p_actor uuid)'),
   ('wf_limits_update(p_actor uuid, p_patch jsonb)'),
+  ('wf_memory_agent_propose(p_run uuid, p_scope_kind text, p_scope_ref text, p_key text, p_value jsonb, p_ttl_days integer)'),
+  ('wf_memory_agent_read(p_run uuid, p_scope_kind text, p_limit integer)'),
+  ('wf_memory_decide(p_actor uuid, p_item uuid, p_decision text)'),
+  ('wf_memory_purge_expired(p_max_rows integer)'),
+  ('wf_memory_put(p_actor uuid, p_scope_kind text, p_scope_ref text, p_key text, p_class text, p_value jsonb, p_ttl_days integer, p_ai_readable boolean)'),
+  ('wf_memory_retire(p_actor uuid, p_item uuid)'),
   ('wf_note_draft_dispatch_failure(p_org uuid, p_draft uuid)'),
   ('wf_persist_step_transition(p_step uuid, p_lease_owner text, p_attempt integer, p_step_status text, p_retry_at timestamp with time zone, p_error_code text, p_run_status text, p_run_finished_at timestamp with time zone, p_run_state jsonb, p_next_step_key text, p_next_iteration integer, p_next_kind text, p_next_action_class text, p_next_budget_units integer, p_next_idempotency_key text, p_next_max_attempts integer, p_next_timeout_seconds integer)'),
   ('wf_quota_check_action(p_org uuid, p_kind text, p_recipients integer, p_mode text, p_run uuid)'),
