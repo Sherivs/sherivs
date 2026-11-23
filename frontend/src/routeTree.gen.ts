@@ -51,6 +51,7 @@ import { Route as siteTrustRouteImport } from './routes/(site)/trust'
 import { Route as siteVerifyTranscriptRouteImport } from './routes/(site)/verify-transcript'
 import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known/apple-app-site-association'
 import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known/assetlinks[.]json'
+import { Route as DotwellKnownWebauthnRouteImport } from './routes/[.]well-known/webauthn'
 import { Route as ApiWebauthnRouteImport } from './routes/api/webauthn'
 import { Route as ConsoleIndexRouteImport } from './routes/console/index'
 import { Route as ConsoleAccountRouteImport } from './routes/console/account'
@@ -355,6 +356,11 @@ const DotwellKnownAssetlinksDotjsonRoute =
     path: '/.well-known/assetlinks.json',
     getParentRoute: () => rootRouteImport,
   } as any)
+const DotwellKnownWebauthnRoute = DotwellKnownWebauthnRouteImport.update({
+  id: '/.well-known/webauthn',
+  path: '/.well-known/webauthn',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWebauthnRoute = ApiWebauthnRouteImport.update({
   id: '/api/webauthn',
   path: '/api/webauthn',
@@ -886,6 +892,7 @@ export interface FileRoutesByFullPath {
   '/verify-transcript': typeof siteVerifyTranscriptRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/.well-known/webauthn': typeof DotwellKnownWebauthnRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
   '/console/alerts': typeof ConsoleAlertsRoute
@@ -1008,6 +1015,7 @@ export interface FileRoutesByTo {
   '/verify-transcript': typeof siteVerifyTranscriptRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/.well-known/webauthn': typeof DotwellKnownWebauthnRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
   '/console/alerts': typeof ConsoleAlertsRoute
@@ -1145,6 +1153,7 @@ export interface FileRoutesById {
   '/(site)/verify-transcript': typeof siteVerifyTranscriptRoute
   '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
   '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
+  '/.well-known/webauthn': typeof DotwellKnownWebauthnRoute
   '/api/webauthn': typeof ApiWebauthnRoute
   '/console/account': typeof ConsoleAccountRoute
   '/console/alerts': typeof ConsoleAlertsRoute
@@ -1282,6 +1291,7 @@ export interface FileRouteTypes {
     | '/verify-transcript'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
+    | '/.well-known/webauthn'
     | '/api/webauthn'
     | '/console/account'
     | '/console/alerts'
@@ -1404,6 +1414,7 @@ export interface FileRouteTypes {
     | '/verify-transcript'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
+    | '/.well-known/webauthn'
     | '/api/webauthn'
     | '/console/account'
     | '/console/alerts'
@@ -1540,6 +1551,7 @@ export interface FileRouteTypes {
     | '/(site)/verify-transcript'
     | '/.well-known/apple-app-site-association'
     | '/.well-known/assetlinks.json'
+    | '/.well-known/webauthn'
     | '/api/webauthn'
     | '/console/account'
     | '/console/alerts'
@@ -1647,6 +1659,7 @@ export interface RootRouteChildren {
   WorkspacePreviewRoute: typeof WorkspacePreviewRoute
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
+  DotwellKnownWebauthnRoute: typeof DotwellKnownWebauthnRoute
   ApiWebauthnRoute: typeof ApiWebauthnRoute
   PagesSlugRoute: typeof PagesSlugRoute
   PostsPostRoute: typeof PostsPostRoute
@@ -1963,6 +1976,13 @@ declare module '@tanstack/react-router' {
       path: '/.well-known/assetlinks.json'
       fullPath: '/.well-known/assetlinks.json'
       preLoaderRoute: typeof DotwellKnownAssetlinksDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/webauthn': {
+      id: '/.well-known/webauthn'
+      path: '/.well-known/webauthn'
+      fullPath: '/.well-known/webauthn'
+      preLoaderRoute: typeof DotwellKnownWebauthnRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/webauthn': {
@@ -2969,6 +2989,7 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
+  DotwellKnownWebauthnRoute: DotwellKnownWebauthnRoute,
   ApiWebauthnRoute: ApiWebauthnRoute,
   PagesSlugRoute: PagesSlugRoute,
   PostsPostRoute: PostsPostRoute,
