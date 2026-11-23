@@ -41,7 +41,16 @@ const PLATFORM_HOSTS = [
   "app.universalschoolos.com",
 ];
 
-const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "internal", "console", "gov"]);
+const RESERVED_SUBS = new Set([
+  "www",
+  "app",
+  "api",
+  "admin",
+  "dashboard",
+  "internal",
+  "console",
+  "gov",
+]);
 
 /**
  * Root domains under which the first label is a Sherivs organization slug

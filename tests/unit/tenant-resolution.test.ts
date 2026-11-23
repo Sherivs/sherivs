@@ -72,16 +72,37 @@ describe("classifyTenantHost", () => {
       slug: "lincoln",
     });
     // Outside the platform roots a multi-label host is the school's own domain, not a slug.
-    expect(classifyTenantHost("acme.example.com")).toEqual({ kind: "custom-domain", domain: "acme.example.com" });
+    expect(classifyTenantHost("acme.example.com")).toEqual({
+      kind: "custom-domain",
+      domain: "acme.example.com",
+    });
   });
 
   it("classifies Nigerian school domains as custom domains, never as bogus slugs (SHERIVS-029)", () => {
-    expect(classifyTenantHost("portal.kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
-    expect(classifyTenantHost("kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "kingsschool.sch.ng" });
-    expect(classifyTenantHost("unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "unimaid.edu.ng" });
-    expect(classifyTenantHost("portal.unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "portal.unimaid.edu.ng" });
-    expect(classifyTenantHost("www.kingsschool.com.ng")).toEqual({ kind: "custom-domain", domain: "www.kingsschool.com.ng" });
-    expect(classifyTenantHost("PORTAL.KingsSchool.SCH.NG")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
+    expect(classifyTenantHost("portal.kingsschool.sch.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.kingsschool.sch.ng",
+    });
+    expect(classifyTenantHost("kingsschool.sch.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "kingsschool.sch.ng",
+    });
+    expect(classifyTenantHost("unimaid.edu.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "unimaid.edu.ng",
+    });
+    expect(classifyTenantHost("portal.unimaid.edu.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.unimaid.edu.ng",
+    });
+    expect(classifyTenantHost("www.kingsschool.com.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "www.kingsschool.com.ng",
+    });
+    expect(classifyTenantHost("PORTAL.KingsSchool.SCH.NG")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.kingsschool.sch.ng",
+    });
   });
 
   it("classifies non-subdomain hostnames as tenant custom domains", () => {
