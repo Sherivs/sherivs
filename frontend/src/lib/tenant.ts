@@ -9,9 +9,9 @@
  *      HOST; the caller looks the organization up by its registered domain
  *      (`schools.domain`, Plane B: "custom-domain.example").
  *
- * Platform hosts (sherivs.com, www, app, console, legacy universalschoolos.com
- * hosts, localhost) resolve to `platform` — meaning the visitor landed on a
- * Sherivs platform host, not a tenant site.
+ * Platform hosts (sherivs.com, www, sherivs.ng, www.sherivs.ng, app, console,
+ * legacy universalschoolos.com hosts, localhost) resolve to `platform` —
+ * meaning the visitor landed on a Sherivs platform host, not a tenant site.
  *
  * Generated Vercel preview hosts (`*.vercel.app`, `*.vercel.sh`) are also
  * never tenants.
@@ -30,6 +30,8 @@ const PLATFORM_HOSTS = [
   "127.0.0.1",
   "sherivs.com",
   "www.sherivs.com",
+  "sherivs.ng",
+  "www.sherivs.ng",
   "app.sherivs.com",
   "console.sherivs.com",
   "internal.sherivs.com",
@@ -48,7 +50,7 @@ const RESERVED_SUBS = new Set(["www", "app", "api", "admin", "dashboard", "inter
  * through `resolve_school_by_host` (verified domains only). Multi-label public
  * suffixes such as .sch.ng / .edu.ng therefore never yield a bogus slug.
  */
-const PLATFORM_ROOT_DOMAINS = ["sherivs.com", "universalschoolos.com"];
+const PLATFORM_ROOT_DOMAINS = ["sherivs.com", "sherivs.ng", "universalschoolos.com"];
 /** Government console hosts (<state>.gov.sherivs.com) are never school tenants. */
 const GOV_ROOT = "gov.sherivs.com";
 
