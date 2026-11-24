@@ -102,6 +102,7 @@ import { Route as siteSolutionsIndexRouteImport } from './routes/(site)/solution
 import { Route as siteSolutionsEducationRouteImport } from './routes/(site)/solutions.education'
 import { Route as siteSolutionsEnterpriseRouteImport } from './routes/(site)/solutions.enterprise'
 import { Route as siteSolutionsResearchRouteImport } from './routes/(site)/solutions.research'
+import { Route as ApiPublicMobileVersionRouteImport } from './routes/api/public/mobile-version'
 import { Route as ApiPublicWebauthnRouteImport } from './routes/api/public/webauthn'
 import { Route as ConsoleActivityIndexRouteImport } from './routes/console/activity/index'
 import { Route as ConsoleActivityAdminRouteImport } from './routes/console/activity/admin'
@@ -613,6 +614,11 @@ const siteSolutionsResearchRoute = siteSolutionsResearchRouteImport.update({
   path: '/research',
   getParentRoute: () => siteSolutionsRoute,
 } as any)
+const ApiPublicMobileVersionRoute = ApiPublicMobileVersionRouteImport.update({
+  id: '/api/public/mobile-version',
+  path: '/api/public/mobile-version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicWebauthnRoute = ApiPublicWebauthnRouteImport.update({
   id: '/api/public/webauthn',
   path: '/api/public/webauthn',
@@ -932,6 +938,7 @@ export interface FileRoutesByFullPath {
   '/solutions/education': typeof siteSolutionsEducationRoute
   '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/mobile-version': typeof ApiPublicMobileVersionRoute
   '/api/public/webauthn': typeof ApiPublicWebauthnRoute
   '/console/activity/admin': typeof ConsoleActivityAdminRoute
   '/console/activity/billing': typeof ConsoleActivityBillingRoute
@@ -1055,6 +1062,7 @@ export interface FileRoutesByTo {
   '/solutions/education': typeof siteSolutionsEducationRoute
   '/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/mobile-version': typeof ApiPublicMobileVersionRoute
   '/api/public/webauthn': typeof ApiPublicWebauthnRoute
   '/console/activity/admin': typeof ConsoleActivityAdminRoute
   '/console/activity/billing': typeof ConsoleActivityBillingRoute
@@ -1193,6 +1201,7 @@ export interface FileRoutesById {
   '/(site)/solutions/education': typeof siteSolutionsEducationRoute
   '/(site)/solutions/enterprise': typeof siteSolutionsEnterpriseRoute
   '/(site)/solutions/research': typeof siteSolutionsResearchRoute
+  '/api/public/mobile-version': typeof ApiPublicMobileVersionRoute
   '/api/public/webauthn': typeof ApiPublicWebauthnRoute
   '/console/activity/admin': typeof ConsoleActivityAdminRoute
   '/console/activity/billing': typeof ConsoleActivityBillingRoute
@@ -1331,6 +1340,7 @@ export interface FileRouteTypes {
     | '/solutions/education'
     | '/solutions/enterprise'
     | '/solutions/research'
+    | '/api/public/mobile-version'
     | '/api/public/webauthn'
     | '/console/activity/admin'
     | '/console/activity/billing'
@@ -1454,6 +1464,7 @@ export interface FileRouteTypes {
     | '/solutions/education'
     | '/solutions/enterprise'
     | '/solutions/research'
+    | '/api/public/mobile-version'
     | '/api/public/webauthn'
     | '/console/activity/admin'
     | '/console/activity/billing'
@@ -1591,6 +1602,7 @@ export interface FileRouteTypes {
     | '/(site)/solutions/education'
     | '/(site)/solutions/enterprise'
     | '/(site)/solutions/research'
+    | '/api/public/mobile-version'
     | '/api/public/webauthn'
     | '/console/activity/admin'
     | '/console/activity/billing'
@@ -1663,6 +1675,7 @@ export interface RootRouteChildren {
   ApiWebauthnRoute: typeof ApiWebauthnRoute
   PagesSlugRoute: typeof PagesSlugRoute
   PostsPostRoute: typeof PostsPostRoute
+  ApiPublicMobileVersionRoute: typeof ApiPublicMobileVersionRoute
   ApiPublicWebauthnRoute: typeof ApiPublicWebauthnRoute
   ApiPublicAuditPasswordResetRoute: typeof ApiPublicAuditPasswordResetRoute
   ApiPublicCronIntegrationsSyncRoute: typeof ApiPublicCronIntegrationsSyncRoute
@@ -2335,6 +2348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof siteSolutionsResearchRouteImport
       parentRoute: typeof siteSolutionsRoute
     }
+    '/api/public/mobile-version': {
+      id: '/api/public/mobile-version'
+      path: '/api/public/mobile-version'
+      fullPath: '/api/public/mobile-version'
+      preLoaderRoute: typeof ApiPublicMobileVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/webauthn': {
       id: '/api/public/webauthn'
       path: '/api/public/webauthn'
@@ -2993,6 +3013,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiWebauthnRoute: ApiWebauthnRoute,
   PagesSlugRoute: PagesSlugRoute,
   PostsPostRoute: PostsPostRoute,
+  ApiPublicMobileVersionRoute: ApiPublicMobileVersionRoute,
   ApiPublicWebauthnRoute: ApiPublicWebauthnRoute,
   ApiPublicAuditPasswordResetRoute: ApiPublicAuditPasswordResetRoute,
   ApiPublicCronIntegrationsSyncRoute: ApiPublicCronIntegrationsSyncRoute,
