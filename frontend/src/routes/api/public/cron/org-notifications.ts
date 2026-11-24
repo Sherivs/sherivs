@@ -1,6 +1,7 @@
 /**
  * Scheduled job endpoint (ENGINE-23): send the organization notification outbox. Call it every
- * five minutes with `Authorization: ****** from Vercel Cron, the n8n server, or
+ * five minutes with an `Authorization` header whose value is the word Bearer, one space, then
+ * the CRON_SECRET value, from Vercel Cron, the n8n server, or
  * any scheduler. Returns 503 until CRON_SECRET is set and the ENGINE-20 tables exist.
  *
  * Email goes through the Resend adapter and needs RESEND_API_KEY and RESEND_FROM_ADDRESS; without
@@ -110,8 +111,13 @@ async function pollExpoReceipts(supabaseAdmin: unknown): Promise<Response> {
     checked += polled.checkedReceiptIds.length;
     if (polled.deviceIdsToPrune.length) {
       const pruneReason = await revokeMobilePushDevicesById(supabaseAdmin, polled.deviceIdsToPrune);
-      if (pruneReason) pruneErrors.push(pruneReason);
-      else pruned += polled.deviceIdsToPrune.length;
+      if (pruneReason) {
+        pruneErrors.push(pruneReason);
+        console.warn("push_prune_failed", {
+          reason: pruneReason,
+          count: polled.deviceIdsToPrune.length,
+        });
+      } else pruned += polled.deviceIdsToPrune.length;
     }
 
     const checkedSet = new Set(polled.checkedReceiptIds);

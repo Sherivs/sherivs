@@ -9,6 +9,9 @@ function createSupabase(data: {
   users?: Row[];
   notification_preferences?: Row[];
   mobile_push_devices?: Row[];
+  updateErrorCodes?: Partial<
+    Record<"users" | "notification_preferences" | "mobile_push_devices", string>
+  >;
 }) {
   const updates: Array<{ table: string; values: Row; ids: unknown[] }> = [];
   const tables = {
@@ -16,6 +19,7 @@ function createSupabase(data: {
     notification_preferences: data.notification_preferences ?? [],
     mobile_push_devices: data.mobile_push_devices ?? [],
   };
+  const updateErrorCodes = data.updateErrorCodes ?? {};
 
   const makeQuery = (table: keyof typeof tables) => {
     const filters: Array<(row: Row) => boolean> = [];
@@ -51,8 +55,14 @@ function createSupabase(data: {
       order() {
         return query;
       },
-      then(resolve: (result: { data: Row[]; error: null }) => unknown) {
+      then(
+        resolve: (result: {
+          data: Row[];
+          error: { code: string; message: string } | null;
+        }) => unknown,
+      ) {
         const rows = tables[table].filter((row) => filters.every((f) => f(row)));
+        const updateCode = updateValues ? updateErrorCodes[table] : undefined;
         if (updateValues) {
           updates.push({
             table,
@@ -60,7 +70,10 @@ function createSupabase(data: {
             ids: rows.map((row) => row.id ?? row.user_id),
           });
         }
-        return Promise.resolve({ data: rows, error: null }).then(resolve);
+        return Promise.resolve({
+          data: rows,
+          error: updateCode ? { code: updateCode, message: updateCode } : null,
+        }).then(resolve);
       },
     };
 
@@ -255,6 +268,52 @@ describe("PUSH-02 delivery orchestration", () => {
 
     const deviceUpdate = supabase.updates.find((entry) => entry.table === "mobile_push_devices");
     expect(deviceUpdate?.ids).toEqual(["d1"]);
+  });
+
+  it("returns pruneError and logs one token-safe warning when prune update fails", async () => {
+    process.env.PUSH_EXPO_ENABLED = "true";
+    const fetchMock = vi.fn(async () =>
+      Response.json({
+        data: [{ status: "error", details: { error: "DeviceNotRegistered" } }],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    const supabase = createSupabase({
+      users: [{ id: "u1", push_token: null }],
+      notification_preferences: [{ user_id: "u1", push_messages: true }],
+      mobile_push_devices: [
+        {
+          id: "d1",
+          user_id: "u1",
+          expo_push_token: "ExponentPushToken[a]",
+          enabled: true,
+          revoked_at: null,
+        },
+      ],
+      updateErrorCodes: { mobile_push_devices: "42501" },
+    });
+
+    const result = await deliverPushToUsers(supabase as never, ["u1"], {
+      category: "messages",
+      route: "/messages",
+      title: "Hello",
+      body: "World",
+    });
+
+    expect(result.expoAttempted).toBe(1);
+    expect(result.expoDelivered).toBe(0);
+    expect(result.pruneError).toBe("prune_failed:42501");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith("push_prune_failed", {
+      reason: "prune_failed:42501",
+      count: 1,
+    });
+    const warnArgs = JSON.stringify(warn.mock.calls[0]);
+    expect(warnArgs).not.toContain("ExponentPushToken");
+    expect(warnArgs).not.toContain("d1");
+    expect(warnArgs).not.toContain("u1");
   });
 });
 

@@ -96,6 +96,7 @@ export type PushDeliveryResult = {
   delivered: number;
   expired: string[];
   skippedReason?: string;
+  pruneError?: string;
   expoAttempted?: number;
   expoDelivered?: number;
   expoReceipts?: ExpoReceiptEntry[];
@@ -307,12 +308,16 @@ export async function deliverPushToUsers(
       expoResult.deviceIdsToPrune,
     );
     if (pruneReason) {
+      console.warn("push_prune_failed", {
+        reason: pruneReason,
+        count: expoResult.deviceIdsToPrune.length,
+      });
       return {
         ...webResult,
+        pruneError: pruneReason,
         expoAttempted: expoResult.attempted,
         expoDelivered: expoResult.accepted,
         expoReceipts: expoResult.receipts,
-        skippedReason: pruneReason,
       };
     }
   }
