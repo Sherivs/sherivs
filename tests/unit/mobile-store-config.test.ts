@@ -62,7 +62,7 @@ describe("Scholar store config", () => {
     const splash = app.expo.plugins.find(
       (plugin) => Array.isArray(plugin) && plugin[0] === "expo-splash-screen",
     ) as [string, { backgroundColor: string; image: string }] | undefined;
-    expect(splash?.[1].backgroundColor).toBe("#FFFFFF");
+    expect(splash?.[1].backgroundColor).toBe("#0B1F3A");
     expect(splash?.[1].image).toBe("./assets/splash-icon.png");
   });
 
