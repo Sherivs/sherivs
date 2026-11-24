@@ -16,6 +16,7 @@
     "@sherivs/contracts": "file:../packages/contracts",
     "@supabase/supabase-js": "^2.119.0",
     "expo": "~57.0.26",
+    "expo-application": "~57.0.3",
     "expo-constants": "~57.0.20",
     "expo-linking": "~57.0.11",
     "expo-router": "~57.0.24",
