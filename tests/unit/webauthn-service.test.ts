@@ -343,6 +343,35 @@ describe("WebAuthn service ceremonies", () => {
     ).rejects.toMatchObject({ code: "register_failed" });
   });
 
+  it("rejects Android origins during browser authentication", async () => {
+    const { service, store } = harness();
+    const registration = await service.registrationOptions({
+      userId: USER_A,
+      origin: ORIGIN,
+      rateKey: USER_A,
+    });
+    await service.verifyRegistration({
+      userId: USER_A,
+      origin: ORIGIN,
+      rateKey: USER_A,
+      response: registrationResponse(registration.challenge),
+    });
+    const authentication = await service.authenticationOptions({ origin: ORIGIN, rateKey: "ip" });
+
+    await expect(
+      service.verifyAuthentication({
+        origin: ORIGIN,
+        rateKey: "ip",
+        response: assertionResponse(
+          authentication.challenge,
+          store.credentials[0]!.credentialId,
+          USER_A,
+          ANDROID_ORIGIN,
+        ),
+      }),
+    ).rejects.toMatchObject({ code: "auth_failed" });
+  });
+
   it("registers a passkey for the authenticated user and lists it without the public key", async () => {
     const { service } = harness();
     const options = await service.registrationOptions({

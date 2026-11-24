@@ -46,6 +46,7 @@ import type {
   WebAuthnSessionMinter,
   WebAuthnStore,
 } from "./webauthn-store";
+import { nativeCeremonyOrigin } from "./webauthn-relying-party";
 
 export class WebAuthnServiceError extends Error {
   readonly code: WebAuthnPublicErrorCode;
@@ -105,7 +106,7 @@ function verificationOrigins(
   requestedOrigins?: readonly string[],
 ): string[] | null {
   if (requestedOrigins === undefined) return [origin];
-  const nativeOrigin = config.rpID === "localhost" ? "http://localhost" : `https://${config.rpID}`;
+  const nativeOrigin = nativeCeremonyOrigin(config);
   const supportsAndroidNativeOrigin = config.rpID !== "localhost" && origin === nativeOrigin;
   if (
     origin !== nativeOrigin ||

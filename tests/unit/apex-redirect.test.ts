@@ -82,4 +82,24 @@ describe("apex host redirects", () => {
     expect(response.headers.get("Location")).toBe("https://www.sherivs.com/fees?x=1");
     expect(response.headers.get("Strict-Transport-Security")).toContain("max-age=31536000");
   });
+
+  it("passes apex association requests through to the TanStack entry", async () => {
+    let entryLoaded = false;
+    const response = await serveFetch(
+      new Request("https://sherivs.com/.well-known/assetlinks.json"),
+      {},
+      {},
+      {
+        loadEntry: async () => {
+          entryLoaded = true;
+          return { fetch: () => new Response("[]", { status: 200 }) };
+        },
+        startTelemetry: () => ({ end: () => undefined }),
+      },
+    );
+
+    expect(entryLoaded).toBe(true);
+    expect(response.status).toBe(200);
+    expect(response.headers.has("Location")).toBe(false);
+  });
 });
