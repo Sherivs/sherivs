@@ -1,4 +1,4 @@
-# ADR-112: BRAND-01 Mobile Brand Hygiene and EAS Remote Version Source
+# ADR-114: BRAND-01 Mobile Brand Hygiene and EAS Remote Version Source
 
 | Field | Value |
 |---|---|

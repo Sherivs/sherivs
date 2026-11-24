@@ -11,7 +11,8 @@
       "bundleIdentifier": "com.sherivs.scholar",
       "supportsTablet": true,
       "associatedDomains": [
-        "webcredentials:sherivs.com"
+        "webcredentials:sherivs.com",
+        "applinks:app.sherivs.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -30,10 +31,39 @@
           "data": [
             {
               "scheme": "https",
-              "host": "sherivs.com"
+              "host": "app.sherivs.com",
+              "pathPrefix": "/m/"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/home/notifications"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/results"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/fees"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/messages"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/cbt"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "edgeToEdgeEnabled": true

@@ -72,7 +72,9 @@ describe("mobile passkeys", () => {
     const client = { auth: { setSession } } as never;
     await expect(signInWithPasskey(client, env)).resolves.toMatchObject({ access_token: "access" });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe("https://app.sherivs.com/api/public/webauthn");
+    expect(String(fetchImpl.mock.calls[0]?.[0])).toBe(
+      "https://app.sherivs.com/api/public/webauthn",
+    );
     expect(JSON.parse(String(fetchImpl.mock.calls[0]?.[1]?.body))).toEqual({
       action: "authentication.options",
     });

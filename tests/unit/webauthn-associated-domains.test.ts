@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   androidAssetLinks,
+  APP_LINK_PATH_PREFIXES,
   appleAppSiteAssociation,
 } from "../../frontend/src/lib/auth/webauthn-associated-domains";
 import {
@@ -24,6 +25,33 @@ describe("native associated domains", () => {
     ).toEqual(["ABCD123456.com.sherivs.scholar"]);
   });
 
+  it("adds applinks only on app.sherivs.com and preserves apex webcredentials", () => {
+    const env = { WEBAUTHN_APPLE_TEAM_ID: "ABCD123456" };
+    expect(appleAppSiteAssociation(env, "sherivs.com")).toEqual({
+      webcredentials: { apps: ["ABCD123456.com.sherivs.scholar"] },
+    });
+
+    const appHost = appleAppSiteAssociation(env, "app.sherivs.com");
+    expect(appHost.webcredentials.apps).toEqual(["ABCD123456.com.sherivs.scholar"]);
+    expect(appHost.applinks?.details[0]?.components).toEqual([
+      { "/": "/m/*" },
+      ...APP_LINK_PATH_PREFIXES.filter((prefix) => !prefix.endsWith("/")).flatMap((prefix) => [
+        { "/": prefix },
+        { "/": `${prefix}/*` },
+      ]),
+    ]);
+  });
+
+  it("does not add applinks on www or console hosts", () => {
+    const env = { WEBAUTHN_APPLE_TEAM_ID: "ABCD123456" };
+    expect(appleAppSiteAssociation(env, "www.sherivs.com")).toEqual({
+      webcredentials: { apps: ["ABCD123456.com.sherivs.scholar"] },
+    });
+    expect(appleAppSiteAssociation(env, "console.sherivs.com")).toEqual({
+      webcredentials: { apps: ["ABCD123456.com.sherivs.scholar"] },
+    });
+  });
+
   it("advertises no Android apps until SHA-256 fingerprints are configured", () => {
     expect(androidAssetLinks({})).toEqual([]);
     const fingerprint = "AA:".repeat(31) + "AA";
@@ -34,6 +62,32 @@ describe("native associated domains", () => {
     expect(androidAssetLinks({ WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint.toLowerCase() })).toEqual(
       [],
     );
+  });
+
+  it("adds handle_all_urls only on app.sherivs.com", () => {
+    const fingerprint = "AA:".repeat(31) + "AA";
+    const env = { WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint };
+
+    expect(androidAssetLinks(env, "sherivs.com")).toHaveLength(1);
+    expect(androidAssetLinks(env, "sherivs.com")[0]?.relation).toEqual([
+      "delegate_permission/common.get_login_creds",
+    ]);
+
+    const appHost = androidAssetLinks(env, "app.sherivs.com");
+    expect(appHost).toHaveLength(2);
+    expect(appHost[0]?.relation).toEqual(["delegate_permission/common.get_login_creds"]);
+    expect(appHost[1]?.relation).toEqual(["delegate_permission/common.handle_all_urls"]);
+  });
+
+  it("does not add handle_all_urls on www or console hosts", () => {
+    const fingerprint = "AA:".repeat(31) + "AA";
+    const env = { WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint };
+
+    for (const host of ["www.sherivs.com", "console.sherivs.com"]) {
+      const links = androidAssetLinks(env, host);
+      expect(links).toHaveLength(1);
+      expect(links[0]?.relation).toEqual(["delegate_permission/common.get_login_creds"]);
+    }
   });
 });
 
