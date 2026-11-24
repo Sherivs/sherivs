@@ -5,6 +5,7 @@
  */
 
 const BUNDLE_DEFAULT = "com.sherivs.scholar";
+const SHA256_CERT_FINGERPRINT = /^[A-F0-9]{2}(?::[A-F0-9]{2}){31}$/;
 
 function trimList(raw: string | undefined): string[] {
   if (!raw) return [];
@@ -12,6 +13,25 @@ function trimList(raw: string | undefined): string[] {
     .split(",")
     .map((part) => part.trim())
     .filter((part) => part.length > 0 && part.length <= 128);
+}
+
+function androidCertFingerprints(env: Record<string, string | undefined>): string[] {
+  return Array.from(
+    new Set(
+      trimList(env.WEBAUTHN_ANDROID_SHA256_CERTS).filter((value) =>
+        SHA256_CERT_FINGERPRINT.test(value),
+      ),
+    ),
+  );
+}
+
+export function androidApkKeyHashOrigins(
+  env: Record<string, string | undefined> = process.env,
+): string[] {
+  return androidCertFingerprints(env).map((fingerprint) => {
+    const bytes = Buffer.from(fingerprint.replace(/:/g, ""), "hex");
+    return `android:apk-key-hash:${bytes.toString("base64url")}`;
+  });
 }
 
 export function appleAppSiteAssociation(env: Record<string, string | undefined> = process.env): {
@@ -31,9 +51,7 @@ export function androidAssetLinks(env: Record<string, string | undefined> = proc
     sha256_cert_fingerprints: string[];
   };
 }> {
-  const fingerprints = trimList(env.WEBAUTHN_ANDROID_SHA256_CERTS).filter((value) =>
-    /^[A-F0-9]{2}(?::[A-F0-9]{2}){31}$/i.test(value),
-  );
+  const fingerprints = androidCertFingerprints(env);
   if (fingerprints.length === 0) return [];
   const packageName = (env.WEBAUTHN_ANDROID_PACKAGE ?? BUNDLE_DEFAULT).trim() || BUNDLE_DEFAULT;
   return [

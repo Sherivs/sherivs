@@ -27,12 +27,13 @@ describe("native associated domains", () => {
   it("advertises no Android apps until SHA-256 fingerprints are configured", () => {
     expect(androidAssetLinks({})).toEqual([]);
     const fingerprint = "AA:".repeat(31) + "AA";
-    const links = androidAssetLinks({
-      WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint.toLowerCase(),
-    });
+    const links = androidAssetLinks({ WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint });
     expect(links).toHaveLength(1);
     expect(links[0]?.target.package_name).toBe("com.sherivs.scholar");
     expect(links[0]?.target.sha256_cert_fingerprints[0]).toBe(fingerprint);
+    expect(androidAssetLinks({ WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint.toLowerCase() })).toEqual(
+      [],
+    );
   });
 });
 
