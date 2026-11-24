@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.sherivs.scholar",
-      "buildNumber": "1",
       "supportsTablet": true,
       "associatedDomains": [
         "webcredentials:sherivs.com"
@@ -20,7 +19,6 @@
     },
     "android": {
       "package": "com.sherivs.scholar",
-      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
@@ -48,7 +46,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFFFFF",
+          "backgroundColor": "#0B1F3A",
           "image": "./assets/splash-icon.png",
           "imageWidth": 160
         }

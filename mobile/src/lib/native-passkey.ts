@@ -36,7 +36,7 @@ export type PasskeyAttestation = {
 };
 
 export const PASSKEY_NATIVE_UNAVAILABLE =
-  "Passkeys are available in the Sherivs iOS and Android apps.";
+  "Passkeys are available in the Scholar app.";
 
 export function nativePasskeyPlatform(): NativePasskeyPlatform | null {
   if (Platform.OS === "ios" || Platform.OS === "android") return Platform.OS;

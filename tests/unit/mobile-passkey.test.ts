@@ -7,7 +7,7 @@ const ROOT = fileURLToPath(new URL("../..", import.meta.url));
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
 
 vi.mock("../../mobile/src/lib/native-passkey", () => ({
-  PASSKEY_NATIVE_UNAVAILABLE: "Passkeys are available in the Sherivs iOS and Android apps.",
+  PASSKEY_NATIVE_UNAVAILABLE: "Passkeys are available in the Scholar app.",
   nativePasskeyPlatform: () => null,
   nativePasskeysSupported: async () => true,
   nativePasskeyGet: async () => ({
