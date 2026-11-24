@@ -120,6 +120,21 @@ type DeviceRow = {
   revoked_at: string | null;
 };
 
+async function resolvePushReadClient(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary.
+  fallbackClient: any,
+) {
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return fallbackClient;
+  }
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return supabaseAdmin;
+  } catch {
+    return fallbackClient;
+  }
+}
+
 /**
  * Deliver a push to each stored subscription token.
  * Returns endpoints that are gone (410/404) so callers can clear them.
@@ -212,6 +227,8 @@ export async function deliverPushToUsers(
   userIds: string[],
   options: DeliverPushOptions = {},
 ): Promise<PushDeliveryResult> {
+  const pushReadClient = await resolvePushReadClient(supabase);
+
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (!ids.length) return { attempted: 0, delivered: 0, expired: [] };
 
@@ -220,7 +237,7 @@ export async function deliverPushToUsers(
 
   const [userRowsRaw, prefMap] = await Promise.all([
     supabase.from("users").select("id, push_token").in("id", ids).not("push_token", "is", null),
-    fetchPushPreferences(supabase, ids),
+    fetchPushPreferences(pushReadClient, ids),
   ]);
 
   const rows = (userRowsRaw.data ?? []) as Array<{ id: string; push_token: string }>;
@@ -266,7 +283,7 @@ export async function deliverPushToUsers(
     };
   }
 
-  const devices = await fetchActiveExpoDevices(supabase, allowedUserIds);
+  const devices = await fetchActiveExpoDevices(pushReadClient, allowedUserIds);
   const route = sanitizePushRoute(options.route ?? undefined);
   const { title, body } = notificationBody(options, category);
 
@@ -285,7 +302,19 @@ export async function deliverPushToUsers(
   });
 
   if (expoResult.deviceIdsToPrune.length) {
-    await revokeMobilePushDevicesById(supabase, expoResult.deviceIdsToPrune);
+    const pruneReason = await revokeMobilePushDevicesById(
+      pushReadClient,
+      expoResult.deviceIdsToPrune,
+    );
+    if (pruneReason) {
+      return {
+        ...webResult,
+        expoAttempted: expoResult.attempted,
+        expoDelivered: expoResult.accepted,
+        expoReceipts: expoResult.receipts,
+        skippedReason: pruneReason,
+      };
+    }
   }
 
   return {

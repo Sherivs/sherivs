@@ -7,8 +7,8 @@
 || Author | `copilot-swe-agent[bot]` |
 || Mission | PUSH-02 (server push sender) |
 || Capabilities | V1 push notification delivery hardening |
-|| Supersedes-in-part | [ADR-112_PUSH01_DEVICE_REGISTRY_AND_PUSH_PREFERENCES.md](./ADR-112_PUSH01_DEVICE_REGISTRY_AND_PUSH_PREFERENCES.md) — consumes its schema and preferences; no schema rewrite |
-|| Cites | frontend/src/lib/push.server.ts; frontend/src/lib/push/expo-push.server.ts; frontend/src/lib/push/push-preferences.server.ts; frontend/src/lib/push/push-route-allowlist.server.ts; frontend/src/lib/org-workforce/notification-worker.server.ts; frontend/src/routes/api/public/cron/org-notifications.ts; frontend/src/routes/api/public/cron/push-expo-receipts.ts; infra/cloudflare/sherivs-cron/src/index.js; database/supabase/migrations/20261124000000_sherivs_push01_mobile_push_devices.sql |
+|| Supersedes-in-part | None |
+|| Cites | architecture/adr/ADR-112_PUSH01_DEVICE_REGISTRY_AND_PUSH_PREFERENCES.md; frontend/src/lib/push.server.ts; frontend/src/lib/push/expo-push.server.ts; frontend/src/lib/push/push-preferences.server.ts; frontend/src/lib/push/push-route-allowlist.server.ts; frontend/src/lib/org-workforce/notification-worker.server.ts; frontend/src/routes/api/public/cron/org-notifications.ts (`?mode=expo-receipts`); infra/cloudflare/sherivs-cron/src/index.js; database/supabase/migrations/20261124000000_sherivs_push01_mobile_push_devices.sql |
 || Minimal ownership artifact | `frontend/src/lib/push/expo-push.server.ts` |
 
 ## Context
@@ -55,3 +55,4 @@ PUSH-01 added device registry and push preference columns, but server delivery s
 - PUSH-03 device client registration and token lifecycle validation against real devices.
 - Operator decision on whether to set `EXPO_ACCESS_TOKEN` in staging/production.
 - Production roll-out timing for enabling `ROUTE_PUSH_EXPO_RECEIPTS` and `PUSH_EXPO_ENABLED`.
+- `DeviceNotRegistered` prune completion needs a follow-up PUSH-01 migration (service-role UPDATE grant/policy on `mobile_push_devices`, or a service-role-only `SECURITY DEFINER` prune RPC). Live pruning remains UNVERIFIED in this PR.

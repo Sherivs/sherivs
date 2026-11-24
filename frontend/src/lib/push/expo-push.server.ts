@@ -193,12 +193,14 @@ export async function pollExpoPushReceipts(input: {
 export async function revokeMobilePushDevicesById(
   supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary.
   deviceIds: string[],
-): Promise<void> {
-  if (!deviceIds.length) return;
+): Promise<string | null> {
+  if (!deviceIds.length) return null;
   const now = timeAuthority.now().at;
-  await supabase
+  const { error } = await supabase
     .from("mobile_push_devices")
     .update({ enabled: false, revoked_at: now, updated_at: now })
     .in("id", deviceIds)
     .is("revoked_at", null);
+  if (!error) return null;
+  return `prune_failed:${error.code ?? "unknown"}`;
 }

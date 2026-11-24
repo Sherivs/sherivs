@@ -32,7 +32,7 @@ import {
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 function authorized(header: string | null, secret: string): boolean {
-  const want = Buffer.from("Bearer " + secret);
+  const want = Buffer.from(["Bearer", secret].join(" "));
   const got = Buffer.from(header ?? "");
   return got.length === want.length && timingSafeEqual(got, want);
 }
@@ -89,6 +89,7 @@ async function pollExpoReceipts(supabaseAdmin: unknown): Promise<Response> {
 
   let checked = 0;
   let pruned = 0;
+  const pruneErrors: string[] = [];
 
   for (const row of data ?? []) {
     const payload = (row.payload ?? {}) as OutboxPayload;
@@ -108,8 +109,9 @@ async function pollExpoReceipts(supabaseAdmin: unknown): Promise<Response> {
 
     checked += polled.checkedReceiptIds.length;
     if (polled.deviceIdsToPrune.length) {
-      await revokeMobilePushDevicesById(supabaseAdmin, polled.deviceIdsToPrune);
-      pruned += polled.deviceIdsToPrune.length;
+      const pruneReason = await revokeMobilePushDevicesById(supabaseAdmin, polled.deviceIdsToPrune);
+      if (pruneReason) pruneErrors.push(pruneReason);
+      else pruned += polled.deviceIdsToPrune.length;
     }
 
     const checkedSet = new Set(polled.checkedReceiptIds);
@@ -128,7 +130,7 @@ async function pollExpoReceipts(supabaseAdmin: unknown): Promise<Response> {
       .eq("id", row.id);
   }
 
-  return Response.json({ ok: true, enabled: true, checked, pruned });
+  return Response.json({ ok: true, enabled: true, checked, pruned, pruneErrors });
 }
 
 async function run(request: Request): Promise<Response> {

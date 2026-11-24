@@ -30,7 +30,6 @@ async function pushAfterInsert(
     route: string;
     title: string;
     body: string;
-    notificationId?: string;
   },
 ) {
   try {
@@ -132,18 +131,13 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
       action_url: "/report-card",
       is_read: false,
     }));
-    const { error, data: created } = await supabase
-      .from("notifications")
-      .insert(rows)
-      .select("id")
-      .limit(1);
+    const { error } = await supabase.from("notifications").insert(rows);
     if (error) throw new Error(error.message);
     await pushAfterInsert(supabase, targets, {
       category: "grades",
       route: "/results",
       title,
       body: "Your latest grades are now available to view.",
-      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
     });
     return { notified: rows.length };
   });
@@ -211,18 +205,13 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
       action_url: "/parent/fees",
       is_read: false,
     }));
-    const { error, data: created } = await supabase
-      .from("notifications")
-      .insert(rows)
-      .select("id")
-      .limit(1);
+    const { error } = await supabase.from("notifications").insert(rows);
     if (error) throw new Error(error.message);
     await pushAfterInsert(supabase, parents, {
       category: "fees",
       route: "/fees",
       title: "Outstanding school fees",
       body: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
-      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
     });
     return { notified: rows.length };
   });
@@ -267,18 +256,13 @@ export const pushNotification = createServerFn({ method: "POST" })
       action_url: data.action_url ?? "/home/notifications",
       is_read: false,
     }));
-    const { error, data: created } = await supabase
-      .from("notifications")
-      .insert(rows)
-      .select("id")
-      .limit(1);
+    const { error } = await supabase.from("notifications").insert(rows);
     if (error) throw new Error(error.message);
     await pushAfterInsert(supabase, ids, {
       category: "announcements",
       route: data.action_url ?? "/home/notifications",
       title: data.title,
       body: data.message,
-      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
     });
     return { notified: rows.length };
   });
@@ -331,18 +315,13 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       action_url: "/home/notifications",
       is_read: false,
     }));
-    const { error, data: created } = await supabase
-      .from("notifications")
-      .insert(rows)
-      .select("id")
-      .limit(1);
+    const { error } = await supabase.from("notifications").insert(rows);
     if (error) throw new Error(error.message);
     await pushAfterInsert(supabase, targets, {
       category: "announcements",
       route: "/home/notifications",
       title: `New ${typeLabel}: ${data.title}`,
       body: `Scheduled for ${data.start_date}. Open the calendar for details.`,
-      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
     });
     return { notified: rows.length };
   });

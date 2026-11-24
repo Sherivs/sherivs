@@ -22,17 +22,17 @@ export function notificationBody(
 ): { title: string; body: string } {
   if (shouldUseGenericBody(options, category)) {
     return {
-      title: "Sherivs notification",
-      body: "Open Sherivs to view this notification.",
+      title: "Scholar notification",
+      body: "Open Scholar to view this notification.",
     };
   }
 
-  const fallbackBody = "You have a new notification in Sherivs.";
+  const fallbackBody = "You have a new notification in Scholar.";
   return {
     title:
       typeof options.title === "string" && options.title.trim()
         ? options.title.trim()
-        : "Sherivs notification",
+        : "Scholar notification",
     body:
       typeof options.body === "string" && options.body.trim() ? options.body.trim() : fallbackBody,
   };

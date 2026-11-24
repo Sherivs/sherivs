@@ -217,8 +217,8 @@ describe("PUSH-02 delivery orchestration", () => {
 
     const firstCall = fetchMock.mock.calls[0] as unknown as [unknown, RequestInit | undefined];
     const payload = JSON.parse(String(firstCall?.[1]?.body));
-    expect(payload[0].body).toBe("Open Sherivs to view this notification.");
-    expect(payload[0].title).toBe("Sherivs notification");
+    expect(payload[0].body).toBe("Open Scholar to view this notification.");
+    expect(payload[0].title).toBe("Scholar notification");
     expect(payload[0].data).toEqual({ notificationId: "n1" });
     expect(payload[0].channelId).toBe("fees");
   });
