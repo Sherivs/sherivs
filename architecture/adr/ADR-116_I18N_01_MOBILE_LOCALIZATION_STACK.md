@@ -1,14 +1,14 @@
 # ADR-116: I18N-01 Mobile Localization Stack (I18N-01)
 
-| Field | Value |
-|---|---|
-| Status | PROPOSED (pending reviewer approval in draft PR for issue #492) |
-| Date | 2026-11-24 |
-| Author | copilot-swe-agent[bot] |
-| Mission | I18N-01 (mobile localization scaffolding and `(school)` extraction) |
-| Version target | V1 organizational capability envelope |
-| Cites | AGENTS.md §22-§23 repository discovery and workflow law; `mobile/app/(school)/*.tsx`; `mobile/src/i18n/*`; `tests/unit/mobile-i18n-*.test.ts` |
-| Minimal ownership artifact | This ADR only — decision artifact |
+| Field                      | Value                                                                                                                                         |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status                     | PROPOSED (pending reviewer approval in draft PR for issue #492)                                                                               |
+| Date                       | 2026-11-24                                                                                                                                    |
+| Author                     | copilot-swe-agent[bot]                                                                                                                        |
+| Mission                    | I18N-01 (mobile localization scaffolding and `(school)` extraction)                                                                           |
+| Version target             | V1 organizational capability envelope                                                                                                         |
+| Cites                      | AGENTS.md §22-§23 repository discovery and workflow law; `mobile/app/(school)/*.tsx`; `mobile/src/i18n/*`; `tests/unit/mobile-i18n-*.test.ts` |
+| Minimal ownership artifact | This ADR only — decision artifact                                                                                                             |
 
 ## Context
 
