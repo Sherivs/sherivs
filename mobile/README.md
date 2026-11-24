@@ -177,8 +177,8 @@ npm run typecheck
 
 Brand artwork lives in `mobile/assets/` (`icon.png` 1024×1024,
 `adaptive-icon.png` 1024×1024, `splash-icon.png` 1024×1024, `favicon.png`
-48×48). `npm run generate-assets` still overwrites those files with the old
-placeholder marks — do not run it for a store build.
+48×48). These assets are checked in for store builds; no local asset-generation
+script is maintained in this package.
 
 ## Pending work
 
@@ -189,7 +189,7 @@ placeholder marks — do not run it for a store build.
 4. Push notifications, deep links, biometric unlock, i18n — Phase 22 scope
    beyond this mission's V1 foundation.
 5. Brand icon, adaptive icon, splash, and favicon are the Scholar marks in
-   `mobile/assets/`. Do not regenerate them with `scripts/generate-assets.mjs`.
+   `mobile/assets/`.
 
 ## School workspace (Track E)
 

@@ -118,7 +118,7 @@ export default function SignInScreen() {
             />
           ) : null}
           {offline ? (
-            <UIText>You are offline — sign-in requires a connection to Sherivs.</UIText>
+            <UIText>You are offline — sign-in requires a connection to Scholar.</UIText>
           ) : null}
         </Card>
 
