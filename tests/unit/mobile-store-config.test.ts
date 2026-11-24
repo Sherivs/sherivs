@@ -16,7 +16,9 @@ const app = JSON.parse(readFileSync(new URL("../../mobile/app.json", import.meta
     android: {
       package: string;
       adaptiveIcon: { backgroundColor: string; foregroundImage: string };
-      intentFilters: Array<{ data: Array<{ scheme: string; host: string }> }>;
+      intentFilters: Array<{
+        data: Array<{ scheme: string; host: string; pathPrefix?: string }>;
+      }>;
     };
     plugins: unknown[];
     web: { favicon: string };
@@ -41,9 +43,17 @@ describe("Scholar store config", () => {
   });
 
   it("points splash and adaptive-icon backgrounds at white and keeps the WebAuthn host", () => {
-    expect(app.expo.ios.associatedDomains).toEqual(["webcredentials:sherivs.com"]);
+    expect(app.expo.ios.associatedDomains).toEqual([
+      "webcredentials:sherivs.com",
+      "applinks:app.sherivs.com",
+    ]);
     expect(app.expo.android.intentFilters[0]?.data).toEqual([
-      { scheme: "https", host: "sherivs.com" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/m/" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/home/notifications" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/results" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/fees" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/messages" },
+      { scheme: "https", host: "app.sherivs.com", pathPrefix: "/cbt" },
     ]);
     expect(app.expo.android.adaptiveIcon.backgroundColor).toBe("#FFFFFF");
     expect(app.expo.android.adaptiveIcon.foregroundImage).toBe("./assets/adaptive-icon.png");
