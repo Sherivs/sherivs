@@ -1,4 +1,4 @@
-# ADR-112: I18N-01 Mobile Localization Stack (I18N-01)
+# ADR-116: I18N-01 Mobile Localization Stack (I18N-01)
 
 | Field | Value |
 |---|---|
