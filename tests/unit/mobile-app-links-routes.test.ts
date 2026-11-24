@@ -17,12 +17,21 @@ describe("mobile app-link route mapping", () => {
     expect(mapScholarIncomingLinkToRoute("/cbt/exams")).toBe("/(school)/cbt");
   });
 
-  it("maps absolute app.sherivs.com links and ignores unknown or non-app hosts", () => {
+  it("preserves query/hash for relative and absolute app-host links", () => {
+    expect(mapScholarIncomingLinkToRoute("/results?term=1")).toBe("/(school)/results?term=1");
+    expect(mapScholarIncomingLinkToRoute("/fees#section")).toBe("/(school)/fees#section");
     expect(mapScholarIncomingLinkToRoute("https://app.sherivs.com/results?term=1")).toBe(
-      "/(school)/results",
+      "/(school)/results?term=1",
     );
+    expect(mapScholarIncomingLinkToRoute("https://app.sherivs.com/fees#section")).toBe(
+      "/(school)/fees#section",
+    );
+  });
+
+  it("maps absolute app.sherivs.com links and ignores unknown or non-app hosts", () => {
     expect(mapScholarIncomingLinkToRoute("https://sherivs.com/results")).toBeNull();
     expect(mapScholarIncomingLinkToRoute("https://www.sherivs.com/messages")).toBeNull();
+    expect(mapScholarIncomingLinkToRoute("https://console.sherivs.com/cbt")).toBeNull();
     expect(mapScholarIncomingLinkToRoute("https://evil.example/messages")).toBeNull();
   });
 

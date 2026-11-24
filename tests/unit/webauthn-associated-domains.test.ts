@@ -42,6 +42,16 @@ describe("native associated domains", () => {
     ]);
   });
 
+  it("does not add applinks on www or console hosts", () => {
+    const env = { WEBAUTHN_APPLE_TEAM_ID: "ABCD123456" };
+    expect(appleAppSiteAssociation(env, "www.sherivs.com")).toEqual({
+      webcredentials: { apps: ["ABCD123456.com.sherivs.scholar"] },
+    });
+    expect(appleAppSiteAssociation(env, "console.sherivs.com")).toEqual({
+      webcredentials: { apps: ["ABCD123456.com.sherivs.scholar"] },
+    });
+  });
+
   it("advertises no Android apps until SHA-256 fingerprints are configured", () => {
     expect(androidAssetLinks({})).toEqual([]);
     const fingerprint = "AA:".repeat(31) + "AA";
@@ -67,6 +77,17 @@ describe("native associated domains", () => {
     expect(appHost).toHaveLength(2);
     expect(appHost[0]?.relation).toEqual(["delegate_permission/common.get_login_creds"]);
     expect(appHost[1]?.relation).toEqual(["delegate_permission/common.handle_all_urls"]);
+  });
+
+  it("does not add handle_all_urls on www or console hosts", () => {
+    const fingerprint = "AA:".repeat(31) + "AA";
+    const env = { WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint };
+
+    for (const host of ["www.sherivs.com", "console.sherivs.com"]) {
+      const links = androidAssetLinks(env, host);
+      expect(links).toHaveLength(1);
+      expect(links[0]?.relation).toEqual(["delegate_permission/common.get_login_creds"]);
+    }
   });
 });
 

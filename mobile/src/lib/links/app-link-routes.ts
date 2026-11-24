@@ -11,7 +11,7 @@ export const APP_LINK_PATH_PREFIXES = [
 
 export const APP_LINK_ROUTE_FALLBACK = "/(school)/home";
 
-function toPathname(raw: string): { pathname: string; host: string | null } | null {
+function toPathname(raw: string): { pathname: string; host: string | null; suffix: string } | null {
   if (!raw) return null;
 
   const value = raw.trim();
@@ -20,7 +20,11 @@ function toPathname(raw: string): { pathname: string; host: string | null } | nu
   if (value.startsWith("http://") || value.startsWith("https://")) {
     try {
       const url = new URL(value);
-      return { pathname: url.pathname || "/", host: url.host.toLowerCase() };
+      return {
+        pathname: url.pathname || "/",
+        host: url.host.toLowerCase(),
+        suffix: `${url.search}${url.hash}`,
+      };
     } catch {
       return null;
     }
@@ -30,11 +34,24 @@ function toPathname(raw: string): { pathname: string; host: string | null } | nu
     return null;
   }
 
-  return { pathname: value, host: null };
+  try {
+    const url = new URL(value, `https://${APP_LINK_HOST}`);
+    return {
+      pathname: url.pathname || "/",
+      host: null,
+      suffix: `${url.search}${url.hash}`,
+    };
+  } catch {
+    return null;
+  }
 }
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
+function withSuffix(route: string, suffix: string): string {
+  return `${route}${suffix}`;
 }
 
 export function mapScholarIncomingLinkToRoute(input: string): string | null {
@@ -42,20 +59,20 @@ export function mapScholarIncomingLinkToRoute(input: string): string | null {
   if (!parsed) return null;
   if (parsed.host && parsed.host !== APP_LINK_HOST) return null;
 
-  const pathname = parsed.pathname;
+  const { pathname, suffix } = parsed;
 
   if (pathname.startsWith("/m/")) {
-    return APP_LINK_ROUTE_FALLBACK;
+    return withSuffix(APP_LINK_ROUTE_FALLBACK, suffix);
   }
 
   if (matchesPrefix(pathname, "/home/notifications")) {
-    return APP_LINK_ROUTE_FALLBACK;
+    return withSuffix(APP_LINK_ROUTE_FALLBACK, suffix);
   }
 
-  if (matchesPrefix(pathname, "/results")) return "/(school)/results";
-  if (matchesPrefix(pathname, "/fees")) return "/(school)/fees";
-  if (matchesPrefix(pathname, "/messages")) return "/(school)/messages";
-  if (matchesPrefix(pathname, "/cbt")) return "/(school)/cbt";
+  if (matchesPrefix(pathname, "/results")) return withSuffix("/(school)/results", suffix);
+  if (matchesPrefix(pathname, "/fees")) return withSuffix("/(school)/fees", suffix);
+  if (matchesPrefix(pathname, "/messages")) return withSuffix("/(school)/messages", suffix);
+  if (matchesPrefix(pathname, "/cbt")) return withSuffix("/(school)/cbt", suffix);
 
   return null;
 }

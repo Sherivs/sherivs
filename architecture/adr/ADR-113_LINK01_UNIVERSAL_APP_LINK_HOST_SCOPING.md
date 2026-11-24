@@ -1,4 +1,4 @@
-# ADR-112: LINK-01 Universal/App Links Host Scoping
+# ADR-113: LINK-01 Universal/App Links Host Scoping
 
 || Field | Value |
 ||---|---|
