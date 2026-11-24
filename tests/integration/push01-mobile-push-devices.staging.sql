@@ -135,7 +135,7 @@ SELECT push01t.expect_count('userA has 10 active devices',
 SELECT push01t.expect_error('11th device is rejected by cap',
   $$SELECT public.register_push_device('ExponentPushToken[push01-a11]', 'ios', '1.0.0', '110')$$, '22023');
 SELECT push01t.expect_error('direct insert is denied for authenticated user',
-  $$INSERT INTO public.mobile_push_devices (user_id, school_id, expo_push_token, platform, app_version, build_number)
+  $$INSERT INTO public.mobile_push_devices (user_id, org_id, expo_push_token, platform, app_version, build_number)
     VALUES (push01t.id('userA'), push01t.id('schoolA'), 'ExponentPushToken[forged-a]', 'ios', '1.0.0', '900')$$, '42501');
 INSERT INTO public.notification_preferences (user_id, school_id)
 VALUES (push01t.id('userA'), push01t.id('schoolA'));

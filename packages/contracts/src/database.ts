@@ -5000,7 +5000,7 @@ export type Database = {
           last_seen_at: string;
           platform: string;
           revoked_at: string | null;
-          school_id: string;
+          org_id: string;
           updated_at: string;
           user_id: string;
         };
@@ -5015,7 +5015,7 @@ export type Database = {
           last_seen_at?: string;
           platform: string;
           revoked_at?: string | null;
-          school_id: string;
+          org_id: string;
           updated_at?: string;
           user_id: string;
         };
@@ -5030,14 +5030,14 @@ export type Database = {
           last_seen_at?: string;
           platform?: string;
           revoked_at?: string | null;
-          school_id?: string;
+          org_id?: string;
           updated_at?: string;
           user_id?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "mobile_push_devices_school_id_fkey";
-            columns: ["school_id"];
+            foreignKeyName: "mobile_push_devices_org_id_fkey";
+            columns: ["org_id"];
             isOneToOne: false;
             referencedRelation: "schools";
             referencedColumns: ["id"];

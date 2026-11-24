@@ -7,7 +7,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.mobile_push_devices (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
-  school_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
+  org_id uuid NOT NULL REFERENCES public.schools(id) ON DELETE CASCADE,
   expo_push_token text NOT NULL,
   platform text NOT NULL CHECK (platform IN ('ios', 'android')),
   app_version text NOT NULL,
@@ -25,8 +25,8 @@ CREATE INDEX IF NOT EXISTS mobile_push_devices_user_idx
   ON public.mobile_push_devices (user_id)
   WHERE revoked_at IS NULL;
 
-CREATE INDEX IF NOT EXISTS mobile_push_devices_school_idx
-  ON public.mobile_push_devices (school_id)
+CREATE INDEX IF NOT EXISTS mobile_push_devices_org_idx
+  ON public.mobile_push_devices (org_id)
   WHERE revoked_at IS NULL;
 
 ALTER TABLE public.mobile_push_devices ENABLE ROW LEVEL SECURITY;
@@ -65,7 +65,7 @@ SET search_path = ''
 AS $$
 DECLARE
   v_user_id uuid := auth.uid();
-  v_school_id uuid;
+  v_org_id uuid;
   v_device_id uuid;
 BEGIN
   IF coalesce(auth.role(), '') <> 'authenticated' OR v_user_id IS NULL THEN
@@ -85,8 +85,8 @@ BEGIN
     RAISE EXCEPTION 'build is required' USING ERRCODE = '22023';
   END IF;
 
-  SELECT public.get_my_school_id() INTO v_school_id;
-  IF v_school_id IS NULL THEN
+  SELECT public.get_my_organization_id() INTO v_org_id;
+  IF v_org_id IS NULL THEN
     RAISE EXCEPTION 'caller has no tenant context' USING ERRCODE = '42501';
   END IF;
 
@@ -102,7 +102,7 @@ BEGIN
 
   INSERT INTO public.mobile_push_devices (
     user_id,
-    school_id,
+    org_id,
     expo_push_token,
     platform,
     app_version,
@@ -113,7 +113,7 @@ BEGIN
   )
   VALUES (
     v_user_id,
-    v_school_id,
+    v_org_id,
     p_token,
     p_platform,
     p_app_version,
@@ -125,7 +125,7 @@ BEGIN
   ON CONFLICT (expo_push_token)
   DO UPDATE SET
     user_id = EXCLUDED.user_id,
-    school_id = EXCLUDED.school_id,
+    org_id = EXCLUDED.org_id,
     platform = EXCLUDED.platform,
     app_version = EXCLUDED.app_version,
     build_number = EXCLUDED.build_number,

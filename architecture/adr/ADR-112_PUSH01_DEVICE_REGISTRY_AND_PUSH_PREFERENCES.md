@@ -2,6 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-24
+- **Author:** `copilot-swe-agent[bot]`
 - **Migration:** `20261124000000_sherivs_push01_mobile_push_devices.sql`
 - **Related to:** `Sherivs/sherivs#487`
 
@@ -13,16 +14,17 @@ The existing model stores one `users.push_token`, cannot track multiple devices,
 ## Decision
 
 1. Add `public.mobile_push_devices` keyed by `id` with one globally unique `expo_push_token`.
-2. Enforce RLS (`ENABLE` + `FORCE`):
+2. Use `org_id` as the neutrality-safe tenant anchor for new rows (FK to `public.schools(id)`).
+3. Enforce RLS (`ENABLE` + `FORCE`):
    - owner read (`user_id = auth.uid()`),
    - service-role read (sender path).
-3. Deny direct client writes to `mobile_push_devices`; expose only:
+4. Deny direct client writes to `mobile_push_devices`; expose only:
    - `public.register_push_device(token, platform, app_version, build)`
    - `public.unregister_push_device(token)`
-   Both are `SECURITY DEFINER`, `SET search_path = ''`, and executable by `authenticated` only.
-4. Enforce at most 10 active devices per user in `register_push_device`.
-5. Ensure token uniqueness across users through `UNIQUE (expo_push_token)` and conflict update in the register RPC (ownership transfer occurs only in RPC path).
-6. Extend `public.notification_preferences` with push category booleans and `timezone` default `'Africa/Lagos'`.
+   Both are `SECURITY DEFINER`, `SET search_path = ''`, and executable by `authenticated` only; registration resolves tenant context via `public.get_my_organization_id()`.
+5. Enforce at most 10 active devices per user in `register_push_device`.
+6. Ensure token uniqueness across users through `UNIQUE (expo_push_token)` and conflict update in the register RPC (ownership transfer occurs only in RPC path).
+7. Extend `public.notification_preferences` with push category booleans and `timezone` default `'Africa/Lagos'`.
 
 ## Consequences
 
