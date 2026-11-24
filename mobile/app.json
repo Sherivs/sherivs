@@ -18,10 +18,7 @@
     "ios": {
       "bundleIdentifier": "com.sherivs.scholar",
       "supportsTablet": true,
-      "associatedDomains": [
-        "webcredentials:sherivs.com",
-        "applinks:app.sherivs.com"
-      ],
+      "associatedDomains": ["webcredentials:sherivs.com", "applinks:app.sherivs.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -68,10 +65,7 @@
               "pathPrefix": "/cbt"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "edgeToEdgeEnabled": true
