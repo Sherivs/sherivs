@@ -22,11 +22,20 @@ const timeAuthority = new TimeAuthority(new SystemClock());
  * Loaded lazily so the server-only push module never enters a client bundle,
  * and never allowed to fail the notification fan-out itself.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary (pre-existing shape).
-async function pushAfterInsert(supabase: any, userIds: string[]) {
+async function pushAfterInsert(
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary (pre-existing shape).
+  userIds: string[],
+  options: {
+    category: PrefCategory;
+    route: string;
+    title: string;
+    body: string;
+    notificationId?: string;
+  },
+) {
   try {
     const { deliverPushToUsers } = await import("@/lib/push.server");
-    await deliverPushToUsers(supabase, userIds);
+    await deliverPushToUsers(supabase, userIds, options);
   } catch {
     /* push is a side-channel — in-app notifications already succeeded */
   }
@@ -35,8 +44,8 @@ async function pushAfterInsert(supabase: any, userIds: string[]) {
 /**
  * Filter target user_ids based on per-user notification_preferences.
  * - Drops users with `inapp_<category>` = false.
- * - Drops users currently inside their quiet_hours window (suppresses both
- *   the in-app row and any email side-channel that would key off it).
+ * Push quiet-hours and push-category preferences are evaluated at send time in
+ * the push sender. In-app creation is never suppressed by quiet hours.
  * Users with no preferences row are kept (defaults treated as opt-in).
  */
 type PrefCategory = "messages" | "announcements" | "grades" | "attendance" | "fees";
@@ -49,34 +58,19 @@ async function filterByPrefs(
   if (!userIds.length) return [];
   const { data } = await supabase
     .from("notification_preferences")
-    .select(`user_id, inapp_${category}, quiet_hours_start, quiet_hours_end`)
+    .select(`user_id, inapp_${category}`)
     .in("user_id", userIds);
   const rows = (data ?? []) as Array<{
     user_id: string;
-    quiet_hours_start: string | null;
-    quiet_hours_end: string | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic preference column projection (pre-existing shape).
     [k: string]: any;
   }>;
   const prefMap = new Map(rows.map((r) => [r.user_id, r]));
 
-  const now = new Date(timeAuthority.now().atMs);
-  const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
-  const inQuiet = (s: string | null, e: string | null) => {
-    if (!s || !e) return false;
-    const [sh, sm] = s.split(":").map(Number);
-    const [eh, em] = e.split(":").map(Number);
-    const sMin = sh * 60 + sm;
-    const eMin = eh * 60 + em;
-    if (sMin === eMin) return false;
-    return sMin < eMin ? nowMin >= sMin && nowMin < eMin : nowMin >= sMin || nowMin < eMin; // wraps midnight
-  };
-
   return userIds.filter((uid) => {
     const p = prefMap.get(uid);
     if (!p) return true;
     if (p[`inapp_${category}`] === false) return false;
-    if (inQuiet(p.quiet_hours_start, p.quiet_hours_end)) return false;
     return true;
   });
 }
@@ -138,9 +132,19 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
       action_url: "/report-card",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
+    const { error, data: created } = await supabase
+      .from("notifications")
+      .insert(rows)
+      .select("id")
+      .limit(1);
     if (error) throw new Error(error.message);
-    await pushAfterInsert(supabase, targets);
+    await pushAfterInsert(supabase, targets, {
+      category: "grades",
+      route: "/results",
+      title,
+      body: "Your latest grades are now available to view.",
+      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
+    });
     return { notified: rows.length };
   });
 
@@ -207,9 +211,19 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
       action_url: "/parent/fees",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
+    const { error, data: created } = await supabase
+      .from("notifications")
+      .insert(rows)
+      .select("id")
+      .limit(1);
     if (error) throw new Error(error.message);
-    await pushAfterInsert(supabase, parents);
+    await pushAfterInsert(supabase, parents, {
+      category: "fees",
+      route: "/fees",
+      title: "Outstanding school fees",
+      body: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
+      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
+    });
     return { notified: rows.length };
   });
 
@@ -253,9 +267,19 @@ export const pushNotification = createServerFn({ method: "POST" })
       action_url: data.action_url ?? "/home/notifications",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
+    const { error, data: created } = await supabase
+      .from("notifications")
+      .insert(rows)
+      .select("id")
+      .limit(1);
     if (error) throw new Error(error.message);
-    await pushAfterInsert(supabase, ids);
+    await pushAfterInsert(supabase, ids, {
+      category: "announcements",
+      route: data.action_url ?? "/home/notifications",
+      title: data.title,
+      body: data.message,
+      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
+    });
     return { notified: rows.length };
   });
 
@@ -307,9 +331,19 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       action_url: "/home/notifications",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
+    const { error, data: created } = await supabase
+      .from("notifications")
+      .insert(rows)
+      .select("id")
+      .limit(1);
     if (error) throw new Error(error.message);
-    await pushAfterInsert(supabase, targets);
+    await pushAfterInsert(supabase, targets, {
+      category: "announcements",
+      route: "/home/notifications",
+      title: `New ${typeLabel}: ${data.title}`,
+      body: `Scheduled for ${data.start_date}. Open the calendar for details.`,
+      notificationId: typeof created?.[0]?.id === "string" ? created[0].id : undefined,
+    });
     return { notified: rows.length };
   });
 

@@ -1,4 +1,17 @@
 import { SystemClock, TimeAuthority } from "./kernel/time-authority";
+import {
+  revokeMobilePushDevicesById,
+  sendExpoPushMessages,
+  type ExpoReceiptEntry,
+  isTruthyFlag,
+} from "@/lib/push/expo-push.server";
+import {
+  canSendPushNow,
+  type NotificationPreferenceRow,
+  type PushCategory,
+} from "@/lib/push/push-preferences.server";
+import { sanitizePushRoute } from "@/lib/push/push-route-allowlist.server";
+import { androidChannelId, notificationBody } from "@/lib/push/expo-message-policy.server";
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -83,6 +96,28 @@ export type PushDeliveryResult = {
   delivered: number;
   expired: string[];
   skippedReason?: string;
+  expoAttempted?: number;
+  expoDelivered?: number;
+  expoReceipts?: ExpoReceiptEntry[];
+};
+
+type DeliverPushOptions = {
+  category?: PushCategory;
+  route?: string | null;
+  notificationId?: string | null;
+  title?: string | null;
+  body?: string | null;
+  redacted?: boolean;
+  safeguarding?: boolean;
+  severity?: string | null;
+};
+
+type DeviceRow = {
+  id: string;
+  user_id: string;
+  expo_push_token: string;
+  enabled: boolean;
+  revoked_at: string | null;
 };
 
 /**
@@ -129,28 +164,90 @@ export async function sendWebPush(tokens: string[]): Promise<PushDeliveryResult>
   return { attempted: tokens.length, delivered, expired };
 }
 
+function isHighPriority(options: DeliverPushOptions): boolean {
+  const severity = (options.severity ?? "").toLowerCase();
+  return options.safeguarding === true || severity === "urgent" || severity === "critical";
+}
+
+async function fetchPushPreferences(
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary.
+  userIds: string[],
+): Promise<Map<string, NotificationPreferenceRow>> {
+  if (!userIds.length) return new Map();
+  const { data } = await supabase
+    .from("notification_preferences")
+    .select(
+      "user_id,push_messages,push_announcements,push_grades,push_attendance,push_fees,quiet_hours_start,quiet_hours_end,timezone",
+    )
+    .in("user_id", userIds);
+
+  const rows = (data ?? []) as NotificationPreferenceRow[];
+  return new Map(rows.map((row) => [row.user_id, row]));
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary.
+async function fetchActiveExpoDevices(supabase: any, userIds: string[]): Promise<DeviceRow[]> {
+  if (!userIds.length) return [];
+
+  const { data } = await supabase
+    .from("mobile_push_devices")
+    .select("id,user_id,expo_push_token,enabled,revoked_at")
+    .in("user_id", userIds)
+    .eq("enabled", true)
+    .is("revoked_at", null);
+
+  const rows = (data ?? []) as DeviceRow[];
+  return rows.filter(
+    (row) => typeof row.expo_push_token === "string" && row.expo_push_token.length > 0,
+  );
+}
+
 /**
  * Look up push tokens for the given users, deliver, and clear dead ones.
  * `supabase` is the request-scoped authenticated client.
  */
 export async function deliverPushToUsers(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary.
   supabase: any,
   userIds: string[],
+  options: DeliverPushOptions = {},
 ): Promise<PushDeliveryResult> {
   const ids = Array.from(new Set(userIds.filter(Boolean)));
   if (!ids.length) return { attempted: 0, delivered: 0, expired: [] };
 
-  const { data } = await supabase
-    .from("users")
-    .select("id, push_token")
-    .in("id", ids)
-    .not("push_token", "is", null);
+  const category = options.category ?? "messages";
+  const nowMs = timeAuthority.now().atMs;
 
-  const rows = (data ?? []) as Array<{ id: string; push_token: string }>;
-  const result = await sendWebPush(rows.map((r) => r.push_token));
+  const [userRowsRaw, prefMap] = await Promise.all([
+    supabase.from("users").select("id, push_token").in("id", ids).not("push_token", "is", null),
+    fetchPushPreferences(supabase, ids),
+  ]);
 
-  if (result.expired.length) {
-    const staleIds = rows.filter((r) => result.expired.includes(r.push_token)).map((r) => r.id);
+  const rows = (userRowsRaw.data ?? []) as Array<{ id: string; push_token: string }>;
+  const allowedUserIds = ids.filter((userId) =>
+    canSendPushNow(prefMap.get(userId), category, nowMs),
+  );
+  if (!allowedUserIds.length) {
+    return {
+      attempted: 0,
+      delivered: 0,
+      expired: [],
+      expoAttempted: 0,
+      expoDelivered: 0,
+      expoReceipts: [],
+      skippedReason: "quiet_hours_or_preferences",
+    };
+  }
+
+  const webTokens = rows
+    .filter((row) => allowedUserIds.includes(row.id))
+    .map((row) => row.push_token)
+    .filter((token): token is string => typeof token === "string" && token.length > 0);
+
+  const webResult = await sendWebPush(webTokens);
+
+  if (webResult.expired.length) {
+    const staleIds = rows.filter((r) => webResult.expired.includes(r.push_token)).map((r) => r.id);
     if (staleIds.length) {
       await supabase
         .from("users")
@@ -159,5 +256,42 @@ export async function deliverPushToUsers(
     }
   }
 
-  return result;
+  const expoEnabled = isTruthyFlag(process.env.PUSH_EXPO_ENABLED);
+  if (!expoEnabled) {
+    return {
+      ...webResult,
+      expoAttempted: 0,
+      expoDelivered: 0,
+      expoReceipts: [],
+    };
+  }
+
+  const devices = await fetchActiveExpoDevices(supabase, allowedUserIds);
+  const route = sanitizePushRoute(options.route ?? undefined);
+  const { title, body } = notificationBody(options, category);
+
+  const expoResult = await sendExpoPushMessages({
+    accessToken: process.env.EXPO_ACCESS_TOKEN,
+    messages: devices.map((device) => ({
+      token: device.expo_push_token,
+      deviceId: device.id,
+      title,
+      body,
+      route,
+      notificationId: options.notificationId ?? undefined,
+      channelId: androidChannelId(category),
+      highPriority: isHighPriority(options),
+    })),
+  });
+
+  if (expoResult.deviceIdsToPrune.length) {
+    await revokeMobilePushDevicesById(supabase, expoResult.deviceIdsToPrune);
+  }
+
+  return {
+    ...webResult,
+    expoAttempted: expoResult.attempted,
+    expoDelivered: expoResult.accepted,
+    expoReceipts: expoResult.receipts,
+  };
 }
