@@ -85,12 +85,20 @@ BEGIN
   END;
   RAISE EXCEPTION 'PUSH01B FAIL [%]: statement was allowed', p_label;
 END $$;
-CREATE FUNCTION push01bt.check_policy_definition(p_table text, p_policy text, p_expected_using text) RETURNS boolean LANGUAGE sql STABLE AS $$
-  SELECT policydef LIKE p_expected_using
+CREATE FUNCTION push01bt.expect_dml_count(p_label text, p_sql text, p_expected bigint) RETURNS void LANGUAGE plpgsql AS $$
+DECLARE
+  v bigint;
+BEGIN
+  EXECUTE 'WITH q AS (' || p_sql || ') SELECT count(*) FROM q' INTO v;
+  IF v IS DISTINCT FROM p_expected THEN
+    RAISE EXCEPTION 'PUSH01B FAIL [%]: expected %, got %', p_label, p_expected, v;
+  END IF;
+  PERFORM push01bt.pass(p_label);
+END $$;
+CREATE FUNCTION push01bt.check_policy_definition(p_table text, p_policy text, p_pattern text) RETURNS boolean LANGUAGE sql STABLE AS $$
+  SELECT coalesce(bool_or(qual ILIKE p_pattern), false)
   FROM pg_policies
-  WHERE schemaname = 'public'
-    AND tablename = p_table
-    AND policyname = p_policy
+  WHERE schemaname = 'public' AND tablename = p_table AND policyname = p_policy
 $$;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA push01bt TO anon, authenticated, service_role;
 
@@ -114,6 +122,37 @@ INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALU
 -- 1. Check that mobile_push_devices_read_own uses (select auth.uid()) not bare auth.uid()
 SELECT push01bt.expect_true('mobile_push_devices_read_own uses (select auth.uid())',
   push01bt.check_policy_definition('mobile_push_devices', 'mobile_push_devices_read_own', '%select auth.uid()%'));
+
+-- 1b. Verify the bare form is NOT present
+SELECT push01bt.expect_true('mobile_push_devices_read_own does NOT use bare auth.uid()',
+  NOT push01bt.check_policy_definition('mobile_push_devices', 'mobile_push_devices_read_own', '%(user_id = auth.uid())%'));
+
+-- 1c. Verify grants on mobile_push_devices table
+SELECT push01bt.expect_true('service_role has SELECT, UPDATE, DELETE',
+  (SELECT count(*) = 3 FROM information_schema.role_table_grants 
+   WHERE table_schema = 'public' AND table_name = 'mobile_push_devices' 
+   AND grantee = 'service_role' AND privilege_type IN ('SELECT', 'UPDATE', 'DELETE')));
+
+SELECT push01bt.expect_true('authenticated has SELECT only',
+  (SELECT count(*) = 1 FROM information_schema.role_table_grants 
+   WHERE table_schema = 'public' AND table_name = 'mobile_push_devices' 
+   AND grantee = 'authenticated' AND privilege_type = 'SELECT'));
+
+SELECT push01bt.expect_true('anon has no table privileges',
+  (SELECT count(*) = 0 FROM information_schema.role_table_grants 
+   WHERE table_schema = 'public' AND table_name = 'mobile_push_devices' 
+   AND grantee = 'anon'));
+
+-- 1d. Verify new service_role UPDATE and DELETE policies exist
+SELECT push01bt.expect_true('mobile_push_devices_service_update policy exists with cmd UPDATE',
+  (SELECT count(*) = 1 FROM pg_policies
+   WHERE schemaname = 'public' AND tablename = 'mobile_push_devices' 
+   AND policyname = 'mobile_push_devices_service_update' AND cmd = 'UPDATE'));
+
+SELECT push01bt.expect_true('mobile_push_devices_service_delete policy exists with cmd DELETE',
+  (SELECT count(*) = 1 FROM pg_policies
+   WHERE schemaname = 'public' AND tablename = 'mobile_push_devices' 
+   AND policyname = 'mobile_push_devices_service_delete' AND cmd = 'DELETE'));
 
 -- 2. Register a device for userA to test later.
 SELECT push01bt.login(push01bt.id('userA'));
@@ -146,7 +185,7 @@ SELECT push01bt.logout();
 
 -- 6. Verify service_role CAN UPDATE (prune).
 SELECT push01bt.login_as('service_role');
-SELECT push01bt.expect_count('service_role can UPDATE to set revoked_at',
+SELECT push01bt.expect_dml_count('service_role can UPDATE to set revoked_at',
   $$UPDATE public.mobile_push_devices SET revoked_at = now(), updated_at = now()
       WHERE expo_push_token = 'ExponentPushToken[push01b-prune1]'
      RETURNING id$$, 1);
@@ -154,7 +193,7 @@ SELECT push01bt.logout();
 
 -- 7. Verify service_role CAN DELETE (after revoke).
 SELECT push01bt.login_as('service_role');
-SELECT push01bt.expect_count('service_role can DELETE pruned row',
+SELECT push01bt.expect_dml_count('service_role can DELETE pruned row',
   $$DELETE FROM public.mobile_push_devices
       WHERE expo_push_token = 'ExponentPushToken[push01b-prune1]'
      RETURNING id$$, 1);
@@ -177,7 +216,7 @@ SELECT push01bt.logout();
 
 -- 10. Verify service_role can still SELECT (unchanged from PUSH-01).
 SELECT push01bt.login_as('service_role');
-SELECT push01bt.expect_true('service_role can SELECT after DELETE',
+SELECT push01bt.expect_true('service_role can SELECT',
   (SELECT count(*) >= 0 FROM public.mobile_push_devices LIMIT 1) = true);
 SELECT push01bt.logout();
 
