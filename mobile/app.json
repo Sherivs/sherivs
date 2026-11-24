@@ -3,6 +3,14 @@
     "name": "Scholar",
     "slug": "coregrid-mobile",
     "version": "0.1.0",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/2e19ca55-cc79-4634-ae8a-bf8b551a6a20",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    },
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "scholar",
@@ -10,10 +18,7 @@
     "ios": {
       "bundleIdentifier": "com.sherivs.scholar",
       "supportsTablet": true,
-      "associatedDomains": [
-        "webcredentials:sherivs.com",
-        "applinks:app.sherivs.com"
-      ],
+      "associatedDomains": ["webcredentials:sherivs.com", "applinks:app.sherivs.com"],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -60,10 +65,7 @@
               "pathPrefix": "/cbt"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "edgeToEdgeEnabled": true
@@ -81,7 +83,8 @@
           "imageWidth": 160
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-updates"
     ],
     "extra": {
       "router": {},

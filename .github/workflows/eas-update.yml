@@ -1,0 +1,85 @@
+name: EAS Update (manual)
+
+# Manual OTA publish only. Push, pull_request, and schedule triggers are absent
+# so a merge cannot spend the free-tier update allowance.
+# Third-party actions are pinned to full commit SHAs.
+# Workflow inputs are passed through env and read by the shell. They are not
+# interpolated into a run script.
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: "Git branch to publish from"
+        required: true
+        default: "master"
+      channel:
+        description: "EAS Update channel and matching EAS environment"
+        required: true
+        type: choice
+        options:
+          - preview
+          - production
+      platform:
+        description: "Target platform"
+        required: true
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+        default: all
+      message:
+        description: "Update message"
+        required: true
+        default: "Manual OTA update"
+
+permissions:
+  contents: read
+
+jobs:
+  publish-update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    steps:
+      - name: Checkout selected branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install mobile dependencies
+        run: npm ci --prefix mobile --no-audit --fund=false
+
+      - name: Publish EAS Update
+        working-directory: mobile
+        env:
+          EAS_UPDATE_CHANNEL: ${{ inputs.channel }}
+          EAS_UPDATE_PLATFORM: ${{ inputs.platform }}
+          EAS_UPDATE_MESSAGE: ${{ inputs.message }}
+        run: |
+          set -euo pipefail
+          case "$EAS_UPDATE_CHANNEL" in
+            preview|production) ;;
+            *) echo "::error::unsupported channel" >&2; exit 1 ;;
+          esac
+          case "$EAS_UPDATE_PLATFORM" in
+            all|android|ios) ;;
+            *) echo "::error::unsupported platform" >&2; exit 1 ;;
+          esac
+          npx --yes eas-cli@latest update \
+            --non-interactive \
+            --channel "$EAS_UPDATE_CHANNEL" \
+            --platform "$EAS_UPDATE_PLATFORM" \
+            --environment "$EAS_UPDATE_CHANNEL" \
+            --message "$EAS_UPDATE_MESSAGE"
