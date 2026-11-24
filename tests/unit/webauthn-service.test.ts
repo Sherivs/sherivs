@@ -18,6 +18,9 @@ import type {
 const USER_A = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const USER_B = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const ORIGIN = "https://app.sherivs.com";
+const NATIVE_ORIGIN = "https://sherivs.com";
+const ANDROID_ORIGIN = "android:apk-key-hash:eVdqO7vvoE9vTF1BnbBhoIYVQi_hQ4w6-n4VWehyXvg";
+const ANDROID_ORIGINS = [NATIVE_ORIGIN, ANDROID_ORIGIN];
 const BASE_MS = Date.parse("2026-10-28T08:00:00.000Z");
 
 class MutableClock implements Clock {
@@ -30,6 +33,17 @@ class MutableClock implements Clock {
 
 function clientData(challenge: string, origin = ORIGIN, type = "webauthn.create"): string {
   return Buffer.from(JSON.stringify({ type, origin, challenge })).toString("base64url");
+}
+
+function originFromClientData(clientDataJSON: string): string {
+  const parsed = JSON.parse(Buffer.from(clientDataJSON, "base64url").toString("utf8")) as {
+    origin: string;
+  };
+  return parsed.origin;
+}
+
+function isExpectedOrigin(expectedOrigin: string | string[], origin: string): boolean {
+  return (Array.isArray(expectedOrigin) ? expectedOrigin : [expectedOrigin]).includes(origin);
 }
 
 function profile(id: string, email = `${id.slice(0, 8)}@sherivs.com`): WebAuthnUserProfile {
@@ -69,10 +83,15 @@ function verifiers(): Partial<WebAuthnVerifiers> {
       timeout: 60_000,
       userVerification: "required",
     }),
-    verifyRegistrationResponse: async ({ expectedChallenge, expectedOrigin, expectedRPID }) => {
-      const origin = Array.isArray(expectedOrigin) ? expectedOrigin[0] : expectedOrigin;
+    verifyRegistrationResponse: async ({
+      response,
+      expectedChallenge,
+      expectedOrigin,
+      expectedRPID,
+    }) => {
+      const origin = originFromClientData(response.response.clientDataJSON);
       const rpID = Array.isArray(expectedRPID) ? expectedRPID[0] : expectedRPID;
-      if (origin !== ORIGIN) throw new Error("wrong origin");
+      if (!isExpectedOrigin(expectedOrigin, origin)) throw new Error("wrong origin");
       if (rpID !== "sherivs.com") throw new Error("wrong rp");
       return {
         verified: true,
@@ -95,14 +114,15 @@ function verifiers(): Partial<WebAuthnVerifiers> {
       };
     },
     verifyAuthenticationResponse: async ({
+      response,
       expectedChallenge,
       expectedOrigin,
       expectedRPID,
       credential,
     }) => {
-      const origin = Array.isArray(expectedOrigin) ? expectedOrigin[0] : expectedOrigin;
+      const origin = originFromClientData(response.response.clientDataJSON);
       const rpID = Array.isArray(expectedRPID) ? expectedRPID[0] : expectedRPID;
-      if (origin !== ORIGIN) throw new Error("wrong origin");
+      if (!isExpectedOrigin(expectedOrigin, origin)) throw new Error("wrong origin");
       if (rpID !== "sherivs.com") throw new Error("wrong rp");
       if (!credential.publicKey || credential.publicKey.length < 8) throw new Error("bad key");
       return {
@@ -174,14 +194,14 @@ function harness(opts?: {
   return { service, store, clock, audits };
 }
 
-function registrationResponse(challenge: string): RegistrationResponseJSON {
+function registrationResponse(challenge: string, origin = ORIGIN): RegistrationResponseJSON {
   return {
     id: "credential-response-id-0001",
     rawId: "credential-response-id-0001",
     type: "public-key" as const,
     clientExtensionResults: {},
     response: {
-      clientDataJSON: clientData(challenge),
+      clientDataJSON: clientData(challenge, origin),
       attestationObject: "a".repeat(32),
       transports: ["internal"],
     },
@@ -192,6 +212,7 @@ function assertionResponse(
   challenge: string,
   credentialId: string,
   userId: string,
+  origin = ORIGIN,
 ): AuthenticationResponseJSON {
   return {
     id: credentialId,
@@ -199,7 +220,7 @@ function assertionResponse(
     type: "public-key" as const,
     clientExtensionResults: {},
     response: {
-      clientDataJSON: clientData(challenge, ORIGIN, "webauthn.get"),
+      clientDataJSON: clientData(challenge, origin, "webauthn.get"),
       authenticatorData: "b".repeat(32),
       signature: "c".repeat(32),
       userHandle: Buffer.from(userId, "utf8").toString("base64url"),
@@ -208,6 +229,120 @@ function assertionResponse(
 }
 
 describe("WebAuthn service ceremonies", () => {
+  it("accepts only configured Android origins during native registration", async () => {
+    const { service, store } = harness();
+    const options = await service.registrationOptions({
+      userId: USER_A,
+      origin: NATIVE_ORIGIN,
+      rateKey: USER_A,
+    });
+    const created = await service.verifyRegistration({
+      userId: USER_A,
+      origin: NATIVE_ORIGIN,
+      expectedOrigins: ANDROID_ORIGINS,
+      rateKey: USER_A,
+      response: registrationResponse(options.challenge, ANDROID_ORIGIN),
+    });
+    expect(created.id).toBeTruthy();
+    expect(store.credentials[0]?.rpId).toBe("sherivs.com");
+
+    const rejectedOrigins = [
+      `android:apk-key-hash:${"A".repeat(43)}`,
+      "https://app.sherivs.com",
+      "http://sherivs.com",
+    ];
+    for (const reportedOrigin of rejectedOrigins) {
+      const challenge = await service.registrationOptions({
+        userId: USER_A,
+        origin: NATIVE_ORIGIN,
+        rateKey: USER_A,
+      });
+      await expect(
+        service.verifyRegistration({
+          userId: USER_A,
+          origin: NATIVE_ORIGIN,
+          expectedOrigins: ANDROID_ORIGINS,
+          rateKey: USER_A,
+          response: registrationResponse(challenge.challenge, reportedOrigin),
+        }),
+      ).rejects.toMatchObject({ code: "register_failed" });
+    }
+  });
+
+  it("accepts configured Android origins during native authentication only", async () => {
+    const { service, store } = harness();
+    const registration = await service.registrationOptions({
+      userId: USER_A,
+      origin: NATIVE_ORIGIN,
+      rateKey: USER_A,
+    });
+    await service.verifyRegistration({
+      userId: USER_A,
+      origin: NATIVE_ORIGIN,
+      expectedOrigins: ANDROID_ORIGINS,
+      rateKey: USER_A,
+      response: registrationResponse(registration.challenge, NATIVE_ORIGIN),
+    });
+
+    const authentication = await service.authenticationOptions({
+      origin: NATIVE_ORIGIN,
+      rateKey: "ip",
+    });
+    const session = await service.verifyAuthentication({
+      origin: NATIVE_ORIGIN,
+      expectedOrigins: ANDROID_ORIGINS,
+      rateKey: "ip",
+      response: assertionResponse(
+        authentication.challenge,
+        store.credentials[0]!.credentialId,
+        USER_A,
+        ANDROID_ORIGIN,
+      ),
+    });
+    expect(session.userId).toBe(USER_A);
+
+    for (const reportedOrigin of [
+      `android:apk-key-hash:${"A".repeat(43)}`,
+      "https://app.sherivs.com",
+      "http://sherivs.com",
+    ]) {
+      const challenge = await service.authenticationOptions({
+        origin: NATIVE_ORIGIN,
+        rateKey: "ip",
+      });
+      await expect(
+        service.verifyAuthentication({
+          origin: NATIVE_ORIGIN,
+          expectedOrigins: ANDROID_ORIGINS,
+          rateKey: "ip",
+          response: assertionResponse(
+            challenge.challenge,
+            store.credentials[0]!.credentialId,
+            USER_A,
+            reportedOrigin,
+          ),
+        }),
+      ).rejects.toMatchObject({ code: "auth_failed" });
+    }
+  });
+
+  it("keeps browser ceremonies on their single configured origin", async () => {
+    const { service } = harness();
+    const options = await service.registrationOptions({
+      userId: USER_A,
+      origin: ORIGIN,
+      rateKey: USER_A,
+    });
+    await expect(
+      service.verifyRegistration({
+        userId: USER_A,
+        origin: ORIGIN,
+        rateKey: USER_A,
+        response: registrationResponse(options.challenge, ANDROID_ORIGIN),
+      }),
+    ).rejects.toMatchObject({ code: "register_failed" });
+  });
+
   it("registers a passkey for the authenticated user and lists it without the public key", async () => {
     const { service } = harness();
     const options = await service.registrationOptions({
