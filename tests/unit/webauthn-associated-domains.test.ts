@@ -14,9 +14,14 @@ describe("native associated domains", () => {
     expect(
       appleAppSiteAssociation({
         WEBAUTHN_APPLE_TEAM_ID: "ABCD123456",
-        WEBAUTHN_IOS_BUNDLE_ID: "com.coregrid.app",
       }).webcredentials.apps,
-    ).toEqual(["ABCD123456.com.coregrid.app"]);
+    ).toEqual(["ABCD123456.com.sherivs.scholar"]);
+    expect(
+      appleAppSiteAssociation({
+        WEBAUTHN_APPLE_TEAM_ID: "ABCD123456",
+        WEBAUTHN_IOS_BUNDLE_ID: "com.sherivs.scholar",
+      }).webcredentials.apps,
+    ).toEqual(["ABCD123456.com.sherivs.scholar"]);
   });
 
   it("advertises no Android apps until SHA-256 fingerprints are configured", () => {
@@ -26,7 +31,7 @@ describe("native associated domains", () => {
       WEBAUTHN_ANDROID_SHA256_CERTS: fingerprint.toLowerCase(),
     });
     expect(links).toHaveLength(1);
-    expect(links[0]?.target.package_name).toBe("com.coregrid.app");
+    expect(links[0]?.target.package_name).toBe("com.sherivs.scholar");
     expect(links[0]?.target.sha256_cert_fingerprints[0]).toBe(fingerprint);
   });
 });

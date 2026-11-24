@@ -4,7 +4,7 @@
  * invented. Empty documents are valid JSON and fail closed (no bogus apps).
  */
 
-const BUNDLE_DEFAULT = "com.coregrid.app";
+const BUNDLE_DEFAULT = "com.sherivs.scholar";
 
 function trimList(raw: string | undefined): string[] {
   if (!raw) return [];
