@@ -296,14 +296,19 @@ agent's notebook, one run). Every item expires; the lifetimes and caps are engin
   SELECT). Writes go through six functions; a signed-in member reads their own organization's live, unexpired items
   through RLS. A write needs `workflows.manage` and the organization's `workflows_enabled` (off in production).
 - **Agents propose, people decide.** An agent run can propose a short note into its own notebook or its run scope,
-  at most 50 a day per agent and organization. The note does nothing until a person with `workflows.manage` accepts
+  at most 50 a day per agent and organization and at most 200 waiting in one organization (they never use up the
+  room for a person's items). The note does nothing until a person with `workflows.manage` accepts
   it; the agent can never accept it, change it or make it readable by an agent.
 - **The agent read path is closed.** `wf_memory_agent_read` fails with `ain03:ai_route_closed` while the AI route
   (founder decision 3) is undecided. No tenant memory reaches any model.
 - **Do not put personal data in memory** until founder decision 7 (minors, lawful basis) is made. The `reference`
   class accepts ids and codes only; the `note` class accepts short free text and is never readable by an agent.
-- **Audit.** Every write, proposal, decision, retirement and purge writes one ledger row (a hash, never content) and
-  one audit chain entry.
+- **Audit.** Every write, proposal, decision, retirement and purge writes one ledger row (never content) and one
+  audit chain entry. A note carries a salted hash that cannot be recomputed after the purge; a `reference` carries
+  none. The key, actor and times stay (ADR-127, "What survives a purge").
+- **A legal hold freezes content.** While an M12 hold is active for the organization, overwriting, retiring or
+  rejecting existing memory is refused (`ain03:legal_hold_freezes_memory`) and nothing is purged; release the hold
+  first to correct or erase an item. The purge skips held organizations without letting them starve the others.
 
 Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the organization switched on for the test:
 
@@ -312,9 +317,11 @@ Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the org
 3. Propose a note for an active run of a granted agent; confirm it stays `proposed` and is not visible to agent reads.
    Accept it as a manager; try to accept it again (refused). Try to propose into the organization scope (refused).
 4. Call `wf_memory_agent_read` for the run: it must fail with `ain03:ai_route_closed`.
-5. Retire an item and confirm its value is `{}`. Expire one (shorten the lifetime in the staging database only) and
+5. Retire an item and confirm its value is `{}` and its ledger row has no hash. Expire one (shorten the lifetime in the staging database only) and
    call `wf_memory_purge_expired(100)`; the row is gone, the ledger row and the audit entry remain.
-6. Confirm nothing was sent and no model was called.
+6. With a hold active (staging only), confirm a put over an existing key and a retire are refused and a new key still
+   writes; release the hold and confirm the retire works.
+7. Confirm nothing was sent and no model was called.
 
 Rollback: `database/supabase/rollbacks/20261117000990_...sql` refuses while an item or a ledger row exists (retire the
 items, let the purge delete them, and export the ledger first). Apply it before the AIN-02 and AIN-01 rollbacks.

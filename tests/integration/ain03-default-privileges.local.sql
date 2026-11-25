@@ -8,7 +8,7 @@ DO $$
 DECLARE
   -- table => the privileges service_role and authenticated may hold (everything else, for any role, must be absent)
   v_tables text[] := ARRAY['wf_memory_scope_kind', 'wf_memory_item', 'wf_memory_change'];
-  v_fns text[] := ARRAY['wf_memory_org_item_cap()', 'wf_memory_agent_daily_proposals()', 'wf_memory_value_ok(text,jsonb)',
+  v_fns text[] := ARRAY['wf_memory_org_item_cap()', 'wf_memory_org_proposal_cap()', 'wf_memory_agent_daily_proposals()', 'wf_memory_value_ok(text,jsonb)',
     'wf_memory_open(text)', 'wf_memory_close()', 'wf_memory_item_guard()', 'wf_memory_item_delete_guard()',
     'wf_memory_item_audit()', 'wf_memory_put(uuid,text,text,text,text,jsonb,integer,boolean)',
     'wf_memory_agent_propose(uuid,text,text,text,jsonb,integer)', 'wf_memory_decide(uuid,uuid,text)',

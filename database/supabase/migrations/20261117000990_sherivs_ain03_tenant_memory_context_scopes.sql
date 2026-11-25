@@ -67,6 +67,12 @@ CREATE FUNCTION public.wf_memory_org_item_cap()
 RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = ''
 AS $$ SELECT 2000 $$;
 
+-- Proposals that are still waiting (not decided, not expired) are capped per organization on their own, and the
+-- organization item cap counts only active items, so agents can never use up the room a person needs.
+CREATE FUNCTION public.wf_memory_org_proposal_cap()
+RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = ''
+AS $$ SELECT 200 $$;
+
 CREATE FUNCTION public.wf_memory_agent_daily_proposals()
 RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = ''
 AS $$ SELECT 50 $$;
@@ -139,6 +145,11 @@ CREATE TABLE public.wf_memory_item (
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now(),
   retired_at    timestamptz,
+  -- Per-item salt for the ledger hash of a note (set by the guard, gone when the row is retired or purged). A reference
+  -- value never gets a hash at all.
+  hash_salt     text,
+  CONSTRAINT wf_memory_item_salt_shape CHECK (
+    (data_class = 'note' AND status <> 'retired') = (hash_salt IS NOT NULL)),
   CONSTRAINT wf_memory_item_scope_ref CHECK (
     (scope_kind = 'organization' AND scope_ref = '')
     OR (scope_kind <> 'organization' AND scope_ref ~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$')),
@@ -254,6 +265,7 @@ BEGIN
 
   IF TG_OP = 'INSERT' THEN
     PERFORM pg_advisory_xact_lock(hashtextextended('ain03:' || NEW.org_id::text, 7127));
+    NEW.hash_salt := CASE WHEN NEW.data_class = 'note' THEN gen_random_uuid()::text END;
     IF NEW.version <> 1 OR NEW.status = 'retired' THEN
       RAISE EXCEPTION 'ain03:a_new_item_starts_live_at_version_1' USING ERRCODE = '23514';
     END IF;
@@ -305,25 +317,36 @@ BEGIN
       IF v_n >= public.wf_memory_agent_daily_proposals() THEN
         RAISE EXCEPTION 'ain03:agent_daily_proposals_exceeded' USING ERRCODE = '53400';
       END IF;
+      SELECT count(*) INTO v_n FROM public.wf_memory_item i
+       WHERE i.org_id = NEW.org_id AND i.status = 'proposed' AND i.expires_at > now();
+      IF v_n >= public.wf_memory_org_proposal_cap() THEN
+        RAISE EXCEPTION 'ain03:organization_proposals_full' USING ERRCODE = '53400';
+      END IF;
     ELSIF NEW.status <> 'active' THEN
       RAISE EXCEPTION 'ain03:a_person_writes_live_memory' USING ERRCODE = '23514';
     END IF;
 
+    -- Only active items count against the scope and the organization (a waiting proposal has its own cap above), and
+    -- a proposal is held to the scope cap too so an agent cannot pile up more than the scope can ever hold.
     SELECT count(*) INTO v_n FROM public.wf_memory_item i
      WHERE i.org_id = NEW.org_id AND i.scope_kind = NEW.scope_kind AND i.scope_ref = NEW.scope_ref
-       AND i.status <> 'retired' AND i.expires_at > now();
+       AND i.expires_at > now()
+       AND (i.status = 'active' OR (NEW.source_kind = 'agent' AND i.status = 'proposed'));
     IF v_n >= v_kind.max_items THEN
       RAISE EXCEPTION 'ain03:scope_is_full' USING ERRCODE = '53400';
     END IF;
-    SELECT count(*) INTO v_n FROM public.wf_memory_item i
-     WHERE i.org_id = NEW.org_id AND i.status <> 'retired' AND i.expires_at > now();
-    IF v_n >= public.wf_memory_org_item_cap() THEN
-      RAISE EXCEPTION 'ain03:organization_is_full' USING ERRCODE = '53400';
+    IF NEW.status = 'active' THEN
+      SELECT count(*) INTO v_n FROM public.wf_memory_item i
+       WHERE i.org_id = NEW.org_id AND i.status = 'active' AND i.expires_at > now();
+      IF v_n >= public.wf_memory_org_item_cap() THEN
+        RAISE EXCEPTION 'ain03:organization_is_full' USING ERRCODE = '53400';
+      END IF;
     END IF;
     RETURN NEW;
   END IF;
 
   -- UPDATE, including the update half of INSERT ... ON CONFLICT DO UPDATE.
+  PERFORM pg_advisory_xact_lock(hashtextextended('ain03:' || NEW.org_id::text, 7127));
   IF (NEW.id, NEW.org_id, NEW.scope_kind, NEW.scope_ref, NEW.key, NEW.source_kind, NEW.source_person,
       NEW.source_agent, NEW.source_run, NEW.created_at)
      IS DISTINCT FROM
@@ -350,10 +373,21 @@ BEGIN
     RAISE EXCEPTION 'ain03:version_moves_only_with_a_change' USING ERRCODE = '23514';
   END IF;
   NEW.updated_at := now();
+  -- A legal hold (M12) freezes content: nothing is overwritten or wiped while it is active, by anyone, on any path.
+  IF (NEW.value IS DISTINCT FROM OLD.value OR NEW.data_class IS DISTINCT FROM OLD.data_class OR NEW.status = 'retired')
+     AND OLD.status <> 'retired' AND public.wf_retention_legal_hold(NEW.org_id) THEN
+    RAISE EXCEPTION 'ain03:legal_hold_freezes_memory' USING ERRCODE = '42501';
+  END IF;
 
   IF NEW.status = 'retired' THEN
-    -- Retiring wipes the content (the row's CHECK requires an empty value) and switches the AI flag off.
+    -- Retiring wipes the content (the row's CHECK requires an empty value) and switches the AI flag off; the salt goes too.
+    NEW.hash_salt := NULL;
     RETURN NEW;
+  END IF;
+  IF NEW.data_class = 'note' AND (NEW.value IS DISTINCT FROM OLD.value OR NEW.data_class IS DISTINCT FROM OLD.data_class) THEN
+    NEW.hash_salt := gen_random_uuid()::text;
+  ELSIF NEW.data_class <> 'note' THEN
+    NEW.hash_salt := NULL;
   END IF;
 
   IF NOT EXISTS (SELECT 1 FROM public.wf_org_settings s WHERE s.org_id = NEW.org_id AND s.workflows_enabled) THEN
@@ -374,6 +408,20 @@ BEGIN
      AND (NEW.decided_by IS NULL OR coalesce(current_setting('ain03.actor', true), '') <> 'person:' || NEW.decided_by::text) THEN
     RAISE EXCEPTION 'ain03:acceptance_needs_a_person' USING ERRCODE = '42501';
   END IF;
+  -- Accepting a proposal makes it active, so the active caps apply to it now.
+  IF OLD.status = 'proposed' AND NEW.status = 'active' THEN
+    SELECT count(*) INTO v_n FROM public.wf_memory_item i
+     WHERE i.org_id = NEW.org_id AND i.scope_kind = NEW.scope_kind AND i.scope_ref = NEW.scope_ref
+       AND i.status = 'active' AND i.expires_at > now();
+    IF v_n >= v_kind.max_items THEN
+      RAISE EXCEPTION 'ain03:scope_is_full' USING ERRCODE = '53400';
+    END IF;
+    SELECT count(*) INTO v_n FROM public.wf_memory_item i
+     WHERE i.org_id = NEW.org_id AND i.status = 'active' AND i.expires_at > now();
+    IF v_n >= public.wf_memory_org_item_cap() THEN
+      RAISE EXCEPTION 'ain03:organization_is_full' USING ERRCODE = '53400';
+    END IF;
+  END IF;
   IF OLD.status = 'active' AND NEW.decided_by IS DISTINCT FROM OLD.decided_by THEN
     RAISE EXCEPTION 'ain03:decision_is_fixed' USING ERRCODE = '42501';
   END IF;
@@ -393,7 +441,8 @@ BEGIN
     RAISE EXCEPTION 'ain03:memory_is_never_truncated' USING ERRCODE = '42501';
   END IF;
   IF coalesce(current_setting('ain03.purge', true), '') = 'org:' || OLD.org_id::text || ':' || txid_current()::text
-     AND (OLD.expires_at <= now() OR (OLD.status = 'retired' AND OLD.retired_at < now() - interval '30 days')) THEN
+     AND (OLD.expires_at <= now() OR (OLD.status = 'retired' AND OLD.retired_at < now() - interval '30 days'))
+     AND NOT public.wf_retention_legal_hold(OLD.org_id) THEN
     RETURN OLD;
   END IF;
   RAISE EXCEPTION 'ain03:deletion_is_the_retention_pass_only' USING ERRCODE = '42501';
@@ -447,8 +496,10 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'ain03:no_actor_for_this_change' USING ERRCODE = '42501';
   END IF;
-  v_hash := CASE WHEN v_row.status = 'retired' THEN NULL
-                 ELSE encode(sha256(convert_to(v_row.value::text, 'UTF8')), 'hex') END;
+  -- A reference value (ids, codes, phone and national numbers) gets no hash: a hash of a short number can be recomputed.
+  -- A note's hash is salted with the item's own salt, which is wiped on retirement and deleted with the row on purge.
+  v_hash := CASE WHEN TG_OP = 'DELETE' OR v_row.status = 'retired' OR v_row.hash_salt IS NULL THEN NULL
+                 ELSE encode(sha256(convert_to(v_row.hash_salt || ':' || v_row.value::text, 'UTF8')), 'hex') END;
   INSERT INTO public.wf_memory_change (org_id, item_id, scope_kind, scope_ref, key, op, actor_kind, actor_person,
                                        actor_agent, data_class, version, value_sha256)
   VALUES (v_row.org_id, v_row.id, v_row.scope_kind, v_row.scope_ref, v_row.key, v_op, v_kind, v_person, v_agent,
@@ -516,13 +567,22 @@ BEGIN
    WHERE i.org_id = v_org AND i.scope_kind = p_scope_kind AND i.scope_ref = v_ref AND i.key = p_key
      AND i.status <> 'retired' FOR UPDATE;
   IF FOUND THEN
-    IF v_row.source_kind <> 'person' THEN
-      RAISE EXCEPTION 'ain03:key_held_by_agent_memory' USING ERRCODE = '42501';
-    END IF;
     IF v_row.expires_at <= now() THEN
+      -- An expired row only waits for the purge. A person's own is retired as that person; an agent's is retired by the
+      -- system (as wf_memory_agent_propose does) so an expired proposal never blocks a person.
+      IF v_row.source_kind <> 'person' THEN
+        PERFORM public.wf_memory_close();
+        PERFORM public.wf_memory_open('system');
+      END IF;
       UPDATE public.wf_memory_item SET status = 'retired', value = '{}'::jsonb, ai_readable = false,
              retired_at = now(), version = v_row.version + 1 WHERE id = v_row.id;
       v_row.id := NULL;
+      IF v_row.source_kind <> 'person' THEN
+        PERFORM public.wf_memory_close();
+        PERFORM public.wf_memory_open('person:' || p_actor::text);
+      END IF;
+    ELSIF v_row.source_kind <> 'person' THEN
+      RAISE EXCEPTION 'ain03:key_held_by_agent_memory' USING ERRCODE = '42501';
     END IF;
   END IF;
   IF v_row.id IS NOT NULL THEN
@@ -744,16 +804,22 @@ DECLARE
   v_held integer := 0;
   v_failed integer := 0;
 BEGIN
-  FOR v_org IN
-    SELECT DISTINCT i.org_id FROM public.wf_memory_item i
+  -- Organizations under a legal hold are filtered out before the window is cut, so they can never fill it; the others are
+  -- taken oldest-expiry first, so nobody waits behind a busy neighbour for ever.
+  SELECT count(*) INTO v_held FROM (
+    SELECT i.org_id FROM public.wf_memory_item i
      WHERE i.expires_at <= now() OR (i.status = 'retired' AND i.retired_at < now() - interval '30 days')
-     ORDER BY i.org_id LIMIT 20
+     GROUP BY i.org_id) h
+   WHERE public.wf_retention_legal_hold(h.org_id);
+  FOR v_org IN
+    SELECT c.org_id FROM (
+      SELECT i.org_id, min(i.expires_at) AS oldest FROM public.wf_memory_item i
+       WHERE i.expires_at <= now() OR (i.status = 'retired' AND i.retired_at < now() - interval '30 days')
+       GROUP BY i.org_id) c
+     WHERE NOT public.wf_retention_legal_hold(c.org_id)
+     ORDER BY c.oldest, c.org_id LIMIT 20
   LOOP
     EXIT WHEN v_left <= 0;
-    IF public.wf_retention_legal_hold(v_org) THEN
-      v_held := v_held + 1;
-      CONTINUE;
-    END IF;
     BEGIN
       PERFORM pg_advisory_xact_lock(hashtextextended('ain03:' || v_org::text, 7127));
       PERFORM set_config('ain03.actor', 'system', true);
@@ -804,7 +870,8 @@ CREATE POLICY wf_memory_change_member_read ON public.wf_memory_change FOR SELECT
 CREATE POLICY wf_memory_change_service_read ON public.wf_memory_change FOR SELECT TO service_role USING (true);
 
 REVOKE ALL ON FUNCTION
-  public.wf_memory_org_item_cap(), public.wf_memory_agent_daily_proposals(), public.wf_memory_value_ok(text, jsonb),
+  public.wf_memory_org_item_cap(), public.wf_memory_org_proposal_cap(), public.wf_memory_agent_daily_proposals(),
+  public.wf_memory_value_ok(text, jsonb),
   public.wf_memory_open(text), public.wf_memory_close(), public.wf_memory_item_guard(),
   public.wf_memory_item_delete_guard(), public.wf_memory_item_audit(),
   public.wf_memory_put(uuid, text, text, text, text, jsonb, integer, boolean),

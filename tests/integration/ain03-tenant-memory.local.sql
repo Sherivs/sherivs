@@ -123,7 +123,7 @@ CREATE FUNCTION ain03t.facts(p_item uuid) RETURNS jsonb LANGUAGE sql SECURITY DE
   SELECT to_jsonb(i) FROM public.wf_memory_item i WHERE i.id = p_item
 $$;
 CREATE FUNCTION ain03t.live(p_org text) RETURNS bigint LANGUAGE sql SECURITY DEFINER AS $$
-  SELECT count(*) FROM public.wf_memory_item WHERE org_id = ain03t.id(p_org) AND status <> 'retired'
+  SELECT count(*) FROM public.wf_memory_item WHERE org_id = ain03t.id(p_org) AND status = 'active' AND expires_at > now()
 $$;
 -- SQL text for the entry points, so a refused call can be passed to expect_error.
 CREATE FUNCTION ain03t.put(p_who text, p_kind text, p_ref text, p_key text, p_class text, p_value text,
@@ -191,24 +191,24 @@ SELECT ain03t.expect_true('exactly six AIN-03 functions execute for the service 
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_memory_put', 'wf_memory_agent_propose', 'wf_memory_decide', 'wf_memory_retire',
                         'wf_memory_agent_read', 'wf_memory_purge_expired'))
-  AND (SELECT count(*) = 8 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
+  AND (SELECT count(*) = 9 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE') AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
-      AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open',
+      AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_org_proposal_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open',
                         'wf_memory_close', 'wf_memory_item_guard', 'wf_memory_item_delete_guard', 'wf_memory_item_audit')));
 SELECT ain03t.expect_true('PUBLIC can execute no AIN-03 function',
   NOT EXISTS (SELECT 1 FROM pg_proc p, aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
                WHERE p.pronamespace = 'public'::regnamespace AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'
                  AND p.proname LIKE 'wf\_memory\_%'));
 SELECT ain03t.expect_true('every AIN-03 function pins an empty search_path',
-  (SELECT count(*) = 14 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
+  (SELECT count(*) = 15 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
     WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'wf\_memory\_%'));
 SELECT ain03t.expect_true('the entry points and the guards are SECURITY DEFINER; the pure helpers and the window helpers are not',
   (SELECT bool_and(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
     AND p.proname IN ('wf_memory_put', 'wf_memory_agent_propose', 'wf_memory_decide', 'wf_memory_retire', 'wf_memory_agent_read',
                       'wf_memory_purge_expired', 'wf_memory_item_guard', 'wf_memory_item_delete_guard', 'wf_memory_item_audit'))
   AND (SELECT NOT bool_or(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
-    AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open', 'wf_memory_close')));
+    AND p.proname IN ('wf_memory_org_item_cap', 'wf_memory_org_proposal_cap', 'wf_memory_agent_daily_proposals', 'wf_memory_value_ok', 'wf_memory_open', 'wf_memory_close')));
 SELECT ain03t.expect_true('the guards are wired where the design says (insert and update; delete; truncate; audit after every row change)',
   EXISTS (SELECT 1 FROM pg_trigger t WHERE t.tgrelid = 'public.wf_memory_item'::regclass AND t.tgname = 'wf_memory_item_10_guard'
             AND t.tgtype & 2 = 2 AND t.tgtype & 4 = 4 AND t.tgtype & 16 = 16 AND t.tgtype & 1 = 1 AND NOT t.tgisinternal)
@@ -232,7 +232,8 @@ SELECT ain03t.expect_true('four scopes with the reviewed lifetimes and caps; onl
   (SELECT string_agg(kind || ':' || default_ttl_days || ':' || max_ttl_days || ':' || max_items || ':' || agent_may_propose, ',' ORDER BY kind)
      FROM public.wf_memory_scope_kind) = 'agent:90:365:200:true,organization:365:1095:300:false,run:7:30:50:true,workflow:180:730:200:false');
 SELECT ain03t.expect_true('the cross-scope caps are 2000 items per organization and 50 proposals per agent per day',
-  public.wf_memory_org_item_cap() = 2000 AND public.wf_memory_agent_daily_proposals() = 50);
+  public.wf_memory_org_item_cap() = 2000 AND public.wf_memory_agent_daily_proposals() = 50
+  AND public.wf_memory_org_proposal_cap() = 200);
 SELECT ain03t.expect_error('an agent can never be given the organization scope in the data',
   $q$UPDATE public.wf_memory_scope_kind SET agent_may_propose = true WHERE kind = 'organization'$q$, '23514');
 SELECT ain03t.expect_error('an agent can never be given the workflow scope in the data',
@@ -357,10 +358,10 @@ SELECT ain03t.expect_true('a manager writes an organization item: active, versio
           AND data_class = 'reference' AND NOT ai_readable AND org_id = ain03t.id('orgA') AND scope_ref = ''
           AND expires_at = now() + interval '365 days'
      FROM public.wf_memory_item WHERE id = ain03t.id('put1')));
-SELECT ain03t.expect_true('the write left one ledger row (write, person, a hash and no content) and one audit entry',
+SELECT ain03t.expect_true('the write left one ledger row (write, person, no content, and no hash of a reference value) and one audit entry',
   ain03t.ops('orgA', 'write') = 1 AND ain03t.audits('orgA', 'workflow.memory.write') = 1
   AND (SELECT actor_kind = 'person' AND actor_person = ain03t.id('adminA') AND version = 1
-              AND value_sha256 = encode(sha256(convert_to('{"plan_code": "term-1", "term_count": 3}', 'UTF8')), 'hex')
+              AND value_sha256 IS NULL
          FROM public.wf_memory_change WHERE item_id = ain03t.id('put1')));
 SELECT ain03t.login_as('service_role');
 SELECT ain03t.expect_true('writing the same key again replaces it in place: same row, version 2, new value, one live row',
@@ -856,9 +857,8 @@ SELECT ain03t.expect_error('delete: a purge marker from another transaction is n
 SELECT ain03t.expect_true('every ledger row has a matching audit entry (counts agree per operation)',
   NOT EXISTS (SELECT 1 FROM (SELECT op, count(*) c FROM public.wf_memory_change WHERE org_id = ain03t.id('orgA') GROUP BY op) l
                WHERE ain03t.audits('orgA', 'workflow.memory.' || l.op) <> l.c));
-SELECT ain03t.expect_true('the ledger holds the hash of a value and never the value (spot check on one write)',
-  (SELECT value_sha256 = encode(sha256(convert_to((SELECT value::text FROM public.wf_memory_item WHERE id = ain03t.id('ret_live'))::text, 'UTF8')), 'hex')
-     FROM public.wf_memory_change WHERE item_id = ain03t.id('ret_live') AND op = 'write'));
+SELECT ain03t.expect_true('the ledger holds no hash of a reference value and never the value (spot check on one write)',
+  (SELECT value_sha256 IS NULL FROM public.wf_memory_change WHERE item_id = ain03t.id('ret_live') AND op = 'write'));
 SELECT ain03t.expect_true('the audit entries carry no memory content (the action is the operation, the hash is of a hash)',
   NOT EXISTS (SELECT 1 FROM public.audit_chain WHERE org_id = ain03t.id('orgA') AND action LIKE 'workflow.memory.%'
                 AND coalesce(after_hash, '') = ''));
@@ -880,6 +880,221 @@ SELECT ain03t.login_as('service_role');
 SELECT ain03t.expect_true('the service role reads the ledger and the reference data, across organizations',
   (SELECT count(DISTINCT org_id) = 2 FROM public.wf_memory_change) AND (SELECT count(*) = 4 FROM public.wf_memory_scope_kind));
 SELECT ain03t.logout();
+
+-- ---------------------------------------------------------------------------------------------
+-- 12b. Review round 1 fixes (coordinator review of #477, items 1 to 5)
+-- ---------------------------------------------------------------------------------------------
+CREATE FUNCTION ain03t.proposed(p_org text) RETURNS bigint LANGUAGE sql SECURITY DEFINER AS $$
+  SELECT count(*) FROM public.wf_memory_item WHERE org_id = ain03t.id(p_org) AND status = 'proposed' AND expires_at > now()
+$$;
+CREATE TABLE ain03t.salts (name text PRIMARY KEY, salt text);
+GRANT SELECT, INSERT, UPDATE ON ain03t.salts TO anon, authenticated, service_role;
+-- Insert an already-expired reference row as the owner with the user triggers off (the harness cannot wait, and the
+-- organizations in the starvation test have no person to write for them).
+CREATE FUNCTION ain03t.raw_expired(p_org uuid, p_key text) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER AS $$
+DECLARE v_id uuid := gen_random_uuid();
+BEGIN
+  ALTER TABLE public.wf_memory_item DISABLE TRIGGER USER;
+  INSERT INTO public.wf_memory_item (id, org_id, scope_kind, scope_ref, key, data_class, value, status, version,
+    source_kind, source_person, expires_at, created_at, updated_at)
+  VALUES (v_id, p_org, 'organization', '', p_key, 'reference', '{"a":"b"}', 'active', 1, 'person', ain03t.id('adminB'),
+    now() - interval '2 days', now() - interval '4 days', now() - interval '4 days');
+  ALTER TABLE public.wf_memory_item ENABLE TRIGGER USER;
+  RETURN v_id;
+END $$;
+GRANT EXECUTE ON FUNCTION ain03t.proposed(text), ain03t.raw_expired(uuid, text) TO anon, authenticated, service_role;
+
+-- Item 1: waiting proposals have their own cap and no longer use up the room a person needs.
+SELECT ain03t.owner(format($q$CREATE OR REPLACE FUNCTION public.wf_memory_org_proposal_cap() RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = '' AS $f$ SELECT %s $f$$q$, ain03t.proposed('orgB') + 2));
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 1: two more proposals fit under the proposal cap of the organization',
+  (public.wf_memory_agent_propose(ain03t.id('run_ab'), 'agent', NULL, 'pcap-1', '{"text":"one"}', NULL) ->> 'status') = 'proposed'
+  AND (public.wf_memory_agent_propose(ain03t.id('run_ab'), 'agent', NULL, 'pcap-2', '{"text":"two"}', NULL) ->> 'status') = 'proposed');
+SELECT ain03t.expect_error('item 1: the next proposal is refused by the proposal cap, however many the agent may still make today',
+  ain03t.propose('ab', 'agent', NULL, 'pcap-3', '{"text":"three"}'), '53400', 'ain03:organization_proposals_full');
+SELECT ain03t.logout();
+SELECT ain03t.owner(format($q$CREATE OR REPLACE FUNCTION public.wf_memory_org_item_cap() RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = '' AS $f$ SELECT %s $f$$q$, ain03t.live('orgB') + 1));
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 1: with proposals waiting, a person still fills the last free place of the organization cap (they are not counted)',
+  (public.wf_memory_put(ain03t.id('adminB'), 'organization', '', 'room-1', 'reference', '{"a":"b"}', NULL, false) ->> 'version')::int = 1);
+SELECT ain03t.expect_error('item 1: the cap itself still holds for people (the control)',
+  ain03t.put('adminB', 'organization', '', 'room-2', 'reference', '{"a":"b"}'), '53400', 'ain03:organization_is_full');
+SELECT ain03t.expect_error('item 1: accepting a proposal into a full organization is refused (it becomes active, so the active cap applies)',
+  ain03t.decide('adminB', ain03t.item('orgB', 'agent', 'ain03-a', 'pcap-1'), 'accept'), '53400', 'ain03:organization_is_full');
+SELECT ain03t.logout();
+SELECT ain03t.owner($q$CREATE OR REPLACE FUNCTION public.wf_memory_org_item_cap() RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = '' AS $f$ SELECT 2000 $f$$q$);
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 1: with room again, the same acceptance works (positive twin)',
+  (public.wf_memory_decide(ain03t.id('adminB'), ain03t.item('orgB', 'agent', 'ain03-a', 'pcap-1'), 'accept') ->> 'decision') = 'accept'
+  AND (ain03t.facts(ain03t.item('orgB', 'agent', 'ain03-a', 'pcap-1')) ->> 'status') = 'active');
+SELECT ain03t.logout();
+SELECT ain03t.owner($q$CREATE OR REPLACE FUNCTION public.wf_memory_org_proposal_cap() RETURNS integer LANGUAGE sql IMMUTABLE PARALLEL SAFE SECURITY INVOKER SET search_path = '' AS $f$ SELECT 200 $f$$q$);
+SELECT ain03t.expect_true('item 1: the reviewed caps are back (2000 active items, 200 waiting proposals)',
+  public.wf_memory_org_item_cap() = 2000 AND public.wf_memory_org_proposal_cap() = 200);
+
+-- Item 2: no hash of a personal-data value survives. A reference value (ids, codes, phone and national numbers) is never
+-- hashed; a note is hashed with the item's own salt, which goes when the row is retired and when it is purged.
+SELECT ain03t.login_as('service_role');
+SELECT public.wf_memory_put(ain03t.id('adminA'), 'organization', '', 'hash-ref', 'reference', '{"phone":"08012345678"}', 10, false);
+SELECT public.wf_memory_put(ain03t.id('adminA'), 'organization', '', 'hash-note', 'note', '{"text":"Parent prefers evening calls."}', 10, false);
+SELECT ain03t.logout();
+SELECT ain03t.keep('hash_ref', ain03t.item('orgA', 'organization', '', 'hash-ref'));
+SELECT ain03t.keep('hash_note', ain03t.item('orgA', 'organization', '', 'hash-note'));
+INSERT INTO ain03t.salts SELECT 'note_v1', hash_salt FROM public.wf_memory_item WHERE id = ain03t.id('hash_note');
+SELECT ain03t.expect_true('item 2: a reference value (a phone-like number) leaves no hash in the ledger, and the row keeps no salt',
+  (SELECT count(*) = 1 AND bool_and(value_sha256 IS NULL) FROM public.wf_memory_change WHERE item_id = ain03t.id('hash_ref'))
+  AND (SELECT hash_salt IS NULL FROM public.wf_memory_item WHERE id = ain03t.id('hash_ref')));
+SELECT ain03t.expect_true('item 2: a note''s ledger hash is salted: it is not the plain hash of the value, and it is the salted one',
+  (SELECT c.value_sha256 IS NOT NULL
+      AND c.value_sha256 <> encode(sha256(convert_to(i.value::text, 'UTF8')), 'hex')
+      AND c.value_sha256 = encode(sha256(convert_to(i.hash_salt || ':' || i.value::text, 'UTF8')), 'hex')
+      AND i.hash_salt IS NOT NULL
+     FROM public.wf_memory_item i JOIN public.wf_memory_change c ON c.item_id = i.id WHERE i.id = ain03t.id('hash_note')));
+SELECT ain03t.expect_true('item 2: no ledger row of any item anywhere holds the plain hash of its value',
+  NOT EXISTS (SELECT 1 FROM public.wf_memory_change c JOIN public.wf_memory_item i ON i.id = c.item_id
+               WHERE c.value_sha256 = encode(sha256(convert_to(i.value::text, 'UTF8')), 'hex')));
+SELECT ain03t.login_as('service_role');
+SELECT public.wf_memory_put(ain03t.id('adminA'), 'organization', '', 'hash-note', 'note', '{"text":"Parent prefers morning calls."}', 10, false);
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 2: changing a note gives it a new salt, so two versions of one value share no hash pattern',
+  (SELECT hash_salt <> (SELECT salt FROM ain03t.salts WHERE name = 'note_v1') FROM public.wf_memory_item WHERE id = ain03t.id('hash_note'))
+  AND (SELECT count(DISTINCT value_sha256) = 2 FROM public.wf_memory_change WHERE item_id = ain03t.id('hash_note')));
+SELECT ain03t.login_as('service_role');
+SELECT public.wf_memory_retire(ain03t.id('adminA'), ain03t.id('hash_note'));
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 2: retiring a note wipes its salt (and the value), and the retire row carries no hash',
+  (SELECT hash_salt IS NULL AND value = '{}'::jsonb FROM public.wf_memory_item WHERE id = ain03t.id('hash_note'))
+  AND (SELECT value_sha256 IS NULL FROM public.wf_memory_change WHERE item_id = ain03t.id('hash_note') AND op = 'retire')
+  AND NOT EXISTS (SELECT 1 FROM public.wf_memory_item WHERE hash_salt = (SELECT salt FROM ain03t.salts WHERE name = 'note_v1')));
+-- The user triggers are switched off inside the helper so only the table's own CHECK can answer (the guard would refuse first).
+CREATE FUNCTION ain03t.raw_salt(p_class text, p_value jsonb, p_salt text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  ALTER TABLE public.wf_memory_item DISABLE TRIGGER USER;
+  INSERT INTO public.wf_memory_item (org_id, scope_kind, scope_ref, key, data_class, value, status, source_kind, source_person,
+    expires_at, hash_salt)
+  VALUES (ain03t.id('orgA'), 'organization', '', 'salt-shape', p_class, p_value, 'active', 'person', ain03t.id('adminA'),
+    now() + interval '1 day', p_salt);
+  ALTER TABLE public.wf_memory_item ENABLE TRIGGER USER;
+END $$;
+GRANT EXECUTE ON FUNCTION ain03t.raw_salt(text, jsonb, text) TO anon, authenticated, service_role;
+SELECT ain03t.expect_error('item 2: a reference row that carries a salt is refused by the table itself',
+  $q$SELECT ain03t.raw_salt('reference', '{"a":"b"}', 'x')$q$, '23514', 'wf_memory_item_salt_shape');
+SELECT ain03t.expect_error('item 2: a live note without a salt is refused by the table itself',
+  $q$SELECT ain03t.raw_salt('note', '{"text":"x"}', NULL)$q$, '23514', 'wf_memory_item_salt_shape');
+SELECT ain03t.expect_true('item 2: control: a live note with a salt is accepted by the same helper (inside this transaction only)',
+  (SELECT true FROM (SELECT ain03t.raw_salt('note', '{"text":"x"}', 'salt-control')) x));
+SELECT ain03t.age(ain03t.id('hash_note'), 31, false);
+SELECT ain03t.login_as('service_role');
+SELECT public.wf_memory_purge_expired(500);
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 2: after the purge the row and its salt are gone, and what the ledger kept cannot be recomputed from anything stored',
+  ain03t.facts(ain03t.id('hash_note')) IS NULL
+  AND NOT EXISTS (SELECT 1 FROM public.wf_memory_item WHERE hash_salt = (SELECT salt FROM ain03t.salts WHERE name = 'note_v1'))
+  AND (SELECT value_sha256 IS NULL FROM public.wf_memory_change WHERE item_id = ain03t.id('hash_note') AND op = 'purge'));
+
+-- Item 3: organizations under a legal hold can no longer fill the purge window and starve the others.
+INSERT INTO public.schools (id, name, slug)
+SELECT ('a0000000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'AIN03 Held ' || g, 'ain03-held-' || g FROM generate_series(1, 22) g;
+INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
+SELECT ('a0000000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, false, 'draft' FROM generate_series(1, 22) g;
+INSERT INTO public.retention_legal_holds (id, org_id, hold_scope, reason, created_by, active)
+SELECT gen_random_uuid(), ('a0000000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'tenant', 'AIN03 starvation hold', ain03t.id('adminB'), true
+  FROM generate_series(1, 22) g;
+SELECT ain03t.raw_expired(('a0000000-0000-4000-8000-' || lpad(g::text, 12, '0'))::uuid, 'held-exp') FROM generate_series(1, 22) g;
+SELECT ain03t.keep('starved', ain03t.raw_expired(ain03t.id('orgC'), 'starved-exp'));
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 3: 22 held organizations that sort first no longer fill the window of 20: the unheld organization is purged in the first call',
+  (SELECT (r ->> 'skipped_legal_hold')::int = 22 AND (r ->> 'failed')::int = 0 AND (r ->> 'purged')::int >= 1
+     FROM (SELECT public.wf_memory_purge_expired(500) AS r) x));
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 3: the unheld organization''s expired row is gone and every held one still has its row',
+  ain03t.facts(ain03t.id('starved')) IS NULL
+  AND (SELECT count(*) = 22 FROM public.wf_memory_item WHERE key = 'held-exp'));
+UPDATE public.retention_legal_holds SET active = false, released_by = ain03t.id('adminB'), released_at = now(), release_reason = 'AIN03 harness release'
+ WHERE reason = 'AIN03 starvation hold';
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 3: released, the same organizations are purged (positive twin; 20 in one pass, the rest in the next)',
+  (SELECT (r ->> 'purged')::int = 20 FROM (SELECT public.wf_memory_purge_expired(500) AS r) x)
+  AND (SELECT (r ->> 'purged')::int = 2 FROM (SELECT public.wf_memory_purge_expired(500) AS r) x));
+SELECT ain03t.logout();
+
+-- Item 4: a legal hold freezes content. Nothing is overwritten, wiped or deleted while it is active, on any path.
+SELECT ain03t.login_as('service_role');
+SELECT public.wf_memory_put(ain03t.id('adminB'), 'organization', '', 'hold-ref', 'reference', '{"a":"b"}', 10, false);
+SELECT public.wf_memory_put(ain03t.id('adminB'), 'organization', '', 'hold-note', 'note', '{"text":"Kept for the matter."}', 10, false);
+SELECT ain03t.logout();
+SELECT ain03t.keep('hold_ref', ain03t.item('orgB', 'organization', '', 'hold-ref'));
+SELECT ain03t.keep('hold_note', ain03t.item('orgB', 'organization', '', 'hold-note'));
+INSERT INTO public.retention_legal_holds (id, org_id, hold_scope, reason, created_by, active)
+VALUES (ain03t.keep('hold2', gen_random_uuid()), ain03t.id('orgB'), 'tenant', 'AIN03 freeze hold', ain03t.id('adminB'), true);
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_error('item 4: a put that would overwrite a held value is refused',
+  ain03t.put('adminB', 'organization', '', 'hold-ref', 'reference', '{"a":"changed"}'), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.expect_error('item 4: a put that would turn a held note into a reference is refused too',
+  ain03t.put('adminB', 'organization', '', 'hold-note', 'reference', '{"a":"changed"}'), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.expect_error('item 4: retiring a held item (which wipes its content) is refused',
+  ain03t.retire('adminB', ain03t.id('hold_ref')), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.keep('hold_prop', (public.wf_memory_agent_propose(ain03t.id('run_ab'), 'agent', NULL, 'hold-prop', '{"text":"A hint kept for the matter."}', NULL) ->> 'id')::uuid);
+SELECT ain03t.expect_error('item 4: rejecting a waiting proposal (which wipes it) is refused under a hold as well',
+  ain03t.decide('adminB', ain03t.id('hold_prop'), 'reject'), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.expect_true('item 4: ... and the proposal is still waiting with its content',
+  ain03t.facts(ain03t.id('hold_prop')) ->> 'status' = 'proposed'
+  AND ain03t.facts(ain03t.id('hold_prop')) -> 'value' = '{"text": "A hint kept for the matter."}'::jsonb);
+SELECT ain03t.expect_true('item 4: a new key is still written under a hold (nothing existing is changed), positive twin',
+  (public.wf_memory_put(ain03t.id('adminB'), 'organization', '', 'hold-new', 'reference', '{"a":"b"}', 10, false) ->> 'version')::int = 1);
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 4: the held rows are unchanged',
+  (SELECT value = '{"a": "b"}'::jsonb AND status = 'active' FROM public.wf_memory_item WHERE id = ain03t.id('hold_ref'))
+  AND (SELECT value = '{"text": "Kept for the matter."}'::jsonb AND status = 'active' FROM public.wf_memory_item WHERE id = ain03t.id('hold_note')));
+SELECT ain03t.window('person:' || ain03t.id('adminB'));
+SELECT ain03t.expect_error('item 4: the guard is the backstop: a hand-opened window cannot overwrite a held value',
+  format($q$UPDATE public.wf_memory_item SET value = '{"a":"zz"}', version = version + 1 WHERE id = %L$q$, ain03t.id('hold_ref')), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.expect_error('item 4: ... or wipe it',
+  format($q$UPDATE public.wf_memory_item SET status = 'retired', value = '{}', ai_readable = false, retired_at = now(), version = version + 1 WHERE id = %L$q$, ain03t.id('hold_ref')), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.shut();
+SELECT ain03t.age(ain03t.id('hold_ref'), 3);
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_error('item 4: an expired item under hold is frozen as well: a put over its key is refused (it would wipe the old row)',
+  ain03t.put('adminB', 'organization', '', 'hold-ref', 'reference', '{"a":"new"}'), '42501', 'ain03:legal_hold_freezes_memory');
+SELECT ain03t.logout();
+SELECT set_config('ain03.purge', 'org:' || ain03t.id('orgB')::text || ':' || txid_current()::text, true);
+SELECT ain03t.expect_error('item 4: the delete guard refuses an expired row of an organization under hold, even with the right purge marker',
+  format($q$DELETE FROM public.wf_memory_item WHERE id = %L$q$, ain03t.id('hold_ref')), '42501', 'ain03:deletion_is_the_retention_pass_only');
+SELECT ain03t.shut();
+UPDATE public.retention_legal_holds SET active = false, released_by = ain03t.id('adminB'), released_at = now(), release_reason = 'AIN03 harness release'
+ WHERE id = ain03t.id('hold2');
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 4: with the hold released, the retire works (positive twin)',
+  (public.wf_memory_retire(ain03t.id('adminB'), ain03t.id('hold_note')) ->> 'status') = 'retired');
+SELECT ain03t.expect_true('item 4: with the hold released, the waiting proposal can be rejected (positive twin)',
+  (public.wf_memory_decide(ain03t.id('adminB'), ain03t.id('hold_prop'), 'reject') ->> 'decision') = 'reject'
+  AND ain03t.facts(ain03t.id('hold_prop')) ->> 'status' = 'retired'
+  AND ain03t.facts(ain03t.id('hold_prop')) -> 'value' = '{}'::jsonb);
+SELECT ain03t.expect_true('item 4: ... and so does a put over the expired key',
+  (public.wf_memory_put(ain03t.id('adminB'), 'organization', '', 'hold-ref', 'reference', '{"a":"new"}', 10, false) ->> 'version')::int = 1);
+SELECT ain03t.logout();
+
+-- Item 5: an expired row of an agent no longer blocks a person's put.
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.keep('exp_agent', (public.wf_memory_agent_propose(ain03t.id('run_b'), 'agent', NULL, 'expire-hint', '{"text":"old hint"}', NULL) ->> 'id')::uuid);
+SELECT public.wf_memory_agent_propose(ain03t.id('run_b'), 'agent', NULL, 'live-hint', '{"text":"live hint"}', NULL);
+SELECT ain03t.expect_error('item 5: while the agent''s proposal is live it still blocks a person (the control)',
+  ain03t.put('adminA', 'agent', 'ain03-b', 'live-hint', 'note', '{"text":"mine"}'), '42501', 'ain03:key_held_by_agent_memory');
+SELECT ain03t.logout();
+SELECT ain03t.age(ain03t.id('exp_agent'), 1);
+SELECT ain03t.login_as('service_role');
+SELECT ain03t.expect_true('item 5: once the agent''s proposal has expired the person writes the key: a new live row at version 1',
+  (public.wf_memory_put(ain03t.id('adminA'), 'agent', 'ain03-b', 'expire-hint', 'note', '{"text":"mine"}', NULL, false) ->> 'version')::int = 1);
+SELECT ain03t.logout();
+SELECT ain03t.expect_true('item 5: the expired row was retired and wiped by the system, in the ledger and the audit chain, and the person''s row is live',
+  (SELECT status = 'retired' AND value = '{}'::jsonb AND hash_salt IS NULL FROM public.wf_memory_item WHERE id = ain03t.id('exp_agent'))
+  AND (SELECT count(*) = 1 AND bool_and(actor_kind = 'system' AND actor_person IS NULL AND actor_agent IS NULL AND value_sha256 IS NULL)
+         FROM public.wf_memory_change WHERE item_id = ain03t.id('exp_agent') AND op = 'retire')
+  AND (SELECT source_kind = 'person' AND status = 'active' AND version = 1
+         FROM public.wf_memory_item WHERE id = ain03t.item('orgA', 'agent', 'ain03-b', 'expire-hint')));
+SELECT ain03t.expect_true('item 5: the ledger and the audit chain still agree after all of this (counts per operation)',
+  NOT EXISTS (SELECT 1 FROM (SELECT op, count(*) c FROM public.wf_memory_change WHERE org_id = ain03t.id('orgA') GROUP BY op) l
+               WHERE ain03t.audits('orgA', 'workflow.memory.' || l.op) <> l.c));
 
 -- ---------------------------------------------------------------------------------------------
 -- 13. Result
