@@ -5,7 +5,7 @@ Origin: Claude Code agent, mission AIN-03 (issue #476)
 Creator: Claude Code agent
 Created: 2026-11-20
 
-Status: Draft implementation (PR stacked on #475, #473, #471, #469, #467, #455; issue #476); NOT APPLIED, not deployed. `WORKFLOWS_ENABLED` is untouched. No model was called and nothing was sent.
+Status: Draft implementation (PR stacked on #475, #473, #471, #469, #467, #455; issue #476); NOT APPLIED, not deployed. `WORKFLOWS_ENABLED` is untouched. No model was called and nothing was sent. Review round 1 (the five findings of the coordinator review, 2026-11-25) is implemented on this branch: see "Review round 1" and the re-run evidence below.
 
 | Field     | Value                                                                                        |
 | --------- | -------------------------------------------------------------------------------------------- |
@@ -46,11 +46,11 @@ So no "blocked on decision N" issue was written.
 ## Implemented
 
 - Migration (inside `BEGIN`/`COMMIT`): `wf_memory_scope_kind` (4 reviewed rows), `wf_memory_item`, the append-only
-  `wf_memory_change`; `wf_memory_value_ok`, `wf_memory_org_item_cap`, `wf_memory_agent_daily_proposals`; the guard
+  `wf_memory_change`; `wf_memory_value_ok`, `wf_memory_org_item_cap`, `wf_memory_org_proposal_cap`, `wf_memory_agent_daily_proposals`; the guard
   `wf_memory_item_guard` (insert and update, so also every upsert), `wf_memory_item_delete_guard`,
   `wf_memory_item_audit`; the write window helpers; the six entry points; privileges; rollback.
 - `frontend/src/lib/workflow/tenant-memory.ts` (pure): scopes, caps, the value shape and a write pre-check.
-- Tests: SQL harness, ACL test, unit file (14 tests), concurrency e2e.
+- Tests: SQL harness, ACL test, unit file (15 tests), concurrency e2e.
 - `verify.yml`: a default-privileges step (AIN-03 rolled back, Supabase default privileges switched on for the migrator,
   re-applied, harness and ACL test run), a harness step, one e2e line after AIN-02's; the AIN-01 default-privileges step
   now undoes and re-applies AIN-03 around AIN-02 and AIN-01 (AIN-03 has a foreign key to `wf_agent`).
@@ -61,7 +61,7 @@ So no "blocked on decision N" issue was written.
 
 - (a) Default privileges: every table and function is revoked from PUBLIC, anon, authenticated and service_role before
   any grant; the service role has NO privilege on `wf_memory_item` and SELECT only on the ledger and the reference data;
-  EXECUTE only on the six entry points; the eight internal functions are executable by nobody. Proved under
+  EXECUTE only on the six entry points; the nine internal functions are executable by nobody. Proved under
   `ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator ... TO anon, authenticated, service_role`, with an ACL test whose
   failure was shown by granting one privilege back.
 - (b) Guards cover UPDATE and upsert: one BEFORE INSERT OR UPDATE trigger; the lifetime cap, the identity, the status
@@ -69,7 +69,7 @@ So no "blocked on decision N" issue was written.
   `INSERT ... ON CONFLICT DO UPDATE` for the lifetime, the shape, the scope move and the proposal-goes-live paths.
 - (c) SQL is the backstop for every cap in code: item cap per scope, 2000 per organization, 50 proposals per agent per
   day, value shape and size, lifetimes. Hand-opened write windows in the harness simulate a faulty function.
-- (d) No earlier assertion was weakened: no existing test file changed except the allow-list line additions below.
+- (d) No earlier assertion was weakened. Review round 1 changed some existing harness assertions to the reviewed behaviour; each is listed under "Existing tests and files changed".
 
 ## Existing tests and files changed
 
@@ -79,30 +79,58 @@ So no "blocked on decision N" issue was written.
   re-applies AIN-03.
 - `architecture/adr/INDEX.md` (one row), `docs/runbooks/workflows-enablement.md` (one section).
 - No change to any WF or AIN-01 or AIN-02 harness, e2e script or migration.
+- Review round 1 (2026-11-25) changed these existing AIN-03 assertions, all to follow a reviewed behaviour change and none
+  loosened without a replacement:
+  - helper `ain03t.live()` counted every non-retired row; it now counts active, unexpired rows (the organization cap no
+    longer counts waiting proposals);
+  - the internal-function count 8 became 9 and `wf_memory_org_proposal_cap` joined the allow-list; the function count 14
+    became 15; the cap check also asserts `wf_memory_org_proposal_cap() = 200`;
+  - "the write left one ledger row (write, person, a hash and no content)" now asserts a `reference` write leaves
+    `value_sha256` NULL (a reference value has no hash any more);
+  - "the ledger holds the hash of a value ... (spot check)" asserted the plain SHA-256 of a `reference` value, which is
+    the defect; it is replaced by the item 2 assertions (a note's hash is salted and is not the plain hash, no ledger
+    row of any item holds a plain hash, a reference has none, retire and purge leave nothing recomputable);
+  - `ain03-default-privileges.local.sql`: `wf_memory_org_proposal_cap()` added to the no-one-may-execute list;
+  - `tests/unit/ain03-tenant-memory.test.ts`: function count 14 became 15, the proposal cap constant is asserted, and a
+    new test requires the rollback to drop every function and table the migration creates (the first version of this fix
+    forgot `wf_memory_org_proposal_cap()` in the rollback; the new test fails without that line).
 
-## Evidence (20 Nov 2026, local PostgreSQL 16, every migration applied as a non-superuser migrator)
+## Evidence
 
-- `AIN03 ALL PASS: 217 checks` (`tests/integration/ain03-tenant-memory.local.sql`; the same count after re-applying
-  AIN-03 under Supabase default privileges).
-- `AIN03-PRIV ALL PASS: 148 checks` (`tests/integration/ain03-default-privileges.local.sql`).
-- `AIN03-E2E RESULT: proposals=60 proposed=50 refused=10 over_cap=0 same_key=30 same_key_inserted=1 puts=20 live_after_puts=1 version_after_puts=20 org_scope_writes=320 org_scope_inserted=300 org_scope_refused=20 accepts=10 accepted=1 mixed_winners=1 purged=10 writes_during_purge=15 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0` (plain `pg`, no PostgREST).
-- Regression with AIN-03 applied, same database: `WF01 ALL PASS: 92 checks`, `WF02 ALL PASS: 24 checks`, `WF03 ALL PASS`,
-  `WF05 ALL PASS: 23 checks`, `WF06 ALL PASS: 29 checks`, `WF07 ALL PASS: 96 checks`, `WF08 ALL PASS: 113 checks`,
-  `WF12 ALL PASS: 213 checks`, `AIN01 ALL PASS: 136 checks`, `AIN02 ALL PASS: 184 checks`, `AIN02-E2E RESULT: ... dup=0`
-  (unchanged line).
-- The CI default-privileges steps, rehearsed locally in scratch databases: AIN-01 step with AIN-03 undone and re-applied
-  around it (`AIN01 ALL PASS: 136 checks`, `AIN01-PRIV ALL PASS: 124 checks`, `AIN03-PRIV ALL PASS: 148 checks`), AIN-02 step
-  (`AIN02 ALL PASS: 184 checks`, `AIN02-PRIV ALL PASS: 241 checks`), AIN-03 step, WF-08/WF-12 step with the extended list
-  (`WF12-PRIV ALL PASS: 41 functions checked`, was 35).
-- Rollback rehearsal: rolled back (no AIN-03 object left), `WF06`, `WF12`, `AIN01` and `AIN02` harnesses pass again, re-applied,
-  `AIN03 ALL PASS: 217 checks`. After the e2e the rollback refuses (`memory items or ledger rows exist`).
-- Sensitivity (mutations made in scratch databases, each killed by the harness): agent content-fixed rule off, update-time
-  lifetime check off, AI-route check off in the read path, daily cap off, acceptance-actor check off, insert-actor check
-  inverted, delete guard widened, legal hold ignored, organization cap off, agent-scope rule off. The e2e also fails
-  with the per-organization advisory lock removed (`proposed=60`, `inserted=320`, `version=14`).
-- Unit: `ain03-tenant-memory.test.ts` 14 passed; `tsc --noEmit`, eslint and prettier clean on the new files.
-- Guards: `verify-domain-neutrality` PASS (no new hit, no quarantine needed), `verify-migration-grants` PASS,
-  `verify-provenance-metadata` PASS.
+Re-run on 25 Nov 2026 after review round 1, on local PostgreSQL 16, every migration applied as a non-superuser migrator
+(the figures from 20 Nov are superseded: harness 217 became 254 checks, ACL test 148 became 153, unit 14 became 15 tests).
+
+- `AIN03 ALL PASS: 254 checks` (`tests/integration/ain03-tenant-memory.local.sql`; 217 earlier checks, 34 for the five
+  review items in section 12b, 3 for rejecting a proposal under a legal hold; the same count after rollback and
+  re-apply under Supabase default privileges).
+- `AIN03-PRIV ALL PASS: 153 checks` (`tests/integration/ain03-default-privileges.local.sql`).
+- `AIN03-E2E RESULT: proposals=60 proposed=50 refused=10 over_cap=0 same_key=30 same_key_inserted=1 puts=20 live_after_puts=1 version_after_puts=20 org_scope_writes=320 org_scope_inserted=300 org_scope_refused=20 accepts=10 accepted=1 mixed_winners=1 purged=10 writes_during_purge=15 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0` (plain `pg`, no PostgREST; identical to the line CI expects, so `verify.yml` needs no change).
+- Regression with AIN-03 applied (review round 1), same database: `WF01 ALL PASS: 92 checks`, `WF02 ALL PASS: 24 checks`,
+  `WF03 ALL PASS`, `WF05 ALL PASS: 23 checks`, `WF06 ALL PASS: 29 checks`, `WF07 ALL PASS: 96 checks`,
+  `WF08 ALL PASS: 113 checks`, `WF12 ALL PASS: 213 checks`, `AIN01 ALL PASS: 136 checks`,
+  `AIN02 ALL PASS: 193 checks` (the 20 Nov record of 184 was stale: AIN-02's review round added 9).
+- The CI default-privileges steps, rehearsed locally in scratch databases: AIN-01 step (AIN-03, AIN-02 and AIN-01 rolled
+  back with the rollback files of this branch, Supabase default privileges switched on for the migrator, all three
+  re-applied: `AIN01 ALL PASS: 136`, `AIN01-PRIV ALL PASS: 124`, `AIN02 ALL PASS: 193`, `AIN02-PRIV ALL PASS: 241`,
+  `AIN03 ALL PASS: 254`, `AIN03-PRIV ALL PASS: 153`), the AIN-03 step, and the WF-12 allow-list
+  (`WF12-PRIV ALL PASS: 41 functions checked`).
+- Rollback rehearsal: rolled back (no AIN-03 object left), re-applied, `AIN03 ALL PASS: 254 checks`. After the e2e the
+  rollback refuses (`memory items or ledger rows exist`). The first version of review round 1 omitted
+  `DROP FUNCTION public.wf_memory_org_proposal_cap()` from the rollback, which made the next re-apply fail
+  ("function already exists"); found by the mutation runs, fixed, and now caught by a unit test.
+- Sensitivity, round 1 (nine mutations of the migration, each applied in a scratch database and each failing the
+  harness): proposal cap removed; organization cap counts proposals again; plain hash back for references; salt kept on
+  retire; purge window starvation back; hold check off in the guard; hold check off in the delete guard; expired agent
+  row blocks again; notes hashed without the salt. Earlier mutations of 20 Nov (agent content-fixed rule, update-time
+  lifetime check, AI-route check, daily cap, acceptance-actor check, insert-actor check, delete guard widened, legal hold
+  ignored, organization cap, agent-scope rule) were not repeated. The e2e failed with the advisory lock removed on 20
+  Nov and was not re-tried.
+- Unit: `ain03-tenant-memory.test.ts` 15 passed (new: the rollback drops every function and table; failing when the
+  `DROP FUNCTION public.wf_memory_org_proposal_cap()` line is removed); `tsc --noEmit`, eslint and prettier clean on the
+  changed files.
+- Guards (25 Nov, local): `verify-domain-neutrality` STATUS=PASS (no new hit), `verify-migration-grants` STATUS=PASS,
+  `verify-provenance-metadata` exit 0 (advisory only). `verify-migration-ledger` was not checked (it needs a read-only
+  database connection; nothing was checked against any database).
 
 ## CI evidence
 

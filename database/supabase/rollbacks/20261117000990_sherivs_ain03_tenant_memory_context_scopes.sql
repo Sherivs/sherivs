@@ -37,5 +37,6 @@ DROP FUNCTION public.wf_memory_close();
 DROP FUNCTION public.wf_memory_value_ok(text, jsonb);
 DROP FUNCTION public.wf_memory_agent_daily_proposals();
 DROP FUNCTION public.wf_memory_org_item_cap();
+DROP FUNCTION public.wf_memory_org_proposal_cap();
 
 COMMIT;

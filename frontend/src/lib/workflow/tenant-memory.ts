@@ -25,8 +25,10 @@ export const MEMORY_SCOPE_RULES: Readonly<Record<MemoryScope, MemoryScopeRule>> 
   run: { defaultTtlDays: 7, maxTtlDays: 30, maxItems: 50, agentMayPropose: true },
 });
 
-/** wf_memory_org_item_cap(): live items per organization across all scopes. */
+/** wf_memory_org_item_cap(): active items per organization across all scopes (waiting proposals are not counted). */
 export const MEMORY_ORG_ITEM_CAP = 2000;
+/** wf_memory_org_proposal_cap(): proposals waiting for a decision (not expired) per organization. */
+export const MEMORY_ORG_PROPOSAL_CAP = 200;
 /** wf_memory_agent_daily_proposals(): proposals per agent and organization in any 24 hours. */
 export const MEMORY_AGENT_DAILY_PROPOSALS = 50;
 /** wf_memory_item_delete_guard: a retired row is deleted by the retention pass after this many days. */

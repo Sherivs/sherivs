@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   MEMORY_AGENT_DAILY_PROPOSALS,
   MEMORY_ORG_ITEM_CAP,
+  MEMORY_ORG_PROPOSAL_CAP,
   MEMORY_SCOPES,
   MEMORY_SCOPE_RULES,
   MEMORY_VALUE_MAX_BYTES,
@@ -44,6 +45,8 @@ describe("AIN-03 memory: the TypeScript restatement matches the migration", () =
   it("the cross-scope caps match the SQL functions", () => {
     expect(migration).toMatch(/wf_memory_org_item_cap\(\)[\s\S]{0,200}SELECT 2000 \$\$/);
     expect(migration).toMatch(/wf_memory_agent_daily_proposals\(\)[\s\S]{0,200}SELECT 50 \$\$/);
+    expect(migration).toMatch(/wf_memory_org_proposal_cap\(\)[\s\S]{0,200}SELECT 200 \$\$/);
+    expect(MEMORY_ORG_PROPOSAL_CAP).toBe(200);
     expect(MEMORY_ORG_ITEM_CAP).toBe(2000);
     expect(MEMORY_AGENT_DAILY_PROPOSALS).toBe(50);
     expect(migration).toContain("octet_length(p_value::text) <= 4096");
@@ -180,9 +183,26 @@ describe("AIN-03 memory: migration hygiene", () => {
     expect(rollback).toContain("memory items or ledger rows exist");
   });
 
+  it("the rollback drops every function, trigger-function and table the migration creates", () => {
+    const created = [...migration.matchAll(/CREATE FUNCTION public\.(\w+)\(/g)].map((m) => m[1]);
+    expect(created.length).toBe(15);
+    for (const name of created) {
+      expect(rollback, `rollback must drop function ${name}`).toMatch(
+        new RegExp(`DROP FUNCTION (IF EXISTS )?public\\.${name}\\(`),
+      );
+    }
+    const tables = [...migration.matchAll(/CREATE TABLE public\.(\w+)/g)].map((m) => m[1]);
+    expect(tables.length).toBeGreaterThanOrEqual(3);
+    for (const name of tables) {
+      expect(rollback, `rollback must drop table ${name}`).toMatch(
+        new RegExp(`DROP TABLE (IF EXISTS )?public\\.${name}\\b`),
+      );
+    }
+  });
+
   it("every function pins an empty search_path and none is granted to PUBLIC, anon or authenticated", () => {
     const fns = migration.split("CREATE FUNCTION public.").slice(1);
-    expect(fns.length).toBe(14);
+    expect(fns.length).toBe(15);
     for (const f of fns) expect(f.slice(0, f.indexOf("AS $$"))).toContain("SET search_path = ''");
     expect(migration).not.toMatch(/GRANT EXECUTE[^;]*TO[^;]*(anon|authenticated|PUBLIC)/);
     expect(migration).toMatch(
