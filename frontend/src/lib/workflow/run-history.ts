@@ -142,6 +142,8 @@ export const RunListInput = z
       .regex(/^[a-z][a-z0-9_-]{1,62}$/)
       .optional(),
     before: isoTime.optional(),
+    // Keyset tiebreaker: runs created in one transaction share created_at, so the page boundary is (created_at, id).
+    beforeId: uuid.optional(),
   })
   .strict();
 export type RunListRequest = z.infer<typeof RunListInput>;

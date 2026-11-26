@@ -530,16 +530,21 @@ AS $$
 DECLARE
   v_category text;
   v_required integer;
+  v_digest text;
 BEGIN
   IF NEW.status = 'approved' AND OLD.status = 'pending' AND OLD.risk = 'high' THEN
     v_category := public.wf_approval_category(OLD.org_id, OLD.id);
     v_required := public.wf_approval_required_count(OLD.org_id, OLD.risk, v_category);
+    -- Only votes cast on the content as it is NOW count, the same rule the decide function applies. A vote on an
+    -- earlier version of the content (the draft or template changed since) must not satisfy this row-level gate.
+    v_digest := public.wf_approval_content_digest(OLD.org_id, OLD.id);
     IF NOT EXISTS (SELECT 1 FROM public.wf_approval_decision x
                     WHERE x.approval_id = OLD.id AND x.approver_id = NEW.decided_by
-                      AND x.decision = 'approve' AND x.step_up_id IS NOT NULL)
+                      AND x.decision = 'approve' AND x.step_up_id IS NOT NULL
+                      AND x.content_digest = v_digest)
        OR (SELECT count(DISTINCT x.approver_id) FROM public.wf_approval_decision x
             WHERE x.approval_id = OLD.id AND x.decision = 'approve'
-              AND x.step_up_id IS NOT NULL) < v_required
+              AND x.step_up_id IS NOT NULL AND x.content_digest = v_digest) < v_required
        OR EXISTS (SELECT 1 FROM public.wf_approval_decision x
                    WHERE x.approval_id = OLD.id AND x.decision = 'reject') THEN
       RAISE EXCEPTION 'wf_approval: a high-risk approval needs recorded step-up votes from the required approvers'
