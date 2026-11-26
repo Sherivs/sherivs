@@ -66,7 +66,7 @@ engine needs the same answers in the database, where a bug in a runtime, a templ
    use: T0 internal and waits; T1 adds tasks, unclassified actions and the reserved `ai_model` class; T2 adds
    communications; T3 adds the six capped classes (money, safeguarding, credentials, publishing, mass messages,
    authority sharing). The autonomy guard still caps those six at draft whatever this table says. Only steps that
-   act (`action`, `notify`, `ai`) are classified; conditions, waits and approvals are not. This mapping is an
+   act (`action`, `notify`, `ai`) are classified; conditions, waits, approvals and subflows are not. This mapping is an
    engineering default for the founder to ratify.
 6. **Budgets.** The daily action budget (rolling 24 hours, counted from the agent's own steps in the organization)
    is enforced now. The model-call and cost budgets are recorded but not enforced: no model call exists to meter
@@ -94,6 +94,16 @@ engine needs the same answers in the database, where a bug in a runtime, a templ
   against production.
 
 ## Accepted limitations and follow-ups (review notes)
+
+- Review (re-review, 2026-11-26): the AI tripwire runs on insert only and the claim path has no check of its own; the
+  migration therefore refuses to install while any `kind = 'ai'` or `action_class = 'ai_model'` step exists. A row
+  written outside the trigger later (owner or `session_replication_role`) would still be claimable: follow-up, add the
+  exclusion to `wf_claim_due_steps` when the AI route is decided.
+- `subflow`, `condition`, `approval` and `wait` steps are not classified, so a tier-0 agent can insert them whatever
+  class they name. The runtime does not execute `subflow` as an action; gate it before it does.
+- `wf_template.agent_ref` can be set to NULL by the service role (pre-existing). A run that carries its agent only
+  through the template then gets steps with no agent, no class gate and no budget. Follow-up: freeze it once a run uses
+  it, or copy the agent onto `wf_run.agent_ref` at run creation.
 
 - A pause blocks new steps only (a step that already exists finishes, retries or is cancelled). Stopping in-flight
   work is a separate, deliberate action (cancel the run).
