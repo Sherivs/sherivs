@@ -121,30 +121,30 @@ SELECT ain02t.expect_true('exactly three AIN-02 functions execute for the servic
       AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_autonomy_record_evidence', 'wf_autonomy_promote', 'wf_autonomy_demote'))
-  AND (SELECT count(*) = 13 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
+  AND (SELECT count(*) = 15 AND bool_and(NOT has_function_privilege('service_role', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('authenticated', p.oid, 'EXECUTE')
       AND NOT has_function_privilege('anon', p.oid, 'EXECUTE'))
      FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
       AND p.proname IN ('wf_autonomy_rank', 'wf_autonomy_level_of', 'wf_autonomy_demote_floor', 'wf_autonomy_append_only',
         'wf_autonomy_ceiling', 'wf_effective_autonomy', 'wf_autonomy_write_gate', 'wf_autonomy_change_guard',
         'wf_autonomy_change_audit', 'wf_autonomy_apply', 'wf_action_sandbox_outbox_autonomy_guard',
-        'wf_run_freeze_actor', 'wf_autonomy_guard'))
+        'wf_run_freeze_actor', 'wf_autonomy_guard', 'wf_template_pin_actor', 'wf_autonomy_earned_no_truncate'))
 );
 SELECT ain02t.expect_true('PUBLIC can execute no AIN-02 function',
   NOT EXISTS (SELECT 1 FROM pg_proc p, aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
                WHERE p.pronamespace = 'public'::regnamespace AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'
                  AND (p.proname LIKE 'wf\_autonomy\_%' OR p.proname IN ('wf_effective_autonomy',
-                      'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor'))));
+                      'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor', 'wf_template_pin_actor'))));
 SELECT ain02t.expect_true('every AIN-02 function pins an empty search_path',
-  (SELECT count(*) = 16 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
+  (SELECT count(*) = 18 AND bool_and(p.proconfig @> ARRAY['search_path=""']) FROM pg_proc p
     WHERE p.pronamespace = 'public'::regnamespace
       AND (p.proname LIKE 'wf\_autonomy\_%' OR p.proname IN ('wf_effective_autonomy',
-           'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor'))));
+           'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor', 'wf_template_pin_actor'))));
 SELECT ain02t.expect_true('the three entry points and every guard are SECURITY DEFINER; the pure helpers are not',
   (SELECT bool_and(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
     AND p.proname IN ('wf_autonomy_record_evidence', 'wf_autonomy_promote', 'wf_autonomy_demote', 'wf_autonomy_apply',
       'wf_autonomy_write_gate', 'wf_autonomy_change_guard', 'wf_autonomy_change_audit', 'wf_autonomy_ceiling',
-      'wf_effective_autonomy', 'wf_autonomy_guard', 'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor'))
+      'wf_effective_autonomy', 'wf_autonomy_guard', 'wf_action_sandbox_outbox_autonomy_guard', 'wf_run_freeze_actor', 'wf_template_pin_actor'))
   AND (SELECT NOT bool_or(p.prosecdef) FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
     AND p.proname IN ('wf_autonomy_rank', 'wf_autonomy_level_of', 'wf_autonomy_demote_floor', 'wf_autonomy_append_only')));
 SELECT ain02t.expect_true('the guards are wired where the design says',
@@ -545,8 +545,8 @@ SELECT ain02t.expect_error('a promotion to the level the agent already holds is 
 
 -- Evidence bars at the boundary: limit-1 fails, limit passes (draft: 20 cases at 0.90).
 SELECT ain02t.ev('d_n19', 'ain02-dept', 19, 19);
-SELECT ain02t.ev('d_r17', 'ain02-dept', 20, 17);
-SELECT ain02t.ev('d_crit', 'ain02-dept', 40, 40 - 1, 1);
+SELECT ain02t.ev('d_r17', 'ain02-dept', 20, 17, 0, 0, interval '2 hours');
+SELECT ain02t.ev('d_crit', 'ain02-dept', 40, 40 - 1, 1, 0, interval '2 hours');
 SELECT ain02t.ev('d_stale', 'ain02-dept', 25, 25, 0, 0, interval '30 days 1 minute');
 SELECT ain02t.ev('d_ungraded', 'ain02-dept', 30, 30, 0, 3);
 SELECT ain02t.ev('o_other', 'ain02-dept2', 30, 30);
@@ -641,8 +641,8 @@ SELECT ain02t.logout();
 -- ---------------------------------------------------------------------------------------------
 SELECT ain02t.login_as('service_role');
 SELECT ain02t.ev('bk_ok', 'ain02-extra', 30, 30);
-SELECT ain02t.ev('bk_below', 'ain02-extra', 20, 10);
-SELECT ain02t.ev('bk_crit', 'ain02-extra', 40, 39, 1);
+SELECT ain02t.ev('bk_below', 'ain02-extra', 20, 10, 0, 0, interval '2 hours');
+SELECT ain02t.ev('bk_crit', 'ain02-extra', 40, 39, 1, 0, interval '2 hours');
 SELECT ain02t.ev('bk_other', 'ain02-dept2', 30, 30);
 SELECT ain02t.ev('bk_reg_ok', 'ain02-extra', 40, 40);
 SELECT ain02t.logout();
@@ -812,7 +812,7 @@ SELECT ain02t.logout();
 -- 10b. Evidence is superseded by anything newer (a later piece of evidence, or a later demotion)
 -- ---------------------------------------------------------------------------------------------
 SELECT ain02t.login_as('service_role');
-SELECT ain02t.ev('sup_g', 'ain02-extra', 40, 40, 0, 0, interval '3 hours');
+SELECT ain02t.ev('sup_g', 'ain02-extra', 60, 60, 0, 0, interval '3 hours');
 SELECT ain02t.ev('sup_r', 'ain02-extra', 100, 50, 0, 0, interval '1 hour');
 SELECT ain02t.expect_error('good evidence followed by regression evidence cannot be used to promote (superseded)',
   ain02t.promote_sql('founder', 'orgA', 'ain02-extra', 'draft', 'sup_g'), '23514', 'ain02:evidence_superseded');
@@ -966,7 +966,20 @@ SELECT ain02t.expect_error('an approved draft with a different idempotency key d
   ain02t.outbox_sql('low', 'ain02-ob-low-rec4'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
 SELECT ain02t.expect_error('an approved draft for a different step does not authorize this step',
   ain02t.outbox_sql('low2', 'ain02-ob-low-rec3'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
-DO $do$ BEGIN EXECUTE ain02t.outbox_sql('low', 'ain02-ob-low-rec3'); END $do$;
+SELECT ain02t.expect_error('an approved draft for this step and key does not authorize a row that does not name it (review round 2)',
+  ain02t.outbox_sql('low', 'ain02-ob-low-rec3'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
+CREATE FUNCTION ain02t.outbox_draft_sql(p_step text, p_key text, p_draft_key text) RETURNS text LANGUAGE sql AS $$
+  SELECT format($f$INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, kind, category, template_ref,
+       broker_decision_id, idempotency_key, draft_id)
+     SELECT s.org_id, s.run_id, s.id, 'in_app', 'communication', 'notice.a', gen_random_uuid(), %L,
+            (SELECT d.id FROM public.wf_action_draft d WHERE d.idempotency_key = %L)
+       FROM public.wf_step_run s WHERE s.idempotency_key = %L$f$, p_key, p_draft_key, 'ain02-step-ob-' || p_step)
+$$;
+SELECT ain02t.expect_error('a row naming an approved draft of another step is refused',
+  ain02t.outbox_draft_sql('low2', 'ain02-ob-low-rec3', 'ain02-ob-low-rec3'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
+SELECT ain02t.expect_error('a row naming an approved draft under another idempotency key is refused',
+  ain02t.outbox_draft_sql('low', 'ain02-ob-low-rec4', 'ain02-ob-low-rec3'), '42501', 'ain02:step_autonomy_does_not_allow_execution');
+DO $do$ BEGIN EXECUTE ain02t.outbox_draft_sql('low', 'ain02-ob-low-rec3', 'ain02-ob-low-rec3'); END $do$;
 SELECT ain02t.expect_true('an approved draft for this very step and key authorizes the record (positive twin)',
   (SELECT count(*) = 1 FROM public.wf_action_sandbox_outbox WHERE idempotency_key LIKE '%low-rec3'));
 SELECT ain02t.expect_error('a stored record cannot be re-pointed to a step that does not allow execution (update path)',
@@ -995,6 +1008,55 @@ SELECT ain02t.expect_error('the upsert path is covered too (ON CONFLICT DO UPDAT
 UPDATE public.wf_run SET agent_ref = 'ain02-dept', template_id = 'f2600000-0000-4000-8000-0000000000c3' WHERE id = ain02t.id('run_dept');
 SELECT ain02t.expect_true('setting the same values again is harmless (positive twin)',
   (SELECT agent_ref = 'ain02-dept' FROM public.wf_run WHERE id = ain02t.id('run_dept')));
+
+-- ---------------------------------------------------------------------------------------------
+-- 13b. Review round 2: lowering past a lowered ceiling, superseding evidence, pinned templates, truncate
+-- ---------------------------------------------------------------------------------------------
+SELECT ain02t.mkagent('ain02-r2', 'department', 'T3');
+INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES (ain02t.id('orgA'), 'ain02-r2');
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.ev('r2_1', 'ain02-r2', 25, 25, 0, 0, interval '0');
+SELECT ain02t.promote('founder', 'orgA', 'ain02-r2', 'draft', 'r2_1');
+SELECT ain02t.ev('r2_2', 'ain02-r2', 60, 60, 0, 0, interval '0');
+SELECT ain02t.promote('founder', 'orgA', 'ain02-r2', 'act_with_approval', 'r2_2');
+SELECT ain02t.logout();
+UPDATE public.wf_agent SET status = 'retired' WHERE agent_ref = 'ain02-r2';
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.expect_true('finding 4: a retired agent two rungs above its ceiling can still be lowered (manual demotion)',
+  (SELECT (v ->> 'to') = 'draft' FROM (SELECT public.wf_autonomy_demote(ain02t.id('founder'), ain02t.id('orgA'), 'ain02-r2', 'draft', 'AIN02 harness lowering past a ceiling') v) x)
+  AND ain02t.lvl('orgA', 'ain02-r2') = 'draft');
+SELECT ain02t.expect_true('finding 4: a regression lowers it too and keeps its evidence',
+  (SELECT (v ->> 'regression')::boolean AND (v ->> 'demoted')::integer = 1
+     FROM (SELECT public.wf_autonomy_record_evidence('ain02-r2', 'suite-r2', 100, 50, 0, 0, now(), repeat('a', 64)) v) x)
+  AND ain02t.lvl('orgA', 'ain02-r2') = 'suggest');
+SELECT ain02t.expect_true('finding 4: the regression evidence is stored',
+  EXISTS (SELECT 1 FROM public.wf_autonomy_evidence WHERE agent_ref = 'ain02-r2' AND content_sha256 = repeat('a', 64)));
+SELECT ain02t.logout();
+UPDATE public.wf_agent SET status = 'active' WHERE agent_ref = 'ain02-r2';
+SELECT ain02t.expect_error('finding 4 twin: a rise above the ceiling is still refused when written directly',
+  $q$INSERT INTO public.wf_agent_autonomy (org_id, agent_ref, earned_level) VALUES ('f2600000-0000-4000-8000-0000000000b2', 'ain02-assure', 'act_and_report')
+     ON CONFLICT (org_id, agent_ref) DO UPDATE SET earned_level = EXCLUDED.earned_level$q$, '42501', 'ain02:above_agent_ceiling');
+
+-- Finding 7: evidence recorded later supersedes, even with the same evaluation time.
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.ev('r2_3', 'ain02-r2', 25, 25, 0, 0, interval '0');
+SELECT public.wf_autonomy_record_evidence('ain02-r2', 'suite-r2', 100, 10, 0, 0, now(), repeat('b', 64));
+SELECT ain02t.expect_error('finding 7: a regression recorded later with the same evaluation time supersedes the good evidence',
+  ain02t.promote_sql('founder', 'orgA', 'ain02-r2', 'draft', 'r2_3'), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.logout();
+
+-- Finding 5: a template that runs use keeps its agent and gains no autonomy.
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.expect_error('finding 5: a template with runs cannot be pointed at another agent',
+  $q$UPDATE public.wf_template SET agent_ref = 'ain02-dept2' WHERE id = 'f2600000-0000-4000-8000-0000000000c4'$q$, '42501', 'ain02:template_actor_is_pinned');
+SELECT ain02t.expect_error('finding 5: nor can its cap be raised',
+  $q$UPDATE public.wf_template SET autonomy_max = 'act_and_report' WHERE id = 'f2600000-0000-4000-8000-0000000000c4'$q$, '42501', 'ain02:template_actor_is_pinned');
+UPDATE public.wf_template SET autonomy_max = 'suggest' WHERE id = 'f2600000-0000-4000-8000-0000000000c4';
+SELECT ain02t.expect_true('finding 5 twin: its cap can be lowered, and an unrelated column can change',
+  (SELECT autonomy_max = 'suggest' FROM public.wf_template WHERE id = 'f2600000-0000-4000-8000-0000000000c4'));
+SELECT ain02t.logout();
+SELECT ain02t.expect_error('finding 9: the earned levels cannot be truncated, even by the owner',
+  $q$TRUNCATE public.wf_agent_autonomy$q$, '42501', 'ain02:earned_level_rows_are_not_deleted');
 
 -- ---------------------------------------------------------------------------------------------
 -- 14. Result

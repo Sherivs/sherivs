@@ -235,7 +235,7 @@ async function main() {
   const ai = await insertStep(orgA, runIds.a, "ai-1", { kind: "ai", cls: "ai_model" });
   const aiInserted = await count(
     admin,
-    "SELECT count(*) n FROM public.wf_step_run WHERE org_id = ANY($1) AND kind = 'ai'",
+    "SELECT count(*) n FROM public.wf_step_run WHERE org_id = ANY($1) AND (kind = 'ai' OR action_class = 'ai_model')",
     [[orgA, orgB]],
   );
   const aiRefusedRight =

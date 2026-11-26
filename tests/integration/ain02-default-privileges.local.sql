@@ -12,7 +12,7 @@ DECLARE
     'wf_autonomy_append_only()', 'wf_autonomy_ceiling(text)', 'wf_effective_autonomy(uuid,text,text,text)',
     'wf_autonomy_guard()', 'wf_autonomy_write_gate()', 'wf_autonomy_change_guard()', 'wf_autonomy_change_audit()',
     'wf_autonomy_apply(uuid,text,text,text,uuid,uuid,text)', 'wf_action_sandbox_outbox_autonomy_guard()',
-    'wf_run_freeze_actor()', 'wf_autonomy_record_evidence(text,text,integer,integer,integer,integer,timestamptz,text)',
+    'wf_run_freeze_actor()', 'wf_template_pin_actor()', 'wf_autonomy_earned_no_truncate()', 'wf_autonomy_record_evidence(text,text,integer,integer,integer,integer,timestamptz,text)',
     'wf_autonomy_promote(uuid,uuid,text,text,uuid,text)', 'wf_autonomy_demote(uuid,uuid,text,text,text)'];
   v_exec text[] := ARRAY['wf_autonomy_record_evidence(text,text,integer,integer,integer,integer,timestamptz,text)',
     'wf_autonomy_promote(uuid,uuid,text,text,uuid,text)', 'wf_autonomy_demote(uuid,uuid,text,text,text)'];

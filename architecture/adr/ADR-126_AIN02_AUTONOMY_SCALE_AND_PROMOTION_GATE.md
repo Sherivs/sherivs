@@ -75,15 +75,53 @@ enforcement stopped at the dispatcher in TypeScript.
 ## Trust model (read this before relying on the gate)
 
 - The gate defends against tenants and against bugs in the runtime. It does **not** defend against the service key.
-- `service_role` can SELECT `super_admins` (and holds a pre-existing GRANT ALL on it from before AIN-02), so it can
-  learn a real founder id.
+- `service_role` holds a pre-existing GRANT ALL on `super_admins` (from before AIN-02; the application uses it to
+  manage staff). It can therefore read a real founder id **and add an active founder row itself**, then promote as
+  that person. Revoking the write is not done here because application code writes that table; the follow-up is a
+  founder list that only a reviewed migration can change (decision for the founder).
 - The numbers passed to `wf_autonomy_record_evidence` are asserted by its caller; SQL cannot check that an
   evaluation happened. A holder of the service key can mint evidence, promote with a real founder id (the person is
   trusted exactly as in WF-07), or demote any agent in every organization.
 - What the gate does guarantee: no tenant role, no direct table write and no runtime bug can raise a level; every
   change leaves an append-only ledger row and an audit-chain entry, so misuse is visible after the fact.
+- Whoever can run SQL as the database owner or hold the service key can edit reference data the gate reads
+  (ceilings, the organization ceiling, the template cap before any run uses it). The edits that would hand an agent
+  more than it earned after runs exist are refused (finding 5 below); the rest is the accepted trust model.
 - Pre-production follow-up: a passkey step-up on promotion, and an evaluation runner whose evidence is signed or
   produced inside the database boundary.
+
+## Review round 2 (independent adversarial review of head 638a6ef1)
+
+Fixed; each has a harness case, and the two races have e2e scenarios H and I (mutation-checked):
+
+1. A first promotion (suggest to draft) that had not committed was invisible to a regression recorded meanwhile, so
+   the regression missed it and the agent kept the level. Recording evidence now takes an agent-wide advisory lock
+   exclusively, a promotion takes it shared before its per-organization lock, so each side sees the other's committed
+   state. E2E scenario H.
+2. The executed-record guard read the level without holding anything: a demotion could commit between the guard and
+   the record's commit. The guard now holds the organization-and-agent lock shared until its transaction ends; a
+   demotion takes it exclusively, so it waits for a record in flight and a later record sees the lowered level.
+   E2E scenario I. Not covered by this lock: edits of the organization ceiling, the tier-cap table (migration only)
+   and the template cap.
+3. An approved draft for the same step and key authorized any row, not the draft's own content. Below
+   `act_and_report` the row must now name that draft (`draft_id`); WF-07's draft guard then checks the content equals
+   the draft.
+4. The write gate applied the agent ceiling to every write, so a retired agent, or one whose tier cap was lowered, could
+   not be lowered and a regression aborted and lost its evidence. The ceiling now limits a rise only.
+5. A run with no agent of its own takes the template's agent and cap, and the service role can update `wf_template`. A
+   template that any run uses can no longer change its agent or raise its cap (lowering stays allowed). Before the
+   first run uses it, a template is still configuration.
+6. The trust model understated the service role: it can insert an active `super_admins` row (see above). Reworded;
+   not changed in SQL.
+7. Evidence recorded later as a regression with the same evaluation time now supersedes the good evidence. The check
+   runs last, so bad evidence is still reported as bad. Evidence that is merely recorded later, or evaluated earlier,
+   does not supersede.
+8. `wf_agent_autonomy` has a BEFORE TRUNCATE trigger like the history tables.
+9. The rollback header says how to remove history deliberately (disable the append-only triggers first).
+
+Noted, not changed: the executed-record guard ignores an AIN-01 pause, so a step already at `act_and_report` can still
+record a result after the agent is paused (a pause stops new steps); a replayed insert after a demotion now fails with
+`42501` instead of conflicting quietly (the dispatcher checks the recorded outcome first).
 
 ## Ceilings (engineering defaults for the founder to ratify)
 
