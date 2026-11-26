@@ -501,9 +501,14 @@ jobs:
             -f tests/integration/a3-sensitive-step-up.local.sql 2>&1 | tee /tmp/a3-step-up.out
           ! grep -Fq 'A3 FAIL' /tmp/a3-step-up.out
           grep -Eq 'A3 ALL PASS: [0-9]+ checks' /tmp/a3-step-up.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/a5-finished-at-write-once.local.sql 2>&1 | tee /tmp/a5-finished.out
+          ! grep -Fq 'A5 FAIL' /tmp/a5-finished.out
+          grep -Eq 'A5 ALL PASS: [0-9]+ checks' /tmp/a5-finished.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
+          set -euo pipefail
           node ../../tests/integration/wf01-claim-concurrency.local.mjs 2>&1 | tee /tmp/wf01-conc.out
           grep -q 'WF01-CONC RESULT: pass=4 fail=0' /tmp/wf01-conc.out
       - name: Seed synthetic schools (10% scale)
