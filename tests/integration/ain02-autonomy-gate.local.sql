@@ -1061,6 +1061,65 @@ SELECT ain02t.expect_error('finding 9: the earned levels cannot be truncated, ev
 -- ---------------------------------------------------------------------------------------------
 -- 14. Result
 -- ---------------------------------------------------------------------------------------------
+-- ---------------------------------------------------------------------------------------------
+-- CD-04 (ADR-134): a pause drops the agent to draft in every organization; rising again needs fresh evidence
+-- ---------------------------------------------------------------------------------------------
+SELECT ain02t.mkagent('cd04-agent', 'department', 'T3');
+SELECT ain02t.mkagent('cd04-other', 'department', 'T3');
+INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES
+  (ain02t.id('orgA'), 'cd04-agent'), (ain02t.id('orgB'), 'cd04-agent'), (ain02t.id('orgA'), 'cd04-other');
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.ev('c4_d', 'cd04-agent', 20, 19, 0, 0, interval '5 hours');
+SELECT ain02t.promote('founder', 'orgA', 'cd04-agent', 'draft', 'c4_d');
+SELECT ain02t.ev('c4_a', 'cd04-agent', 50, 49, 0, 0, interval '4 hours');
+SELECT ain02t.promote('founder', 'orgA', 'cd04-agent', 'act_with_approval', 'c4_a');
+SELECT ain02t.ev('c4_d2', 'cd04-agent', 20, 19, 0, 0, interval '3 hours');
+SELECT ain02t.promote('founder', 'orgB', 'cd04-agent', 'draft', 'c4_d2');
+SELECT ain02t.ev('o_d', 'cd04-other', 20, 19, 0, 0, interval '5 hours');
+SELECT ain02t.promote('founder', 'orgA', 'cd04-other', 'draft', 'o_d');
+SELECT ain02t.ev('o_a', 'cd04-other', 50, 49, 0, 0, interval '4 hours');
+SELECT ain02t.promote('founder', 'orgA', 'cd04-other', 'act_with_approval', 'o_a');
+-- Unused evidence recorded before the pause (it would be enough for act_with_approval).
+SELECT ain02t.ev('c4_unused', 'cd04-agent', 50, 49, 0, 0, interval '1 hour');
+SELECT ain02t.logout();
+SELECT ain02t.expect_true('CD-04 fixture: cd04-agent is act_with_approval in A and draft in B; cd04-other acts in A',
+  ain02t.lvl('orgA', 'cd04-agent') = 'act_with_approval' AND ain02t.lvl('orgB', 'cd04-agent') = 'draft'
+  AND ain02t.lvl('orgA', 'cd04-other') = 'act_with_approval');
+
+INSERT INTO public.agent_pause_events (action, target, reason, actor_id)
+VALUES ('pause', 'cd04-agent', 'CD-04 harness pause of one agent', ain02t.id('founder'));
+SELECT ain02t.expect_true('CD-04: pausing an agent drops it to draft where it was higher, and leaves lower levels alone',
+  ain02t.lvl('orgA', 'cd04-agent') = 'draft' AND ain02t.lvl('orgB', 'cd04-agent') = 'draft');
+SELECT ain02t.expect_true('CD-04: other agents are untouched by that pause',
+  ain02t.lvl('orgA', 'cd04-other') = 'act_with_approval');
+SELECT ain02t.expect_true('CD-04: the drop is a ledger demotion by the person who paused, with the reason',
+  EXISTS (SELECT 1 FROM public.wf_autonomy_change c
+           WHERE c.org_id = ain02t.id('orgA') AND c.agent_ref = 'cd04-agent' AND c.kind = 'demote'
+             AND c.from_level = 'act_with_approval' AND c.to_level = 'draft'
+             AND c.decided_by = ain02t.id('founder') AND c.reason LIKE 'Agent paused:%'));
+
+INSERT INTO public.agent_pause_events (action, target, reason, actor_id)
+VALUES ('resume', 'cd04-agent', 'CD-04 harness resume of one agent', ain02t.id('founder'));
+SELECT ain02t.expect_true('CD-04: resuming does not give the level back',
+  ain02t.lvl('orgA', 'cd04-agent') = 'draft');
+SELECT ain02t.login_as('service_role');
+SELECT ain02t.expect_error('CD-04: evidence recorded before the pause cannot promote the agent again',
+  ain02t.promote_sql('founder', 'orgA', 'cd04-agent', 'act_with_approval', 'c4_unused'), '23514', 'ain02:evidence_superseded');
+SELECT ain02t.ev('c4_fresh', 'cd04-agent', 50, 49, 0, 0, interval '0 seconds');
+SELECT ain02t.promote('founder', 'orgA', 'cd04-agent', 'act_with_approval', 'c4_fresh');
+SELECT ain02t.logout();
+SELECT ain02t.expect_true('CD-04: evidence evaluated after the pause promotes again, one rung, by the founder',
+  ain02t.lvl('orgA', 'cd04-agent') = 'act_with_approval');
+
+INSERT INTO public.agent_pause_events (action, target, reason, actor_id)
+VALUES ('pause', 'all', 'CD-04 harness pause of every agent', ain02t.id('founder'));
+SELECT ain02t.expect_true('CD-04: a pause of everything drops every agent that is above draft',
+  ain02t.lvl('orgA', 'cd04-agent') = 'draft' AND ain02t.lvl('orgA', 'cd04-other') = 'draft');
+SELECT ain02t.expect_true('CD-04: the trigger function has no EXECUTE for API roles',
+  NOT has_function_privilege('anon', 'public.wf_pause_autonomy_drop()', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.wf_pause_autonomy_drop()', 'EXECUTE')
+  AND NOT has_function_privilege('service_role', 'public.wf_pause_autonomy_drop()', 'EXECUTE'));
+
 DO $done$
 DECLARE n integer;
 BEGIN
