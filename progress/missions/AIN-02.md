@@ -67,12 +67,13 @@ So no "blocked on decision N" issue was written. The founder is asked to ratify 
   `wf12-quota-e2e.mjs`: the autonomy insert is bracketed by disabling and enabling the gate trigger as the owner.
 - `.github/workflows/verify.yml`, `architecture/adr/INDEX.md` (one row), `docs/runbooks/workflows-enablement.md`.
 
-## Evidence (20 Nov 2026, local PostgreSQL 16, every migration applied as a non-superuser migrator)
+## Evidence (round 2, 26 Nov 2026, local PostgreSQL 16, every migration applied as a non-superuser migrator)
 
-- `AIN02 ALL PASS: 193 checks` (also after re-applying AIN-02 under Supabase default privileges).
-- `AIN02-PRIV ALL PASS: 241 checks`.
-- `AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0` (over plain `pg`; no PostgREST).
+- `AIN02 ALL PASS: 205 checks` (main database and, after rollback and re-apply, under Supabase default privileges). Round 1 head `638a6ef1` had 193; the original `602bb1fe` head reported 193 in its first evidence but 184 when re-run by the round 2 reviewer, so treat 193 as the round 1 number.
+- `AIN02-PRIV ALL PASS: 251 checks`; `AIN01 ALL PASS: 136`, `AIN01-PRIV ALL PASS: 124`, `WF12-PRIV ALL PASS: 35 functions checked` (AIN-03 not installed in this branch).
+- `AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft rung_race_demoted=1 rung_race_level=suggest record_waited=true record_after_demotion=42501 step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0` (over plain `pg`; no PostgREST).
 - Earlier suites with AIN-02 applied: `WF06 ALL PASS: 29 checks`, `WF07 ALL PASS: 96 checks`, `WF08 ALL PASS: 113 checks`, `WF12 ALL PASS: 213 checks`, `WF03 ALL PASS`, `WF05 ALL PASS: 23 checks`, `AIN01 ALL PASS: 136 checks` (the AIN-01 count is from the clean run before any e2e).
+- Round 2: WF-06, 07, 08 and 12 e2e scripts re-run on local PostgREST 12.2.3: all pass with the same result lines as in CI. Seven mutations (no agent lock, no shared outbox lock, draft not bound, ceiling on every write, no template pin, no tie rule, no truncate trigger) each fail the harness or e2e.
 - Unit: `ain02-autonomy-scale.test.ts` 18 passed; `tsc --noEmit`, eslint and prettier clean on the new files.
 - Guards: `verify-domain-neutrality` PASS, `verify-migration-grants` PASS, `verify-provenance-metadata` PASS.
 - The rollback was exercised against the applied migration and the migration applied again.
@@ -106,9 +107,18 @@ Fixed in new commits (history kept):
    ratify"; a demotion that lowers nothing (including an org administrator on an agent with no row) fails with
    `ain02:nothing_to_lower`.
 
+## Review round 2 (independent adversarial review of head 638a6ef1)
+
+See ADR-126 "Review round 2" for the ten findings and what was done. Changed existing assertions, disclosed: in the
+promotion section the regression-shaped fixtures (`d_r17`, `d_crit`, `bk_below`, `bk_crit`) are now evaluated two hours
+before the evidence they sit beside, because a regression recorded later with an equal evaluation time now supersedes
+(finding 7); `sup_g` is a 60-case record so it clears the bar of the level it is promoted to; the outbox positive twin
+now names its draft (finding 3); one count (15 guard functions) and the function-count (18) include the two new
+functions. No assertion was weakened.
+
 ## Not verified
 
-- The four modified e2e scripts (WF-06, 07, 08, 12) need PostgREST and were not run locally; they ran green in CI.
+- Round 2 CI has not yet run on the new head. The e2e scenarios H and I use two simultaneous sessions and a one-and-a-half second wait; a very slow runner could in principle make them flaky, not wrong.
 - PostgreSQL 17 was used only in CI; locally PostgreSQL 16.
 - The organization add-on state is a stub of the reviewed ENGINE-20 shape; the real objects were not available.
 - Promotion trusts the identity the server passes, as WF-07 does. There is no passkey step-up and no UI.
