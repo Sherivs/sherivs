@@ -481,6 +481,14 @@ jobs:
             -f tests/integration/ain05-agent-console.local.sql 2>&1 | tee /tmp/ain05-agent-console.out
           ! grep -Fq 'AIN05 FAIL' /tmp/ain05-agent-console.out
           grep -Eq 'AIN05 ALL PASS: [0-9]+ checks' /tmp/ain05-agent-console.out
+      - name: WF-15a Private School Pack install checks
+        run: |
+          set -euo pipefail
+          PORT="${SIM_PG_PORT:-54329}"
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf15a-pack-install.local.sql 2>&1 | tee /tmp/wf15a-pack.out
+          ! grep -Fq 'WF15A FAIL' /tmp/wf15a-pack.out
+          grep -Eq 'WF15A ALL PASS: [0-9]+ checks' /tmp/wf15a-pack.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
@@ -532,6 +540,8 @@ jobs:
           grep -Eq 'AIN04-E2E RESULT: concurrent_checks=250 landed=200 refused=50 over_cap=0 mixed=30 clean=10 flagged=10 blocked=10 usable=10 reviews=20 reviewed=1 review_refused=19 starter_refused=1 suite_runs=10 suite_reused=10 new_runs=0 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0$' /tmp/ain04-e2e.out
           node load/ain05-console-e2e.mjs 2>&1 | tee /tmp/ain05-e2e.out
           grep -Eq 'AIN05-E2E RESULT: concurrent_reads=60 read_ok=60 proposals=20 pending_before=20 decided=20 reads_during_decides_failed=0 pending_after=0 tenant_leaks=0 plain_refused=3 client_refused=3 reads_changed_rows=0 sent_live=0 dup=0$' /tmp/ain05-e2e.out
+          node load/wf15a-pack-e2e.mjs 2>&1 | tee /tmp/wf15a-e2e.out
+          grep -Eq 'WF15A-E2E RESULT: templates=3 events=3 dispatched=3 runs=3 replay_events=0 replay_runs=0 executor_calls_positive=1 sent_live=0 dup=0$' /tmp/wf15a-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
