@@ -60,7 +60,7 @@ BEGIN
                 AND column_name IN ('retry_of_run_id', 'retry_of_step_id', 'retry_generation'))
      OR to_regprocedure('public.wf_run_cancel(uuid,uuid,text)') IS NOT NULL
      OR to_regprocedure('public.wf_run_retry(uuid,uuid,text)') IS NOT NULL
-     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer)') IS NOT NULL
+     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer,uuid)') IS NOT NULL
      OR to_regprocedure('public.wf_run_history_detail(uuid,uuid)') IS NOT NULL THEN
     RAISE EXCEPTION 'WF-08: one or more WF-08 objects already exist';
   END IF;
@@ -118,8 +118,12 @@ RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE v_status text;
 BEGIN
+  -- FOR SHARE: a cancel (which updates the run row) waits for this record's transaction, and a record that starts
+  -- after a cancel commits sees the new status. Without the lock the check and the cancel could interleave and an
+  -- executed record could be written for a run that was cancelled between the two (review finding, WF-08 #469).
   SELECT r.status INTO v_status FROM public.wf_run r
-   WHERE r.org_id = NEW.org_id AND r.id = NEW.run_id;
+   WHERE r.org_id = NEW.org_id AND r.id = NEW.run_id
+   FOR SHARE;
   -- A run that does not exist in this organization is left to the foreign key (23503), exactly as before.
   IF v_status IS NOT NULL AND v_status NOT IN ('queued', 'running', 'waiting') THEN
     RAISE EXCEPTION 'wf_action_sandbox_outbox: the run is no longer active' USING ERRCODE = '42501';
@@ -425,7 +429,7 @@ $$;
 -- payloads, subject references, step input or output, approval notes, the engine state, or any free text.
 CREATE FUNCTION public.wf_run_history_list(
   p_actor uuid, p_status text DEFAULT NULL, p_workflow text DEFAULT NULL,
-  p_before timestamptz DEFAULT NULL, p_limit integer DEFAULT 50)
+  p_before timestamptz DEFAULT NULL, p_limit integer DEFAULT 50, p_before_id uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
 DECLARE
@@ -461,7 +465,8 @@ BEGIN
      WHERE r.org_id = v_org
        AND (v_statuses IS NULL OR r.status = ANY (v_statuses))
        AND (p_workflow IS NULL OR d.key = p_workflow)
-       AND (p_before IS NULL OR r.created_at < p_before)
+       AND (p_before IS NULL OR r.created_at < p_before
+            OR (p_before_id IS NOT NULL AND r.created_at = p_before AND r.id < p_before_id))
      ORDER BY r.created_at DESC, r.id DESC
      LIMIT v_limit + 1
   ), shown AS (
@@ -562,6 +567,12 @@ BEGIN
         'detail', public.wf_redact_event_detail(q.detail)) ORDER BY q.id)
       FROM (SELECT e.* FROM public.wf_run_event e
              WHERE e.org_id = v_org AND e.run_id = v_r.id AND e.kind <> 'runtime.state'
+               -- A draft whose dispatch keeps failing is noted every few minutes; the timeline shows the latest note
+               -- for each draft only, so a draft that never succeeds cannot push everything else out of the window.
+               AND (e.kind <> 'draft.dispatch_failed' OR NOT EXISTS (
+                     SELECT 1 FROM public.wf_run_event e2
+                      WHERE e2.org_id = e.org_id AND e2.run_id = e.run_id AND e2.kind = 'draft.dispatch_failed'
+                        AND e2.detail ->> 'draft_id' = e.detail ->> 'draft_id' AND e2.id > e.id))
              ORDER BY e.id DESC LIMIT 200) q), '[]'::jsonb),
     'approvals', coalesce((
       SELECT jsonb_agg(jsonb_build_object(
@@ -606,15 +617,35 @@ REVOKE ALL ON FUNCTION
 REVOKE ALL ON FUNCTION
   public.wf_run_cancel(uuid, uuid, text),
   public.wf_run_retry(uuid, uuid, text),
-  public.wf_run_history_list(uuid, text, text, timestamptz, integer),
+  public.wf_run_history_list(uuid, text, text, timestamptz, integer, uuid),
   public.wf_run_history_detail(uuid, uuid)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION
   public.wf_run_cancel(uuid, uuid, text),
   public.wf_run_retry(uuid, uuid, text),
-  public.wf_run_history_list(uuid, text, text, timestamptz, integer),
+  public.wf_run_history_list(uuid, text, text, timestamptz, integer, uuid),
   public.wf_run_history_detail(uuid, uuid)
   TO service_role;
+
+-- -----------------------------------------------------------------------------
+-- 8b. Raw reads no longer bypass the redaction (review finding, WF-08 #469)
+-- -----------------------------------------------------------------------------
+-- WF-01 and WF-06 let any holder of workflows.view SELECT whole rows of these four tables through the API, which
+-- returns exactly what this section's functions redact: event payloads and subject references, step input and
+-- output, timeline detail, draft parameters and recipients. Nothing in the application reads them with a user
+-- token (every reader is a server function that uses the service role or the functions above), so the columns that
+-- carry content are no longer readable by `authenticated`. The row policies stay as they were. Selecting `*` as a
+-- signed-in person now fails with "permission denied"; selecting the listed columns still works.
+REVOKE SELECT ON public.wf_event, public.wf_step_run, public.wf_run_event, public.wf_action_draft FROM authenticated;
+GRANT SELECT (id, org_id, event_type, source, dedupe_key, causation_run_id, depth, status, attempts,
+              next_attempt_at, occurred_at, created_at, updated_at) ON public.wf_event TO authenticated;
+GRANT SELECT (id, org_id, run_id, step_key, iteration, kind, status, attempt, max_attempts, idempotency_key,
+              next_attempt_at, resume_at, timeout_seconds, error_code, started_at, finished_at, created_at,
+              updated_at, agent_ref, autonomy_level, action_class, budget_units, spent_units)
+  ON public.wf_step_run TO authenticated;
+GRANT SELECT (id, org_id, run_id, step_run_id, kind, actor_kind, at) ON public.wf_run_event TO authenticated;
+GRANT SELECT (id, org_id, run_id, step_run_id, kind, category, template_ref, data_class, status, idempotency_key,
+              created_at, updated_at, webhook_target_id, approval_id) ON public.wf_action_draft TO authenticated;
 
 -- -----------------------------------------------------------------------------
 -- 9. WF-07 review follow-up: the approval sweep's work list
@@ -678,7 +709,7 @@ COMMENT ON FUNCTION public.wf_run_cancel(uuid, uuid, text) IS
   'WF-08 / ADR-123: stop a queued, running or waiting run. Service role only; the signed-in actor is bound and checked in SQL. Idempotent; audited.';
 COMMENT ON FUNCTION public.wf_run_retry(uuid, uuid, text) IS
   'WF-08 / ADR-123: re-run a dead step in a NEW run. Idempotent per dead step; refuses live effects, capped escalation and approved or recorded actions.';
-COMMENT ON FUNCTION public.wf_run_history_list(uuid, text, text, timestamptz, integer) IS
+COMMENT ON FUNCTION public.wf_run_history_list(uuid, text, text, timestamptz, integer, uuid) IS
   'WF-08 / ADR-123: redacted, tenant-scoped run list. Counts and codes only.';
 COMMENT ON FUNCTION public.wf_run_history_detail(uuid, uuid) IS
   'WF-08 / ADR-123: redacted run detail (steps, timeline, approvals, drafts, outbox). Never returns recipients, parameters, payloads or free text.';
