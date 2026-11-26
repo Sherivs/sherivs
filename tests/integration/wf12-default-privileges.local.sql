@@ -51,6 +51,9 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_safety_review_check(p_actor uuid, p_check uuid, p_decision text, p_reason text)'),
   ('wf_safety_run_eval()'),
   ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer, p_before_id uuid)'),
+  ('wf_console_agents(p_actor uuid)'),
+  ('wf_console_memory_list(p_actor uuid, p_status text, p_before timestamp with time zone, p_before_id uuid, p_limit integer)'),
+  ('wf_console_safety_list(p_actor uuid, p_filter text, p_before timestamp with time zone, p_before_id uuid, p_limit integer)'),
   ('wf_run_retry(p_actor uuid, p_step uuid, p_reason text)');
 DO $$
 DECLARE v_extra text; v_missing text;

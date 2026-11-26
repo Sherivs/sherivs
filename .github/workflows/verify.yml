@@ -451,6 +451,36 @@ jobs:
             -f tests/integration/ain04-guardrail-layer.local.sql 2>&1 | tee /tmp/ain04-guardrail-layer.out
           ! grep -Fq 'AIN04 FAIL' /tmp/ain04-guardrail-layer.out
           grep -Eq 'AIN04 ALL PASS: [0-9]+ checks' /tmp/ain04-guardrail-layer.out
+      - name: AIN-05 privileges under Supabase default privileges (scratch database, AIN-05 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01 to AIN-03: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-05, switch those defaults on for the migrator, apply
+          # AIN-05 again, run its harness and assert the exact ACLs (the service role may call three functions and no table is added).
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain5priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain5priv TEMPLATE postgres"
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain5priv SET search_path = public, extensions"
+          psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000996_sherivs_ain05_agent_console_read_models.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000996_sherivs_ain05_agent_console_read_models.sql
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -f tests/integration/ain05-agent-console.local.sql 2>&1 | tee /tmp/ain05-priv.out
+          ! grep -Fq 'AIN05 FAIL' /tmp/ain05-priv.out
+          grep -Eq 'AIN05 ALL PASS: [0-9]+ checks' /tmp/ain05-priv.out
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -f tests/integration/ain05-default-privileges.local.sql 2>&1 | tee /tmp/ain05-privacl.out
+          grep -Eq 'AIN05-PRIV ALL PASS: [0-9]+ checks' /tmp/ain05-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain5priv"
+      - name: AIN-05 agent console read models (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain05-agent-console.local.sql 2>&1 | tee /tmp/ain05-agent-console.out
+          ! grep -Fq 'AIN05 FAIL' /tmp/ain05-agent-console.out
+          grep -Eq 'AIN05 ALL PASS: [0-9]+ checks' /tmp/ain05-agent-console.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
