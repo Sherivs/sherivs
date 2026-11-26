@@ -320,7 +320,7 @@ $$;
 -- BEFORE INSERT OR UPDATE OR DELETE on wf_agent_autonomy, covering the upsert path (INSERT ... ON CONFLICT DO UPDATE
 -- fires this trigger for the insert half too, so the current level is read from the table, not from OLD).
 --   * a row is never deleted, and its key never changes;
---   * the level never exceeds the agent's ceiling (unknown and retired agents hold 'suggest' only);
+--   * a rise never exceeds the agent's ceiling (unknown and retired agents hold 'suggest' only); a fall is always allowed;
 --   * a rise needs a 'promote' ledger row written in this transaction for exactly this step up;
 --   * a fall needs a 'demote' or 'auto_demote' ledger row written in this transaction for exactly this level.
 CREATE FUNCTION public.wf_autonomy_write_gate()
@@ -335,12 +335,15 @@ BEGIN
   IF TG_OP = 'UPDATE' AND (NEW.org_id IS DISTINCT FROM OLD.org_id OR NEW.agent_ref IS DISTINCT FROM OLD.agent_ref) THEN
     RAISE EXCEPTION 'ain02:earned_level_key_is_immutable' USING ERRCODE = '42501';
   END IF;
-  IF public.wf_autonomy_rank(NEW.earned_level) > public.wf_autonomy_rank(public.wf_autonomy_ceiling(NEW.agent_ref)) THEN
-    RAISE EXCEPTION 'ain02:above_agent_ceiling' USING ERRCODE = '42501';
-  END IF;
   SELECT a.earned_level INTO v_current FROM public.wf_agent_autonomy a
    WHERE a.org_id = NEW.org_id AND a.agent_ref = NEW.agent_ref;
   v_current := coalesce(v_current, 'suggest');
+  -- The ceiling limits a rise only. A level above a ceiling that was lowered later (or of a retired agent) must still
+  -- be lowerable, or a regression would abort and lose its evidence (review round 2, finding 4).
+  IF public.wf_autonomy_rank(NEW.earned_level) > public.wf_autonomy_rank(public.wf_autonomy_ceiling(NEW.agent_ref))
+     AND public.wf_autonomy_rank(NEW.earned_level) > public.wf_autonomy_rank(v_current) THEN
+    RAISE EXCEPTION 'ain02:above_agent_ceiling' USING ERRCODE = '42501';
+  END IF;
   IF public.wf_autonomy_rank(NEW.earned_level) > public.wf_autonomy_rank(v_current) THEN
     IF NOT EXISTS (SELECT 1 FROM public.wf_autonomy_change c
                     WHERE c.org_id = NEW.org_id AND c.agent_ref = NEW.agent_ref AND c.kind = 'promote'
@@ -411,14 +414,6 @@ BEGIN
   IF v_ev.evaluated_at > now() OR v_ev.evaluated_at < now() - make_interval(days => v_bar.max_age_days) THEN
     RAISE EXCEPTION 'ain02:evidence_stale_or_invalid' USING ERRCODE = '23514';
   END IF;
-  -- Evidence is superseded by anything newer: later evidence for this agent (good or bad) or a later demotion here.
-  IF EXISTS (SELECT 1 FROM public.wf_autonomy_evidence e2
-              WHERE e2.agent_ref = NEW.agent_ref AND e2.evaluated_at > v_ev.evaluated_at)
-     OR EXISTS (SELECT 1 FROM public.wf_autonomy_change c
-                 WHERE c.org_id = NEW.org_id AND c.agent_ref = NEW.agent_ref
-                   AND c.kind IN ('demote', 'auto_demote') AND c.created_at > v_ev.evaluated_at) THEN
-    RAISE EXCEPTION 'ain02:evidence_superseded' USING ERRCODE = '23514';
-  END IF;
   IF v_ev.critical_failures > 0 THEN
     RAISE EXCEPTION 'ain02:evidence_has_critical_failures' USING ERRCODE = '23514';
   END IF;
@@ -428,6 +423,21 @@ BEGIN
   -- Ungraded model cases mean nobody has yet seen how the agent behaves on them: nothing above 'draft'.
   IF v_ev.ungraded > 0 AND public.wf_autonomy_rank(NEW.to_level) > 1 THEN
     RAISE EXCEPTION 'ain02:ungraded_cases_block_this_level' USING ERRCODE = '23514';
+  END IF;
+  -- Evidence is superseded by anything newer: later evidence for this agent (good or bad), a regression recorded later
+  -- with the same evaluation time (review round 2: a tie must not favour the good evidence), or a later demotion here.
+  -- Checked last, so that evidence that is bad in itself is reported as bad.
+  IF EXISTS (SELECT 1 FROM public.wf_autonomy_evidence e2
+              WHERE e2.agent_ref = NEW.agent_ref AND e2.id <> v_ev.id
+                AND (e2.evaluated_at > v_ev.evaluated_at
+                     OR (e2.evaluated_at = v_ev.evaluated_at AND e2.recorded_at > v_ev.recorded_at
+                         AND (e2.critical_failures > 0
+                              OR (CASE WHEN e2.graded = 0 THEN 0::numeric ELSE e2.passed::numeric / e2.graded END)
+                                 < public.wf_autonomy_demote_floor()))))
+     OR EXISTS (SELECT 1 FROM public.wf_autonomy_change c
+                 WHERE c.org_id = NEW.org_id AND c.agent_ref = NEW.agent_ref
+                   AND c.kind IN ('demote', 'auto_demote') AND c.created_at > v_ev.evaluated_at) THEN
+    RAISE EXCEPTION 'ain02:evidence_superseded' USING ERRCODE = '23514';
   END IF;
   RETURN NEW;
 END
@@ -461,6 +471,12 @@ DECLARE
   v_from text;
   v_to text;
 BEGIN
+  -- A promotion takes the agent-wide lock shared, before the per-organization lock; recording evidence takes it
+  -- exclusive. Each side then sees the other's committed state (a regression can no longer slip past an
+  -- uncommitted first promotion, nor a promotion past uncommitted newer evidence). Review round 2, finding 1.
+  IF p_kind = 'promote' THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtextextended('ain02:agent:' || p_agent, 7127));
+  END IF;
   PERFORM pg_advisory_xact_lock(hashtextextended('ain02:' || p_org::text || ':' || p_agent, 7126));
   SELECT a.earned_level INTO v_from FROM public.wf_agent_autonomy a
    WHERE a.org_id = p_org AND a.agent_ref = p_agent;
@@ -509,9 +525,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM public.wf_agent a WHERE a.agent_ref = p_agent) THEN
     RAISE EXCEPTION 'ain02:agent_unknown' USING ERRCODE = '23503';
   END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('ain02:agent:' || p_agent, 7127));
   INSERT INTO public.wf_autonomy_evidence (agent_ref, suite_id, graded, passed, critical_failures, ungraded,
-                                           evaluated_at, content_sha256)
-  VALUES (p_agent, p_suite, p_graded, p_passed, p_critical_failures, p_ungraded, p_evaluated_at, p_content_sha256)
+                                           evaluated_at, content_sha256, recorded_at)
+  VALUES (p_agent, p_suite, p_graded, p_passed, p_critical_failures, p_ungraded, p_evaluated_at, p_content_sha256,
+          clock_timestamp())
   ON CONFLICT (agent_ref, content_sha256) DO NOTHING
   RETURNING id INTO v_id;
   v_new := v_id IS NOT NULL;
@@ -593,8 +611,8 @@ $$;
 -- -----------------------------------------------------------------------------
 -- The dispatcher already turns the step's level into "draft" or "execute". This repeats the rule where the executed
 -- record is written, so no code path (a bug, a replayed call, a hand-written insert) records an execution for a step
--- whose level does not allow one: the step must be at act_and_report, or a person must have approved a draft for this
--- very step and idempotency key. It also fires on UPDATE, so a stored record cannot be re-pointed at another step.
+-- whose level does not allow one: the step must be at act_and_report, or the row must name (draft_id) a draft that a
+-- person approved for this very step and idempotency key; WF-07 then checks the content equals the draft. It also fires on UPDATE, so a stored record cannot be re-pointed at another step.
 CREATE FUNCTION public.wf_action_sandbox_outbox_autonomy_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
 AS $$
@@ -612,6 +630,13 @@ BEGIN
     FROM public.wf_step_run s LEFT JOIN public.wf_run r ON r.org_id = s.org_id AND r.id = s.run_id
    WHERE s.org_id = NEW.org_id AND s.id = NEW.step_run_id;
   v_agent := coalesce(v_agent, v_step_agent);
+  -- Hold the organization-and-agent lock shared until this transaction ends: a demotion (which takes it exclusive)
+  -- waits for the record in flight, and a record that starts after a demotion sees the lowered level. Review round 2,
+  -- finding 2. Ceiling, template and tier-cap edits are not covered by this lock (documented in ADR-126).
+  IF v_agent IS NOT NULL THEN
+    PERFORM pg_advisory_xact_lock_shared(hashtextextended('ain02:' || NEW.org_id::text || ':' || v_agent, 7126));
+    SELECT s.autonomy_level INTO v_level FROM public.wf_step_run s WHERE s.org_id = NEW.org_id AND s.id = NEW.step_run_id;
+  END IF;
   v_template_level := 'suggest';
   IF v_template_id IS NOT NULL THEN
     SELECT t.autonomy_max, t.agent_ref INTO v_template_level, v_template_agent
@@ -630,6 +655,7 @@ BEGIN
   END IF;
   IF EXISTS (SELECT 1 FROM public.wf_action_draft d
               WHERE d.org_id = NEW.org_id AND d.step_run_id = NEW.step_run_id
+                AND d.id = NEW.draft_id
                 AND d.idempotency_key = NEW.idempotency_key AND d.status = 'approved') THEN
     RETURN NEW;
   END IF;
@@ -660,6 +686,34 @@ END
 $$;
 CREATE TRIGGER wf_run_08_freeze_actor BEFORE UPDATE OF agent_ref, template_id ON public.wf_run
   FOR EACH ROW EXECUTE FUNCTION public.wf_run_freeze_actor();
+
+-- A template that runs reference keeps its agent and cannot gain autonomy. The step and outbox guards fall back to the
+-- template when a run carries no agent; without this the service role could point a template at a higher agent or raise
+-- its cap and lend the level to every agentless run. Lowering the cap stays allowed. Review round 2, finding 5.
+CREATE FUNCTION public.wf_template_pin_actor()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  IF (NEW.agent_ref IS DISTINCT FROM OLD.agent_ref
+      OR public.wf_autonomy_rank(NEW.autonomy_max) > public.wf_autonomy_rank(OLD.autonomy_max))
+     AND EXISTS (SELECT 1 FROM public.wf_run r WHERE r.template_id = OLD.id) THEN
+    RAISE EXCEPTION 'ain02:template_actor_is_pinned' USING ERRCODE = '42501';
+  END IF;
+  RETURN NEW;
+END
+$$;
+CREATE TRIGGER wf_template_05_pin_actor BEFORE UPDATE ON public.wf_template
+  FOR EACH ROW EXECUTE FUNCTION public.wf_template_pin_actor();
+
+CREATE FUNCTION public.wf_autonomy_earned_no_truncate()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = ''
+AS $$
+BEGIN
+  RAISE EXCEPTION 'ain02:earned_level_rows_are_not_deleted' USING ERRCODE = '42501';
+END
+$$;
+CREATE TRIGGER wf_agent_autonomy_06_no_truncate BEFORE TRUNCATE ON public.wf_agent_autonomy
+  FOR EACH STATEMENT EXECUTE FUNCTION public.wf_autonomy_earned_no_truncate();
 
 -- -----------------------------------------------------------------------------
 -- 12. Row level security and privileges
@@ -707,7 +761,8 @@ REVOKE ALL ON FUNCTION
   public.wf_autonomy_record_evidence(text, text, integer, integer, integer, integer, timestamptz, text),
   public.wf_autonomy_promote(uuid, uuid, text, text, uuid, text),
   public.wf_autonomy_demote(uuid, uuid, text, text, text),
-  public.wf_action_sandbox_outbox_autonomy_guard(), public.wf_run_freeze_actor(), public.wf_autonomy_guard()
+  public.wf_action_sandbox_outbox_autonomy_guard(), public.wf_run_freeze_actor(), public.wf_autonomy_guard(),
+  public.wf_template_pin_actor(), public.wf_autonomy_earned_no_truncate()
   FROM PUBLIC, anon, authenticated, service_role;
 GRANT EXECUTE ON FUNCTION
   public.wf_autonomy_record_evidence(text, text, integer, integer, integer, integer, timestamptz, text),

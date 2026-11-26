@@ -12,6 +12,10 @@
 //   F  new steps follow the level: draft after the promotion, suggest after the automatic demotion;
 //   G  a promotion that commits while a regression is being recorded does not make the regression call abort: the
 //      regression is recorded and lowers the level that was committed, one rung from where it stands.
+//   H  the first rung: a promotion from suggest that has not committed, and a regression recorded meanwhile: the
+//      regression waits for the promotion and then lowers it (an agent-wide lock orders them);
+//   I  an executed record in flight at act_and_report and a demotion: the demotion waits for the record's
+//      transaction, and a record started after the demotion is refused.
 //
 // Nothing here calls a model, sends a message or reaches a network other than loopback. `sent_live` counts rows in the
 // outbound tables for these organizations (this scenario creates none) and `dup` is computed from SQL.
@@ -295,6 +299,154 @@ async function main() {
   const raceV = raced.rows?.[0]?.v;
   const levelAfterG = await levelOf(admin, orgB);
 
+  // H. the first rung: a promotion from suggest that has not committed yet, and a regression recorded meanwhile.
+  //    The regression must wait for the promotion and then lower it (review round 2, finding 1).
+  const agentH = `ain02-e2e-h-${runTag}`;
+  await admin.query(
+    `INSERT INTO public.agent_pause_rules (agent_code, tier, kill_scope) VALUES ($1, 'department', 'agent')`,
+    [agentH],
+  );
+  await admin.query(
+    `INSERT INTO public.wf_agent (agent_ref, family, codename, agent_tier, accountable, supervisor, pack_version,
+       max_tier, context_ceiling, daily_actions, daily_model_calls, daily_cost_cap_minor)
+     VALUES ($1, 'platform', 'Fixture', 'department', 'fixture', 'jarvis-executive', '1.0.0', 'T3', 'internal', 1000, 0, 0)`,
+    [agentH],
+  );
+  await admin.query(
+    `INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES ($1, $2)`,
+    [orgA, agentH],
+  );
+  const recordH = async (label, graded, passed) => {
+    const r = await asServiceRole(
+      `SELECT public.wf_autonomy_record_evidence($1, $2, $3, $4, 0, 0, now(), $5) AS v`,
+      [agentH, `suite-${label}`, graded, passed, sha(label)],
+    );
+    if (r.outcome !== "ok") throw new Error(`record evidence ${label}: ${r.message}`);
+    return r.rows[0].v;
+  };
+  const promoteH = (org, to, evidence) =>
+    asServiceRole(
+      `SELECT public.wf_autonomy_promote($1, $2, $3, $4, $5, 'AIN02 e2e promotion on evidence') AS v`,
+      [founder, org, agentH, to, evidence],
+    );
+  const levelOfH = async (org) =>
+    (
+      await admin.query(
+        `SELECT earned_level FROM public.wf_agent_autonomy WHERE org_id = $1 AND agent_ref = $2`,
+        [org, agentH],
+      )
+    ).rows[0]?.earned_level ?? "suggest";
+  const evH1 = (await recordH("h1", 25, 25)).evidence_id;
+  const holderH = await connect();
+  await holderH.query("BEGIN");
+  await holderH.query("SET LOCAL ROLE service_role");
+  await holderH.query(
+    `SELECT public.wf_autonomy_promote($1, $2, $3, 'draft', $4, 'AIN02 e2e first rung race')`,
+    [founder, orgA, agentH, evH1],
+  );
+  const racingH = asServiceRole(
+    `SELECT public.wf_autonomy_record_evidence($1, 'suite-h2', 100, 10, 0, 0, now(), $2) AS v`,
+    [agentH, sha("h2")],
+  );
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await holderH.query("COMMIT");
+  await holderH.end();
+  const racedH = await racingH;
+  const rungV = racedH.rows?.[0]?.v;
+  const levelAfterH = await levelOfH(orgA);
+
+  // I. an executed record in flight and a demotion: the demotion waits for the record (finding 2).
+  const climb = async (label, to, graded) => {
+    const ev = (await recordH(label, graded, graded)).evidence_id;
+    const r = await promoteH(orgA, to, ev);
+    if (r.outcome !== "ok") throw new Error(`climb ${label}: ${r.message}`);
+  };
+  await climb("i1", "draft", 25);
+  await climb("i2", "act_with_approval", 60);
+  await climb("i3", "act_and_report", 400);
+  const runH = crypto.randomUUID();
+  await admin.query(
+    `INSERT INTO public.wf_run (id, org_id, definition_id, version_id, idempotency_key, status, max_depth, max_steps,
+       step_count, started_by, deadline_at, started_at, agent_ref, template_id)
+     SELECT $1, org_id, definition_id, version_id, $2, status, max_depth, max_steps, 0, started_by, deadline_at,
+            started_at, $3, template_id FROM public.wf_run WHERE id = $4`,
+    [runH, `ain02-e2e-run-h-${runTag}`, agentH, runIds.a],
+  );
+  await admin.query(
+    `INSERT INTO public.wf_step_run (org_id, run_id, step_key, kind, idempotency_key, action_class)
+     VALUES ($1, $2, 'h', 'action', $3, 'internal')`,
+    [orgA, runH, `ain02-e2e-${runTag}-h`],
+  );
+  const stepH = (
+    await admin.query(
+      `SELECT id, autonomy_level FROM public.wf_step_run WHERE org_id = $1 AND idempotency_key = $2`,
+      [orgA, `ain02-e2e-${runTag}-h`],
+    )
+  ).rows[0];
+  const outboxInsert = `INSERT INTO public.wf_action_sandbox_outbox (org_id, run_id, step_run_id, kind, category,
+       template_ref, broker_decision_id, idempotency_key) VALUES ($1, $2, $3, 'in_app', 'communication', 'notice.a', gen_random_uuid(), $4)`;
+  // Only the AIN-02 trigger is under test; the other outbox triggers and the broker foreign key are off for this
+  // transaction and switched back on below.
+  const holderI = await connect();
+  await holderI.query("BEGIN");
+  await holderI.query("ALTER TABLE public.wf_action_sandbox_outbox DISABLE TRIGGER ALL");
+  await holderI.query(
+    "ALTER TABLE public.wf_action_sandbox_outbox ENABLE TRIGGER wf_action_sandbox_outbox_90_autonomy",
+  );
+  await holderI.query(outboxInsert, [orgA, runH, stepH.id, `ain02-e2e-ob-${runTag}-1`]);
+  let demoteDoneAt = 0;
+  const demoting = asServiceRole(
+    `SELECT public.wf_autonomy_demote($1, $2, $3, 'act_with_approval', 'AIN02 e2e demotion during a record') AS v`,
+    [founder, orgA, agentH],
+  ).then((r) => {
+    demoteDoneAt = Date.now();
+    return r;
+  });
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  const demotionWaited = demoteDoneAt === 0;
+  await holderI.query("COMMIT");
+  const holderCommittedAt = Date.now();
+  await holderI.end();
+  const demoted = await demoting;
+  const afterRefused = await (async () => {
+    const c = await connect();
+    try {
+      await c.query("BEGIN");
+      await c.query("ALTER TABLE public.wf_action_sandbox_outbox DISABLE TRIGGER ALL");
+      await c.query(
+        "ALTER TABLE public.wf_action_sandbox_outbox ENABLE TRIGGER wf_action_sandbox_outbox_90_autonomy",
+      );
+      await c.query(outboxInsert, [orgA, runH, stepH.id, `ain02-e2e-ob-${runTag}-2`]);
+      await c.query("COMMIT");
+      return "allowed";
+    } catch (error) {
+      await c.query("ROLLBACK").catch(() => {});
+      return error.code;
+    } finally {
+      await c.end();
+    }
+  })();
+  const recordRows = await count(
+    admin,
+    `SELECT count(*) n FROM public.wf_action_sandbox_outbox WHERE org_id = $1 AND idempotency_key LIKE $2`,
+    [orgA, `ain02-e2e-ob-${runTag}-%`],
+  );
+  const levelAfterI = await levelOfH(orgA);
+  // Clean up: the record rows are test data; switch every outbox trigger back on.
+  await admin.query("BEGIN");
+  await admin.query("ALTER TABLE public.wf_action_sandbox_outbox DISABLE TRIGGER ALL");
+  await admin.query(
+    `DELETE FROM public.wf_action_sandbox_outbox WHERE org_id = $1 AND idempotency_key LIKE $2`,
+    [orgA, `ain02-e2e-ob-${runTag}-%`],
+  );
+  await admin.query("ALTER TABLE public.wf_action_sandbox_outbox ENABLE TRIGGER ALL");
+  await admin.query("COMMIT");
+  const outboxTriggersOn = await count(
+    admin,
+    `SELECT count(*) n FROM pg_trigger WHERE tgrelid = 'public.wf_action_sandbox_outbox'::regclass AND NOT tgisinternal AND tgenabled <> 'O'`,
+    [],
+  );
+
   const sentLive = await count(
     admin,
     `SELECT (SELECT count(*) FROM public.wf_action_sandbox_outbox WHERE org_id = ANY($1))
@@ -346,11 +498,31 @@ async function main() {
       `G race outcome=${raced.outcome} ${raced.message ?? ""} demoted=${raceV?.demoted} level=${levelAfterG}`,
     );
   }
+  if (!rungV?.recorded || !rungV?.regression || rungV.demoted !== 1 || levelAfterH !== "suggest") {
+    failures.push(
+      `H rung race outcome=${racedH.outcome} ${racedH.message ?? ""} demoted=${rungV?.demoted} level=${levelAfterH}`,
+    );
+  }
+  if (
+    stepH.autonomy_level !== "act_and_report" ||
+    !demotionWaited ||
+    demoted.outcome !== "ok" ||
+    demoteDoneAt < holderCommittedAt ||
+    recordRows !== 1 ||
+    afterRefused !== "42501" ||
+    levelAfterI !== "act_with_approval" ||
+    outboxTriggersOn !== 0
+  ) {
+    failures.push(
+      `I outbox race step=${stepH.autonomy_level} waited=${demotionWaited} demote=${demoted.outcome} rows=${recordRows} after=${afterRefused} level=${levelAfterI} triggers_off=${outboxTriggersOn}`,
+    );
+  }
   if (sentLive !== 0 || dup !== 0) failures.push("sent_or_dup");
   const line =
     `AIN02-E2E RESULT: concurrent=${CONCURRENT} promoted=${promoted} refused=${refused} ledger_rows=${ledgerA} ` +
     `rivals=${RIVALS} rivals_promoted=${rivalsPromoted} nonfounder_promoted=${nonFounderPromoted} ` +
     `direct_write_refused=${directRefused} auto_demoted=${regression.demoted} replay_demoted=${replay.demoted} race_demoted=${raceV?.demoted} race_level=${levelAfterG} ` +
+    `rung_race_demoted=${rungV?.demoted} rung_race_level=${levelAfterH} record_waited=${demotionWaited} record_after_demotion=${afterRefused} ` +
     `step_after_promote=${stepAtApproval} step_after_demote=${stepAtFloor} sent_live=${sentLive} dup=${dup}`;
   console.log(line);
   if (failures.length) {

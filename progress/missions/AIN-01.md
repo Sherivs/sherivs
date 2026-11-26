@@ -48,7 +48,7 @@ exposes is decision 3 (see "Founder decisions needed").
 ## Implemented
 
 - Migration (inside `BEGIN`/`COMMIT`): `wf_agent` (42 rows), `wf_agent_capability` (188), `wf_agent_tier_action_class`
-  (22), `wf_agent_platform_grant` (empty); constraints that restate the charter rules; the BEFORE INSERT step guard
+  (25), `wf_agent_platform_grant` (empty); constraints that restate the charter rules; the BEFORE INSERT step guard
   `wf_step_run_07_agent` and the BEFORE UPDATE `wf_step_run_07_agent_immutable` (review B1); `wf_agent_state_code`, `wf_agent_class_allowed`, `wf_ai_route_approved`,
   `wf_agent_registry_get`; the daily-count index; a grant audit trigger; rollback.
 - Definitions: `frontend/src/lib/workforce-charter/engine-actors.ts` (pure), the generator
@@ -128,6 +128,22 @@ ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_
   Unit tests, Typecheck, Lint, guards + build, Migration dry-run + sim smoke (includes the AIN-01 harness, e2e and the
   new default-privileges step), RLS isolation battery, Secret scan, Mobile typecheck, Workspace shell E2E, role UI
   screenshots, Vercel preview: all success; production deploy, Supabase Preview, restore drill skipped.
+
+## Re-review (2026-11-26)
+
+An independent re-review of the review-round-1 fix (APPROVE WITH FIXES, no blocking item) confirmed that an agent identity
+and class cannot change after insert by any path as the service role, that no AI step can be inserted, that the class
+gate and the budget hold under concurrency (12 parallel sessions against a budget of 3 inserted 3), and that ACLs and RLS
+hold. Changes made:
+
+- The migration now refuses to install while any `kind = 'ai'` or `action_class = 'ai_model'` step exists (the insert
+  tripwire cannot see older rows and the claim path has no check of its own). Proved by seeding such a row and installing:
+  refused, no AIN-01 object created; a normal install passes `AIN01 ALL PASS: 136 checks` and `AIN01-PRIV ALL PASS: 124
+checks` (AIN-01 alone, as in this PR's CI).
+- Mission file: the tier table has 25 rows (it said 22). ADR-125: subflows are unclassified, listed with two further
+  limitations (insert-only tripwire; `wf_template.agent_ref` can be cleared by the service role, pre-existing).
+- e2e: the `ai_inserted` count now includes `action_class = 'ai_model'` (not run locally: it needs PostgREST).
+- Rollback header notes that AIN-03 and AIN-02 must be rolled back first.
 
 ## Not verified
 

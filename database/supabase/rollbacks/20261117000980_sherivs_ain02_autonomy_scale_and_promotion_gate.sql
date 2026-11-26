@@ -2,7 +2,8 @@
 -- Removes the gate, the evidence and ledger tables, the reference tables and every AIN-02 function and trigger, puts the
 -- WF-06 step guard back (SECURITY INVOKER, the inline ladder) and gives the service role back the WF-03 right to
 -- write wf_agent_autonomy. It refuses to run while the ledger or the evidence table holds a row: those are recorded
--- decisions (the audit chain keeps its copy either way). Export and remove them deliberately first.
+-- decisions (the audit chain keeps its copy either way). Export them, then remove them deliberately: both tables have
+-- append-only DELETE and TRUNCATE triggers, so disable those two triggers first (ALTER TABLE ... DISABLE TRIGGER).
 -- wf_agent_autonomy rows are not touched: every earned level stays as it is.
 BEGIN;
 
@@ -20,6 +21,10 @@ BEGIN
 END
 $prereq$;
 
+DROP TRIGGER wf_template_05_pin_actor ON public.wf_template;
+DROP FUNCTION public.wf_template_pin_actor();
+DROP TRIGGER wf_agent_autonomy_06_no_truncate ON public.wf_agent_autonomy;
+DROP FUNCTION public.wf_autonomy_earned_no_truncate();
 DROP TRIGGER wf_run_08_freeze_actor ON public.wf_run;
 DROP FUNCTION public.wf_run_freeze_actor();
 DROP TRIGGER wf_action_sandbox_outbox_90_autonomy ON public.wf_action_sandbox_outbox;
