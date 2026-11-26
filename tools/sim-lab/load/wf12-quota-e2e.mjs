@@ -482,7 +482,19 @@ async function main() {
     };
     const actionRuntime = modules.createWorkflowActionRuntime(sandboxEnv, providers.dependencies);
     const actionPorts = modules.createActionPorts(sandboxEnv, providers.dependencies);
-    const ports = { rpc: (fn, args) => modules.admin.rpc(fn, args) };
+    // The application maps every database error to a safe code, which hides the cause when a check fails here. This
+    // local-only wrapper prints the underlying code and message (never arguments) so a failing run can be diagnosed.
+    const ports = {
+      rpc: async (fn, args) => {
+        const result = await modules.admin.rpc(fn, args);
+        if (result?.error && !/wf12:/.test(String(result.error.message ?? ""))) {
+          console.error(
+            `WF12-E2E rpc ${fn} failed: ${result.error.code ?? "no-code"} ${String(result.error.message ?? "").slice(0, 200)}`,
+          );
+        }
+        return result;
+      },
+    };
     const refusals = [];
     const expectRefusal = async (label, expected, run) => {
       try {
