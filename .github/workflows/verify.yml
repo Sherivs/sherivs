@@ -517,6 +517,9 @@ jobs:
       - name: Scenarios
         working-directory: tools/sim-lab
         run: node sim/scenarios.mjs
+      - name: Scenario ratchet (fails on any new failing scenario or stale baseline entry; issue #465)
+        working-directory: tools/sim-lab
+        run: node sim/scenario-ratchet.mjs
       - name: Database security audit + RLS leak regression
         working-directory: tools/sim-lab
         run: |

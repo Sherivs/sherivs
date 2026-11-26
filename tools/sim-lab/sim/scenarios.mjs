@@ -11,7 +11,8 @@ const pool = new pg.Pool({
 });
 const results = [];
 const rec = (area, name, pass, detail, severity = "high") => {
-  results.push({ area, name, pass, detail, severity });
+  // A7: a scenario may pass a truthy value (an id, for instance); the results file always holds a boolean.
+  results.push({ area, name, pass: Boolean(pass), detail, severity });
   console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail);
 };
 async function as(uid, fn, role = "authenticated") {
