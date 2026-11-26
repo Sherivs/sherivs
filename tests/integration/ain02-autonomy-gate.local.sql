@@ -14,7 +14,8 @@ BEGIN
   END IF;
   IF to_regclass('public.wf_autonomy_change') IS NULL
      OR to_regprocedure('public.wf_autonomy_promote(uuid,uuid,text,text,uuid,text)') IS NULL
-     OR to_regprocedure('public.wf_agent_state_code(uuid,text)') IS NULL THEN
+     OR to_regprocedure('public.wf_agent_state_code(uuid,text)') IS NULL
+     OR to_regclass('public.wf_sensitive_step_up') IS NULL THEN
     RAISE EXCEPTION 'AIN02 FAIL: the AIN-01 and AIN-02 migrations must be present';
   END IF;
   IF to_regclass('public.org_agent_addon_events') IS NOT NULL THEN
@@ -488,9 +489,15 @@ SELECT ain02t.keep('ev_first', (SELECT id FROM public.wf_autonomy_evidence WHERE
 -- ---------------------------------------------------------------------------------------------
 -- 7. Promotion: the founder, one rung, fresh single-use evidence
 -- ---------------------------------------------------------------------------------------------
+-- A3: a promotion also needs a verified passkey step-up; the harness records one as the server would (owner context).
+CREATE FUNCTION ain02t.su(p_actor uuid, p_org uuid, p_agent text, p_to text, p_ev uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.wf_sensitive_step_up (user_id, action_kind, subject_digest, expires_at)
+  VALUES (p_actor, 'agent_promotion', public.wf_step_up_digest('agent_promotion', ARRAY[p_org::text, p_agent, p_to, p_ev::text]), now() + interval '4 minutes');
+END $$;
 CREATE FUNCTION ain02t.promote_sql(p_actor text, p_org text, p_agent text, p_to text, p_ev text, p_reason text DEFAULT 'AIN02 harness promotion on evidence')
 RETURNS text LANGUAGE sql AS $$
-  SELECT format($f$SELECT public.wf_autonomy_promote(%L, %L, %L, %L, %L, %L)$f$,
+  SELECT format($f$WITH g AS MATERIALIZED (SELECT ain02t.su(%1$L, %2$L, %3$L, %4$L, %5$L)) SELECT public.wf_autonomy_promote(%1$L, %2$L, %3$L, %4$L, %5$L, %6$L) FROM g$f$,
     ain02t.id(p_actor), ain02t.id(p_org), p_agent, p_to, ain02t.id('ev_' || p_ev), p_reason)
 $$;
 CREATE FUNCTION ain02t.promote(p_actor text, p_org text, p_agent text, p_to text, p_ev text) RETURNS jsonb LANGUAGE plpgsql AS $$

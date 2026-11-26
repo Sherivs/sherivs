@@ -261,7 +261,14 @@ SELECT ain05t.expect_true('the same evidence is shown to a person of another org
 
 -- The view agrees with the promotion guard: when it says the bar is met the founder can promote, and when it says not, the
 -- guard refuses.
+CREATE FUNCTION ain05t.su(p_actor uuid, p_org uuid, p_agent text, p_to text, p_ev uuid) RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO public.wf_sensitive_step_up (user_id, action_kind, subject_digest, expires_at)
+  VALUES (p_actor, 'agent_promotion', public.wf_step_up_digest('agent_promotion', ARRAY[p_org::text, p_agent, p_to, p_ev::text]), now() + interval '4 minutes');
+END $$;
+GRANT EXECUTE ON FUNCTION ain05t.su(uuid, uuid, text, text, uuid) TO service_role;
 SELECT ain05t.login_as('service_role');
+SELECT ain05t.su(ain05t.id('founder'), ain05t.id('orgA'), 'ain05-granted', 'draft', ain05t.id('ev_good'));
 SELECT ain05t.expect_true('the founder promotes on the evidence the console reported as meeting the bar',
   (public.wf_autonomy_promote(ain05t.id('founder'), ain05t.id('orgA'), 'ain05-granted', 'draft', ain05t.id('ev_good'),
      'The evaluation meets the bar for the next rung.') ->> 'to') = 'draft');
