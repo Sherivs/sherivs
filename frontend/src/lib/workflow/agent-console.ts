@@ -163,7 +163,11 @@ export const MemoryDecideInput = z
   .strict();
 export const MemoryRetireInput = z.object({ itemId: uuid }).strict();
 export const SafetyReviewInput = z
-  .object({ checkId: uuid, decision: z.enum(["cleared", "rejected"]), reason: z.enum(CONSOLE_REASONS) })
+  .object({
+    checkId: uuid,
+    decision: z.enum(["cleared", "rejected"]),
+    reason: z.enum(CONSOLE_REASONS),
+  })
   .strict();
 export const AgentDemoteInput = z
   .object({
@@ -178,7 +182,11 @@ export const AgentDemoteInput = z
 // ---------------------------------------------------------------------------------------------
 
 const barSchema = z
-  .object({ min_graded: count, min_pass_rate: z.coerce.number().min(0).max(1), max_age_days: count })
+  .object({
+    min_graded: count,
+    min_pass_rate: z.coerce.number().min(0).max(1),
+    max_age_days: count,
+  })
   .strict();
 const evidenceSchema = z
   .object({
@@ -222,12 +230,17 @@ const agentSchema = z
   .strict();
 const agentsSchema = z
   .object({
+    org_id: uuid,
     ai_route_approved: z.boolean(),
     can_manage: z.boolean(),
     can_approve: z.boolean(),
     is_founder: z.boolean(),
     levels: z
-      .array(z.object({ level: z.enum(AUTONOMY_LEVELS), rank: count, label: z.string().max(80) }).strict())
+      .array(
+        z
+          .object({ level: z.enum(AUTONOMY_LEVELS), rank: count, label: z.string().max(80) })
+          .strict(),
+      )
       .max(8),
     agents: z.array(agentSchema).max(200),
   })
@@ -277,7 +290,11 @@ const safetyItemSchema = z
   })
   .strict();
 const safetyListSchema = z
-  .object({ items: z.array(safetyItemSchema).max(100), has_more: z.boolean(), can_approve: z.boolean() })
+  .object({
+    items: z.array(safetyItemSchema).max(100),
+    has_more: z.boolean(),
+    can_approve: z.boolean(),
+  })
   .strict();
 export type SafetyItem = z.infer<typeof safetyItemSchema>;
 export type SafetyList = z.infer<typeof safetyListSchema>;

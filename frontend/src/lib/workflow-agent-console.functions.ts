@@ -22,23 +22,12 @@ type Rpc = {
     fn: string,
     args?: Record<string, unknown>,
   ) => PromiseLike<{ data: unknown; error: { message?: unknown; code?: unknown } | null }>;
-  from: (t: string) => {
-    select: (c: string) => {
-      eq: (k: string, v: string) => { maybeSingle: () => PromiseLike<{ data: { school_id?: string | null } | null }> };
-    };
-  };
 };
 
 async function ports(): Promise<AgentConsolePorts> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as unknown as Rpc;
-  return {
-    rpc: (fn, args) => db.rpc(fn, args),
-    organizationOf: async (actorId) => {
-      const { data } = await db.from("users").select("school_id").eq("id", actorId).maybeSingle();
-      return data?.school_id ?? null;
-    },
-  };
+  return { rpc: (fn, args) => db.rpc(fn, args) };
 }
 
 function surface(err: unknown): never {

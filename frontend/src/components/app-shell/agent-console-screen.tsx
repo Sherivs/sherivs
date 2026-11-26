@@ -42,7 +42,11 @@ type Tab = "agents" | "memory" | "review";
 type MemoryFilter = (typeof MEMORY_FILTERS)[number];
 type SafetyFilter = (typeof SAFETY_FILTERS)[number];
 
-const MEMORY_LABEL: Record<MemoryFilter, string> = { proposed: "Waiting", active: "In use", all: "All" };
+const MEMORY_LABEL: Record<MemoryFilter, string> = {
+  proposed: "Waiting",
+  active: "In use",
+  all: "All",
+};
 const SAFETY_LABEL: Record<SafetyFilter, string> = {
   pending: "Waiting",
   blocked: "Blocked",
@@ -90,33 +94,39 @@ export default function AgentConsoleScreen() {
     }
   }, []);
 
-  const loadMemory = useCallback(async (status: MemoryFilter, before?: string, beforeId?: string) => {
-    try {
-      const page = await listConsoleMemory({
-        data: { status, ...(before ? { before, ...(beforeId ? { beforeId } : {}) } : {}) },
-      });
-      setMemory((prev) => (before && prev ? [...prev, ...page.items] : page.items));
-      setMemMore(page.has_more);
-      setError(null);
-    } catch (err) {
-      if (!before) setMemory([]);
-      setError(safeConsoleMessage(err));
-    }
-  }, []);
+  const loadMemory = useCallback(
+    async (status: MemoryFilter, before?: string, beforeId?: string) => {
+      try {
+        const page = await listConsoleMemory({
+          data: { status, ...(before ? { before, ...(beforeId ? { beforeId } : {}) } : {}) },
+        });
+        setMemory((prev) => (before && prev ? [...prev, ...page.items] : page.items));
+        setMemMore(page.has_more);
+        setError(null);
+      } catch (err) {
+        if (!before) setMemory([]);
+        setError(safeConsoleMessage(err));
+      }
+    },
+    [],
+  );
 
-  const loadSafety = useCallback(async (filter: SafetyFilter, before?: string, beforeId?: string) => {
-    try {
-      const page = await listConsoleSafety({
-        data: { filter, ...(before ? { before, ...(beforeId ? { beforeId } : {}) } : {}) },
-      });
-      setSafety((prev) => (before && prev ? [...prev, ...page.items] : page.items));
-      setSafeMore(page.has_more);
-      setError(null);
-    } catch (err) {
-      if (!before) setSafety([]);
-      setError(safeConsoleMessage(err));
-    }
-  }, []);
+  const loadSafety = useCallback(
+    async (filter: SafetyFilter, before?: string, beforeId?: string) => {
+      try {
+        const page = await listConsoleSafety({
+          data: { filter, ...(before ? { before, ...(beforeId ? { beforeId } : {}) } : {}) },
+        });
+        setSafety((prev) => (before && prev ? [...prev, ...page.items] : page.items));
+        setSafeMore(page.has_more);
+        setError(null);
+      } catch (err) {
+        if (!before) setSafety([]);
+        setError(safeConsoleMessage(err));
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     void loadAgents();
@@ -135,7 +145,11 @@ export default function AgentConsoleScreen() {
     setNotice(null);
     try {
       await decideConsoleMemory({ data: { itemId: item.item_id, decision } });
-      setNotice(decision === "accept" ? "Accepted. It is now in use." : "Rejected. Its content was removed.");
+      setNotice(
+        decision === "accept"
+          ? "Accepted. It is now in use."
+          : "Rejected. Its content was removed.",
+      );
       await loadMemory(memFilter);
     } catch (err) {
       setError(safeConsoleMessage(err));
@@ -151,11 +165,15 @@ export default function AgentConsoleScreen() {
     setNotice(null);
     try {
       if (pending.kind === "demote") {
-        await demoteConsoleAgent({ data: { agentRef: pending.agent.agent_ref, toLevel: pending.to, reason } });
+        await demoteConsoleAgent({
+          data: { agentRef: pending.agent.agent_ref, toLevel: pending.to, reason },
+        });
         setNotice("The level was lowered. It takes effect on the agent's next step.");
         await loadAgents();
       } else if (pending.kind === "review") {
-        await reviewConsoleSafety({ data: { checkId: pending.item.check_id, decision: pending.decision, reason } });
+        await reviewConsoleSafety({
+          data: { checkId: pending.item.check_id, decision: pending.decision, reason },
+        });
         setNotice(pending.decision === "cleared" ? "Cleared." : "Rejected.");
         await loadSafety(safeFilter);
       } else {
@@ -186,9 +204,9 @@ export default function AgentConsoleScreen() {
           <p className="wf-inbox-eyebrow">AGENTS</p>
           <h1 id="ain-console-title">Agent console</h1>
           <p className="wf-inbox-subtitle">
-            Which agents work for your organisation, what each may do, and what is waiting for a person. The text of a
-            screened output is never shown here. Raising an agent&apos;s level is a founder decision.{" "}
-            <Link to={APP_SHELL_HOME}>Back to home</Link>
+            Which agents work for your organisation, what each may do, and what is waiting for a
+            person. The text of a screened output is never shown here. Raising an agent&apos;s level
+            is a founder decision. <Link to={APP_SHELL_HOME}>Back to home</Link>
           </p>
         </div>
         <button
@@ -208,7 +226,8 @@ export default function AgentConsoleScreen() {
 
       {agents && !agents.ai_route_approved ? (
         <p role="status" className="wf-inbox-notice" data-testid="ai-route-banner">
-          The AI route is not approved yet, so agents are not running. Levels and reviews can still be set up.
+          The AI route is not approved yet, so agents are not running. Levels and reviews can still
+          be set up.
         </p>
       ) : null}
 
@@ -269,10 +288,20 @@ export default function AgentConsoleScreen() {
             </label>
           ) : null}
           <div>
-            <button type="button" className="wf-inbox-button" disabled={busy} onClick={() => void confirm()}>
+            <button
+              type="button"
+              className="wf-inbox-button"
+              disabled={busy}
+              onClick={() => void confirm()}
+            >
               Confirm
             </button>
-            <button type="button" className="wf-inbox-button" disabled={busy} onClick={() => setPending(null)}>
+            <button
+              type="button"
+              className="wf-inbox-button"
+              disabled={busy}
+              onClick={() => setPending(null)}
+            >
               Cancel
             </button>
           </div>
@@ -285,23 +314,26 @@ export default function AgentConsoleScreen() {
           {(agents?.agents ?? []).map((a) => (
             <li key={a.agent_ref} className="wf-inbox-row" data-testid="agent-row">
               <span className="wf-inbox-row-title">
-                {a.codename} <small>({a.family === "org" ? "your organisation" : "platform"})</small>
+                {a.codename}{" "}
+                <small>({a.family === "org" ? "your organisation" : "platform"})</small>
               </span>
               <span className="wf-inbox-row-meta">
-                {AGENT_LEVEL_LABELS[a.earned_level as AutonomyLevel]} · limit {AGENT_LEVEL_LABELS[a.ceiling]} ·{" "}
-                {words(a.state)} · {a.steps_24h} steps in 24 hours
+                {AGENT_LEVEL_LABELS[a.earned_level as AutonomyLevel]} · limit{" "}
+                {AGENT_LEVEL_LABELS[a.ceiling]} · {words(a.state)} · {a.steps_24h} steps in 24 hours
               </span>
               {a.next_level && a.bar ? (
                 <span className="wf-inbox-row-meta">
                   Next: {AGENT_LEVEL_LABELS[a.next_level]}. Needs {a.bar.min_graded}+ graded cases,{" "}
-                  {Math.round(a.bar.min_pass_rate * 100)}% passed, no critical failure, evaluated within{" "}
-                  {a.bar.max_age_days} days.{" "}
+                  {Math.round(a.bar.min_pass_rate * 100)}% passed, no critical failure, evaluated
+                  within {a.bar.max_age_days} days.{" "}
                   {a.evidence
                     ? `Latest evaluation: ${a.evidence.passed}/${a.evidence.graded} passed, ${a.evidence.critical_failures} critical, ${a.evidence.age_days} days old, ${a.evidence.meets_bar ? "meets" : "does not meet"} the bar.`
                     : "No evaluation yet."}
                 </span>
               ) : (
-                <span className="wf-inbox-row-meta">No higher level is available to this agent.</span>
+                <span className="wf-inbox-row-meta">
+                  No higher level is available to this agent.
+                </span>
               )}
               {a.changes.length > 0 ? (
                 <span className="wf-inbox-row-meta">
@@ -346,28 +378,49 @@ export default function AgentConsoleScreen() {
           </div>
           <ul className="wf-inbox-list" aria-label="Memory">
             {memory === null ? <li className="wf-inbox-empty">Loading memory…</li> : null}
-            {memory !== null && memory.length === 0 ? <li className="wf-inbox-empty">Nothing here.</li> : null}
+            {memory !== null && memory.length === 0 ? (
+              <li className="wf-inbox-empty">Nothing here.</li>
+            ) : null}
             {(memory ?? []).map((m) => (
               <li key={m.item_id} className="wf-inbox-row" data-testid="memory-row">
                 <span className="wf-inbox-row-title">{m.key}</span>
                 <span className="wf-inbox-row-meta">
-                  {m.status} · {m.source_kind === "agent" ? `proposed by ${m.source_agent ?? "an agent"}` : "written by a person"} ·{" "}
-                  {words(m.scope_kind)} · {when(m.created_at)}
+                  {m.status} ·{" "}
+                  {m.source_kind === "agent"
+                    ? `proposed by ${m.source_agent ?? "an agent"}`
+                    : "written by a person"}{" "}
+                  · {words(m.scope_kind)} · {when(m.created_at)}
                   {m.expired ? " · expired" : ""}
                 </span>
-                {m.status !== "retired" ? <code className="wf-inbox-row-meta">{m.value}</code> : null}
+                {m.status !== "retired" ? (
+                  <code className="wf-inbox-row-meta">{m.value}</code>
+                ) : null}
                 {m.status === "proposed" && !m.expired ? (
                   <>
-                    <button type="button" className="wf-inbox-button" disabled={busy} onClick={() => void decideMemory(m, "accept")}>
+                    <button
+                      type="button"
+                      className="wf-inbox-button"
+                      disabled={busy}
+                      onClick={() => void decideMemory(m, "accept")}
+                    >
                       Accept
                     </button>
-                    <button type="button" className="wf-inbox-button" disabled={busy} onClick={() => void decideMemory(m, "reject")}>
+                    <button
+                      type="button"
+                      className="wf-inbox-button"
+                      disabled={busy}
+                      onClick={() => void decideMemory(m, "reject")}
+                    >
                       Reject
                     </button>
                   </>
                 ) : null}
                 {m.status !== "retired" ? (
-                  <button type="button" className="wf-inbox-button" onClick={() => setPending({ kind: "retire", item: m })}>
+                  <button
+                    type="button"
+                    className="wf-inbox-button"
+                    onClick={() => setPending({ kind: "retire", item: m })}
+                  >
                     Retire
                   </button>
                 ) : null}
@@ -407,7 +460,9 @@ export default function AgentConsoleScreen() {
           </div>
           <ul className="wf-inbox-list" aria-label="Screened outputs">
             {safety === null ? <li className="wf-inbox-empty">Loading…</li> : null}
-            {safety !== null && safety.length === 0 ? <li className="wf-inbox-empty">Nothing here.</li> : null}
+            {safety !== null && safety.length === 0 ? (
+              <li className="wf-inbox-empty">Nothing here.</li>
+            ) : null}
             {(safety ?? []).map((s) => (
               <li key={s.check_id} className="wf-inbox-row" data-testid="check-row">
                 <span className="wf-inbox-row-title">
@@ -415,19 +470,29 @@ export default function AgentConsoleScreen() {
                 </span>
                 <span className="wf-inbox-row-meta">
                   {s.verdict}
-                  {s.codes.length > 0 ? ` (${s.codes.map(words).join(", ")})` : ""} · {s.text_chars} characters ·{" "}
-                  {when(s.created_at)}
+                  {s.codes.length > 0 ? ` (${s.codes.map(words).join(", ")})` : ""} · {s.text_chars}{" "}
+                  characters · {when(s.created_at)}
                   {s.decision ? ` · ${s.decision} ${when(s.decided_at)}` : ""}
                 </span>
                 {s.started_by_me && s.verdict === "flagged" && !s.decision ? (
-                  <span className="wf-inbox-row-meta">You started this run, so another person must review it.</span>
+                  <span className="wf-inbox-row-meta">
+                    You started this run, so another person must review it.
+                  </span>
                 ) : null}
                 {s.can_review ? (
                   <>
-                    <button type="button" className="wf-inbox-button" onClick={() => setPending({ kind: "review", item: s, decision: "cleared" })}>
+                    <button
+                      type="button"
+                      className="wf-inbox-button"
+                      onClick={() => setPending({ kind: "review", item: s, decision: "cleared" })}
+                    >
                       Clear
                     </button>
-                    <button type="button" className="wf-inbox-button" onClick={() => setPending({ kind: "review", item: s, decision: "rejected" })}>
+                    <button
+                      type="button"
+                      className="wf-inbox-button"
+                      onClick={() => setPending({ kind: "review", item: s, decision: "rejected" })}
+                    >
                       Reject
                     </button>
                   </>

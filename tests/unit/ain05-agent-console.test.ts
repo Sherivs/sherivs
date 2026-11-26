@@ -52,6 +52,7 @@ const agent = {
   budget: { daily_actions: 10, daily_model_calls: 0, daily_cost_cap_minor: 0 },
 };
 const consoleDoc = {
+  org_id: ID,
   ai_route_approved: false,
   can_manage: true,
   can_approve: true,
@@ -60,14 +61,13 @@ const consoleDoc = {
   agents: [agent],
 };
 
-function ports(over: Partial<AgentConsolePorts> & { data?: unknown; error?: { message: string } | null } = {}) {
+function ports(over: { data?: unknown; error?: { message: string } | null } = {}) {
   const calls: Array<{ fn: string; args: Record<string, unknown> }> = [];
   const p: AgentConsolePorts = {
     rpc: async (fn, args) => {
       calls.push({ fn, args });
       return { data: over.data ?? null, error: over.error ?? null };
     },
-    organizationOf: over.organizationOf ?? (async () => ID),
   };
   return { p, calls };
 }
@@ -76,9 +76,9 @@ describe("AIN-05 agent console shapes", () => {
   it("parses the agent view strictly and rejects an unknown key", () => {
     expect(parseAgentConsole(consoleDoc).agents[0]?.agent_ref).toBe("org-fees");
     expect(() => parseAgentConsole({ ...consoleDoc, extra: 1 })).toThrow(AgentConsoleError);
-    expect(() =>
-      parseAgentConsole({ ...consoleDoc, agents: [{ ...agent, secret: "x" }] }),
-    ).toThrow(AgentConsoleError);
+    expect(() => parseAgentConsole({ ...consoleDoc, agents: [{ ...agent, secret: "x" }] })).toThrow(
+      AgentConsoleError,
+    );
   });
 
   it("rejects an agent change that carries a reason or a person", () => {
@@ -123,7 +123,9 @@ describe("AIN-05 agent console shapes", () => {
       started_by_me: false,
       can_review: true,
     };
-    expect(parseSafetyList({ items: [check], has_more: false, can_approve: true }).items).toHaveLength(1);
+    expect(
+      parseSafetyList({ items: [check], has_more: false, can_approve: true }).items,
+    ).toHaveLength(1);
     expect(() =>
       parseSafetyList({ items: [{ ...check, text: "hello" }], has_more: false, can_approve: true }),
     ).toThrow(AgentConsoleError);
@@ -140,9 +142,20 @@ describe("AIN-05 reasons and requests", () => {
   });
 
   it("refuses free text, unknown keys and a raise of level at the edge", () => {
-    expect(() => SafetyReviewInput.parse({ checkId: ID, decision: "cleared", reason: "because I said so" })).toThrow();
-    expect(() => SafetyReviewInput.parse({ checkId: ID, decision: "cleared", reason: "reviewed_ok", note: "x" })).toThrow();
-    expect(() => AgentDemoteInput.parse({ agentRef: "org-fees", toLevel: "act_and_report", reason: "other" })).toThrow();
+    expect(() =>
+      SafetyReviewInput.parse({ checkId: ID, decision: "cleared", reason: "because I said so" }),
+    ).toThrow();
+    expect(() =>
+      SafetyReviewInput.parse({
+        checkId: ID,
+        decision: "cleared",
+        reason: "reviewed_ok",
+        note: "x",
+      }),
+    ).toThrow();
+    expect(() =>
+      AgentDemoteInput.parse({ agentRef: "org-fees", toLevel: "act_and_report", reason: "other" }),
+    ).toThrow();
     expect(MemoryListInput.parse({}).status).toBe("proposed");
   });
 });
@@ -151,13 +164,18 @@ describe("AIN-05 errors", () => {
   it("maps database codes to safe sentences and never leaks unknown text", () => {
     const e = consoleErrorFromDatabase({ message: "ain05:not_authorized" });
     expect(e.code).toBe("not_authorized");
-    expect(consoleErrorFromDatabase({ message: "ain04:the_starter_of_the_run_cannot_review_its_output" }).code).toBe(
-      "the_starter_of_the_run_cannot_review_its_output",
+    expect(
+      consoleErrorFromDatabase({ message: "ain04:the_starter_of_the_run_cannot_review_its_output" })
+        .code,
+    ).toBe("the_starter_of_the_run_cannot_review_its_output");
+    expect(
+      consoleErrorFromDatabase({
+        message: 'relation "wf_safety_check" does not exist ada@x.example',
+      }).code,
+    ).toBe("unavailable");
+    expect(safeConsoleMessage(new Error("password=hunter2"))).toBe(
+      consoleErrorMessage("unavailable"),
     );
-    expect(consoleErrorFromDatabase({ message: 'relation "wf_safety_check" does not exist ada@x.example' }).code).toBe(
-      "unavailable",
-    );
-    expect(safeConsoleMessage(new Error("password=hunter2"))).toBe(consoleErrorMessage("unavailable"));
     expect(safeConsoleMessage(e)).toBe(consoleErrorMessage("not_authorized"));
     for (const c of CONSOLE_ERROR_CODES) expect(consoleErrorMessage(c).length).toBeGreaterThan(10);
   });
@@ -170,24 +188,56 @@ describe("AIN-05 server operations", () => {
     expect(a.calls).toEqual([{ fn: "wf_console_agents", args: { p_actor: ID } }]);
     const m = ports({ data: { items: [], has_more: false } });
     await listMemory(m.p, { actorId: ID, status: "active" });
-    expect(m.calls[0]?.args).toMatchObject({ p_actor: ID, p_status: "active", p_limit: 25, p_before: null, p_before_id: null });
+    expect(m.calls[0]?.args).toMatchObject({
+      p_actor: ID,
+      p_status: "active",
+      p_limit: 25,
+      p_before: null,
+      p_before_id: null,
+    });
   });
 
   it("sends the fixed sentence for a review, not the person's words", async () => {
     const r = ports({ data: { decision: "cleared" } });
-    await reviewSafety(r.p, { actorId: ID, checkId: ID, decision: "cleared", reason: "reviewed_ok" });
+    await reviewSafety(r.p, {
+      actorId: ID,
+      checkId: ID,
+      decision: "cleared",
+      reason: "reviewed_ok",
+    });
     expect(r.calls[0]?.args.p_reason).toBe(CONSOLE_REASON_SENTENCES.reviewed_ok);
   });
 
-  it("resolves the organisation for a demotion and refuses when there is none", async () => {
-    const ok = ports({ data: { to: "suggest" } });
-    await demoteAgent(ok.p, { actorId: ID, agentRef: "org-fees", toLevel: "suggest", reason: "quality_concern" });
-    expect(ok.calls[0]?.args).toMatchObject({ p_actor: ID, p_org: ID, p_agent: "org-fees", p_to_level: "suggest" });
-    const none = ports({ organizationOf: async () => null });
+  it("takes the organisation for a demotion from the permission-checked view, then demotes", async () => {
+    const calls: Array<{ fn: string; args: Record<string, unknown> }> = [];
+    const p: AgentConsolePorts = {
+      rpc: async (fn, args) => {
+        calls.push({ fn, args });
+        return { data: fn === "wf_console_agents" ? consoleDoc : { to: "suggest" }, error: null };
+      },
+    };
+    await demoteAgent(p, {
+      actorId: ID,
+      agentRef: "org-fees",
+      toLevel: "suggest",
+      reason: "quality_concern",
+    });
+    expect(calls.map((c) => c.fn)).toEqual(["wf_console_agents", "wf_autonomy_demote"]);
+    expect(calls[1]?.args).toMatchObject({
+      p_actor: ID,
+      p_org: ID,
+      p_agent: "org-fees",
+      p_to_level: "suggest",
+    });
+  });
+
+  it("does not demote when the view is refused", async () => {
+    const p: AgentConsolePorts = {
+      rpc: async () => ({ data: null, error: { message: "ain05:not_authorized" } }),
+    };
     await expect(
-      demoteAgent(none.p, { actorId: ID, agentRef: "org-fees", toLevel: "suggest", reason: "other" }),
+      demoteAgent(p, { actorId: ID, agentRef: "org-fees", toLevel: "suggest", reason: "other" }),
     ).rejects.toMatchObject({ code: "not_authorized" });
-    expect(none.calls).toHaveLength(0);
   });
 
   it("turns a thrown transport error into the generic sentence", async () => {
@@ -195,7 +245,6 @@ describe("AIN-05 server operations", () => {
       rpc: async () => {
         throw new Error("connect ECONNREFUSED 10.0.0.1");
       },
-      organizationOf: async () => ID,
     };
     await expect(loadAgents(p, { actorId: ID })).rejects.toMatchObject({ code: "unavailable" });
   });

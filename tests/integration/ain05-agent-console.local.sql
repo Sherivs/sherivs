@@ -220,6 +220,8 @@ SELECT ain05t.expect_true('an administrator sees the flags: manage, approve, not
   AND NOT (ain05t.agents('adminA') ->> 'is_founder')::boolean AND NOT (ain05t.agents('adminA') ->> 'ai_route_approved')::boolean);
 SELECT ain05t.expect_true('an auditor reads the view but cannot manage; can approve',
   NOT (ain05t.agents('viewer') ->> 'can_manage')::boolean AND (ain05t.agents('viewer') ->> 'can_approve')::boolean);
+SELECT ain05t.expect_true('the view carries the person''s own organization, so a demotion needs no other lookup',
+  (ain05t.agents('adminA') ->> 'org_id')::uuid = ain05t.id('orgA') AND (ain05t.agents('adminB') ->> 'org_id')::uuid = ain05t.id('orgB'));
 SELECT ain05t.expect_true('the four levels come back in rank order',
   (SELECT array_agg(l ->> 'level' ORDER BY (l ->> 'rank')::int) = ARRAY['suggest', 'draft', 'act_with_approval', 'act_and_report']
      FROM jsonb_array_elements(ain05t.agents('adminA') -> 'levels') l));

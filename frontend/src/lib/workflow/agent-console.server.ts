@@ -26,11 +26,13 @@ export interface ConsoleRpcResult {
 }
 export interface AgentConsolePorts {
   readonly rpc: (fn: string, args: Record<string, unknown>) => PromiseLike<ConsoleRpcResult>;
-  /** The organisation of the verified person, resolved by the caller from the database, never from the request. */
-  readonly organizationOf: (actorId: string) => PromiseLike<string | null>;
 }
 
-async function call(ports: AgentConsolePorts, fn: string, args: Record<string, unknown>): Promise<unknown> {
+async function call(
+  ports: AgentConsolePorts,
+  fn: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
   let result: ConsoleRpcResult;
   try {
     result = await ports.rpc(fn, args);
@@ -41,13 +43,21 @@ async function call(ports: AgentConsolePorts, fn: string, args: Record<string, u
   return result.data;
 }
 
-export async function loadAgents(ports: AgentConsolePorts, input: { actorId: string }): Promise<AgentConsole> {
+export async function loadAgents(
+  ports: AgentConsolePorts,
+  input: { actorId: string },
+): Promise<AgentConsole> {
   return parseAgentConsole(await call(ports, "wf_console_agents", { p_actor: input.actorId }));
 }
 
 export async function listMemory(
   ports: AgentConsolePorts,
-  input: { actorId: string; status: "proposed" | "active" | "all"; before?: string; beforeId?: string },
+  input: {
+    actorId: string;
+    status: "proposed" | "active" | "all";
+    before?: string;
+    beforeId?: string;
+  },
 ): Promise<MemoryList> {
   return parseMemoryList(
     await call(ports, "wf_console_memory_list", {
@@ -62,7 +72,12 @@ export async function listMemory(
 
 export async function listSafety(
   ports: AgentConsolePorts,
-  input: { actorId: string; filter: "pending" | "blocked" | "decided" | "all"; before?: string; beforeId?: string },
+  input: {
+    actorId: string;
+    filter: "pending" | "blocked" | "decided" | "all";
+    before?: string;
+    beforeId?: string;
+  },
 ): Promise<SafetyList> {
   return parseSafetyList(
     await call(ports, "wf_console_safety_list", {
@@ -80,7 +95,11 @@ export async function decideMemory(
   input: { actorId: string; itemId: string; decision: "accept" | "reject" },
 ): Promise<{ ok: true }> {
   return parseAck(
-    await call(ports, "wf_memory_decide", { p_actor: input.actorId, p_item: input.itemId, p_decision: input.decision }),
+    await call(ports, "wf_memory_decide", {
+      p_actor: input.actorId,
+      p_item: input.itemId,
+      p_decision: input.decision,
+    }),
   );
 }
 
@@ -88,12 +107,19 @@ export async function retireMemory(
   ports: AgentConsolePorts,
   input: { actorId: string; itemId: string },
 ): Promise<{ ok: true }> {
-  return parseAck(await call(ports, "wf_memory_retire", { p_actor: input.actorId, p_item: input.itemId }));
+  return parseAck(
+    await call(ports, "wf_memory_retire", { p_actor: input.actorId, p_item: input.itemId }),
+  );
 }
 
 export async function reviewSafety(
   ports: AgentConsolePorts,
-  input: { actorId: string; checkId: string; decision: "cleared" | "rejected"; reason: ConsoleReason },
+  input: {
+    actorId: string;
+    checkId: string;
+    decision: "cleared" | "rejected";
+    reason: ConsoleReason;
+  },
 ): Promise<{ ok: true }> {
   return parseAck(
     await call(ports, "wf_safety_review_check", {
@@ -107,10 +133,15 @@ export async function reviewSafety(
 
 export async function demoteAgent(
   ports: AgentConsolePorts,
-  input: { actorId: string; agentRef: string; toLevel: "suggest" | "draft" | "act_with_approval"; reason: ConsoleReason },
+  input: {
+    actorId: string;
+    agentRef: string;
+    toLevel: "suggest" | "draft" | "act_with_approval";
+    reason: ConsoleReason;
+  },
 ): Promise<{ ok: true }> {
-  const org = await ports.organizationOf(input.actorId);
-  if (!org) throw new AgentConsoleError("not_authorized");
+  // The organisation comes from the permission-checked view of the person's own organisation, never from the request.
+  const { org_id: org } = await loadAgents(ports, { actorId: input.actorId });
   return parseAck(
     await call(ports, "wf_autonomy_demote", {
       p_actor: input.actorId,

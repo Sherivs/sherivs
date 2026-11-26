@@ -62,6 +62,7 @@ BEGIN
     RAISE EXCEPTION 'ain05:not_authorized' USING ERRCODE = '42501';
   END IF;
   v_out := jsonb_build_object(
+    'org_id', v_org,
     'ai_route_approved', public.wf_ai_route_approved(),
     'can_manage', public.wf_can(v_org, 'workflows.manage'),
     'can_approve', public.wf_can(v_org, 'workflows.approve'),
