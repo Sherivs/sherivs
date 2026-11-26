@@ -19,7 +19,19 @@ describe("WF-08 migration (static)", () => {
 
   it("adds no table and never loosens grants", () => {
     expect(up).not.toMatch(/CREATE TABLE/i);
-    expect(up).not.toMatch(/GRANT[^;]*\bTO\s+(anon|PUBLIC|authenticated)\b/);
+    // The only grant to a client role is the column-level SELECT in section 8b, which narrows what WF-01/WF-06
+    // allowed (it follows a table-level REVOKE). Nothing else may be granted to anon, PUBLIC or authenticated.
+    const clientGrants = [...up.matchAll(/GRANT[^;]*\bTO\s+(?:anon|PUBLIC|authenticated)\b/g)].map(
+      (m) => m[0],
+    );
+    expect(clientGrants.length).toBeGreaterThan(0);
+    for (const g of clientGrants) expect(g).toMatch(/^GRANT SELECT \(/);
+    expect(up).toMatch(
+      /REVOKE SELECT ON public\.wf_event, public\.wf_step_run, public\.wf_run_event, public\.wf_action_draft FROM authenticated/,
+    );
+    expect(up).not.toMatch(
+      /GRANT\s+(ALL|INSERT|UPDATE|DELETE|TRUNCATE)[^;]*\bTO\s+(anon|PUBLIC|authenticated)\b/,
+    );
     expect(up).not.toMatch(/DISABLE ROW LEVEL SECURITY|NO FORCE ROW LEVEL SECURITY/i);
     expect(up).not.toMatch(/DROP POLICY/i);
   });

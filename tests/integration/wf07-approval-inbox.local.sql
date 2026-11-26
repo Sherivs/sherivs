@@ -966,6 +966,28 @@ SELECT wf07t.expect_true('the sweep gives an orphan draft its approval',
   :swept::int >= 1
   AND (SELECT approval_id IS NOT NULL FROM public.wf_action_draft WHERE id = wf07t.id('draft_sw')));
 
+-- ---------------------------------------------------------------------------------------------
+-- Round 2: the row-level gate counts only votes cast on the CURRENT content digest
+-- ---------------------------------------------------------------------------------------------
+SELECT wf07t.mkrun('gt', 'verA', 'starter');
+SELECT wf07t.mkstep('gt', 'gt', 'safeguarding');
+SELECT wf07t.mkdraft('gt', 'gt', 'in_app', 'safeguarding', 'notice.dg');
+SELECT wf07t.keep('apr_gt', public.wf_request_draft_approval(wf07t.id('orgA'), wf07t.id('draft_gt')));
+-- Two approvers each hold a consumed step-up and a recorded approving vote, but both were cast on an OLDER digest.
+INSERT INTO public.wf_approval_step_up (id, org_id, approval_id, user_id, content_digest, verified_at, expires_at, used_at)
+SELECT wf07t.keep('su_old_' || u, gen_random_uuid()), wf07t.id('orgA'), wf07t.id('apr_gt'), wf07t.id(u), repeat('a', 64),
+                  now() - interval '1 minute', now() + interval '4 minutes', now() - interval '30 seconds'
+  FROM unnest(ARRAY['ap1', 'ap2']) u;
+INSERT INTO public.wf_approval_decision (org_id, approval_id, approver_id, decision, high_risk, step_up_id, content_digest)
+SELECT wf07t.id('orgA'), wf07t.id('apr_gt'), wf07t.id(u), 'approve', true, wf07t.id('su_old_' || u), repeat('a', 64)
+  FROM unnest(ARRAY['ap1', 'ap2']) u;
+SELECT wf07t.expect_true('fixture: the stale votes differ from the current digest and meet the old count',
+  repeat('a', 64) <> wf07t.digest('ap1', 'apr_gt')
+  AND (SELECT count(DISTINCT approver_id) >= 2 FROM public.wf_approval_decision WHERE approval_id = wf07t.id('apr_gt')));
+SELECT wf07t.expect_error('votes cast on an older content digest do not satisfy the row-level gate',
+  $q$UPDATE public.wf_approval SET status = 'approved', decided_by = wf07t.id('ap1'), decided_at = now(),
+            decision_channel = 'console' WHERE id = wf07t.id('apr_gt')$q$, '42501', 'step-up votes');
+
 DO $summary$
 DECLARE v_count integer;
 BEGIN

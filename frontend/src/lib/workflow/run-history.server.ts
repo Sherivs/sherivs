@@ -49,7 +49,13 @@ async function call(
 
 export async function listRuns(
   ports: RunHistoryPorts,
-  input: { actorId: string; filter: RunHistoryFilter; workflow?: string; before?: string },
+  input: {
+    actorId: string;
+    filter: RunHistoryFilter;
+    workflow?: string;
+    before?: string;
+    beforeId?: string;
+  },
 ): Promise<RunList> {
   const data = await call(ports, "wf_run_history_list", {
     p_actor: input.actorId,
@@ -57,6 +63,7 @@ export async function listRuns(
     p_workflow: input.workflow ?? null,
     p_before: input.before ?? null,
     p_limit: 25,
+    p_before_id: input.beforeId ?? null,
   });
   return parseRunList(data);
 }

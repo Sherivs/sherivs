@@ -1292,6 +1292,17 @@ SELECT wf12t.expect_true('the scheduler reported organization B as failed (by co
 SELECT wf12t.expect_true('the failure is audited and left no log row (the audit entry holds hashes, never the error text)',
   wf12t.audits('orgB', 'workflow.retention.failed') = 1
   AND NOT EXISTS (SELECT 1 FROM public.wf_retention_run WHERE org_id = wf12t.id('orgB') AND trigger_kind = 'scheduler'));
+-- A second and third call while the fault persists still report the failure but add no audit rows.
+SELECT wf12t.login_as('service_role');
+SELECT public.wf_retention_run_scheduled(20) AS sched4 \gset s4_
+SELECT public.wf_retention_run_scheduled(20) AS sched5 \gset s5_
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('a persistent failure is reported on every call but audited once',
+  EXISTS (SELECT 1 FROM jsonb_array_elements(:'s4_sched4'::jsonb -> 'orgs') o
+           WHERE o ->> 'org_id' = wf12t.id('orgB')::text AND o ->> 'outcome' = 'failed')
+  AND EXISTS (SELECT 1 FROM jsonb_array_elements(:'s5_sched5'::jsonb -> 'orgs') o
+               WHERE o ->> 'org_id' = wf12t.id('orgB')::text AND o ->> 'outcome' = 'failed')
+  AND wf12t.audits('orgB', 'workflow.retention.failed') = 1);
 DROP TRIGGER wf12_fail_orgb ON public.wf_retention_run;
 SELECT wf12t.login_as('service_role');
 SELECT wf12t.setlimits('adminB', '{"retention_auto_purge": false}');

@@ -82,19 +82,22 @@ export default function RunHistoryScreen() {
   const [reason, setReason] = useState<RunControlReason>("operator_request");
   const [busy, setBusy] = useState(false);
 
-  const loadList = useCallback(async (next: RunHistoryFilter, before?: string) => {
-    try {
-      const page = await listWorkflowRuns({
-        data: { filter: next, ...(before ? { before } : {}) },
-      });
-      setItems((prev) => (before && prev ? [...prev, ...page.items] : page.items));
-      setHasMore(page.has_more);
-      setError(null);
-    } catch (err) {
-      if (!before) setItems([]);
-      setError(safeRunMessage(err));
-    }
-  }, []);
+  const loadList = useCallback(
+    async (next: RunHistoryFilter, before?: string, beforeId?: string) => {
+      try {
+        const page = await listWorkflowRuns({
+          data: { filter: next, ...(before ? { before, ...(beforeId ? { beforeId } : {}) } : {}) },
+        });
+        setItems((prev) => (before && prev ? [...prev, ...page.items] : page.items));
+        setHasMore(page.has_more);
+        setError(null);
+      } catch (err) {
+        if (!before) setItems([]);
+        setError(safeRunMessage(err));
+      }
+    },
+    [],
+  );
 
   const loadDetail = useCallback(async (runId: string) => {
     try {
@@ -278,7 +281,13 @@ export default function RunHistoryScreen() {
               <button
                 type="button"
                 className="wf-inbox-button"
-                onClick={() => void loadList(filter, items[items.length - 1]?.created_at)}
+                onClick={() =>
+                  void loadList(
+                    filter,
+                    items[items.length - 1]?.created_at,
+                    items[items.length - 1]?.run_id,
+                  )
+                }
               >
                 Show older runs
               </button>

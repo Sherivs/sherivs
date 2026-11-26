@@ -11,7 +11,7 @@ DO $prereq$
 BEGIN
   IF to_regprocedure('public.wf_run_cancel(uuid,uuid,text)') IS NULL
      OR to_regprocedure('public.wf_run_retry(uuid,uuid,text)') IS NULL
-     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer)') IS NULL
+     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer,uuid)') IS NULL
      OR to_regprocedure('public.wf_run_history_detail(uuid,uuid)') IS NULL
      OR NOT EXISTS (SELECT 1 FROM information_schema.columns
                      WHERE table_schema = 'public' AND table_name = 'wf_run' AND column_name = 'retry_of_run_id') THEN
@@ -44,8 +44,12 @@ $$;
 REVOKE ALL ON FUNCTION public.wf_approved_drafts_ready(integer) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.wf_approved_drafts_ready(integer) TO service_role;
 
+-- Give `authenticated` back the whole-row SELECT that WF-01 and WF-06 granted (section 8b took the content columns away).
+REVOKE SELECT ON public.wf_event, public.wf_step_run, public.wf_run_event, public.wf_action_draft FROM authenticated;
+GRANT SELECT ON public.wf_event, public.wf_step_run, public.wf_run_event, public.wf_action_draft TO authenticated;
+
 DROP FUNCTION public.wf_run_history_detail(uuid, uuid);
-DROP FUNCTION public.wf_run_history_list(uuid, text, text, timestamptz, integer);
+DROP FUNCTION public.wf_run_history_list(uuid, text, text, timestamptz, integer, uuid);
 DROP FUNCTION public.wf_run_retry(uuid, uuid, text);
 DROP FUNCTION public.wf_run_cancel(uuid, uuid, text);
 DROP FUNCTION public.wf_retry_blockers(uuid, uuid);
