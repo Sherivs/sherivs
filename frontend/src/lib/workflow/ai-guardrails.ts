@@ -98,6 +98,7 @@ export const SAFETY_PATTERNS: readonly SafetyPattern[] = Object.freeze([
     "normalized",
     String.raw`((note|message|instruction)s? (to|for) (the )?(ai|assistant|model|agent|llm|chatbot)|(assistant|ai|model|agent|llm),? (you must|you should|you will|please) (now )?(ignore|send|forward|delete|transfer|approve|pay|reveal|disable))`,
   ),
+  p("injection.tag_chars", "injection", "both", "raw", String.raw`[\U000e0000-\U000e007f]`),
   p(
     "secret.private_key",
     "secret",
@@ -143,9 +144,9 @@ export const SAFETY_PATTERNS: readonly SafetyPattern[] = Object.freeze([
     "encoding",
     "both",
     "raw",
-    String.raw`[\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufeff\u00ad]`,
+    String.raw`[\u034f\u061c\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufe00-\ufe0f\ufeff\u00ad\U000e0000-\U000e007f]|[\u115f\u1160\u3164\uffa0]`,
   ),
-  p("encoding.mixed_script", "encoding", "both", "raw", String.raw`[\u0400-\u04ff]`),
+  p("encoding.mixed_script", "encoding", "both", "raw", String.raw`[\u0370-\u03ff\u0400-\u04ff]`),
   p("encoding.long_blob", "encoding", "both", "normalized", String.raw`[0-9a-z+/_-]{120,}={0,2}`),
 ]);
 
@@ -155,13 +156,31 @@ export const SAFETY_RUN_CHECK_CAP = 200;
 export const SAFETY_ORG_DAILY_CAP = 5_000;
 export const SAFETY_EVAL_DAILY_CAP = 100;
 
-const INVISIBLE = /[\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufeff\u00ad]/g;
+/** Pattern text is shared with PostgreSQL, which writes an astral character as \U000e0000; JavaScript needs \u{e0000}. */
+function compilePattern(regex: string): RegExp {
+  const js = regex.replace(/\\U000([0-9a-f]{5})/g, "\\u{$1}");
+  return new RegExp(js, js === regex ? "" : "u");
+}
 
-/** Mirror of wf_safety_norm: NFKC, invisible characters removed, lower-cased, whitespace collapsed. */
+// Same character sets as wf_safety_norm / wf_safety_screen in the migration.
+const FILLERS = String.raw`[\u0085\u115f\u1160\u1680\u180e\u200b-\u200d\u2060\u2800\u3164\ufeff\uffa0]`;
+const INVISIBLE = String.raw`[\u034f\u061c\u17b4\u17b5\u180b-\u180f\u200b-\u200f\u2028\u2029\u202a-\u202e\u2060-\u2064\ufe00-\ufe0f\ufeff\u00ad\U000e0000-\U000e007f]`;
+const LOOKALIKE_FROM = "ΟΑΕΙΚΝΡΤΥΧοαειμκνρτυχАЕОРСХУІЈЅаеорсхуіјѕ";
+const LOOKALIKE_TO = "OAEIKNPTYXoaeimkvptuxAEOPCXYIJSaeopcxyijs";
+const LOOKALIKE = new Map<string, string>(
+  Array.from(LOOKALIKE_FROM, (c, i): [string, string] => [c, LOOKALIKE_TO[i]]),
+);
+const FILLERS_G = new RegExp(FILLERS, "gu");
+const INVISIBLE_G = new RegExp(compilePattern(INVISIBLE).source, "gu");
+
+/**
+ * Mirror of wf_safety_norm: NFKC; filler characters become a space; invisible, joiner, selector, direction and tag
+ * characters are removed; Greek and Cyrillic look-alikes are folded to Latin; lower-cased; whitespace collapsed.
+ */
 export function safetyNormalize(text: string): string {
-  return text
-    .normalize("NFKC")
-    .replace(INVISIBLE, "")
+  const stripped = text.normalize("NFKC").replace(FILLERS_G, " ").replace(INVISIBLE_G, "");
+  return Array.from(stripped, (c) => LOOKALIKE.get(c) ?? c)
+    .join("")
     .toLowerCase()
     .replace(/[ \t\n\r\f\v]+/g, " ")
     .trim();
@@ -169,15 +188,22 @@ export function safetyNormalize(text: string): string {
 
 export type SafetyScreen = Readonly<{ verdict: SafetyVerdict; codes: string[] }>;
 
-const COMPILED = new Map<string, RegExp>(SAFETY_PATTERNS.map((x) => [x.code, new RegExp(x.regex)]));
+const COMPILED = new Map<string, RegExp>(
+  SAFETY_PATTERNS.map((x) => [x.code, compilePattern(x.regex)]),
+);
 
 /** Mirror of wf_safety_screen. Verdict blocked when a block pattern matches, else flagged when a flag pattern does. */
 export function screenText(text: string, direction: SafetyDirection): SafetyScreen {
   const norm = safetyNormalize(text);
+  // A filler inside a word: the same text with the fillers deleted instead of turned into a space.
+  const joined = safetyNormalize(text.replace(FILLERS_G, ""));
   const hits = SAFETY_PATTERNS.filter(
     (x) =>
       (x.appliesTo === "both" || x.appliesTo === direction) &&
-      (x.scan === "raw" ? text : norm).search(COMPILED.get(x.code) as RegExp) >= 0,
+      (x.scan === "raw"
+        ? text.search(COMPILED.get(x.code) as RegExp) >= 0
+        : norm.search(COMPILED.get(x.code) as RegExp) >= 0 ||
+          joined.search(COMPILED.get(x.code) as RegExp) >= 0),
   );
   const codes = hits.map((x) => x.code).sort();
   const blocked = hits.some((x) => x.severity === "block");

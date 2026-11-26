@@ -29,7 +29,7 @@ is ever allowed.
 
 ## Decision
 
-1. **A reviewed corpus** (`wf_safety_pattern`): 22 patterns in five categories. Injection and secret shapes can only
+1. **A reviewed corpus** (`wf_safety_pattern`): 23 patterns in five categories. Injection and secret shapes can only
    **block** and the rest only **flag** (a CHECK, so editing the data cannot soften an injection pattern). All patterns
    are lower-case and use syntax PostgreSQL and JavaScript read the same way; `frontend/src/lib/workflow/ai-guardrails.ts`
    restates them and a unit test ties the two files row by row.
@@ -37,7 +37,7 @@ is ever allowed.
    lower-cased, whitespace collapsed; then every pattern that applies to the direction (`input` is text on its way to a
    model, `output` is text from one). Verdict `blocked` when a block pattern matches, `flagged` when only flag patterns
    do, else `clean`. Two patterns scan the raw text so the tricks the normalization removes are themselves reported.
-3. **An eval suite for the screener** (`wf_safety_eval_suite`, `wf_safety_eval_case`): 47 cases, injection and
+3. **An eval suite for the screener** (`wf_safety_eval_suite`, `wf_safety_eval_case`): 63 cases, injection and
    obfuscation variants, secrets built from pieces (no secret-shaped literal exists in the repository), personal-data
    shapes, and eleven cases that must stay clean (hard negatives). Every pattern must be expected by at least one case; an
    uncovered pattern is a failed check. The only suite kind is `screener`: a suite about a real agent or model needs the
@@ -58,7 +58,7 @@ is ever allowed.
    organization; the person who started the run cannot decide its output (checked in the guard, so a bypassed function
    still cannot skip it); one decision per check; a `blocked` or `clean` check cannot be reviewed, so a blocked output can
    never be cleared.
-8. **Usable means this exact text** (`wf_safety_check_usable(check, text_sha256)`): true only when the hash matches the
+8. **Usable means this exact text** (`wf_safety_check_usable(check, text_sha256, direction)`): true only when the hash matches the
    checked text, the check was made against the current verified corpus, the organization still has workflows on, and the
    verdict is `clean` or `flagged` and cleared. Anything else, including an unknown id, is false.
 9. **Nothing here raises autonomy.** No AIN-04 function reads or writes autonomy, agents, memory content or the AI route
@@ -92,11 +92,35 @@ makes an unreviewed edit visible rather than impossible for the database owner.
 - No suite exists for an agent's or a model's behaviour (needs decision 3). AIN-02 `wf_autonomy_evidence` remains
   caller-asserted; this mission does not change it. Only the screener's own results are computed in the database.
 - AIN-03 memory notes are not screened on write (AIN-03 is unchanged); a later reviewed change can call the screener there.
-- If a run is deleted by retention the "starter cannot review" rule has nothing to compare with; the checks and reviews
-  are kept by their own ledger, but the rule then relies on the person set not including the starter.
+- The starter of the run is copied onto the check row when the check is made (`run_started_by`), so the "starter cannot
+  review" rule still holds after run retention deletes the run. A run with no person starter has none to exclude.
 - PostgreSQL and JavaScript may differ on a newer Unicode normalization; the harness proves PostgreSQL, the unit test
   proves JavaScript, against the same cases.
 - The ledgers are not purged (hashes and codes only); a retention rule is a follow-up.
+
+## Review round 1 (2026-11-26)
+
+The independent review of #479 (APPROVE WITH FIXES, no blocking item) led to four changes:
+
+1. **Starter after retention.** `wf_safety_check.run_started_by` is set from the run when the check is made and the
+   review guard compares against it instead of looking the run up (above).
+2. **A harder screener.** Blank-looking fillers (NEL, Ogham space, Mongolian vowel separator, Braille blank, Hangul
+   fillers, zero-width spaces and joiners) turn into a space; joiners, variation selectors, the combining grapheme joiner,
+   Arabic letter mark, Khmer inherent vowels, Mongolian free variation selectors and tag characters are removed; Greek
+   and Cyrillic look-alike letters are folded to Latin. `wf_safety_screen` matches the normalized text and a second form
+   with the fillers deleted (a filler inside a word). Tag characters (U+E0000 to U+E007F) block on their own
+   (`injection.tag_chars`: they can carry an invisible instruction). The raw invisible-character and look-alike-script
+   patterns now cover the new ranges and Greek. Sixteen new eval cases cover each family. This is still a deny-list of
+   known shapes: a paraphrase or another language is not caught (see limitations).
+3. **The screener's code is part of "verified".** The suite hash includes the definitions of `wf_safety_norm` and
+   `wf_safety_screen`, so replacing either with different code un-verifies every earlier run until a new run passes.
+4. **A usable answer is tied to the direction** the text was checked in: `wf_safety_check_usable` takes the direction
+   and is false for any other.
+
+Left as recorded, not changed: the text hash is a plain SHA-256 (a short flagged text such as an email or phone number
+can be guessed from it by a member who can read the ledger; an HMAC with a server pepper is a follow-up); the suite hash
+joins fields with `|` and newlines (an ambiguity only an owner-edited corpus could use); reviewer-typed reasons are kept
+in `wf_safety_review` but not written to the audit chain.
 
 ## Consequences
 

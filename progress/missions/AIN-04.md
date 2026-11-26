@@ -43,7 +43,7 @@ So no "blocked on decision N" issue was written. Issue #478 holds the spec and a
 ## Implemented
 
 - Migration (inside `BEGIN`/`COMMIT`): `wf_safety_pattern` (22 reviewed patterns), `wf_safety_eval_suite`,
-  `wf_safety_eval_case` (47 cases), the append-only ledgers `wf_safety_eval_run` (platform), `wf_safety_check` and
+  `wf_safety_eval_case` (63 cases), the append-only ledgers `wf_safety_eval_run` (platform), `wf_safety_check` and
   `wf_safety_review` (tenant); `wf_safety_norm`, `wf_safety_screen`, `wf_safety_suite_sha`, `wf_safety_eval_compute`,
   `wf_safety_verified`; the guards (`wf_safety_eval_run_guard`, `wf_safety_check_guard`, `wf_safety_review_guard`,
   `wf_safety_audit`); four entry points; privileges; the migration runs its own suite and aborts if it does not pass.
@@ -79,9 +79,9 @@ So no "blocked on decision N" issue was written. Issue #478 holds the spec and a
 - `architecture/adr/INDEX.md` (one row), `docs/runbooks/workflows-enablement.md` (one section).
 - No change to any WF or AIN-01 to AIN-03 harness, e2e script or migration.
 
-## Evidence (20 Nov 2026, local PostgreSQL 16.15, every migration applied as a non-superuser migrator)
+## Evidence (20 Nov 2026, counts re-run 26 Nov after review round 1; local PostgreSQL 16.15, every migration applied as a non-superuser migrator)
 
-- `AIN04 ALL PASS: 157 checks` (`tests/integration/ain04-guardrail-layer.local.sql`; the same count after re-applying AIN-04
+- `AIN04 ALL PASS: 173 checks` (`tests/integration/ain04-guardrail-layer.local.sql`; the same count after re-applying AIN-04
   under Supabase default privileges).
 - `AIN04-PRIV ALL PASS: 251 checks` (`tests/integration/ain04-default-privileges.local.sql`).
 - `AIN04-E2E RESULT: concurrent_checks=250 landed=200 refused=50 over_cap=0 mixed=30 clean=10 flagged=10 blocked=10 usable=10 reviews=20 reviewed=1 review_refused=19 starter_refused=1 suite_runs=10 suite_reused=10 new_runs=0 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0` (plain `pg`, no PostgREST).
@@ -89,19 +89,19 @@ So no "blocked on decision N" issue was written. Issue #478 holds the spec and a
   `WF05 ALL PASS: 23 checks`, `WF06 ALL PASS: 29 checks`, `WF07 ALL PASS: 96 checks`, `WF08 ALL PASS: 113 checks`,
   `WF12 ALL PASS: 213 checks`, `AIN01 ALL PASS: 136 checks`, `AIN02 ALL PASS: 193 checks`, `AIN03 ALL PASS: 217 checks`,
   `AIN02-E2E RESULT: ... dup=0` and `AIN03-E2E RESULT: ... dup=0` (both unchanged lines).
-- The CI default-privileges steps, rehearsed locally in scratch databases: AIN-04 step (`AIN04 ALL PASS: 157 checks`,
+- The CI default-privileges steps, rehearsed locally in scratch databases: AIN-04 step (`AIN04 ALL PASS: 173 checks`,
   `AIN04-PRIV ALL PASS: 251 checks`); AIN-01 step with AIN-04 present (`AIN01 ALL PASS: 136 checks`,
   `AIN01-PRIV ALL PASS: 124 checks`, then AIN-02, AIN-03 and AIN-04 harnesses still pass); WF-08/WF-12 step with the extended
   allow-list (`WF12-PRIV ALL PASS: 45 functions checked`, was 41).
 - Rollback rehearsal: with rows present the rollback refuses (`check or review rows exist`); on a fresh database it removes
   every AIN-04 object (none left), `WF06`, `WF12`, `AIN01`, `AIN02` and `AIN03` harnesses pass again, re-applied,
-  `AIN04 ALL PASS: 157 checks`.
+  `AIN04 ALL PASS: 173 checks`.
 - Sensitivity (mutations made in scratch databases, each killed by the harness): starter rule off, run-active check off,
   verification link always true, organization daily cap off, blocked output reviewable, text-hash binding off, severity
   CHECK off, eval-run recompute replaced by the row's own claims. The e2e fails with the per-organization advisory lock
   removed (`landed=236 over_cap=36`). The ACL test fails when INSERT is granted back on a ledger and when an internal
   function is made executable.
-- Unit: `ain04-ai-guardrails.test.ts` 58 passed (every seed row of the corpus and all 47 cases parsed from the migration
+- Unit: `ain04-ai-guardrails.test.ts` 76 passed (every seed row of the corpus and all 63 cases parsed from the migration
   and re-run in JavaScript); `tsc --noEmit` exit 0, eslint and prettier clean on the new files.
 - Guards: `verify-domain-neutrality` PASS (case texts reworded to stay neutral, no quarantine), `verify-migration-grants`
   PASS, `verify-provenance-metadata` PASS.
@@ -109,6 +109,23 @@ So no "blocked on decision N" issue was written. Issue #478 holds the spec and a
 ## CI evidence
 
 CI_PLACEHOLDER
+
+## Review round 1 (2026-11-26)
+
+The independent review of #479 (no blocking item; three should-fix, one nit promoted) is implemented: the starter is
+stored on the check row (`run_started_by`); the screener folds fillers, joiners, selectors, tag characters and Greek and
+Cyrillic look-alikes (23 patterns, 63 cases, `injection.tag_chars` blocks); the suite hash covers the definitions of
+`wf_safety_norm` and `wf_safety_screen`; `wf_safety_check_usable` takes a direction (3 arguments, so the WF-12 allow-list
+entry and the ACL test changed with it; still 45 functions). See ADR-128, "Review round 1".
+
+- Re-run: `AIN04 ALL PASS: 173 checks` (157 earlier + 16 for the review items), `AIN04-PRIV ALL PASS: 251 checks`,
+  `WF12-PRIV ALL PASS: 45 functions checked`, the e2e line unchanged, unit 76 passed, `tsc --noEmit` exit 0, eslint clean.
+- Six mutations (starter looked up live; fillers not spaced; tag pattern dead; hash without function code; direction
+  ignored; joined variant off) each fail the migration's own self-check or the harness.
+- Existing assertions changed: the helper `ain04t.usable` and two direct calls of `wf_safety_check_usable` pass the new
+  direction argument; nothing else was loosened. The reviewer noted the harness fails on a database whose latest eval run
+  is older than the one-hour reuse window; it passes on a freshly built database (as in CI) and was not changed.
+- Not changed (recorded in the ADR): plain SHA-256 text hash, suite-hash field joining, reviewer reason text.
 
 ## Not verified
 
@@ -124,14 +141,14 @@ CI_PLACEHOLDER
 - Usefulness of the corpus on real Nigerian school messages (English, Pidgin, Hausa, Yoruba, Igbo, Arabic): not measured;
   the cases are synthetic. False positives on real text, and attacks that paraphrase or use another language, are not
   covered. The corpus catches known shapes only.
-- JavaScript and PostgreSQL may differ on a newer Unicode version; both pass the same 47 cases.
+- JavaScript and PostgreSQL may differ on a newer Unicode version; both pass the same 63 cases.
 - The AIN-02 harness now reports 193 checks on a clean database; the AIN-03 mission file recorded 184 (that file predates
   the merge of AIN-02 review round 1). Not changed here.
 
 ## Founder decisions needed
 
 1. Ratify or change the caps (20000 characters, 200 checks per run, 5000 per organization per day, 100 suite runs a day,
-   one hour reuse) and the corpus itself (22 patterns; what blocks and what flags).
+   one hour reuse) and the corpus itself (23 patterns; what blocks and what flags).
 2. Who may clear flagged output: v1 is `workflows.approve` and never the person who started the run. In a one-person
    organization that person cannot clear their own run's output at all.
 3. Decision 3 (AI route): unchanged and still blocking WF-11, and any suite that evaluates a real agent or model.

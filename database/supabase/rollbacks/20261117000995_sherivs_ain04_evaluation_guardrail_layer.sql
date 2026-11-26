@@ -29,7 +29,7 @@ DROP TABLE public.wf_safety_pattern;
 DROP FUNCTION public.wf_safety_run_eval();
 DROP FUNCTION public.wf_safety_check_text(uuid, text, text, text);
 DROP FUNCTION public.wf_safety_review_check(uuid, uuid, text, text);
-DROP FUNCTION public.wf_safety_check_usable(uuid, text);
+DROP FUNCTION public.wf_safety_check_usable(uuid, text, text);
 DROP FUNCTION public.wf_safety_eval_run_guard();
 DROP FUNCTION public.wf_safety_check_guard();
 DROP FUNCTION public.wf_safety_review_guard();

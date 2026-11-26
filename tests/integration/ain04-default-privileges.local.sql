@@ -14,9 +14,9 @@ DECLARE
     'wf_safety_eval_compute(text,integer)', 'wf_safety_verified()', 'wf_safety_open(text)', 'wf_safety_close()',
     'wf_safety_eval_run_guard()', 'wf_safety_check_guard()', 'wf_safety_review_guard()', 'wf_safety_audit()',
     'wf_safety_run_eval()', 'wf_safety_check_text(uuid,text,text,text)', 'wf_safety_review_check(uuid,uuid,text,text)',
-    'wf_safety_check_usable(uuid,text)'];
+    'wf_safety_check_usable(uuid,text,text)'];
   v_exec text[] := ARRAY['wf_safety_run_eval()', 'wf_safety_check_text(uuid,text,text,text)',
-    'wf_safety_review_check(uuid,uuid,text,text)', 'wf_safety_check_usable(uuid,text)'];
+    'wf_safety_review_check(uuid,uuid,text,text)', 'wf_safety_check_usable(uuid,text,text)'];
   t text; f text; r text; p text; n integer := 0; v_svc_select boolean; v_auth_select boolean;
 BEGIN
   FOREACH t IN ARRAY v_tables LOOP

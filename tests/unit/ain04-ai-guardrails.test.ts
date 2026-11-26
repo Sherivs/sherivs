@@ -114,10 +114,36 @@ describe("AIN-04 guardrails: the TypeScript restatement matches the migration", 
   it("the normalization is the same steps in the same order", () => {
     expect(migration).toMatch(/normalize\(p_text, NFKC\)/);
     expect(migration).toContain(
-      "[\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2060-\\u2064\\ufeff\\u00ad]",
+      "[\\u034f\\u061c\\u17b4\\u17b5\\u180b-\\u180f\\u200b-\\u200f\\u2028\\u2029\\u202a-\\u202e\\u2060-\\u2064\\ufe00-\\ufe0f\\ufeff\\u00ad\\U000e0000-\\U000e007f]",
     );
-    expect(safetyNormalize("  IG​NORE  \t All\n\nthings  ")).toBe("ignore all things");
+    expect(migration).toContain(
+      "[\\u0085\\u115f\\u1160\\u1680\\u180e\\u200b-\\u200d\\u2060\\u2800\\u3164\\ufeff\\uffa0]",
+    );
+    expect(safetyNormalize("  IGNORE  \tAll\n\nthings  ")).toBe("ignore all things");
+    // a zero-width space is a separator in this form; wf_safety_screen also tries the joined form
+    expect(safetyNormalize("IG\u200bNORE")).toBe("ig nore");
     expect(safetyNormalize("ｉｇｎｏｒｅ")).toBe("ignore");
+    expect(safetyNormalize("ign\u03bfre")).toBe("ignore");
+    expect(safetyNormalize("IGN\u041eRE")).toBe("ignore");
+    expect(safetyNormalize("a\u3164b")).toBe("a b");
+  });
+
+  it("the look-alike fold has one Latin letter for every Greek or Cyrillic letter, in both files", () => {
+    const m = migration.match(/translate\([\s\S]*?'([^']+)', '([^']+)'\)\)/);
+    expect(m).not.toBeNull();
+    expect(Array.from(m?.[1] ?? "").length).toBe(Array.from(m?.[2] ?? "").length);
+    const ts = readFileSync("frontend/src/lib/workflow/ai-guardrails.ts", "utf8");
+    expect(ts).toContain(`"${m?.[1]}"`);
+    expect(ts).toContain(`"${m?.[2]}"`);
+  });
+
+  it("the screener hash covers the screener's own code, and a usable answer is tied to the direction", () => {
+    expect(migration).toContain("pg_get_functiondef('public.wf_safety_norm(text)'::regprocedure)");
+    expect(migration).toContain(
+      "pg_get_functiondef('public.wf_safety_screen(text,text)'::regprocedure)",
+    );
+    expect(migration).toContain("v_c.direction <> p_direction");
+    expect(migration).toContain("v_starter := v_check.run_started_by;");
   });
 });
 

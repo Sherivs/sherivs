@@ -374,7 +374,7 @@ reviewed corpus of patterns, proves the corpus with an eval suite, and records e
 - **Output is untrusted.** Only a `clean` verdict is usable. A `flagged` one needs a person with `workflows.approve`
   who did not start the run (`wf_safety_review_check`); a `blocked` one can never be cleared.
 - **Nothing stores the text.** The ledger holds the SHA-256, the length, the verdict and the codes. To use an output,
-  pass the hash of the exact text to `wf_safety_check_usable`.
+  pass the hash of the exact text and its direction (`input` or `output`) to `wf_safety_check_usable`.
 - **Do not treat this as complete protection.** It catches known shapes only. It is one layer, not a promise.
 
 Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the organization switched on for the test:
@@ -382,7 +382,7 @@ Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the org
 1. As the service role: an INSERT into `wf_safety_check` and an UPDATE of `wf_safety_pattern` are both refused (`42501`).
 2. `SELECT public.wf_safety_run_eval()` returns `status: passed` (or the migration's own run, reused).
 3. Screen a clean sentence and an injected one for an active run; confirm `clean` and `blocked`, one ledger row each and
-   one audit entry each, and that `wf_safety_check_usable` is true only for the clean text's exact hash.
+   one audit entry each, and that `wf_safety_check_usable` is true only for the clean text's exact hash and the direction it was checked in.
 4. Screen a sentence with an email address (flagged); try to clear it as the person who started the run (refused), then
    as another approver (accepted); a second decision is refused.
 5. Change one pattern in the staging database only; confirm checks now return `guard.unverified`; restore it.
