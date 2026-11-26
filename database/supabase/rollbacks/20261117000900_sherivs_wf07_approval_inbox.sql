@@ -78,7 +78,10 @@ BEGIN
   RETURN NEW;
 END
 $$;
-GRANT EXECUTE ON FUNCTION public.wf_action_sandbox_outbox_guard() TO service_role;
+-- A trigger function is checked for EXECUTE only when the trigger is created, never when it fires, so no role needs it.
+-- WF-07 removed service_role's EXECUTE; the rollback keeps that (it must not leave the function more exposed than the
+-- migration did).
+REVOKE ALL ON FUNCTION public.wf_action_sandbox_outbox_guard() FROM PUBLIC, anon, authenticated, service_role;
 
 -- Drafts: restore the WF-06 status set and cap constraint, then drop the approval link.
 UPDATE public.wf_action_draft SET status = 'expired' WHERE status = 'cancelled';
