@@ -50,7 +50,7 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_safety_check_usable(p_check uuid, p_text_sha256 text, p_direction text)'),
   ('wf_safety_review_check(p_actor uuid, p_check uuid, p_decision text, p_reason text)'),
   ('wf_safety_run_eval()'),
-  ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer)'),
+  ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer, p_before_id uuid)'),
   ('wf_run_retry(p_actor uuid, p_step uuid, p_reason text)');
 DO $$
 DECLARE v_extra text; v_missing text;
