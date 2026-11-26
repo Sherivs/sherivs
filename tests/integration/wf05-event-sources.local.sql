@@ -57,7 +57,7 @@ SELECT wf05test.expect_true('catalog writes are service-role only',
   AND NOT has_table_privilege('authenticated', 'public.wf_event_source', 'INSERT')
   AND NOT has_table_privilege('anon', 'public.wf_event_source', 'INSERT'));
 SELECT wf05test.expect_true('seven verified source types are registered and unsupported types deferred',
-  (SELECT count(*) = 7 FROM public.wf_event_source)
+  (SELECT count(*) = 7 FROM public.wf_event_source WHERE event_type NOT LIKE 'fees.reminder\_%')
   AND NOT EXISTS (SELECT 1 FROM public.wf_event_source
                    WHERE event_type IN ('fees.overdue', 'payment.failed')));
 SELECT wf05test.expect_true('all verified source triggers are attached',

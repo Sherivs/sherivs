@@ -1,7 +1,7 @@
 // WF-15a Private School Pack E2E against the local sim-lab Postgres + PostgREST (never a hosted database).
 //
-// Installs the pack's three templates from the TypeScript source of truth, instantiates each as a published
-// workflow in a synthetic organization, emits the three real WF-05 event types, drives the real workflow tick
+// Installs the pack's eight templates from the TypeScript source of truth, instantiates each as a published
+// workflow in a synthetic organization, emits the real WF-05 event types (including the five WF-15a2 reminder types), drives the real workflow tick
 // with a counting action stub, then replays the same events to prove replay creates nothing.
 // Scope, stated plainly: this proves the pack graphs are accepted by the engine and dispatch exactly once. The
 // real action executor (drafts, approvals, sandbox outbox) is not re-driven here; WF-06 and WF-07 e2es own it.
@@ -25,6 +25,51 @@ const EVENTS = {
   ps_fee_ladder: {
     type: "fees.invoice_issued",
     payload: { amount_kobo: 4500000, invoice_id: uid("f15a0001", 1) },
+  },
+  ps_fee_week_start: {
+    type: "fees.reminder_week_start",
+    payload: {
+      amount_kobo: 4500000,
+      due_at: "2026-12-04",
+      invoice_id: uid("f15a0001", 1),
+      offset_days: 32,
+    },
+  },
+  ps_fee_week_end: {
+    type: "fees.reminder_week_end",
+    payload: {
+      amount_kobo: 4500000,
+      due_at: "2026-12-04",
+      invoice_id: uid("f15a0001", 1),
+      offset_days: 28,
+    },
+  },
+  ps_fee_due_day: {
+    type: "fees.reminder_due_day",
+    payload: {
+      amount_kobo: 4500000,
+      due_at: "2026-12-04",
+      invoice_id: uid("f15a0001", 1),
+      offset_days: 0,
+    },
+  },
+  ps_fee_overdue: {
+    type: "fees.reminder_overdue",
+    payload: {
+      amount_kobo: 4500000,
+      due_at: "2026-12-04",
+      invoice_id: uid("f15a0001", 1),
+      offset_days: -7,
+    },
+  },
+  ps_fee_escalation: {
+    type: "fees.reminder_escalation",
+    payload: {
+      amount_kobo: 4500000,
+      due_at: "2026-12-04",
+      invoice_id: uid("f15a0001", 1),
+      offset_days: -28,
+    },
   },
   ps_payment_receipt: {
     type: "payment.succeeded",
@@ -239,16 +284,16 @@ async function main() {
     const replayRuns = after.rows[0].runs - first.rows[0].runs;
     const kinds = await client.query(
       `SELECT count(*)::int AS n FROM public.wf_template t, jsonb_array_elements(t.graph->'steps') s
-        WHERE t.template_key LIKE $1 AND s #>> '{action,kind}' IN ('sms','whatsapp','webhook')`,
+        WHERE t.template_key LIKE $1 AND s #>> '{action,kind}' IN ('webhook')`,
       [`ps\\_%-${runTag}`],
     );
-    const sentLive = kinds.rows[0].n; // no provider adapter is wired in this script; any messaging kind in the pack counts.
+    const sentLive = kinds.rows[0].n; // no provider adapter is wired in this script; no provider adapter exists in this script, so the only thing counted is a webhook step (sms and whatsapp are drafts here).
     console.log(
       `WF15A-E2E RESULT: templates=${mod.PRIVATE_SCHOOL_PACK_V1.templates.length} events=${emitted.rows[0].n} dispatched=${first.rows[0].dispatched} runs=${first.rows[0].runs} replay_events=${after.rows[0].events - emitted.rows[0].n} replay_runs=${replayRuns} executor_calls_positive=${executorCalls > 0 ? 1 : 0} sent_live=${sentLive} dup=${dup.rows[0].n}`,
     );
     if (
-      first.rows[0].dispatched !== 3 ||
-      first.rows[0].runs !== 3 ||
+      first.rows[0].dispatched !== 8 ||
+      first.rows[0].runs !== 8 ||
       after.rows[0].events !== emitted.rows[0].n ||
       replayRuns !== 0 ||
       executorCalls < 1 ||

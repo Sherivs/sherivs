@@ -8,7 +8,9 @@
  *
  * Rules every template here must satisfy (enforced by `validatePrivateSchoolPack`):
  * - trigger is one of the WF-05 event sources and only reads that event's payload keys;
- * - only email, in_app, task and wait actions (WhatsApp and SMS wait for decision 2; no webhook);
+ * - only email, in_app, sms, whatsapp, task and wait actions (decision D-02: BulkSMS Nigeria and the official WhatsApp
+ *   API; no webhook). Every message reference must resolve in the message registry, and a WhatsApp template whose
+ *   Meta approval is not recorded keeps the pack template blocked from going live (`meta-templates-approved`);
  * - every customer-visible action is declared at `draft` autonomy and is therefore approved by a
  *   human through the WF-07 inbox before anything can leave (WF-06/WF-07/AIN-02 enforce this in
  *   the engine; the pack declares it so an installer cannot widen it);
@@ -22,6 +24,11 @@ import {
   type WorkflowStep,
 } from "../../../workflow/workflow-contract";
 import {
+  FEE_MESSAGE_REGISTRY,
+  messageVariables,
+  type RegistryMessage,
+} from "./fee-message-registry";
+import {
   workflowActionDefinitionIsValid,
   type WorkflowAutonomyLevel,
 } from "../../../workflow/workflow-actions";
@@ -29,6 +36,12 @@ import {
 /** Payload keys per WF-05 event source (ADR-111). A template may only bind these. */
 export const WF05_EVENT_PAYLOAD_KEYS: Readonly<Record<string, readonly string[]>> = Object.freeze({
   "fees.invoice_issued": ["amount_kobo", "invoice_id"],
+  // WF-15a2 (ADR-136): due-date-relative reminder events; one event type per message class.
+  "fees.reminder_week_start": ["amount_kobo", "due_at", "invoice_id", "offset_days"],
+  "fees.reminder_week_end": ["amount_kobo", "due_at", "invoice_id", "offset_days"],
+  "fees.reminder_due_day": ["amount_kobo", "due_at", "invoice_id", "offset_days"],
+  "fees.reminder_overdue": ["amount_kobo", "due_at", "invoice_id", "offset_days"],
+  "fees.reminder_escalation": ["amount_kobo", "due_at", "invoice_id", "offset_days"],
   "payment.succeeded": ["amount_kobo", "invoice_id", "method", "payment_id"],
   "wallet.topup_succeeded": ["amount_minor", "ledger_id"],
   "wallet.low_balance": ["alert_id", "kind"],
@@ -40,7 +53,14 @@ export const WF05_EVENT_PAYLOAD_KEYS: Readonly<Record<string, readonly string[]>
 /** Abstract approver label; the tenant maps it to holders of `workflows.approve` (decision 4). */
 export const PACK_APPROVER_ROLE = "workflow_approver";
 
-export const PACK_ALLOWED_ACTION_KINDS = ["email", "in_app", "task", "wait"] as const;
+export const PACK_ALLOWED_ACTION_KINDS = [
+  "email",
+  "in_app",
+  "sms",
+  "whatsapp",
+  "task",
+  "wait",
+] as const;
 const CUSTOMER_VISIBLE_KINDS = new Set(["email", "in_app", "whatsapp", "sms", "webhook"]);
 
 export interface PackLawfulBasis {
@@ -112,88 +132,242 @@ const task = (stepId: string, templateRef: string, role: string): WorkflowStep =
 });
 const DAY = 86_400;
 
+const FEE_PARAMS = {
+  invoice_id: "payload.invoice_id",
+  amount_kobo: "payload.amount_kobo",
+} as const;
+const REMINDER_PARAMS = {
+  invoice_id: "payload.invoice_id",
+  amount_kobo: "payload.amount_kobo",
+  due_at: "payload.due_at",
+  offset_days: "payload.offset_days",
+} as const;
+
+const msg = (
+  kind: "email" | "in_app" | "sms" | "whatsapp",
+  stepId: string,
+  templateRef: string,
+  next: string | undefined,
+  params: Record<string, string>,
+  dataClass: string,
+): WorkflowStep => ({
+  stepId,
+  kind: "action",
+  assignment: { kind: "unassigned" },
+  actionClass: "communication",
+  action: { kind, templateRef, templateParams: params, recipientIds: [], dataClass },
+  authorizedActions: [kind],
+  ...(next ? { nextStepId: next } : {}),
+});
+
 export const PS_FEE_LADDER: PackTemplate = {
   templateKey: "ps_fee_ladder",
-  version: 1,
-  name: "Fee reminder ladder",
+  version: 2,
+  name: "Fee invoice notice",
   description:
-    "When a fee invoice is issued: a notice, a reminder after 7 days and a final notice after 14 days, then a task for the bursar. Each message is a draft a person approves; the approver can skip a rung once the invoice is paid.",
+    "When a fee invoice is issued: one notice to the payer, drafted for approval. Reminders now follow the due date (the five ps_fee_* reminder templates), not the issue date.",
   definition: {
     trigger: { kind: "event", eventType: "fees.invoice_issued" },
-    steps: [
-      email(
-        "notice",
-        "ps.fee.invoice_notice",
-        "wait_1",
-        { invoice_id: "payload.invoice_id", amount_kobo: "payload.amount_kobo" },
-        "confidential",
-      ),
-      wait("wait_1", 7 * DAY, "reminder"),
-      email(
-        "reminder",
-        "ps.fee.reminder",
-        "wait_2",
-        { invoice_id: "payload.invoice_id", amount_kobo: "payload.amount_kobo" },
-        "confidential",
-      ),
-      wait("wait_2", 7 * DAY, "final_notice"),
-      email(
-        "final_notice",
-        "ps.fee.final_notice",
-        "bursar_task",
-        { invoice_id: "payload.invoice_id", amount_kobo: "payload.amount_kobo" },
-        "confidential",
-      ),
-      task("bursar_task", "ps.fee.review_unpaid", "bursar"),
-    ],
+    steps: [msg("email", "notice", "ps.fee.invoice_notice", undefined, FEE_PARAMS, "confidential")],
     onFailure: { kind: "halt" },
     requiredApprovals: [],
   },
   meta: {
     agentRef: null,
-    actors: ["engine", "bursar"],
-    stepAutonomy: {
-      notice: "draft",
-      reminder: "draft",
-      final_notice: "draft",
-      bursar_task: "act_and_report",
-      wait_1: "act_and_report",
-      wait_2: "act_and_report",
-    },
+    actors: ["engine"],
+    stepAutonomy: { notice: "draft" },
     lawfulBasis: [
-      {
-        purpose: "Notify the payer of an issued fee and its follow-up",
-        basis: "contract",
-        involvesMinorData: false,
-      },
+      { purpose: "Notify the payer of an issued fee", basis: "contract", involvesMinorData: false },
     ],
     evalSuite: {
-      ref: "ps_fee_ladder_eval_v1",
+      ref: "ps_fee_ladder_eval_v2",
       cases: [
         {
           id: "no-send-without-approval",
-          expect: "no message leaves while any rung is an unapproved draft",
+          expect: "no message leaves while the notice is an unapproved draft",
         },
         {
           id: "payload-keys-only",
           expect: "only invoice_id and amount_kobo are bound from the event",
         },
-        { id: "no-sms-whatsapp", expect: "the graph contains no sms, whatsapp or webhook step" },
-        {
-          id: "ladder-order",
-          expect: "notice precedes reminder precedes final notice with 7-day waits",
-        },
+        { id: "one-message", expect: "the graph holds a single notice and no reminder rungs" },
       ],
     },
     shadowDefault: true,
     blockedUntil: [],
     changelog: [
+      { version: 1, note: "First version: email only, issue-date ladder with 7-day waits." },
       {
-        version: 1,
-        note: "First version: email only, every rung approved, bursar task at the end.",
+        version: 2,
+        note: "Reminders moved to due-date-relative templates (ADR-136); this template now sends the issue notice only.",
       },
     ],
   },
+};
+
+const reminderMeta = (
+  ref: string,
+  steps: Record<string, WorkflowAutonomyLevel>,
+  blockedUntil: readonly string[],
+  expectOrder: string,
+): PackTemplateMeta => ({
+  agentRef: null,
+  actors: ["engine", "bursar"],
+  stepAutonomy: steps,
+  lawfulBasis: [
+    {
+      purpose: "Remind the payer of a fee that is due or overdue",
+      basis: "contract",
+      involvesMinorData: false,
+    },
+  ],
+  evalSuite: {
+    ref,
+    cases: [
+      {
+        id: "no-send-without-approval",
+        expect: "no message leaves while a step is an unapproved draft",
+      },
+      {
+        id: "payload-keys-only",
+        expect: "only invoice_id, amount_kobo, due_at and offset_days are bound",
+      },
+      { id: "stop-on-payment", expect: "a fully paid invoice ends the run and cancels its drafts" },
+      { id: "channel-order", expect: expectOrder },
+    ],
+  },
+  shadowDefault: true,
+  blockedUntil,
+  changelog: [{ version: 1, note: "First version: due-date-relative reminder (ADR-136)." }],
+});
+
+const META_GATE = ["meta-templates-approved"] as const;
+
+export const PS_FEE_WEEK_START: PackTemplate = {
+  templateKey: "ps_fee_week_start",
+  version: 1,
+  name: "Fee reminder, first day of the week",
+  description:
+    "On the first school day of each of the four weeks before the due date: an SMS and a push notification to the payer, each drafted for approval.",
+  definition: {
+    trigger: { kind: "event", eventType: "fees.reminder_week_start" },
+    steps: [
+      msg("sms", "sms", "ps.fee.week_start.sms", "push", REMINDER_PARAMS, "confidential"),
+      msg("in_app", "push", "ps.fee.week_start.push", undefined, REMINDER_PARAMS, "confidential"),
+    ],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  },
+  meta: reminderMeta(
+    "ps_fee_week_start_eval_v1",
+    { sms: "draft", push: "draft" },
+    [],
+    "sms then push; no whatsapp, no email",
+  ),
+};
+
+export const PS_FEE_WEEK_END: PackTemplate = {
+  templateKey: "ps_fee_week_end",
+  version: 1,
+  name: "Fee reminder, last day of the week",
+  description:
+    "On the last school day of each of the four weeks before the due date: a push notification only, drafted for approval.",
+  definition: {
+    trigger: { kind: "event", eventType: "fees.reminder_week_end" },
+    steps: [
+      msg("in_app", "push", "ps.fee.week_end.push", undefined, REMINDER_PARAMS, "confidential"),
+    ],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  },
+  meta: reminderMeta(
+    "ps_fee_week_end_eval_v1",
+    { push: "draft" },
+    [],
+    "push only; no sms, no whatsapp",
+  ),
+};
+
+export const PS_FEE_DUE_DAY: PackTemplate = {
+  templateKey: "ps_fee_due_day",
+  version: 1,
+  name: "Fee due today",
+  description:
+    "On the due date: WhatsApp, SMS and push to the payer, each drafted for approval. Voice calls are added once a provider is chosen.",
+  definition: {
+    trigger: { kind: "event", eventType: "fees.reminder_due_day" },
+    steps: [
+      msg(
+        "whatsapp",
+        "whatsapp",
+        "ps.fee.due_day.whatsapp",
+        "sms",
+        REMINDER_PARAMS,
+        "confidential",
+      ),
+      msg("sms", "sms", "ps.fee.due_day.sms", "push", REMINDER_PARAMS, "confidential"),
+      msg("in_app", "push", "ps.fee.due_day.push", undefined, REMINDER_PARAMS, "confidential"),
+    ],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  },
+  meta: reminderMeta(
+    "ps_fee_due_day_eval_v1",
+    { whatsapp: "draft", sms: "draft", push: "draft" },
+    META_GATE,
+    "whatsapp, then sms, then push",
+  ),
+};
+
+export const PS_FEE_OVERDUE: PackTemplate = {
+  templateKey: "ps_fee_overdue",
+  version: 1,
+  name: "Fee overdue, weekly",
+  description:
+    "Every week after the due date, up to twelve weeks: WhatsApp, SMS and push to the payer, each drafted for approval, until the invoice is paid.",
+  definition: {
+    trigger: { kind: "event", eventType: "fees.reminder_overdue" },
+    steps: [
+      msg(
+        "whatsapp",
+        "whatsapp",
+        "ps.fee.overdue.whatsapp",
+        "sms",
+        REMINDER_PARAMS,
+        "confidential",
+      ),
+      msg("sms", "sms", "ps.fee.overdue.sms", "push", REMINDER_PARAMS, "confidential"),
+      msg("in_app", "push", "ps.fee.overdue.push", undefined, REMINDER_PARAMS, "confidential"),
+    ],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  },
+  meta: reminderMeta(
+    "ps_fee_overdue_eval_v1",
+    { whatsapp: "draft", sms: "draft", push: "draft" },
+    META_GATE,
+    "whatsapp, then sms, then push; at most twelve weekly events per invoice",
+  ),
+};
+
+export const PS_FEE_ESCALATION: PackTemplate = {
+  templateKey: "ps_fee_escalation",
+  version: 1,
+  name: "Fee four weeks overdue: bursar task",
+  description:
+    "Four weeks after the due date: one task for the bursar to contact the payer. No message is sent.",
+  definition: {
+    trigger: { kind: "event", eventType: "fees.reminder_escalation" },
+    steps: [task("bursar_task", "ps.fee.review_unpaid", "bursar")],
+    onFailure: { kind: "halt" },
+    requiredApprovals: [],
+  },
+  meta: reminderMeta(
+    "ps_fee_escalation_eval_v1",
+    { bursar_task: "act_and_report" },
+    [],
+    "a task for the bursar and nothing else",
+  ),
 };
 
 export const PS_PAYMENT_RECEIPT: PackTemplate = {
@@ -330,9 +504,18 @@ export const PS_ABSENCE_ALERT: PackTemplate = {
 
 export const PRIVATE_SCHOOL_PACK_V1 = Object.freeze({
   packKey: "private-school",
-  version: 1,
+  version: 2,
   status: "proposed" as const,
-  templates: Object.freeze([PS_FEE_LADDER, PS_PAYMENT_RECEIPT, PS_ABSENCE_ALERT]),
+  templates: Object.freeze([
+    PS_FEE_LADDER,
+    PS_FEE_WEEK_START,
+    PS_FEE_WEEK_END,
+    PS_FEE_DUE_DAY,
+    PS_FEE_OVERDUE,
+    PS_FEE_ESCALATION,
+    PS_PAYMENT_RECEIPT,
+    PS_ABSENCE_ALERT,
+  ]),
 });
 
 export type PackValidation = { ok: true } | { ok: false; errors: string[] };
@@ -368,6 +551,24 @@ export function validatePackTemplate(t: PackTemplate): PackValidation {
     if (!(PACK_ALLOWED_ACTION_KINDS as readonly string[]).includes(a.kind))
       errors.push(`${s.stepId}: action kind ${a.kind} not allowed in v1`);
     if (!workflowActionDefinitionIsValid(a)) errors.push(`${s.stepId}: invalid action definition`);
+    if (a.templateRef) {
+      const entry: RegistryMessage | undefined = FEE_MESSAGE_REGISTRY[a.templateRef];
+      if (!entry) errors.push(`${s.stepId}: ${a.templateRef} is not in the message registry`);
+      else {
+        if (entry.channel !== a.kind)
+          errors.push(`${s.stepId}: registry channel ${entry.channel} differs from ${a.kind}`);
+        if (
+          a.kind === "whatsapp" &&
+          entry.whatsapp?.status !== "approved" &&
+          !t.meta.blockedUntil.includes("meta-templates-approved")
+        )
+          errors.push(
+            `${s.stepId}: an unapproved WhatsApp template needs blockedUntil meta-templates-approved`,
+          );
+        const pay = messageVariables(entry.body).includes("pay_link");
+        if (a.kind === "sms" && !pay) errors.push(`${s.stepId}: sms must carry the pay link`);
+      }
+    }
     for (const value of Object.values(a.templateParams ?? {})) {
       if (typeof value === "string" && value.startsWith("payload.")) {
         const key = value.slice("payload.".length);
