@@ -589,7 +589,7 @@ SELECT ain01t.expect_error('the service role is refused beyond the daily budget'
   ain01t.stepsql('smallb', 's5', 'action', 'internal'), '54000', 'ain01:budget_daily_actions');
 SELECT ain01t.logout();
 
--- 6g2. An existing step cannot be reclassified (review B1; agent_ref was already frozen by wf_step_run_guard, whose
+-- 6g2. An existing step cannot be reclassified (review B1; agent_ref was already frozen by wf_autonomy_guard, whose
 -- message is accepted for those two cases): not by UPDATE, not by the upsert half of
 -- INSERT ... ON CONFLICT DO UPDATE, for an agent step or an agentless one, as the service role.
 SELECT ain01t.login_as('service_role');

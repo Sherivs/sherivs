@@ -3,6 +3,7 @@
 -- refuses to run when a platform grant exists (a grant is a recorded decision; revoke it deliberately first)
 -- (it does not check steps: nothing is deleted or rewritten in wf_step_run, and the agent_ref values stay as plain
 -- text, as they were before AIN-01).
+-- Roll back AIN-03, AIN-02 first: their foreign keys to wf_agent make DROP TABLE wf_agent fail while they exist.
 -- audit_chain entries AIN-01 wrote stay (the chain is append-only). wf_agent_autonomy is not touched.
 BEGIN;
 

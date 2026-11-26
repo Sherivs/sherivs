@@ -50,6 +50,11 @@ BEGIN
      OR to_regprocedure('public.wf_agent_registry_get(uuid)') IS NOT NULL THEN
     RAISE EXCEPTION 'AIN-01: registry objects already exist';
   END IF;
+  -- The insert tripwire (ain01:ai_route_undecided) cannot see rows written before it existed, and the claim path has no
+  -- check of its own: refuse to install over an AI step so none can ever be claimed while the route is undecided.
+  IF EXISTS (SELECT 1 FROM public.wf_step_run WHERE kind = 'ai' OR action_class = 'ai_model') THEN
+    RAISE EXCEPTION 'AIN-01: an AI step already exists while the AI route is undecided (founder decision 3); review it first';
+  END IF;
 END
 $prereq$;
 
