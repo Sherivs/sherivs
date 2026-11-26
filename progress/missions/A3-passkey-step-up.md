@@ -2,7 +2,7 @@
 
 | Field     | Value                                                                                   |
 | --------- | --------------------------------------------------------------------------------------- |
-| Status    | Draft PR (separate branch from `claude/wf-15a3-reminder-runtime`); NOT APPLIED          |
+| Status    | Draft PR stacked on A2 (#514); NOT APPLIED                                              |
 | Decision  | [ADR-138](../../architecture/adr/ADR-138_A3_PASSKEY_STEP_UP_FOR_SENSITIVE_DECISIONS.md) |
 | Migration | `database/supabase/migrations/20261117001000_sherivs_a3_sensitive_step_up.sql`          |
 | Rollback  | `database/supabase/rollbacks/20261117001000_sherivs_a3_sensitive_step_up.sql`           |
