@@ -12,7 +12,7 @@ BEGIN
   END IF;
   IF to_regprocedure('public.wf_run_cancel(uuid,uuid,text)') IS NULL
      OR to_regprocedure('public.wf_run_retry(uuid,uuid,text)') IS NULL
-     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer)') IS NULL
+     OR to_regprocedure('public.wf_run_history_list(uuid,text,text,timestamp with time zone,integer,uuid)') IS NULL
      OR to_regprocedure('public.wf_run_history_detail(uuid,uuid)') IS NULL THEN
     RAISE EXCEPTION 'WF08 FAIL: WF-08 migration must be present';
   END IF;
@@ -854,6 +854,72 @@ SELECT wf08t.expect_true('resuming the recorded draft restarts its step and drop
   public.wf_resume_after_dispatch(wf08t.id('orgA'), wf08t.id('draft_sw_recorded')));
 SELECT wf08t.expect_true('after the resume the recorded draft is no longer listed',
   NOT (wf08t.id('draft_sw_recorded') = ANY (wf08t.ready_order())));
+
+
+-- ---------------------------------------------------------------------------------------------------------------
+-- WF-08 round 2 (review findings on #469)
+-- ---------------------------------------------------------------------------------------------------------------
+-- Keyset pagination: runs created in one transaction share created_at, so the boundary is (created_at, id).
+SELECT wf08t.mkrun('tie1', 'wf08-a', 'succeeded', 'adminA', NULL, NULL, 7777);
+SELECT wf08t.mkrun('tie2', 'wf08-a', 'succeeded', 'adminA', NULL, NULL, 7777);
+SELECT wf08t.mkrun('tie3', 'wf08-a', 'succeeded', 'adminA', NULL, NULL, 7777);
+SELECT wf08t.expect_true('three runs share one created_at (fixture)',
+  (SELECT count(DISTINCT created_at) = 1 FROM public.wf_run WHERE id IN (wf08t.id('run_tie1'), wf08t.id('run_tie2'), wf08t.id('run_tie3'))));
+SELECT set_config('wf08t.p1', public.wf_run_history_list(wf08t.id('adminA'), NULL, NULL, now() - interval '7000 seconds', 2)::text, true);
+SELECT wf08t.expect_true('the first page of tied runs is full and has more',
+  jsonb_array_length(current_setting('wf08t.p1')::jsonb -> 'items') = 2 AND (current_setting('wf08t.p1')::jsonb ->> 'has_more')::boolean);
+SELECT set_config('wf08t.p2', public.wf_run_history_list(wf08t.id('adminA'), NULL, NULL,
+  (current_setting('wf08t.p1')::jsonb -> 'items' -> 1 ->> 'created_at')::timestamptz, 2,
+  (current_setting('wf08t.p1')::jsonb -> 'items' -> 1 ->> 'run_id')::uuid)::text, true);
+SELECT wf08t.expect_true('the second page returns the remaining tied run, once, and no more',
+  jsonb_array_length(current_setting('wf08t.p2')::jsonb -> 'items') = 1
+  AND NOT (current_setting('wf08t.p2')::jsonb ->> 'has_more')::boolean
+  AND (current_setting('wf08t.p2')::jsonb -> 'items' -> 0 ->> 'run_id') <> (current_setting('wf08t.p1')::jsonb -> 'items' -> 0 ->> 'run_id')
+  AND (current_setting('wf08t.p2')::jsonb -> 'items' -> 0 ->> 'run_id') <> (current_setting('wf08t.p1')::jsonb -> 'items' -> 1 ->> 'run_id'));
+SELECT wf08t.expect_true('without the id tiebreaker the tied runs after the boundary are skipped (documents why it exists)',
+  jsonb_array_length(public.wf_run_history_list(wf08t.id('adminA'), NULL, NULL,
+    (current_setting('wf08t.p1')::jsonb -> 'items' -> 1 ->> 'created_at')::timestamptz, 2) -> 'items') = 0);
+
+-- The outbox run guard locks the run row, so a cancel cannot interleave with a record.
+SELECT wf08t.expect_true('the outbox run guard takes FOR SHARE on the run row',
+  pg_get_functiondef('public.wf_action_sandbox_outbox_run_guard()'::regprocedure) ~* 'FOR SHARE');
+
+-- Raw reads of content columns are closed to signed-in clients; the metadata columns still work.
+SELECT wf08t.login_as('authenticated');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_event.payload', $q$SELECT payload FROM public.wf_event$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_event.subject_ref', $q$SELECT subject_ref FROM public.wf_event$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_step_run.input_ref', $q$SELECT input_ref FROM public.wf_step_run$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_step_run.output_ref', $q$SELECT output_ref FROM public.wf_step_run$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_run_event.detail', $q$SELECT detail FROM public.wf_run_event$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_action_draft.template_params', $q$SELECT template_params FROM public.wf_action_draft$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_action_draft.recipient_ids', $q$SELECT recipient_ids FROM public.wf_action_draft$q$, '42501');
+SELECT wf08t.expect_error('a signed-in client cannot read wf_action_draft.audience_selector', $q$SELECT audience_selector FROM public.wf_action_draft$q$, '42501');
+SELECT wf08t.expect_error('select star on a protected table is refused', $q$SELECT * FROM public.wf_run_event$q$, '42501');
+SELECT wf08t.expect_true('metadata columns remain readable (no error)',
+  (SELECT count(*) >= 0 FROM public.wf_run_event) IS NOT NULL);
+SELECT wf08t.logout();
+SELECT wf08t.expect_true('the content columns are not granted to authenticated, the metadata columns are',
+  NOT has_column_privilege('authenticated', 'public.wf_event', 'payload', 'SELECT')
+  AND NOT has_column_privilege('authenticated', 'public.wf_step_run', 'output_ref', 'SELECT')
+  AND NOT has_column_privilege('authenticated', 'public.wf_run_event', 'detail', 'SELECT')
+  AND NOT has_column_privilege('authenticated', 'public.wf_action_draft', 'recipient_ids', 'SELECT')
+  AND has_column_privilege('authenticated', 'public.wf_run_event', 'kind', 'SELECT')
+  AND has_column_privilege('authenticated', 'public.wf_step_run', 'status', 'SELECT')
+  AND has_column_privilege('service_role', 'public.wf_run_event', 'detail', 'SELECT'));
+
+-- A draft that never dispatches shows one timeline entry (the latest), not one per throttle window.
+SELECT wf08t.login_as('service_role');
+WITH ins AS (
+  INSERT INTO public.wf_run_event (org_id, run_id, step_run_id, kind, actor_kind, actor_ref, detail, at)
+  SELECT e.org_id, e.run_id, e.step_run_id, e.kind, e.actor_kind, e.actor_ref, e.detail, e.at - (g * interval '10 minutes')
+    FROM public.wf_run_event e, generate_series(1, 5) g
+   WHERE e.run_id = wf08t.id('run_sw_old') AND e.kind = 'draft.dispatch_failed'
+  RETURNING 1)
+SELECT wf08t.expect_true('fixture: five older failure notes for the same draft', (SELECT count(*) FROM ins) = 5);
+SELECT wf08t.logout();
+SELECT wf08t.expect_true('the detail timeline collapses repeated failure notes for one draft to the latest',
+  (SELECT count(*) FROM jsonb_array_elements(wf08t.detail('adminA', 'sw_old') -> 'events') e
+    WHERE e ->> 'kind' = 'draft.dispatch_failed') = 1);
 
 SELECT wf08t.logout();
 SELECT 'WF08 ALL PASS: ' || count(*) || ' checks' FROM wf08t.passed;
