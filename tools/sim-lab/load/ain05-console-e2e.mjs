@@ -101,19 +101,23 @@ async function setup(c) {
   ]);
   const def = crypto.randomUUID();
   const ver = crypto.randomUUID();
-  await c.query("INSERT INTO public.wf_definition (id, org_id, key, name) VALUES ($1, $2, $3, $4)", [
-    def,
-    orgA,
-    `ain05-e2e-${runTag}`,
-    "AIN05 e2e",
-  ]);
+  await c.query(
+    "INSERT INTO public.wf_definition (id, org_id, key, name) VALUES ($1, $2, $3, $4)",
+    [def, orgA, `ain05-e2e-${runTag}`, "AIN05 e2e"],
+  );
   await c.query(
     `INSERT INTO public.wf_version (id, org_id, definition_id, version, graph, created_by)
      VALUES ($1, $2, $3, 1, '{"steps":[]}', $4)`,
     [ver, orgA, def, author],
   );
-  await c.query(`UPDATE public.wf_version SET state = 'published', published_by = $2 WHERE id = $1`, [ver, publisher]);
-  await c.query(`UPDATE public.wf_definition SET current_version_id = $2, status = 'active' WHERE id = $1`, [def, ver]);
+  await c.query(
+    `UPDATE public.wf_version SET state = 'published', published_by = $2 WHERE id = $1`,
+    [ver, publisher],
+  );
+  await c.query(
+    `UPDATE public.wf_definition SET current_version_id = $2, status = 'active' WHERE id = $1`,
+    [def, ver],
+  );
   await c.query(
     `INSERT INTO public.wf_run (id, org_id, definition_id, version_id, idempotency_key, status, max_depth, max_steps,
        step_count, started_by, deadline_at, started_at, agent_ref)
@@ -170,7 +174,8 @@ async function pooled(limit, tasks) {
 const agentsOf = (actor) => svc(`SELECT public.wf_console_agents($1) AS v`, [actor]);
 const memoryOf = (actor, status = "proposed", limit = 100) =>
   svc(`SELECT public.wf_console_memory_list($1, $2, NULL, NULL, $3) AS v`, [actor, status, limit]);
-const safetyOf = (actor) => svc(`SELECT public.wf_console_safety_list($1, 'all', NULL, NULL, 100) AS v`, [actor]);
+const safetyOf = (actor) =>
+  svc(`SELECT public.wf_console_safety_list($1, 'all', NULL, NULL, 100) AS v`, [actor]);
 const count = async (c, sql, params) => Number((await c.query(sql, params)).rows[0].n);
 const ok = (rs) => rs.filter((r) => r.outcome === "ok").length;
 
@@ -182,17 +187,22 @@ async function main() {
   // Seed: proposals by the agent through the production function, a check for the safety view.
   const proposed = await pooled(
     10,
-    Array.from({ length: PROPOSALS }, (_, i) => () =>
-      svc(`SELECT public.wf_memory_agent_propose($1, 'agent', NULL, $2, $3::jsonb, NULL) AS v`, [
-        run,
-        `hint-${i}`,
-        JSON.stringify({ text: `Note ${i}.` }),
-      ]),
+    Array.from(
+      { length: PROPOSALS },
+      (_, i) => () =>
+        svc(`SELECT public.wf_memory_agent_propose($1, 'agent', NULL, $2, $3::jsonb, NULL) AS v`, [
+          run,
+          `hint-${i}`,
+          JSON.stringify({ text: `Note ${i}.` }),
+        ]),
     ),
   );
   const seeded = ok(proposed);
   await svc(`SELECT public.wf_safety_run_eval()`);
-  await svc(`SELECT public.wf_safety_check_text($1, 'draft', 'output', 'Write to ann@mail.example now.')`, [run]);
+  await svc(
+    `SELECT public.wf_safety_check_text($1, 'draft', 'output', 'Write to ann@mail.example now.')`,
+    [run],
+  );
 
   const tables = `(SELECT count(*) FROM public.wf_memory_item) + (SELECT count(*) FROM public.wf_safety_check)
     + (SELECT count(*) FROM public.wf_safety_review) + (SELECT count(*) FROM public.wf_autonomy_change)
@@ -215,10 +225,18 @@ async function main() {
   const items = (await memoryOf(adminA)).rows[0].v.items.map((i) => i.item_id);
   const pendingBefore = items.length;
   const mixed = await pooled(POOL, [
-    ...items.map((item, i) => () =>
-      svc(`SELECT public.wf_memory_decide($1, $2, $3) AS v`, [i % 2 ? adminA2 : adminA, item, i % 2 ? "reject" : "accept"]),
+    ...items.map(
+      (item, i) => () =>
+        svc(`SELECT public.wf_memory_decide($1, $2, $3) AS v`, [
+          i % 2 ? adminA2 : adminA,
+          item,
+          i % 2 ? "reject" : "accept",
+        ]),
     ),
-    ...Array.from({ length: 40 }, (_, i) => () => (i % 2 ? memoryOf(adminA2, "all") : agentsOf(adminA2))),
+    ...Array.from(
+      { length: 40 },
+      (_, i) => () => (i % 2 ? memoryOf(adminA2, "all") : agentsOf(adminA2)),
+    ),
   ]);
   const decided = ok(mixed.slice(0, items.length));
   const readsFailed = mixed.slice(items.length).filter((r) => r.outcome !== "ok").length;
