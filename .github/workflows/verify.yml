@@ -493,6 +493,10 @@ jobs:
             -f tests/integration/wf15a2-fee-reminders.local.sql 2>&1 | tee /tmp/wf15a2-reminders.out
           ! grep -Fq 'WF15A2 FAIL' /tmp/wf15a2-reminders.out
           grep -Eq 'WF15A2 ALL PASS: [0-9]+ checks' /tmp/wf15a2-reminders.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/a2-multi-org-student-isolation.local.sql 2>&1 | tee /tmp/a2-isolation.out
+          ! grep -Fq 'A2ISO FAIL' /tmp/a2-isolation.out
+          grep -Eq 'A2ISO ALL PASS: [0-9]+ checks' /tmp/a2-isolation.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
