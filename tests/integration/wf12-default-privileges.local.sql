@@ -46,7 +46,7 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_retention_run_scheduled(p_max_orgs integer)'),
   ('wf_run_cancel(p_actor uuid, p_run uuid, p_reason text)'),
   ('wf_run_history_detail(p_actor uuid, p_run uuid)'),
-  ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer)'),
+  ('wf_run_history_list(p_actor uuid, p_status text, p_workflow text, p_before timestamp with time zone, p_limit integer, p_before_id uuid)'),
   ('wf_run_retry(p_actor uuid, p_step uuid, p_reason text)');
 DO $$
 DECLARE v_extra text; v_missing text;
