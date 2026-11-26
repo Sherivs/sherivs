@@ -811,6 +811,34 @@ SELECT ain04t.owner(current_setting('ain04t.norm_def'));
 SELECT ain04t.expect_true('and restoring it restores it', public.wf_safety_verified());
 
 -- ---------------------------------------------------------------------------------------------
+-- 8b. CD-05 (ADR-135): clearing needs a second person who could also review; a one-person organization is blocked
+-- ---------------------------------------------------------------------------------------------
+SELECT ain04t.mkrun('bs', 'ain04-wfb', NULL);
+SELECT ain04t.screen_as_service('chk_solo', 'bs', 'draft-step', 'output', 'Mail ed@mail.example today');
+SELECT ain04t.expect_true('CD-05 fixture: organization B has exactly one person holding workflows.approve',
+  (SELECT count(*) = 1 FROM public.users u WHERE u.school_id = ain04t.id('orgB') AND u.is_active));
+SELECT ain04t.login_as('service_role');
+SELECT ain04t.expect_error('CD-05: a one-person organization cannot clear a flagged output, even from a run with no starter',
+  ain04t.review_sql('adminB', ain04t.id('chk_solo'), 'cleared', 'I am the only person here, so I clear it.'), '42501', 'ain04:second_reviewer_required');
+SELECT ain04t.expect_error('CD-05: nor can it reject (a review needs a second person to exist)',
+  ain04t.review_sql('adminB', ain04t.id('chk_solo'), 'rejected', 'I am the only person here, so I reject it.'), '42501', 'ain04:second_reviewer_required');
+SELECT ain04t.logout();
+SELECT ain04t.expect_true('CD-05: the refused review left no decision behind',
+  NOT EXISTS (SELECT 1 FROM public.wf_safety_review r WHERE r.check_id = ain04t.id('chk_solo')));
+SELECT ain04t.keep('adminB2', 'f4600000-0000-4000-8000-0000000000b3'::uuid);
+INSERT INTO auth.users (id) VALUES (ain04t.id('adminB2'));
+INSERT INTO public.users (id, school_id, full_name, email, role, is_active)
+VALUES (ain04t.id('adminB2'), ain04t.id('orgB'), 'AIN04 Admin B2', 'admin-b2@ain04.invalid', 'admin', true);
+SELECT ain04t.login_as('service_role');
+SELECT ain04t.expect_true('CD-05: with a second approver in the organization the same review works',
+  (public.wf_safety_review_check(ain04t.id('adminB'), ain04t.id('chk_solo'), 'cleared', 'A second approver exists now.') ->> 'decision') = 'cleared');
+SELECT ain04t.logout();
+SELECT ain04t.expect_true('CD-05: the helper is not callable by any API role',
+  NOT has_function_privilege('anon', 'public.wf_review_second_person_exists(uuid,uuid)', 'EXECUTE')
+  AND NOT has_function_privilege('authenticated', 'public.wf_review_second_person_exists(uuid,uuid)', 'EXECUTE')
+  AND NOT has_function_privilege('service_role', 'public.wf_review_second_person_exists(uuid,uuid)', 'EXECUTE'));
+
+-- ---------------------------------------------------------------------------------------------
 -- 9. Result
 -- ---------------------------------------------------------------------------------------------
 DO $done$
