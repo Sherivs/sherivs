@@ -36,8 +36,8 @@ set of functions under those prefixes, and a console function under them would b
 
 ## Evidence (26 Nov 2026; local PostgreSQL 16.15, every migration applied as a non-superuser migrator)
 
-- Harness `ain05-agent-console.local.sql`: `AIN05 ALL PASS: 60 checks`.
-- Privileges under Supabase default privileges (the CI step re-run locally): `AIN05 ALL PASS: 60 checks`,
+- Harness `ain05-agent-console.local.sql`: `AIN05 ALL PASS: 61 checks`.
+- Privileges under Supabase default privileges (the CI step re-run locally): `AIN05 ALL PASS: 61 checks`,
   `AIN05-PRIV ALL PASS: 17 checks`; the WF-08/WF-12 privilege step still passes with three new allow-listed functions
   (`WF12-PRIV ALL PASS: 48 functions checked`).
 - Earlier harnesses unchanged and passing on this tip: WF07 98, WF08 131, WF12 214, AIN01 136, AIN02 205, AIN03 254, AIN04 173.

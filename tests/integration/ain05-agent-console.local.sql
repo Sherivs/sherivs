@@ -172,13 +172,14 @@ INSERT INTO public.wf_org_settings (org_id, workflows_enabled, autonomy_ceiling)
 
 -- One platform agent granted to organization A only, one granted to nobody.
 INSERT INTO public.agent_pause_rules (agent_code, tier, kill_scope) VALUES
-  ('ain05-granted', 'department', 'agent'), ('ain05-ungranted', 'department', 'agent');
+  ('ain05-granted', 'department', 'agent'), ('ain05-ungranted', 'department', 'agent'), ('ain05-low', 'assurance', 'agent');
 INSERT INTO public.wf_agent (agent_ref, family, codename, agent_tier, accountable, supervisor, pack_version, max_tier,
     context_ceiling, daily_actions, daily_model_calls, daily_cost_cap_minor)
 VALUES
   ('ain05-granted', 'platform', 'Granted', 'department', 'fixture', 'jarvis-executive', '1.0.0', 'T3', 'internal', 100000, 0, 0),
-  ('ain05-ungranted', 'platform', 'Ungranted', 'department', 'fixture', 'jarvis-executive', '1.0.0', 'T3', 'internal', 100000, 0, 0);
-INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES (ain05t.id('orgA'), 'ain05-granted');
+  ('ain05-ungranted', 'platform', 'Ungranted', 'department', 'fixture', 'jarvis-executive', '1.0.0', 'T3', 'internal', 100000, 0, 0),
+  ('ain05-low', 'platform', 'Low', 'assurance', 'fixture', 'sheriff', '1.0.0', 'T1', 'internal', 100000, 0, 0);
+INSERT INTO public.wf_agent_platform_grant (org_id, agent_ref) VALUES (ain05t.id('orgA'), 'ain05-granted'), (ain05t.id('orgA'), 'ain05-low');
 
 CREATE FUNCTION ain05t.mkdef(p_key text, p_org text) RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE v_def uuid := gen_random_uuid(); v_ver uuid := gen_random_uuid();
@@ -224,7 +225,7 @@ SELECT ain05t.expect_true('the four levels come back in rank order',
      FROM jsonb_array_elements(ain05t.agents('adminA') -> 'levels') l));
 SELECT ain05t.expect_true('the organization agents are listed and the founder flag is false for them',
   (SELECT count(*) = (SELECT count(*) FROM public.wf_agent WHERE family = 'org' AND status = 'active')
-       + 1  -- the granted platform agent
+       + 2  -- the two granted platform agents
      FROM jsonb_array_elements(ain05t.agents('adminA') -> 'agents')));
 SELECT ain05t.expect_true('a platform agent is listed only where it is granted',
   ain05t.agent('adminA', 'ain05-granted') IS NOT NULL AND ain05t.agent('adminA', 'ain05-ungranted') IS NULL
@@ -235,6 +236,9 @@ SELECT ain05t.expect_true('an agent that holds no earned level shows suggest, it
   AND (ain05t.agent('adminA', 'ain05-granted') -> 'bar' ->> 'min_graded')::int = (SELECT min_graded FROM public.wf_autonomy_bar WHERE target_level = 'draft')
   AND ain05t.agent('adminA', 'ain05-granted') -> 'evidence' = 'null'::jsonb
   AND jsonb_array_length(ain05t.agent('adminA', 'ain05-granted') -> 'changes') = 0);
+SELECT ain05t.expect_true('an agent of a lower tier shows its lower ceiling, and no next rung beyond it',
+  (ain05t.agent('adminA', 'ain05-low') ->> 'ceiling') = 'draft'
+  AND (ain05t.agent('adminA', 'ain05-low') ->> 'next_level') = 'draft');
 SELECT ain05t.expect_true('the ceiling shown is the one the database computes',
   (ain05t.agent('adminA', 'ain05-granted') ->> 'ceiling') = public.wf_autonomy_ceiling('ain05-granted')
   AND (SELECT bool_and((a ->> 'ceiling') = public.wf_autonomy_ceiling(a ->> 'agent_ref'))
