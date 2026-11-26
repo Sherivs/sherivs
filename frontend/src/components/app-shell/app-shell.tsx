@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, Navigate, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bell,
+  Bot,
   ClipboardCheck,
   Gauge,
   History,
@@ -21,6 +22,7 @@ import {
   APP_SHELL_PROFILE,
   APP_SHELL_WORKFLOW_LIMITS,
   APP_SHELL_WORKFLOW_RUNS,
+  APP_SHELL_AGENT_CONSOLE,
 } from "@/lib/shell/paths";
 import {
   affiliationForOrganization,
@@ -372,6 +374,19 @@ function ShellChrome({ children }: { children: ReactNode }) {
                   <History />
                 </ShellGlassIcon>
                 Workflow runs
+              </button>
+            ) : null}
+            {app.profile ? (
+              <button
+                type="button"
+                className={`app-shell-drawer-item${path === APP_SHELL_AGENT_CONSOLE ? " is-active" : ""}`}
+                onClick={() => go(APP_SHELL_AGENT_CONSOLE, "agent-console")}
+                data-testid="agent-console-link"
+              >
+                <ShellGlassIcon active={path === APP_SHELL_AGENT_CONSOLE}>
+                  <Bot />
+                </ShellGlassIcon>
+                Agent console
               </button>
             ) : null}
             {app.profile ? (

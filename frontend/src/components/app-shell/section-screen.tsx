@@ -20,6 +20,7 @@ import { InstitutionInterviewScreen } from "./institution-interview-screen";
 const ApprovalInboxScreen = lazy(() => import("./approval-inbox-screen"));
 // WF-08: run history loads on demand for the same reason.
 const RunHistoryScreen = lazy(() => import("./run-history-screen"));
+const AgentConsoleScreen = lazy(() => import("./agent-console-screen"));
 // WF-12: limits, wallet caps and retention load on demand too.
 const LimitsScreen = lazy(() => import("./limits-screen"));
 
@@ -43,6 +44,13 @@ export function AppSectionScreen({ sectionKey }: { sectionKey: string }) {
     return (
       <Suspense fallback={<p className="app-shell-empty">Loading run history…</p>}>
         <RunHistoryScreen />
+      </Suspense>
+    );
+  }
+  if (sectionKey === "agent-console") {
+    return (
+      <Suspense fallback={<p className="app-shell-empty">Loading the agent console…</p>}>
+        <AgentConsoleScreen />
       </Suspense>
     );
   }

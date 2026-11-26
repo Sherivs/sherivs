@@ -390,3 +390,32 @@ Checks before a staging pilot, with `WORKFLOW_DELIVERY_MODE=sandbox` and the org
 
 Rollback: `database/supabase/rollbacks/20261117000995_...sql` refuses while a check or review row exists (export and
 remove them deliberately first). It does not touch AIN-01 to AIN-03.
+
+## Agent console (AIN-05)
+
+Origin: `database/supabase/migrations/20261117000996_sherivs_ain05_agent_console_read_models.sql` and
+`architecture/adr/ADR-129_AIN05_AGENT_CONSOLE.md`. Not applied to any hosted database by the mission that wrote it; the
+lead applies it to staging after AIN-04. The number `20261117000996` is free on every branch checked.
+
+The console (Home menu, "Agent console") shows three things to a person in their own organisation: the agents and the
+level each has earned, the memory proposals waiting for a manager, and the screened outputs waiting for review. It adds
+three read functions and no table.
+
+- It never shows the text of a screened output, and it has no control to raise a level. Raising a level stays a founder
+  decision on evidence (`wf_autonomy_promote`).
+- While the AI route is closed the screen says so. Nothing runs; levels and reviews can still be prepared.
+- A manager can lower a level, accept or reject a proposal, retire a memory item, and clear or reject a flagged output
+  (a different person from the one who started the run). Each is audited by the existing function.
+
+Checks before a staging pilot:
+
+1. As a manager: the three tabs load; as a teacher with no workflow role: all three are refused.
+2. A person in another organisation sees none of the first organisation's agents grants, proposals or checks.
+3. Accept one proposal and reject another; both leave "Waiting"; the rejected one's content is gone.
+4. Screen a text with an address for an active run; the check appears under "Waiting" with codes and size and no text.
+   The starter cannot review it; another approver can.
+5. Lower an agent one level; the change shows in its recent changes, and the next step runs at the lower level.
+6. Confirm nothing was sent and no model was called.
+
+Rollback: `database/supabase/rollbacks/20261117000996_...sql` drops the three functions. Nothing else changes.
+
