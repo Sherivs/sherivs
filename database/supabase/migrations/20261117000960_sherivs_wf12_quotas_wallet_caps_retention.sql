@@ -1092,9 +1092,15 @@ BEGIN
       PERFORM set_config('wf.retention_purge', '', true);
       v_out := v_out || jsonb_build_array(jsonb_build_object(
         'org_id', v_org, 'outcome', 'failed', 'refusal_code', NULL, 'total', 0, 'sqlstate', v_state));
+      -- A failing organization has no log row, so it is retried on every call. Its failure is audited once a day, not
+      -- once per call, so a persistent fault cannot fill the audit chain (the return value still reports it each time).
       BEGIN
-        PERFORM public.wf_audit_append(v_org, 'workflow.retention.failed', 'organization', v_org::text, NULL,
-          jsonb_build_object('sqlstate', v_state, 'trigger', 'scheduler'));
+        IF NOT EXISTS (SELECT 1 FROM public.audit_chain c
+                        WHERE c.org_id = v_org AND c.action = 'workflow.retention.failed'
+                          AND c.at >= now() - interval '24 hours') THEN
+          PERFORM public.wf_audit_append(v_org, 'workflow.retention.failed', 'organization', v_org::text, NULL,
+            jsonb_build_object('sqlstate', v_state, 'trigger', 'scheduler'));
+        END IF;
       EXCEPTION WHEN OTHERS THEN
         NULL;
       END;

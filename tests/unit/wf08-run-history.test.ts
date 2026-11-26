@@ -242,7 +242,14 @@ describe("WF-08 server operations", () => {
     await listRuns(ports, { actorId: ID(7), filter: "failed", workflow: "wf-a" });
     expect(calls[0]).toEqual({
       fn: "wf_run_history_list",
-      args: { p_actor: ID(7), p_status: "failed", p_workflow: "wf-a", p_before: null, p_limit: 25 },
+      args: {
+        p_actor: ID(7),
+        p_status: "failed",
+        p_workflow: "wf-a",
+        p_before: null,
+        p_limit: 25,
+        p_before_id: null,
+      },
     });
   });
 
