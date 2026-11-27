@@ -120,7 +120,21 @@ export interface WorkflowTransition {
   errorCode?: string;
 }
 
+/** An approval step whose approval was decided "approved" and that is now leased for resuming (WF-07). */
+export interface ApprovedStepClaim {
+  step: ClaimedWorkflowStep;
+  approval: { id: string; approvedBy: string; approvedAt: string };
+}
+
 export interface WorkflowRuntimePort {
+  /** Optional: ports that cannot resume approved approval steps leave them waiting. */
+  claimApprovedSteps?(
+    worker: string,
+    limit: number,
+    leaseSeconds: number,
+  ): Promise<ApprovedStepClaim[]>;
+  /** True while this person holds the role, in this organisation, right now. Needed only when the definition names a role. */
+  approverHoldsRole?(orgId: string, userId: string, roleRef: string): Promise<boolean>;
   claimDueEvents(worker: string, limit: number, leaseSeconds: number): Promise<WorkflowEvent[]>;
   claimDueSteps(
     worker: string,
@@ -375,6 +389,32 @@ export async function runWorkflowTick(
           }
         }
       }
+      if (port.claimApprovedSteps && monotonicNow() - startedAt < budgetMs - STOP_BEFORE_DEADLINE_MS) {
+        let approved: ApprovedStepClaim[] = [];
+        try {
+          approved = await port.claimApprovedSteps(
+            options.worker,
+            options.limit ?? 50,
+            options.leaseSeconds ?? 60,
+          );
+          counts.claimed += approved.length;
+        } catch {
+          tickFailed = true;
+          tickSpan.setAttribute("workflow.error_code", "approved_step_claim_failed");
+        }
+        for (const claim of approved) {
+          if (monotonicNow() - startedAt >= budgetMs - STOP_BEFORE_DEADLINE_MS) break;
+          try {
+            const transition = await resumeApprovedStep(port, claim, clock);
+            await port.persistTransition(transition);
+            countResult(counts, transition.status);
+            if (transition.status === "dead") tickFailed = true;
+          } catch {
+            // The lease expires and the step is claimed again; nothing is advanced on a failed persist.
+            tickFailed = true;
+          }
+        }
+      }
       tickSpan.setAttribute("workflow.claimed.count", counts.claimed);
       tickSpan.setAttribute("workflow.succeeded.count", counts.succeeded);
       tickSpan.setAttribute("workflow.retried.count", counts.retried);
@@ -505,8 +545,29 @@ async function advanceClaimedStep(
     throw Object.assign(new Error("advance_denied"), { code: advanced.denyCode });
   }
 
+  return settleAdvancedStep(step, record, version, steps, currentStep, advanced, context);
+}
+
+/**
+ * Everything that happens after the engine has accepted a step: record its evidence, then complete the run,
+ * stop it at the step or loop limit, or hand back the next step. Shared by claimed steps and by approved
+ * approval steps (WF-07 resume), so both settle a step the same way.
+ */
+export function settleAdvancedStep(
+  step: ClaimedWorkflowStep,
+  record: WorkflowRunRecord,
+  version: WorkflowVersionRecord,
+  steps: WorkflowStepRecord[],
+  currentStep: WorkflowDefinition["steps"][number],
+  advanced: { run: WorkflowRun },
+  context: AdvanceContext,
+  /** True when the engine held the run at its last step only for this step's evidence (so complete it once recorded). */
+  completesRun = false,
+): WorkflowTransition {
   const evidenceKind =
-    currentStep.kind === "condition"
+    currentStep.kind === "approval"
+      ? "approval_recorded"
+      : currentStep.kind === "condition"
       ? "condition_evaluated"
       : currentStep.kind === "action"
         ? "action_planned"
@@ -528,7 +589,7 @@ async function advanceClaimedStep(
   const recorded = recordStepEvidence(advanced.run, evidence);
   if (!recorded.ok)
     throw Object.assign(new Error("evidence_rejected"), { code: recorded.denyCode });
-  if (recorded.run.currentStepId === null) {
+  if (recorded.run.currentStepId === null || completesRun) {
     const completed = advance(
       version.definition,
       recorded.run,
@@ -596,12 +657,92 @@ async function advanceClaimedStep(
   };
 }
 
+/**
+ * Resumes one approval step after people approved it. The approval itself was already decided and
+ * checked by the database (wf_decide_approval: permission, separation of duties, passkey for high
+ * risk). This adds the one rule the database does not know, the role a definition names for the step,
+ * then lets the engine move the run exactly as it would for any step. An AI can never be the approver.
+ * Fails closed: if the engine refuses, the run ends failed with the engine's own code.
+ */
+export async function resumeApprovedStep(
+  port: WorkflowRuntimePort,
+  claim: ApprovedStepClaim,
+  clock: () => Date,
+): Promise<WorkflowTransition> {
+  const { step, approval } = claim;
+  const record = await port.loadRun(step.orgId, step.runId);
+  const [version, steps] = record
+    ? await Promise.all([
+        port.loadVersion(record.orgId, record.versionId),
+        port.loadSteps(step.orgId, step.runId),
+      ])
+    : [null, []];
+  if (!record || !version) {
+    return { step, run: record?.run ?? null, status: "dead", errorCode: "run_context_missing" };
+  }
+  const currentStep = version.definition.steps.find((item) => item.stepId === step.stepKey);
+  if (!currentStep || currentStep.kind !== "approval" || record.run.currentStepId !== currentStep.stepId) {
+    return { step, run: record.run, status: "skipped" };
+  }
+  const now = clock().toISOString();
+  const context: AdvanceContext = { actor: record.actor, now };
+  const requirement = version.definition.requiredApprovals.find(
+    (item) => item.stepId === currentStep.stepId,
+  );
+  const roleOk = requirement
+    ? ((await port.approverHoldsRole?.(step.orgId, approval.approvedBy, requirement.approverRoleRef)) ?? false)
+    : true;
+  const advanced = roleOk
+    ? advance(
+        version.definition,
+        record.run,
+        {
+          kind: "approval",
+          record: {
+            recordId: approval.id,
+            stepId: currentStep.stepId,
+            decision: "approved",
+            approver: {
+              kind: "human",
+              humanRef: approval.approvedBy,
+              roleRef: requirement?.approverRoleRef ?? "approver",
+            },
+            decidedAt: approval.approvedAt,
+          },
+          at: now,
+        },
+        context,
+      )
+    : null;
+  // On the last step the engine returns "evidence_pending" with the run already approved and the
+  // expectation for this step's evidence added: record that evidence and complete, as any final step does.
+  const lastStep = advanced !== null && !advanced.ok && advanced.denyCode === "evidence_pending";
+  if (!advanced || (!advanced.ok && !lastStep)) {
+    const code = advanced && !advanced.ok ? advanced.denyCode : "approver_role_mismatch";
+    const stopped = advance(
+      { ...version.definition, onFailure: { kind: "halt" } },
+      record.run,
+      { kind: "failure", reason: code, at: now },
+      context,
+    );
+    return {
+      step,
+      run: stopped.run.state === "failed" ? stopped.run : null,
+      status: "dead",
+      errorCode: `approval.${code}`.slice(0, 64),
+    };
+  }
+  return settleAdvancedStep(step, record, version, steps, currentStep, advanced, context, lastStep);
+}
+
 export class InMemoryWorkflowRuntimePort implements WorkflowRuntimePort {
   readonly events: WorkflowEvent[] = [];
   readonly runs = new Map<string, WorkflowRunRecord>();
   readonly versions = new Map<string, WorkflowVersionRecord>();
   readonly steps = new Map<string, WorkflowStepRecord[]>();
   readonly stepsToClaim: ClaimedWorkflowStep[] = [];
+  readonly approvedToClaim: ApprovedStepClaim[] = [];
+  readonly rolesByUser = new Map<string, Set<string>>();
   readonly completedEffects = new Set<string>();
   readonly transitions: WorkflowTransition[] = [];
   private readonly eventRuns = new Map<string, string>();
@@ -625,6 +766,18 @@ export class InMemoryWorkflowRuntimePort implements WorkflowRuntimePort {
     _leaseSeconds: number,
   ): Promise<ClaimedWorkflowStep[]> {
     return this.stepsToClaim.splice(0);
+  }
+
+  async claimApprovedSteps(
+    _worker: string,
+    _limit: number,
+    _leaseSeconds: number,
+  ): Promise<ApprovedStepClaim[]> {
+    return this.approvedToClaim.splice(0);
+  }
+
+  async approverHoldsRole(_orgId: string, userId: string, roleRef: string): Promise<boolean> {
+    return this.rolesByUser.get(userId)?.has(roleRef) ?? false;
   }
 
   async dispatchEvent(event: WorkflowEvent): Promise<"succeeded" | "retried" | "dead" | "skipped"> {

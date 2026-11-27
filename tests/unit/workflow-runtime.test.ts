@@ -443,3 +443,96 @@ describe("workflow runtime reliability", () => {
     }
   });
 });
+
+describe("approved approval-step resume (WF-07b)", () => {
+  async function approvalFixture(approverRoles: string[]) {
+    const orgId = "org-1";
+    const actor: WorkflowActorScope = {
+      actorId: "reviewer-1",
+      tenantRef: tenantId(orgId),
+      kind: "human",
+      roleRef: "reviewer",
+      agentRef: null,
+      revoked: false,
+    };
+    const definition: WorkflowDefinition = {
+      definitionId: "approval-resume",
+      tenantRef: tenantId(orgId),
+      name: "Approval resume",
+      version: "1",
+      trigger: { kind: "event", eventType: "workflow.requested" },
+      steps: [
+        {
+          stepId: "approve",
+          kind: "approval",
+          assignment: { kind: "human", roleRef: "reviewer" },
+          authorizedActions: [],
+        },
+      ],
+      onFailure: { kind: "halt" },
+      requiredApprovals: [{ stepId: "approve", approverRoleRef: "reviewer" }],
+    };
+    const started = startRun(definition, {
+      runId: "run-resume",
+      actor,
+      trigger: { kind: "event", eventType: "workflow.requested" },
+      now: "2026-11-17T00:00:00.000Z",
+    });
+    if (!started.ok) throw new Error("start failed");
+    const port = new InMemoryWorkflowRuntimePort();
+    port.runs.set("run-resume", {
+      orgId,
+      id: "run-resume",
+      versionId: "version-1",
+      run: started.run,
+      actor,
+    });
+    port.versions.set("version-1", { orgId, id: "version-1", definition, maxLoopIterations: 5 });
+    port.steps.set("run-resume", [{ id: "approval-step", stepKey: "approve", iteration: 0, input: {} }]);
+    port.rolesByUser.set("human-1", new Set(approverRoles));
+    port.approvedToClaim.push({
+      step: {
+        id: "approval-step",
+        orgId,
+        leaseOwner: "worker-1",
+        runId: "run-resume",
+        stepKey: "approve",
+        iteration: 0,
+        status: "claimed",
+        attempt: 1,
+        maxAttempts: 5,
+        idempotencyKey: "wf-step-run-resume-approve-0",
+        timeoutSeconds: 30,
+        actionClass: "unclassified",
+        autonomyLevel: "suggest",
+        budgetUnits: 0,
+        spentUnits: 0,
+      },
+      approval: { id: "approval-1", approvedBy: "human-1", approvedAt: "2026-11-17T00:05:00.000Z" },
+    });
+    return port;
+  }
+
+  it("completes the run when a human holding the required role approved", async () => {
+    const port = await approvalFixture(["reviewer"]);
+    const counts = await runWorkflowTick(port, { worker: "worker-1" });
+    expect(port.transitions).toHaveLength(1);
+    expect(port.transitions[0].status).toBe("succeeded");
+    expect(port.transitions[0].run?.state).toBe("completed");
+    expect(counts.claimed).toBe(1);
+  });
+
+  it("fails closed when the approver no longer holds the required role", async () => {
+    const port = await approvalFixture(["teacher"]);
+    await runWorkflowTick(port, { worker: "worker-1" });
+    expect(port.transitions[0].status).toBe("dead");
+    expect(port.transitions[0].errorCode).toBe("approval.approver_role_mismatch");
+  });
+
+  it("does nothing when the port cannot resume approved steps", async () => {
+    const port = await approvalFixture(["reviewer"]);
+    (port as { claimApprovedSteps?: unknown }).claimApprovedSteps = undefined;
+    await runWorkflowTick(port, { worker: "worker-1" });
+    expect(port.transitions).toHaveLength(0);
+  });
+});

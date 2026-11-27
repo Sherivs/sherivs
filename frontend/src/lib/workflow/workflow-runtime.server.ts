@@ -17,6 +17,7 @@ import {
 } from "./workflow-contract";
 import {
   retryDelaySeconds,
+  type ApprovedStepClaim,
   type ClaimedWorkflowStep,
   type WorkflowEvent,
   type WorkflowRuntimePort,
@@ -271,6 +272,53 @@ export function createWorkflowRuntimePort(): WorkflowRuntimePort {
           }),
         )
       ).map(stepFromRow);
+    },
+
+    async claimApprovedSteps(worker, limit, leaseSeconds) {
+      const claimed = (
+        await rows(
+          client.rpc("wf_claim_approved_steps", {
+            p_worker: worker,
+            p_limit: limit,
+            p_lease_seconds: leaseSeconds,
+          }),
+        )
+      ).map(stepFromRow);
+      const out: ApprovedStepClaim[] = [];
+      for (const step of claimed) {
+        const approval = await one(
+          client
+            .from("wf_approval")
+            .select("id,decided_by,decided_at")
+            .eq("org_id", step.orgId)
+            .eq("step_run_id", step.id)
+            .eq("status", "approved")
+            .order("decided_at", { ascending: false })
+            .limit(1),
+        );
+        // No readable approval means nothing can be proven; the lease expires and the step is retried.
+        if (!approval || typeof approval.decided_by !== "string" || typeof approval.decided_at !== "string") {
+          continue;
+        }
+        out.push({
+          step,
+          approval: {
+            id: text(approval, "id"),
+            approvedBy: approval.decided_by,
+            approvedAt: approval.decided_at,
+          },
+        });
+      }
+      return out;
+    },
+
+    async approverHoldsRole(orgId, userId, roleRef) {
+      const result = await client.rpc("wf_approver_holds_role", {
+        p_org: orgId,
+        p_user: userId,
+        p_role: roleRef,
+      });
+      return !result.error && (result.data as unknown) === true;
     },
 
     async dispatchEvent(event) {
