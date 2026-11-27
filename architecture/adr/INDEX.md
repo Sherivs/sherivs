@@ -144,6 +144,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 >>>>>>>>> Temporary merge branch 2
 | 109 | [ADR-109_SV1_LITE_OUTBOX_CONTEXT_TAGGING_AND_WIPE.md](./ADR-109_SV1_LITE_OUTBOX_CONTEXT_TAGGING_AND_WIPE.md) | SV1-LITE Outbox Contract, Context Tagging and the Wipe Rule | PROPOSED | 2026-11-17 | One generic outbox on the existing IndexedDB store; rows tagged with user, organization and role; unsent work is sent or discarded before a context exit |
 | 149 | [ADR-149_M7_ACADEMIC_CORE_SCREENS_AND_OWN_CLASS_ENFORCEMENT.md](./ADR-149_M7_ACADEMIC_CORE_SCREENS_AND_OWN_CLASS_ENFORCEMENT.md) | Academic Core Screens and Own-Class Enforcement | PROPOSED | 2026-11-18 | Teaching screens over existing M05/M06/SHERIVS-024 functions; own classes enforced by read functions and restrictive grades policies; audited attendance corrections; lesson-note approval only by a reviewer who is not the author (NOT APPLIED) |
+| 115 | [ADR-115_M11_ADMISSIONS_DATA_MODEL_FAIRNESS_AND_SEPARATION_OF_DUTIES.md](./ADR-115_M11_ADMISSIONS_DATA_MODEL_FAIRNESS_AND_SEPARATION_OF_DUTIES.md) | Admissions Data Model, Blind Scoring and Separation of Duties | PROPOSED | 2026-11-17 | Cycles to offers keyed by org; blind scoring surface; scorer and drafter cannot approve; published forms immutable |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 
