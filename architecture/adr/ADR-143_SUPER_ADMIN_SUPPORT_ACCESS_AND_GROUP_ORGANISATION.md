@@ -34,3 +34,7 @@
 - Who is the named second platform approver when Tumi is unavailable.
 - Whether the school head's confirmation can be given in WhatsApp (with a signed link) or only in the app.
 - Retention period for support-access audit rows (proposal: 7 years).
+
+## Addendum: baseline extension approved (27 Nov 2026)
+
+The founder approved in chat the domain-neutrality baseline extension for the WF-15a2 migration (5 groups, 28 hits), recorded in `NEUTRALITY_GUARD_BASELINE.json` `meta.lastExtension`. It stays a quarantined exception; Tumi's independent review is still requested.
