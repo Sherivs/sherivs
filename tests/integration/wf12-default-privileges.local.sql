@@ -24,6 +24,7 @@ INSERT INTO wf12_priv_allowed VALUES
   ('wf_decide_approval(p_actor uuid, p_approval uuid, p_decision text, p_note text, p_digest text, p_step_up uuid)'),
   ('wf_emit_event(p_org uuid, p_type text, p_source text, p_dedupe text, p_subject text, p_payload jsonb)'),
   ('wf_expire_approvals(p_limit integer)'),
+  ('wf_fee_reminder_scan(p_now timestamp with time zone, p_limit integer)'),
   ('wf_inbox_list(p_actor uuid, p_status text, p_limit integer)'),
   ('wf_limits_get(p_actor uuid)'),
   ('wf_limits_update(p_actor uuid, p_patch jsonb)'),

@@ -176,9 +176,13 @@ describe("WF-07 inbox in the workspace shell (static)", () => {
   const css = read("frontend/src/components/app-shell/approval-inbox.css");
 
   it("is lazy-loaded and never imported statically, so /home does not grow", () => {
-    expect(section).toMatch(/screen: \(\) => import\("@\/components\/app-shell\/approval-inbox-screen"\)/);
+    expect(section).toMatch(
+      /screen: \(\) => import\("@\/components\/app-shell\/approval-inbox-screen"\)/,
+    );
     expect(section).not.toMatch(/^import[^\n]*approval-inbox-screen/m);
-    expect(read("frontend/src/components/app-shell/section-screen.tsx")).not.toMatch(/approval-inbox-screen/);
+    expect(read("frontend/src/components/app-shell/section-screen.tsx")).not.toMatch(
+      /approval-inbox-screen/,
+    );
     expect(shell).not.toMatch(/approval-inbox-screen/);
     expect(section).toMatch(/approvals: \{ \.\.\.workflowApprovals, kind: "section" \}/);
   });

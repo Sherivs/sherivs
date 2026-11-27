@@ -139,7 +139,9 @@ describe("WF-08 surfaces (static)", () => {
 
   it("the screen is lazy in the shell and linked from the drawer", () => {
     const section = read("frontend/src/lib/shell/card-registry.ts"); // M3: the card registry owns screen loading
-    expect(section).toMatch(/screen: \(\) => import\("@\/components\/app-shell\/run-history-screen"\)/);
+    expect(section).toMatch(
+      /screen: \(\) => import\("@\/components\/app-shell\/run-history-screen"\)/,
+    );
     expect(read("frontend/src/components/app-shell/app-shell.tsx")).toContain("run-history-link");
     expect(read("frontend/src/lib/shell/paths.ts")).toContain("/home/s/workflow-runs");
   });
