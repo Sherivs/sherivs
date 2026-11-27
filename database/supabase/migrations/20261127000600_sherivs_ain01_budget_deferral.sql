@@ -1,6 +1,12 @@
 -- AIN-01 follow-up: a refused daily agent budget defers the event instead of walking it to dead-letter. NOT APPLIED.
 -- Founder approval and a backup are required first. Body is the applied function with one EXCEPTION block added.
 
+-- The denial counter learns one more limit name so budget deferrals are counted like quota denials (hourly, no identifiers).
+ALTER TABLE public.wf_quota_denial DROP CONSTRAINT IF EXISTS wf_quota_denial_limit_name_check;
+ALTER TABLE public.wf_quota_denial ADD CONSTRAINT wf_quota_denial_limit_name_check CHECK (limit_name = ANY (ARRAY[
+  'runs_per_day', 'drafts_pending', 'actions_per_hour', 'spend_cap_day', 'spend_cap_run', 'spend_wallet',
+  'spend_rate_unknown', 'kind_unknown', 'agent_budget_day']));
+
 CREATE OR REPLACE FUNCTION public.wf_create_event_run(p_run uuid, p_event uuid, p_lease_owner text, p_binding uuid, p_template uuid, p_agent_ref text, p_started_at timestamp with time zone, p_deadline_at timestamp with time zone, p_max_depth integer, p_max_steps integer, p_step_key text, p_step_kind text, p_action_class text, p_budget_units integer, p_max_attempts integer, p_timeout_seconds integer, p_input jsonb, p_run_state jsonb)
  RETURNS TABLE(created boolean)
  LANGUAGE plpgsql
@@ -106,6 +112,7 @@ BEGIN
       lease_expires_at = NULL, next_attempt_at = now() + interval '1 hour',
       attempts = greatest(attempts - 1, 0), updated_at = now()
      WHERE id = p_event;
+    PERFORM public.wf_quota_note_denial(v_org, 'agent_budget_day', NULL);
     RETURN QUERY SELECT false;
     RETURN;
   END;

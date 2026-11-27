@@ -622,6 +622,8 @@ SELECT wf12t.expect_true('an exhausted agent budget defers the event (created = 
      'wf12-agent', now(), now() + interval '1 hour', 3, 20, 'first', 'action', 'internal', 0, 5, 60, '{}',
      '{"run":{"runId":"r","definitionId":"d","tenantRef":"t","state":"running","history":[],"pendingEvidence":[],"evidence":[],"attempts":[]}}')));
 SELECT wf12t.logout();
+SELECT wf12t.expect_true('the budget deferral is counted for the organization (hourly counter, no identifiers)',
+  (SELECT denied >= 1 FROM public.wf_quota_denial WHERE org_id = wf12t.id('orgA') AND limit_name = 'agent_budget_day' AND kind = ''));
 SELECT wf12t.expect_true('the budget-deferred event is pending, an hour later, no attempt burned, and left no run',
   (SELECT status = 'pending' AND lease_owner IS NULL AND next_attempt_at > now() + interval '50 minutes'
      FROM public.wf_event WHERE id = 'f1240000-0000-4000-8000-0000000000a2')

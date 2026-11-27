@@ -1,4 +1,9 @@
--- Rollback: restores wf_create_event_run to the body before the budget deferral.
+-- Rollback: restores wf_create_event_run to the body before the budget deferral, and the counter's limit names.
+DELETE FROM public.wf_quota_denial WHERE limit_name = 'agent_budget_day';
+ALTER TABLE public.wf_quota_denial DROP CONSTRAINT IF EXISTS wf_quota_denial_limit_name_check;
+ALTER TABLE public.wf_quota_denial ADD CONSTRAINT wf_quota_denial_limit_name_check CHECK (limit_name = ANY (ARRAY[
+  'runs_per_day', 'drafts_pending', 'actions_per_hour', 'spend_cap_day', 'spend_cap_run', 'spend_wallet',
+  'spend_rate_unknown', 'kind_unknown']));
 CREATE OR REPLACE FUNCTION public.wf_create_event_run(p_run uuid, p_event uuid, p_lease_owner text, p_binding uuid, p_template uuid, p_agent_ref text, p_started_at timestamp with time zone, p_deadline_at timestamp with time zone, p_max_depth integer, p_max_steps integer, p_step_key text, p_step_kind text, p_action_class text, p_budget_units integer, p_max_attempts integer, p_timeout_seconds integer, p_input jsonb, p_run_state jsonb)
  RETURNS TABLE(created boolean)
  LANGUAGE plpgsql
