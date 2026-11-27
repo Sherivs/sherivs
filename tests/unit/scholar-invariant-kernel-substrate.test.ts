@@ -124,9 +124,7 @@ function defineFamilySuite(fam: FamilySpec): void {
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn);
         expect(block, `${fam.family}#${spec.fn} block present`).toBeDefined();
-        expect(block).toMatch(
-          new RegExp(`createServerFn\\(\\{\\s*method:\\s*"${spec.method}"`),
-        );
+        expect(block).toMatch(new RegExp(`createServerFn\\(\\{\\s*method:\\s*"${spec.method}"`));
       }
     });
 
@@ -142,7 +140,9 @@ function defineFamilySuite(fam: FamilySpec): void {
           expect(spec.method, `${label}: public bootstrap probe must stay a read-only GET`).toBe(
             "GET",
           );
-          expect(block, `${label}: probe may return only a derived boolean`).toMatch(/hasSuperAdmin/);
+          expect(block, `${label}: probe may return only a derived boolean`).toMatch(
+            /hasSuperAdmin/,
+          );
         } else {
           expect(block, `${label}: must enter through requireSupabaseAuth`).toMatch(MIDDLEWARE_RE);
         }
@@ -151,9 +151,10 @@ function defineFamilySuite(fam: FamilySpec): void {
 
     it("2 RESOLVE TENANT: tenant resolved server-side, never trusted from client input", () => {
       if (!fam.clientTenantSelector) {
-        expect(src, `${fam.family}: client input contract must declare no tenant field`).not.toMatch(
-          CLIENT_TENANT_FIELD_RE,
-        );
+        expect(
+          src,
+          `${fam.family}: client input contract must declare no tenant field`,
+        ).not.toMatch(CLIENT_TENANT_FIELD_RE);
       }
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn) ?? "";
@@ -162,13 +163,17 @@ function defineFamilySuite(fam: FamilySpec): void {
           expect(block, `${label}: must never query by a client-supplied tenant id`).not.toMatch(
             EQ_CLIENT_TENANT_RE,
           );
-          expect(block, `${label}: must never stamp a client-supplied tenant id into a row`).not.toMatch(
-            PAYLOAD_CLIENT_TENANT_RE,
-          );
+          expect(
+            block,
+            `${label}: must never stamp a client-supplied tenant id into a row`,
+          ).not.toMatch(PAYLOAD_CLIENT_TENANT_RE);
         }
         const marker = spec.gateMarker ?? GATE_MARKERS[spec.gate];
         if (marker) {
-          expect(block, `${label}: tenant/authority must be resolved through the declared enforcement`).toMatch(marker);
+          expect(
+            block,
+            `${label}: tenant/authority must be resolved through the declared enforcement`,
+          ).toMatch(marker);
         }
       }
     });
@@ -192,7 +197,9 @@ function defineFamilySuite(fam: FamilySpec): void {
         expect(block, `${label}: lifecycle signal must be threaded (never silent)`).toMatch(
           /lifecycle:\s*null/,
         );
-        expect(block, `${label}: session validity must be attested at the gate`).toMatch(/sessionValid/);
+        expect(block, `${label}: session validity must be attested at the gate`).toMatch(
+          /sessionValid/,
+        );
       }
     });
 
@@ -220,17 +227,19 @@ function defineFamilySuite(fam: FamilySpec): void {
     it("5 EXECUTE: sanctioned substrate only — no vendor leakage, gateway adoption where AI-bearing", () => {
       for (const spec of fam.functions) {
         const block = blocks.get(spec.fn) ?? "";
-        expect(block, `${fam.family}#${spec.fn}: must execute through the sanctioned substrate`).toMatch(
-          SUBSTRATE_RE,
-        );
+        expect(
+          block,
+          `${fam.family}#${spec.fn}: must execute through the sanctioned substrate`,
+        ).toMatch(SUBSTRATE_RE);
       }
       expect(src, `${fam.family}: no vendor SDK import (provider-agnostic, §25)`).not.toMatch(
         VENDOR_SDK_RE,
       );
       if (fam.gateway) {
-        expect(src, `${fam.family}: AI-bearing family must route through the AI gateway (§20)`).toMatch(
-          /invokeAiGateway/,
-        );
+        expect(
+          src,
+          `${fam.family}: AI-bearing family must route through the AI gateway (§20)`,
+        ).toMatch(/invokeAiGateway/);
       }
       if (fam.externalProvider) {
         expect(
@@ -253,16 +262,19 @@ function defineFamilySuite(fam: FamilySpec): void {
             (spec.auditMarkers ?? []).length,
             `${label}: ${spec.audit} must declare its evidence markers`,
           ).toBeGreaterThan(0);
-          expect(evidence, `${label}: must perform the declared mutation`).toMatch(WRITE_EVIDENCE_RE);
+          expect(evidence, `${label}: must perform the declared mutation`).toMatch(
+            WRITE_EVIDENCE_RE,
+          );
           for (const re of spec.auditMarkers ?? []) {
             expect(evidence, `${label}: audit evidence marker`).toMatch(re);
           }
         }
       }
       if (fam.auditDeclaration) {
-        expect(src, `${fam.family}: contract must declare its audit posture in its own header`).toContain(
-          fam.auditDeclaration,
-        );
+        expect(
+          src,
+          `${fam.family}: contract must declare its audit posture in its own header`,
+        ).toContain(fam.auditDeclaration);
       }
     });
 

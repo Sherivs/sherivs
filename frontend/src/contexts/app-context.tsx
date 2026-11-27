@@ -123,11 +123,15 @@ function applyBrandColors(school: SchoolRow | null) {
 
 async function clearClientOfflineData(scope?: { tenantId: string; userId: string; role: string }) {
   clearLegacyOfflineStorage();
+  // SV1-LITE (ADR-109): a forced wipe records only a count of unsent items, then clears the shell cache.
+  const lite = await import("@/lib/offline/context-exit").catch(() => null);
+  await lite?.noteUnsentBeforeWipe(scope).catch(() => 0);
   try {
     await clearOfflineData(scope);
   } catch {
     /* Offline storage may be unavailable or blocked by the browser. */
   }
+  if (!scope) await lite?.clearAppShellCaches().catch(() => 0);
 }
 
 /**
