@@ -609,6 +609,38 @@ SELECT wf12t.logout();
 SELECT wf12t.expect_true('the replay was recorded as dispatched, not pending',
   (SELECT status = 'dispatched' FROM public.wf_event WHERE id = 'f1240000-0000-4000-8000-0000000000a1'));
 
+-- AIN-01 follow-up: an exhausted daily agent budget defers the event (like the run quota) instead of failing it.
+SET LOCAL session_replication_role = replica;
+UPDATE public.wf_agent SET daily_actions = 1 WHERE agent_ref = 'wf12-agent';
+SELECT wf12t.expect_true('fixture: the second event is claimed', (SELECT status = 'claimed' FROM public.wf_event WHERE id = 'f1240000-0000-4000-8000-0000000000a2'));
+SET LOCAL session_replication_role = origin;
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.expect_true('an exhausted agent budget defers the event (created = false) instead of raising',
+  (SELECT NOT created FROM public.wf_create_event_run(
+     'f1250000-0000-4000-8000-0000000000b1', 'f1240000-0000-4000-8000-0000000000a2', 'wf12-worker',
+     'f1230000-0000-4000-8000-0000000000a1', (SELECT id FROM public.wf_template WHERE template_key = 'payment_due_reminder_ladder' AND version = 1),
+     'wf12-agent', now(), now() + interval '1 hour', 3, 20, 'first', 'action', 'internal', 0, 5, 60, '{}',
+     '{"run":{"runId":"r","definitionId":"d","tenantRef":"t","state":"running","history":[],"pendingEvidence":[],"evidence":[],"attempts":[]}}')));
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('the budget-deferred event is pending, an hour later, no attempt burned, and left no run',
+  (SELECT status = 'pending' AND lease_owner IS NULL AND next_attempt_at > now() + interval '50 minutes'
+     FROM public.wf_event WHERE id = 'f1240000-0000-4000-8000-0000000000a2')
+  AND NOT EXISTS (SELECT 1 FROM public.wf_run WHERE idempotency_key = 'wf-event:f1240000-0000-4000-8000-0000000000a2')
+  AND NOT EXISTS (SELECT 1 FROM public.wf_step_run WHERE run_id = 'f1250000-0000-4000-8000-0000000000b1'));
+SET LOCAL session_replication_role = replica;
+UPDATE public.wf_agent SET daily_actions = 100000 WHERE agent_ref = 'wf12-agent';
+UPDATE public.wf_event SET status = 'claimed', lease_owner = 'wf12-worker', lease_expires_at = now() + interval '10 minutes',
+  next_attempt_at = now() WHERE id = 'f1240000-0000-4000-8000-0000000000a2';
+SET LOCAL session_replication_role = origin;
+SELECT wf12t.login_as('service_role');
+SELECT wf12t.expect_true('with the budget restored the same event creates its run (nothing was dropped)',
+  (SELECT created FROM public.wf_create_event_run(
+     'f1250000-0000-4000-8000-0000000000b1', 'f1240000-0000-4000-8000-0000000000a2', 'wf12-worker',
+     'f1230000-0000-4000-8000-0000000000a1', (SELECT id FROM public.wf_template WHERE template_key = 'payment_due_reminder_ladder' AND version = 1),
+     'wf12-agent', now(), now() + interval '1 hour', 3, 20, 'first', 'action', 'internal', 0, 5, 60, '{}',
+     '{"run":{"runId":"r","definitionId":"d","tenantRef":"t","state":"running","history":[],"pendingEvidence":[],"evidence":[],"attempts":[]}}')));
+SELECT wf12t.logout();
+
 -- Steps per run: the organization limit can only lower what the published version allows.
 SELECT wf12t.login_as('service_role');
 SELECT wf12t.setlimits('adminA', '{"steps_per_run": 5}');
