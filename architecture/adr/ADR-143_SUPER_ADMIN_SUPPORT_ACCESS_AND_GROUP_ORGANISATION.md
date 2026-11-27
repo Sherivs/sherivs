@@ -1,5 +1,8 @@
 # ADR-143: Super-Admin Support Access (Item 9) and the Group-Level Organisation
 
+- Creator: Claude Code agent, mission WF-15b2 (group pack and support access) (provenance id W-015); AI-generated
+- Origin: Mission: W-015; Authority: founder decision record 2026-11-26 (ADR-140) and the Sherivs Automation Vision blueprint
+
 - Status: ACCEPTED by the founder in chat, 27 Nov 2026 (to be added to the signed record at the next pack). The access mechanism is a design only; nothing is built or applied until Tumi reviews SUP-01.
 - Date: 2026-11-27
 
