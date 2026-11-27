@@ -9,7 +9,7 @@
  * Replaying an assertion made for approval A against approval B, or approve against deny,
  * produces a different digest and is refused.
  *
- * M6 (ADR-117) extends the binding with an optional subject digest: the onboarding console binds
+ * M6 (ADR-148) extends the binding with an optional subject digest: the onboarding console binds
  * an approval to ONE request AND the sha-256 of ONE plan, so an assertion made while reviewing one
  * plan cannot approve an edited plan. Bindings without a digest produce exactly the same challenge
  * as before, so existing JARVIS approvals are unchanged.

@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — /console/onboarding: the onboarding request queue and the review
+ * M6 (mission E-016, ADR-148) — /console/onboarding: the onboarding request queue and the review
  * screen (interview answers read-only, generated plan, plan under review, diff, staff edits,
  * assign to self, and approve-and-provision with a passkey bound to the plan hash).
  *

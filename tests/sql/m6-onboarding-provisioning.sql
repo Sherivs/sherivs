@@ -1,4 +1,4 @@
--- Disposable proof for 20261117003100_sherivs_m6_onboarding_provisioning.sql (M6, ADR-117).
+-- Disposable proof for 20261117003100_sherivs_m6_onboarding_provisioning.sql (M6, ADR-148).
 -- A small production-shaped schema (the columns, constraints and triggers the migration touches,
 -- read from production with read-only queries on 2026-11-17), then the real M1 and M5b migrations,
 -- then this migration twice. role_pack_install is a fixture with the same caller rule and

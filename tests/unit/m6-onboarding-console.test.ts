@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — console onboarding queue, plan review, passkey step-up bound to
+ * M6 (mission E-016, ADR-148) — console onboarding queue, plan review, passkey step-up bound to
  * the plan hash, and the transactional provisioning wrapper. The database behaviour itself is
  * proved by tests/sql/m6-onboarding-provisioning.sql.
  */

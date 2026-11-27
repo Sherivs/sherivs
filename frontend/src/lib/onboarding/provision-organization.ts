@@ -415,7 +415,7 @@ export async function executeOrganizationProvisioning(
   }
 }
 /* ─────────────────────────────────────────────────────────────
- * M6 (ADR-117): provisioning from an approved plan, natively atomic
+ * M6 (ADR-148): provisioning from an approved plan, natively atomic
  *
  * The residual gap named at the top of this file (native atomicity needs a
  * Postgres function) is closed for plan-based onboarding: the database

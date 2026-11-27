@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — server functions behind /console/onboarding.
+ * M6 (mission E-016, ADR-148) — server functions behind /console/onboarding.
  *
  * Each one: verified session (requireSupabaseAuth) -> zod input (ids and the reviewed plan hash
  * only; never an organization id, an approver or an amount) -> onboarding-queue.server.ts,

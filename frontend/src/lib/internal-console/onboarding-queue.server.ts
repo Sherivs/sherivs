@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — server logic behind /console/onboarding. Server-only.
+ * M6 (mission E-016, ADR-148) — server logic behind /console/onboarding. Server-only.
  *
  * Every entry point:
  *   1. resolves the caller's console capability from the database with the caller's own session

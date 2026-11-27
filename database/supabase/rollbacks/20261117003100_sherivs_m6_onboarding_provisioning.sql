@@ -1,4 +1,4 @@
--- Rollback for 20261117003100_sherivs_m6_onboarding_provisioning.sql (M6, ADR-117).
+-- Rollback for 20261117003100_sherivs_m6_onboarding_provisioning.sql (M6, ADR-148).
 -- NOT APPLIED. Removes the review columns, the invitation table, the provisioning functions and
 -- the self-serve flag. Organizations already provisioned are NOT deleted: they are ordinary
 -- organizations with all root records; their onboarding_sessions rows keep plan, plan_hash and

@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — the draft website for a newly provisioned organization.
+ * M6 (mission E-016, ADR-148) — the draft website for a newly provisioned organization.
  *
  * Built on the server from the approved plan and the request's own facts with the existing
  * website generator (SPEC §6), never from client input. Only facts the organization gave are

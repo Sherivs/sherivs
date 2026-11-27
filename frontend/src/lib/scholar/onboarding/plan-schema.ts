@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — the schema a staff-edited provisioning plan must satisfy.
+ * M6 (mission E-016, ADR-148) — the schema a staff-edited provisioning plan must satisfy.
  *
  * It is the runtime form of `OnboardingPlan` from the M5a plan generator (ADR-107): the same
  * fields, strict (no extra keys), bounded, and with every authority link still 'unverified'. A

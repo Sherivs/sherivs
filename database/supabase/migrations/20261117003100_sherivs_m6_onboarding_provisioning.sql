@@ -1,6 +1,6 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
 -- =============================================================================
--- M6 (mission E-016, ADR-117): console onboarding queue, plan review and approval, and ONE
+-- M6 (mission E-016, ADR-148): console onboarding queue, plan review and approval, and ONE
 -- database transaction that provisions an organization from an approved plan.
 -- Rollback: database/supabase/rollbacks/20261117003100_sherivs_m6_onboarding_provisioning.sql
 --

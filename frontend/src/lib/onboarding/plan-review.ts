@@ -1,5 +1,5 @@
 /**
- * M6 (mission E-016, ADR-117) — pure helpers for staff review of a provisioning plan
+ * M6 (mission E-016, ADR-148) — pure helpers for staff review of a provisioning plan
  * (domain-neutral).
  *
  *  - `diffPlans`: a deterministic, path-level diff between the generated plan and the plan under
