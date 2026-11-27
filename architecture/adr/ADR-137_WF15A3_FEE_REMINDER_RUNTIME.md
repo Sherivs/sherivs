@@ -1,5 +1,8 @@
 # ADR-137: Fee Reminder Scan Route and Message Renderer (WF-15a3)
 
+- Creator: Claude Code agent, mission WF-15a3 (provenance id W-015); AI-generated
+- Origin: Mission: W-015; Authority: founder decision record 2026-11-26 (ADR-140) and the Sherivs Automation Vision blueprint
+
 - Status: PROPOSED
 - Date: 2026-11-26
 - Builds on: ADR-136 (WF-15a2)

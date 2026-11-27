@@ -18,6 +18,17 @@ vi.mock("@tanstack/react-router", () => ({
     </a>
   ),
 }));
+// WF-07/08/12 and AIN-05: the workflow screens are registry cards with default-export screens.
+vi.mock("@/components/app-shell/approval-inbox-screen", () => ({
+  default: marker("ApprovalInboxScreen"),
+}));
+vi.mock("@/components/app-shell/run-history-screen", () => ({
+  default: marker("RunHistoryScreen"),
+}));
+vi.mock("@/components/app-shell/agent-console-screen", () => ({
+  default: marker("AgentConsoleScreen"),
+}));
+vi.mock("@/components/app-shell/limits-screen", () => ({ default: marker("LimitsScreen") }));
 vi.mock("@/components/app-shell/role-management-screen", () => ({
   RoleManagementScreen: marker("RoleManagementScreen"),
 }));
@@ -123,6 +134,10 @@ const LIVE_SCREENS: Record<string, string> = {
   "privacy-register": "PrivacyRegisterScreen",
   "r001.org_admin.ndpa": "PrivacyRegisterScreen",
   "a.record_cash": "CashierDeskScreen",
+  approvals: "ApprovalInboxScreen",
+  "workflow-runs": "RunHistoryScreen",
+  "agent-console": "AgentConsoleScreen",
+  "workflow-limits": "LimitsScreen",
 };
 
 beforeEach(() => {

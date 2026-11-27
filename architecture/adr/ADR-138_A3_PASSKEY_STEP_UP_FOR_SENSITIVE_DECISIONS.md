@@ -1,5 +1,7 @@
 # ADR-138: Passkey Step-Up for Agent Promotion (A3, decision D-09)
 
+- Creator: Claude Code agent, mission A3 (passkey step-up) (provenance id W-103); AI-generated
+
 - Status: PROPOSED
 - Date: 2026-11-26
 - Builds on: ADR-103 and WF-07 (approval step-up), AIN-02 (promotion gate)

@@ -2,9 +2,9 @@
 
 # CoreGrid — Phase Completion Status (evidence-derived)
 
-Generated: 2026-11-26T09:49:01.965Z
+Generated: 2026-11-27T18:19:53.561Z
 
-Phases audited: 51 · COMPLETE: 5 · IMPLEMENTING: 28 · ARCHITECTURE_DEFINED: 18
+Phases audited: 51 · COMPLETE: 4 · IMPLEMENTING: 29 · ARCHITECTURE_DEFINED: 18
 
 Levels: L1 conceptual · L2 data model · L3 backend · L4 frontend/workspace · L5 operational.
 
@@ -21,7 +21,7 @@ Levels: L1 conceptual · L2 data model · L3 backend · L4 frontend/workspace ·
 | 09 | Security Trust Fabric | trust-fabric | 20/20 | 5 | 90 | yes | yes | yes | — | yes | IMPLEMENTING | COMPLETE |
 | 10 | Communication Platform | communication-messaging | 20/20 | 7 | 169 | yes | yes | yes | — | yes | IMPLEMENTING | COMPLETE |
 | 11 | Academic Intelligence | academic-intelligence | 20/20 | 7 | 80 | yes | yes | yes | — | yes | IMPLEMENTING | COMPLETE |
-| 12 | Scheduling Intelligence | scheduling | 20/20 | 7 | 74 | yes | yes | yes | yes | yes | COMPLETE | COMPLETE |
+| 12 | Scheduling Intelligence | scheduling | 20/20 | 7 | 74 | yes | yes | yes | — | yes | IMPLEMENTING | COMPLETE |
 | 13 | Financial System | financial-ledger | 20/20 | 9 | 130 | yes | yes | yes | — | yes | IMPLEMENTING | COMPLETE |
 | 14 | Data Platform | data-platform | 18/20 | 4 | 43 | yes | yes | yes | — | yes | IMPLEMENTING | IMPLEMENTING |
 | 15 | Hardware Integration | hardware-device-telemetry | 17/20 | 4 | 89 | yes | yes | yes | — | yes | IMPLEMENTING | IMPLEMENTING |
@@ -66,7 +66,7 @@ Levels: L1 conceptual · L2 data model · L3 backend · L4 frontend/workspace ·
 
 Evidence beyond the registry claim (registry is stale): 14, 15, 16, 17, 18, 20, 21, 22, 23, 24, 26, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 50, 51
 
-Registry claims this audit could not evidence (UNKNOWN class — review by hand): 01(L4 frontend/workspace integration), 05(L4 frontend/workspace integration), 06(L4 frontend/workspace integration), 07(L4 frontend/workspace integration), 08(L4 frontend/workspace integration), 09(L4 frontend/workspace integration), 10(L4 frontend/workspace integration), 11(L4 frontend/workspace integration), 13(L4 frontend/workspace integration), 25(L4 frontend/workspace integration)
+Registry claims this audit could not evidence (UNKNOWN class — review by hand): 01(L4 frontend/workspace integration), 05(L4 frontend/workspace integration), 06(L4 frontend/workspace integration), 07(L4 frontend/workspace integration), 08(L4 frontend/workspace integration), 09(L4 frontend/workspace integration), 10(L4 frontend/workspace integration), 11(L4 frontend/workspace integration), 12(L4 frontend/workspace integration), 13(L4 frontend/workspace integration), 25(L4 frontend/workspace integration)
 
 ## Provable inconsistencies (these fail the gate)
 
@@ -74,7 +74,7 @@ Registry claims this audit could not evidence (UNKNOWN class — review by hand)
 
 ## Missing levels (frequency across phases)
 
-- L4 frontend/workspace integration: 46 phase(s)
+- L4 frontend/workspace integration: 47 phase(s)
 - L3 backend: 18 phase(s)
 - L2 data model: 12 phase(s)
 - L1 conceptual: 1 phase(s)

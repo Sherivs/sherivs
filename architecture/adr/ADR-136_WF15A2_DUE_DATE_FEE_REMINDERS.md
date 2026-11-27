@@ -1,5 +1,7 @@
 # ADR-136: Due-Date-Relative Fee Reminders, Message Registry and Stop-on-Payment (WF-15a2)
 
+- Creator: Claude Code agent, mission WF-15a2 (provenance id W-015); AI-generated
+
 | Field      | Value                                                                                               |
 | ---------- | --------------------------------------------------------------------------------------------------- |
 | Status     | PROPOSED in the WF-15a2 PR; nothing applied to any hosted database, nothing enabled, nothing sent   |

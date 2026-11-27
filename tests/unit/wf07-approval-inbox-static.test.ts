@@ -170,16 +170,17 @@ describe("WF-07 migration (static)", () => {
 });
 
 describe("WF-07 inbox in the workspace shell (static)", () => {
-  const section = read("frontend/src/components/app-shell/section-screen.tsx");
+  const section = read("frontend/src/lib/shell/card-registry.ts"); // M3: the card registry owns screen loading
   const shell = read("frontend/src/components/app-shell/app-shell.tsx");
   const screen = read("frontend/src/components/app-shell/approval-inbox-screen.tsx");
   const css = read("frontend/src/components/app-shell/approval-inbox.css");
 
   it("is lazy-loaded and never imported statically, so /home does not grow", () => {
-    expect(section).toMatch(/lazy\(\(\) => import\("\.\/approval-inbox-screen"\)\)/);
+    expect(section).toMatch(/screen: \(\) => import\("@\/components\/app-shell\/approval-inbox-screen"\)/);
     expect(section).not.toMatch(/^import[^\n]*approval-inbox-screen/m);
+    expect(read("frontend/src/components/app-shell/section-screen.tsx")).not.toMatch(/approval-inbox-screen/);
     expect(shell).not.toMatch(/approval-inbox-screen/);
-    expect(section).toContain('sectionKey === "approvals"');
+    expect(section).toMatch(/approvals: \{ \.\.\.workflowApprovals, kind: "section" \}/);
   });
 
   it("has a drawer entry that opens /home/s/approvals", () => {
