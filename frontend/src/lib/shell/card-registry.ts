@@ -376,6 +376,28 @@ const lessonNotes: LiveSpec = {
   offline: false,
 };
 
+const privacyRegister: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/privacy-register-screen").then((m) => ({
+      default: m.PrivacyRegisterScreen,
+    })),
+  screenModule: `${APP_SHELL}/privacy-register-screen`,
+  serverFns: [
+    "fn:loadPrivacyRegister",
+    "fn:saveRopaActivity",
+    "fn:saveDpia",
+    "fn:signOffDpia",
+    "fn:reviewPlatformRopa",
+    "fn:exportPrivacyRegister",
+    "rpc:privacy_register_snapshot",
+    "rpc:privacy_register_export",
+    "rpc:dpia_approve",
+  ],
+  tables: ["ropa_processing_activities", "privacy_register_audit_events"],
+  auditEvents: ["dpia.signed_off"],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -387,6 +409,9 @@ const LIVE: Record<string, LiveSpec> = {
   delegations: { ...delegations, kind: "section" },
   school_setup: { ...institutionInterview, kind: "section" },
   communications: { ...communicationInbox, kind: "section" },
+  privacy: { ...privacyRegister, kind: "section" },
+  "privacy-register": { ...privacyRegister, kind: "section" },
+  "r001.org_admin.ndpa": { ...privacyRegister, kind: "section" },
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },
   "nav.students": mobility,
   "nav.reports": ascExport,

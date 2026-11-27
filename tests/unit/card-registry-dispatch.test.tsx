@@ -59,6 +59,9 @@ vi.mock("@/components/app-shell/teaching/gradebook-screen", () => ({
 vi.mock("@/components/app-shell/teaching/lesson-notes-screen", () => ({
   LessonNotesScreen: marker("LessonNotesScreen"),
 }));
+vi.mock("@/components/app-shell/privacy-register-screen", () => ({
+  PrivacyRegisterScreen: marker("PrivacyRegisterScreen"),
+}));
 
 const shell = {
   nav: [] as { key: string; label: string; icon: string }[],
@@ -113,6 +116,9 @@ const LIVE_SCREENS: Record<string, string> = {
   "a.submit_note": "LessonNotesScreen",
   "w.lesson_note_status": "LessonNotesScreen",
   "w.lesson_note_approvals": "LessonNotesScreen",
+  privacy: "PrivacyRegisterScreen",
+  "privacy-register": "PrivacyRegisterScreen",
+  "r001.org_admin.ndpa": "PrivacyRegisterScreen",
 };
 
 beforeEach(() => {

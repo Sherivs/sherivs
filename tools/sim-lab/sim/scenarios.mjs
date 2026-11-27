@@ -2166,13 +2166,19 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       [A.schoolId],
     );
     out.retention = (await t("select public.ndpa_seed_retention($1) n", [A.schoolId])).row?.n;
+    // M10 (ADR-046): DPIAs are written through the audited privacy_dpia_save, need risks and
+    // mitigations, and only the tenant's assigned DPO may sign off one they did not prepare.
     const dp = (
       await t(
-        "select public.dpia_save($1,'AI tutor','AI tutoring for SS students','{academic,usage}','medium','Pseudonymised prompts') id",
+        "select public.privacy_dpia_save(null,$1,'AI tutor','AI tutoring for SS students','{academic,usage}','medium','{prompt leakage,profiling of minors}','Pseudonymised prompts; no free-text retention') id",
         [A.schoolId],
       )
     ).row?.id;
     out.dpiaSelf = await t("select public.dpia_approve($1)", [dp]);
+    out.dpoRole = await t("select public.role_assign($1,$2,'ng.data_protection_officer_dpo')", [
+      A.schoolId,
+      A.principal,
+    ]);
     await act(A.principal);
     out.dpiaOk = await t("select public.dpia_approve($1)", [dp]);
     out.ndpa = (await t("select public.ndpa_compliance_status($1) s", [A.schoolId])).row?.s;
@@ -2361,9 +2367,9 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   );
   rec(
     "ndpa",
-    "DPIA preparer cannot approve their own DPIA; another officer can",
+    "DPIA preparer cannot approve their own DPIA; the assigned DPO can",
     !v.dpiaSelf?.ok && v.dpiaOk?.ok,
-    `self ${W_ERR(v.dpiaSelf)}`,
+    `self ${W_ERR(v.dpiaSelf)}; DPO ${v.dpiaOk?.ok ? "approved" : W_ERR(v.dpiaOk)}`,
     "critical",
   );
   rec(
