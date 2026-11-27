@@ -40,7 +40,7 @@ BEGIN
   IF jsonb_array_length(v_fams) = 0 THEN v_fams := '["staff"]'; END IF;
   v_famarr := array(SELECT jsonb_array_elements_text(v_fams));
   SELECT prefs INTO v_prefs FROM public.user_workspace_prefs WHERE user_id = v_uid AND org_id = v_org;
-  -- When the school turns personalisation off, stored prefs are ignored (except language/density).
+  -- When the organisation turns personalisation off, stored prefs are ignored (except language/density).
   v_prefs := CASE WHEN v_personal THEN coalesce(v_prefs, '{}') ELSE jsonb_strip_nulls(jsonb_build_object('locale', v_prefs->'locale', 'density', v_prefs->'density')) END;
   v_hidden := array(SELECT jsonb_array_elements_text(coalesce(v_prefs->'hidden', '[]')));
   v_order := array(SELECT jsonb_array_elements_text(coalesce(v_prefs->'order', '[]')));
