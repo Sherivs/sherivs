@@ -6,7 +6,7 @@
 | Date           | 2026-11-19                                                                                                                                                               |
 | Creator        | Claude Code agent, mission WF-07 (provenance id W-007, issue #466); AI-generated                                                                                         |
 | Version target | V1 organizational workflows                                                                                                                                              |
-| Depends on     | [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md), [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-116](ADR-116_WF06_ACTIONS_V1.md) (stacked on #455) |
+| Depends on     | [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md), [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-147](ADR-147_WF06_ACTIONS_V1.md) (stacked on #455) |
 | Migration      | `database/supabase/migrations/20261117000900_sherivs_wf07_approval_inbox.sql`                                                                                            |
 | Rollback       | `database/supabase/rollbacks/20261117000900_sherivs_wf07_approval_inbox.sql`                                                                                             |
 
@@ -14,7 +14,7 @@
 
 | Item                       | Source                                                                                                                                                                                          |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Requirement                | Issue #466 "WF-07: tenant approval inbox with passkey step-up for high-risk approvals"; WF-06 hand-off in ADR-116 ("WF-07 owns the approval inbox")                                             |
+| Requirement                | Issue #466 "WF-07: tenant approval inbox with passkey step-up for high-risk approvals"; WF-06 hand-off in ADR-147 ("WF-07 owns the approval inbox")                                             |
 | Approval and SoD tables    | WF-01 to WF-03: `wf_approval`, `wf_approval_not_self`, `workflows.approve`, the `workflows.manage` / `workflows.approve` separation-of-duties rule (ADR-104)                                    |
 | Passkey step-up pattern    | JARVIS-CONSOLE-01 owner console: `frontend/src/lib/jarvis-bridge/step-up.ts` and `frontend/src/lib/auth/webauthn.server.ts` (`assertionOptions`, `verifyAssertion`); reused, not re-implemented |
 | WF-06 constraint replaced  | `wf_action_draft_cap_check`, and the `wf_action_sandbox_outbox` cap, mass and data-class checks (migration `20261117000800`)                                                                    |
