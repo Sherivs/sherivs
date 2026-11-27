@@ -49,6 +49,23 @@ async function connect() {
   return c;
 }
 
+// A3: every promotion spends one fresh step-up bound to (org, agent, level, evidence). The e2e plays the verified
+// passkey by inserting that row; a refused promotion does not spend it, so racers can each hold one.
+async function grantStepUp(actor, org, agentRef, to, evidence) {
+  const c = await connect();
+  try {
+    await c.query(
+      `INSERT INTO public.wf_sensitive_step_up (user_id, action_kind, subject_digest, expires_at)
+       VALUES ($1, 'agent_promotion',
+               public.wf_step_up_digest('agent_promotion', ARRAY[$2::text, $3::text, $4::text, $5::text]),
+               now() + interval '4 minutes')`,
+      [actor, org, agentRef, to, evidence],
+    );
+  } finally {
+    await c.end();
+  }
+}
+
 const orgA = id("f2610000", 1);
 const orgB = id("f2610000", 2);
 const adminA = id("f2620000", 1);
@@ -164,7 +181,11 @@ const recordEvidence = async (label, graded, passed, critical = 0) => {
   return r.rows[0].v;
 };
 
-const promote = (actor, org, to, evidence) =>
+const promote = async (actor, org, to, evidence) => {
+  await grantStepUp(actor, org, agent, to, evidence);
+  return promoteNoGrant(actor, org, to, evidence);
+};
+const promoteNoGrant = (actor, org, to, evidence) =>
   asServiceRole(
     `SELECT public.wf_autonomy_promote($1, $2, $3, $4, $5, 'AIN02 e2e promotion on evidence') AS v`,
     [actor, org, agent, to, evidence],
@@ -280,6 +301,7 @@ async function main() {
   const evG1 = (await recordEvidence("g1", 25, 25)).evidence_id;
   const g1 = await promote(founder, orgB, "draft", evG1);
   const evG2 = (await recordEvidence("g2", 60, 60)).evidence_id;
+  await grantStepUp(founder, orgB, agent, "act_with_approval", evG2);
   const holder = await connect();
   await holder.query("BEGIN");
   await holder.query("SET LOCAL ROLE service_role");
@@ -324,7 +346,11 @@ async function main() {
     if (r.outcome !== "ok") throw new Error(`record evidence ${label}: ${r.message}`);
     return r.rows[0].v;
   };
-  const promoteH = (org, to, evidence) =>
+  const promoteH = async (org, to, evidence) => {
+    await grantStepUp(founder, org, agentH, to, evidence);
+    return promoteHNoGrant(org, to, evidence);
+  };
+  const promoteHNoGrant = (org, to, evidence) =>
     asServiceRole(
       `SELECT public.wf_autonomy_promote($1, $2, $3, $4, $5, 'AIN02 e2e promotion on evidence') AS v`,
       [founder, org, agentH, to, evidence],
@@ -337,6 +363,7 @@ async function main() {
       )
     ).rows[0]?.earned_level ?? "suggest";
   const evH1 = (await recordH("h1", 25, 25)).evidence_id;
+  await grantStepUp(founder, orgA, agentH, "draft", evH1);
   const holderH = await connect();
   await holderH.query("BEGIN");
   await holderH.query("SET LOCAL ROLE service_role");
