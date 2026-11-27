@@ -6,7 +6,7 @@
 | Date           | 2026-11-26                                                                                                                        |
 | Creator        | Claude Code agent, mission WF-15a (issue spec in the PR); AI-generated                                                            |
 | Version target | V1 organizational workflows, Phase 3 (first packs)                                                                                |
-| Depends on     | ADR-104 (template catalogue), ADR-111 (event sources), ADR-116 (actions), ADR-122 (approval inbox), ADR-126 (autonomy)            |
+| Depends on     | ADR-104 (template catalogue), ADR-111 (event sources), ADR-147 (actions), ADR-122 (approval inbox), ADR-126 (autonomy)            |
 | Migration      | None. The pack is data in the scholar runtime namespace; install is a separate, founder-approved service-role action.             |
 | Rollback       | `DELETE FROM public.wf_template WHERE template_key IN ('ps_fee_ladder','ps_payment_receipt','ps_absence_alert') AND version = 1;` |
 
@@ -54,7 +54,7 @@ lawful basis, an evaluation suite, a version and a changelog, all starting in sh
 - WHAT: three templates, shadow mode, draft autonomy.
 - WHERE: scholar runtime namespace; catalogue rows only after a founder-approved install.
 - WHY: a pilot school needs real templates before enablement.
-- UNDER WHICH POLICY: ADR-104, ADR-116, ADR-122, ADR-126; NDPA minors question left open (decision 7).
+- UNDER WHICH POLICY: ADR-104, ADR-147, ADR-122, ADR-126; NDPA minors question left open (decision 7).
 
 ## Unknowns
 
