@@ -1239,12 +1239,74 @@ SELECT wf12t.expect_true('after the hold is released the same organization''s dr
   :'hold2_dry'::jsonb ->> 'outcome' = 'completed' AND (:'hold2_dry'::jsonb -> 'counts' ->> 'runs')::integer = 1
   AND (:'hold2_dry'::jsonb -> 'counts' ->> 'outbox')::integer = 1);
 
+-- CD-02 (ADR-132): ANY active hold blocks every purge; an unreadable register blocks too.
+INSERT INTO public.retention_legal_holds (id, org_id, hold_scope, subject_ref, reason, created_by)
+VALUES ('f1280000-0000-4000-8000-000000000001', wf12t.id('orgA'), 'subject', 'f1280000-0000-4000-8000-0000000000aa', 'fixture subject hold', wf12t.id('adminA'));
+SELECT wf12t.expect_true('CD-02: a subject-scoped hold blocks purges for the organization',
+  public.wf_retention_legal_hold(wf12t.id('orgA')));
+UPDATE public.retention_legal_holds SET active = false, released_by = wf12t.id('adminA'), released_at = now(), release_reason = 'fixture release'
+ WHERE id = 'f1280000-0000-4000-8000-000000000001';
+INSERT INTO public.retention_legal_holds (id, org_id, hold_scope, target_table, target_record_id, reason, created_by)
+VALUES ('f1280000-0000-4000-8000-000000000002', wf12t.id('orgA'), 'record', 'attendance', 'f1280000-0000-4000-8000-0000000000bb', 'fixture record hold', wf12t.id('adminA'));
+SELECT wf12t.expect_true('CD-02: a record-scoped hold blocks purges for the organization',
+  public.wf_retention_legal_hold(wf12t.id('orgA')));
+SELECT wf12t.expect_true('CD-02: the block is per organization (organization B unaffected by A''s hold)',
+  NOT public.wf_retention_legal_hold(wf12t.id('orgB')));
+UPDATE public.retention_legal_holds SET active = false, released_by = wf12t.id('adminA'), released_at = now(), release_reason = 'fixture release'
+ WHERE id = 'f1280000-0000-4000-8000-000000000002';
+SELECT wf12t.expect_true('CD-02: once every hold is released the organization is purgeable again',
+  NOT public.wf_retention_legal_hold(wf12t.id('orgA')));
+ALTER TABLE public.retention_legal_holds RENAME TO retention_legal_holds_hidden;
+SELECT wf12t.expect_true('CD-02: an unreadable hold register counts as a hold (fail closed)',
+  public.wf_retention_legal_hold(wf12t.id('orgA')));
+ALTER TABLE public.retention_legal_holds_hidden RENAME TO retention_legal_holds;
+
+-- CD-03 (ADR-133): the scheduler is off by default, dry-run only when asked, purge only with counsel's reference.
+SELECT wf12t.expect_true('CD-03: the platform switch defaults to off with no counsel reference',
+  (SELECT scheduler_mode = 'off' AND counsel_ref IS NULL AND counsel_confirmed_at IS NULL
+     FROM public.wf_retention_platform WHERE singleton));
+SELECT wf12t.expect_true('CD-03: API roles have no privilege on the switch',
+  NOT has_table_privilege('anon', 'public.wf_retention_platform', 'SELECT')
+  AND NOT has_table_privilege('authenticated', 'public.wf_retention_platform', 'SELECT')
+  AND NOT has_table_privilege('service_role', 'public.wf_retention_platform', 'SELECT')
+  AND NOT has_table_privilege('service_role', 'public.wf_retention_platform', 'UPDATE'));
+SELECT wf12t.expect_error('CD-03: purge mode cannot be set without a counsel reference',
+  $q$UPDATE public.wf_retention_platform SET scheduler_mode = 'purge'$q$, '23514', 'purge_needs_counsel');
+SELECT wf12t.setlimits('adminA', '{"retention_auto_purge": true}');
+SELECT wf12t.mkrun('cd3', 'wf12-a', 'succeeded', 400);
+SELECT wf12t.mkstep('cd3_s', 'cd3', 'send', 'action', 'succeeded');
+SELECT wf12t.snapshot_counts('orgA') AS cd3_before \gset
+SELECT count(*) AS cd3_sched_before FROM public.wf_retention_run WHERE trigger_kind = 'scheduler' \gset
+SELECT wf12t.login_as('service_role');
+SELECT public.wf_retention_run_scheduled(20) AS off_res \gset
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('CD-03: with the switch off the scheduler does nothing, logs nothing, deletes nothing',
+  :'off_res'::jsonb = '{"orgs": [], "mode": "off"}'::jsonb
+  AND (SELECT count(*) FROM public.wf_retention_run WHERE trigger_kind = 'scheduler') = :cd3_sched_before
+  AND wf12t.snapshot_counts('orgA') = :'cd3_before');
+UPDATE public.wf_retention_platform SET scheduler_mode = 'dry_run';
+SELECT wf12t.login_as('service_role');
+SELECT public.wf_retention_run_scheduled(20) AS dry_res \gset
+SELECT wf12t.logout();
+SELECT wf12t.expect_true('CD-03: dry-run mode counts eligible rows for opted-in organizations and deletes nothing',
+  :'dry_res'::jsonb ->> 'mode' = 'dry_run'
+  AND EXISTS (SELECT 1 FROM public.wf_retention_run WHERE trigger_kind = 'scheduler' AND mode = 'dry_run' AND outcome = 'completed')
+  AND NOT EXISTS (SELECT 1 FROM public.wf_retention_run WHERE trigger_kind = 'scheduler' AND mode = 'purge' AND org_id = wf12t.id('orgA'))
+  AND wf12t.snapshot_counts('orgA') = :'cd3_before');
+SET LOCAL session_replication_role = replica;
+DELETE FROM public.wf_retention_run WHERE trigger_kind = 'scheduler' AND mode = 'dry_run';
+SET LOCAL session_replication_role = origin;
+SELECT wf12t.setlimits('adminA', '{"retention_auto_purge": false}');
+UPDATE public.wf_retention_platform SET scheduler_mode = 'purge', counsel_ref = 'FIXTURE-COUNSEL-REF', counsel_confirmed_at = now();
+SELECT wf12t.expect_true('CD-03: purge mode is accepted only with the counsel reference and date recorded',
+  (SELECT scheduler_mode = 'purge' FROM public.wf_retention_platform WHERE singleton));
+
 -- The scheduler: only organizations that opted in, each at most once a day, never a person.
 SELECT wf12t.mkrun('r11', 'wf12-a', 'succeeded', 400);
 SELECT wf12t.mkstep('r11_s', 'r11', 'send', 'action', 'succeeded');
 SELECT wf12t.login_as('service_role');
 SELECT wf12t.expect_true('with no organization opted in the scheduler does nothing',
-  public.wf_retention_run_scheduled(20) = '{"orgs": []}'::jsonb);
+  public.wf_retention_run_scheduled(20) = '{"orgs": [], "mode": "purge"}'::jsonb);
 SELECT wf12t.setlimits('adminA', '{"retention_auto_purge": true}');
 SELECT public.wf_retention_run_scheduled(20) AS sched \gset s1_
 SELECT wf12t.logout();
@@ -1258,7 +1320,7 @@ SELECT wf12t.expect_true('a scheduled purge is logged as the scheduler with no p
   AND wf12t.audits('orgA', 'workflow.retention.purge') = 5);
 SELECT wf12t.login_as('service_role');
 SELECT wf12t.expect_true('a second scheduler call within a day skips the organization',
-  public.wf_retention_run_scheduled(20) = '{"orgs": []}'::jsonb);
+  public.wf_retention_run_scheduled(20) = '{"orgs": [], "mode": "purge"}'::jsonb);
 SELECT wf12t.logout();
 SELECT wf12t.login_as('authenticated');
 SELECT wf12t.expect_error('a client cannot call the scheduler', $q$SELECT public.wf_retention_run_scheduled(20)$q$, '42501');
