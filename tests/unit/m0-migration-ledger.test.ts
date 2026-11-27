@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { compareLedger, readRepoState } from "../../scripts/verify-migration-ledger.mjs";
 import {
   checkMigrationsFolder,
+  checkOpsPrivate,
+  opsPrivateGrants,
   tablesWithoutGrant,
   // @ts-expect-error plain .mjs script without types
 } from "../../scripts/verify-migration-grants.mjs";
@@ -261,5 +263,41 @@ describe("M0 migration grant check (private by default needs explicit grants)", 
 
   it("passes on the repository's migrations folder", () => {
     expect(checkMigrationsFolder("database/supabase/migrations")).toEqual([]);
+  });
+});
+
+describe("M0 guard: schema ops_private stays closed to client roles", () => {
+  it("flags a grant on the schema or on an object in it, to anon, authenticated or PUBLIC", () => {
+    expect(opsPrivateGrants("GRANT USAGE ON SCHEMA ops_private TO authenticated;")).toHaveLength(1);
+    expect(
+      opsPrivateGrants("GRANT SELECT ON TABLE ops_private.sec_m0_acl_snapshot TO anon;"),
+    ).toHaveLength(1);
+    expect(
+      opsPrivateGrants("GRANT SELECT ON ALL TABLES IN SCHEMA ops_private TO PUBLIC;"),
+    ).toHaveLength(1);
+    expect(
+      opsPrivateGrants("grant select on ops_private.t to service_role, authenticated;"),
+    ).toHaveLength(1);
+  });
+
+  it("flags a grant hidden in dynamic SQL", () => {
+    expect(
+      opsPrivateGrants("DO $$ BEGIN EXECUTE 'GRANT USAGE ON SCHEMA ops_private TO anon'; END $$;"),
+    ).toHaveLength(1);
+  });
+
+  it("allows revokes, service-role grants, comments and grants on other schemas", () => {
+    expect(
+      opsPrivateGrants(
+        "REVOKE ALL ON SCHEMA ops_private FROM PUBLIC, anon, authenticated;\n" +
+          "GRANT USAGE ON SCHEMA ops_private TO service_role;\n" +
+          "-- GRANT USAGE ON SCHEMA ops_private TO anon;\n" +
+          "GRANT SELECT ON TABLE public.news TO anon;",
+      ),
+    ).toEqual([]);
+  });
+
+  it("passes on the repository's migrations and proposals", () => {
+    expect(checkOpsPrivate(["database/supabase/migrations", "database/proposals"])).toEqual([]);
   });
 });
