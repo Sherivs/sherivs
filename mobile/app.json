@@ -1,31 +1,75 @@
 {
   "expo": {
-    "name": "Sherivs",
+    "name": "Scholar",
     "slug": "coregrid-mobile",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "coregrid",
+    "scheme": "scholar",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "bundleIdentifier": "com.coregrid.app",
-      "buildNumber": "1",
+      "bundleIdentifier": "com.sherivs.scholar",
       "supportsTablet": true,
       "associatedDomains": [
-        "webcredentials:sherivs.com"
+        "webcredentials:sherivs.com",
+        "applinks:app.sherivs.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.coregrid.app",
-      "versionCode": 1,
+      "package": "com.sherivs.scholar",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0B1F3A"
+        "backgroundColor": "#FFFFFF"
       },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/m/"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/home/notifications"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/results"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/fees"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/messages"
+            },
+            {
+              "scheme": "https",
+              "host": "app.sherivs.com",
+              "pathPrefix": "/cbt"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
       "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
