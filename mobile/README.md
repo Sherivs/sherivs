@@ -1,10 +1,15 @@
-# Sherivs Mobile
+# Scholar
 
-The Sherivs mobile client (V1-010, Wave 3 — mission team MOBILE). An Expo /
-React Native application sharing the web platform's identity service, API
-contracts, and governed mission substrate. Phase 22 ownership applies
-(`architecture/phase-22-mobile-platform.md`): **Sherivs services own truth;
-this client owns interaction.**
+Scholar is the Sherivs education app (V1-010, Wave 3 — mission team MOBILE).
+Sherivs Technologies Limited is the parent brand; this client is the store
+app. Store display name: **Scholar**. iOS bundle identifier and Android
+package: `com.sherivs.scholar`. URL scheme: `scholar`. Future products ship
+as separate apps under `com.sherivs.*`.
+
+An Expo / React Native application sharing the web platform's identity
+service, API contracts, and governed mission substrate. Phase 22 ownership
+applies (`architecture/phase-22-mobile-platform.md`): **Sherivs services own
+truth; this client owns interaction.**
 
 Status: **foundation implemented, store submission is an EXTERNAL GATE**
 (pending Apple/Google developer accounts and signing credentials — never
@@ -46,27 +51,43 @@ Environment contract (names in `.env.example`; never commit real values):
 
 ## Build (EAS)
 
-The Expo project is owned by the **sherivs** Expo account (signed up
-through GitHub as Sharfaddeen100). Do not use the old `vibeoraai-bit`
-Expo account. After this account move, `extra.eas.projectId` is
-intentionally absent until the owner creates the new project. Do not
-invent or paste a project ID by hand.
+The Expo project is owned by the **sherivs** Expo account. Do not use the
+old `vibeoraai-bit` Expo account. The linked project is already in
+`app.json`: owner `sherivs`, slug `coregrid-mobile`, `extra.eas.projectId`
+`2e19ca55-cc79-4634-ae8a-bf8b551a6a20`. Do not run `eas init` again and do
+not replace that project id.
 
-One-time steps (owner, on a machine signed in to the sherivs Expo account):
+Passkey association uses the WebAuthn RP host `sherivs.com`:
 
-```bash
-cd mobile
-npx eas-cli login    # sign in as sherivs
-npx eas init         # creates the project under sherivs and writes the new projectId into app.json
-```
+- iOS `associatedDomains`: `webcredentials:sherivs.com` (apple-app-site-association
+  defaults to bundle id `com.sherivs.scholar`)
+- Android `package`: `com.sherivs.scholar`, plus an `https` intent filter on
+  host `sherivs.com` (the same host). Expo also emits the `scholar://` scheme
+  filter from `scheme`. `assetlinks.json` defaults to package
+  `com.sherivs.scholar` and only the passkey relation
+  `delegate_permission/common.get_login_creds` — it does not grant
+  `handle_all_urls`.
 
-Then rebuild with the profiles below. If any push-notification credentials
-existed on the old Expo project, re-set them on the new one (this repo has
-no `expo-notifications` dependency, no `google-services.json`, and no
-`GoogleService-Info.plist`). GitHub Actions does not currently run EAS; if
-a future workflow does (`eas build` / `eas update` / `eas submit`), add an
-`EXPO_TOKEN` issued from the **sherivs** Expo account as a repository
-Actions secret.
+The EAS project defines three **public** environment variables in each of
+the `production`, `preview`, and `development` environments. Names only;
+values live in EAS, never in this repo:
+
+| Name | Source |
+| --- | --- |
+| `EXPO_PUBLIC_SUPABASE_URL` | EAS environment (same Supabase project as the web app) |
+| `EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | EAS environment (publishable/anon key only) |
+| `EXPO_PUBLIC_SHERIVS_WEB_BASE_URL` | EAS environment (deployed web app origin) |
+
+Each build profile sets `environment` to the matching EAS environment so
+those variables load at build time. `EXPO_PUBLIC_APP_ENV` is pinned in the
+profile (`development`, `preview`, or `production`) and is not one of the
+EAS-hosted variables. No server secrets belong in the mobile app.
+
+GitHub Actions does not currently run EAS. If a future workflow does
+(`eas build` / `eas update` / `eas submit`), add an `EXPO_TOKEN` issued
+from the **sherivs** Expo account as a repository Actions secret. The
+`submit.production` profile is an empty object: it does not name an Apple
+ID, an App Store Connect app, or a Play service account.
 
 ```bash
 npm install -g eas-cli   # once
@@ -77,11 +98,12 @@ eas build --profile preview --platform android   # internal APK
 eas build --profile production --platform all    # store artifacts
 ```
 
-Profiles (`mobile/eas.json`): `development` (dev client, iOS simulator),
-`preview` (internal distribution, Android APK), `production` (app-bundle,
-auto-incremented versions). Each profile pins its `EXPO_PUBLIC_APP_ENV`
-channel so production configuration can never leak into development builds
-(Phase 22 §CD).
+Profiles (`mobile/eas.json`): `development` (dev client, iOS simulator,
+EAS environment `development`), `preview` (internal distribution, Android
+APK, EAS environment `preview`), `production` (app-bundle,
+auto-incremented versions, EAS environment `production`). Each profile
+pins `EXPO_PUBLIC_APP_ENV` to that same channel so production
+configuration can never leak into development builds (Phase 22 §CD).
 
 **Store submission — EXTERNAL GATE:** releasing to the Apple App Store /
 Google Play requires Apple Developer and Google Play Console accounts plus
@@ -151,8 +173,12 @@ npx vitest run tests/unit/mobile-env-contract.test.ts \
 
 # inside mobile/
 npm run typecheck
-npm run generate-assets   # regenerates the placeholder icon/splash PNGs
 ```
+
+Brand artwork lives in `mobile/assets/` (`icon.png` 1024×1024,
+`adaptive-icon.png` 1024×1024, `splash-icon.png` 1024×1024, `favicon.png`
+48×48). These assets are checked in for store builds; no local asset-generation
+script is maintained in this package.
 
 ## Pending work
 
@@ -162,8 +188,9 @@ npm run generate-assets   # regenerates the placeholder icon/splash PNGs
 3. Server-function ids emitted per environment into EAS env config.
 4. Push notifications, deep links, biometric unlock, i18n — Phase 22 scope
    beyond this mission's V1 foundation.
-5. Replace generated placeholder icon/splash artwork with final brand
-   assets (design authority pending).
+5. Brand icon, adaptive icon, splash, and favicon are the Scholar marks in
+   `mobile/assets/`.
+
 ## School workspace (Track E)
 
 Signed-in users now land in `app/(school)/`, a tab bar built from the **workspace manifest**
@@ -191,5 +218,5 @@ Verified locally: `npm run typecheck` passes, `npx expo start` serves Metro, and
 - **Expo account `sherivs` + `EXPO_TOKEN`** issued from that account (for `eas build` / `eas update`; set as a CI secret if a workflow starts using EAS).
 - **Apple Developer Program** membership ($99/yr) + App Store Connect app record. EAS can manage the certificates and profiles.
 - **Google Play Console** account ($25 one-time) + an upload keystore (EAS can generate it) + a service-account JSON for `eas submit`.
-- Production `EXPO_PUBLIC_*` values (Supabase URL + publishable key, web base URL) in EAS environment variables.
+- The three public EAS variables above are set on the project for `production`, `preview`, and `development`. Server-function ids are still unset and fail closed until supplied.
 - Push notifications (optional next step): `expo-notifications` + an FCM server key / APNs key.
