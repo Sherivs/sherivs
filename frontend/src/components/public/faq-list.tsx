@@ -50,7 +50,7 @@ export function FaqList({
             className={`${inputClass} mt-2`}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Identity, twins, Scholar…"
+            placeholder="Onboarding, access, Scholar…"
           />
         </div>
       ) : null}
