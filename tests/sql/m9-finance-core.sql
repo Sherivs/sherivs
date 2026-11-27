@@ -1,4 +1,4 @@
--- Disposable proof for 20261117003300_sherivs_m9_finance_core.sql (ADR-119).
+-- Disposable proof for 20261117003300_sherivs_m9_finance_core.sql (ADR-150).
 -- Builds a small production-shaped fixture on an EMPTY database, replays the REAL applied migrations for the money
 -- tables (cg_financial_scope, Paystack refund reconciliation, M07 fees ledger, A05 relief), recreates staff_payroll,
 -- school_expenses and their guards exactly as production has them (column shapes and function bodies read with a

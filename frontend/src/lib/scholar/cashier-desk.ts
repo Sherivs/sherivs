@@ -1,5 +1,5 @@
 /**
- * M9 cashier desk (ADR-119): pure rules shared by the screen, the outbox sender and the server functions.
+ * M9 cashier desk (ADR-150): pure rules shared by the screen, the outbox sender and the server functions.
  *
  * - Money is integer kobo end to end. The cashier types naira; `parseNairaToKobo` refuses anything that is not a
  *   plain positive amount with at most two decimals, so no float ever reaches the ledger.

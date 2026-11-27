@@ -1,5 +1,5 @@
 /**
- * M9 (ADR-119) integrity at the webhook boundary, driving the REAL Paystack route:
+ * M9 (ADR-150) integrity at the webhook boundary, driving the REAL Paystack route:
  * - a forged or unsigned charge.success never reaches a ledger RPC;
  * - a live-mode secret disables the endpoint (TEST mode only);
  * - the amount that settles comes from the server-held intent, never from the payload or its metadata;

@@ -1,4 +1,4 @@
--- Rollback for 20261117003300_sherivs_m9_finance_core.sql (ADR-119). NOT APPLIED.
+-- Rollback for 20261117003300_sherivs_m9_finance_core.sql (ADR-150). NOT APPLIED.
 -- Restores the payroll, expense, cg_fee_authorize and cg_fee_posting_balanced definitions exactly as applied before
 -- (copied from 20261024000240 and 20261103130000), and removes everything M9 part A added.
 -- Refuses to run once a relief posting, day close or cash reconciliation exists: those are financial records and

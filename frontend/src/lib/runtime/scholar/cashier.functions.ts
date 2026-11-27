@@ -1,5 +1,5 @@
 /**
- * M9 cashier desk server functions (ADR-119), over the applied M07 fees ledger.
+ * M9 cashier desk server functions (ADR-150), over the applied M07 fees ledger.
  *
  * Every call runs with the signed-in person's own Supabase session, so the database derives the organization, checks
  * the cashier role and the campus scope, enforces separation of duties and computes what is owed. No amount owed, no

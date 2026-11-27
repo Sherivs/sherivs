@@ -1,5 +1,5 @@
 /**
- * M9 cashier desk (ADR-119): money parsing, server-function contracts over the M07 ledger, outbox delivery
+ * M9 cashier desk (ADR-150): money parsing, server-function contracts over the M07 ledger, outbox delivery
  * (idempotent, server wins) and the screen itself
  * (frontend/src/components/app-shell/cashier-desk-screen).
  */

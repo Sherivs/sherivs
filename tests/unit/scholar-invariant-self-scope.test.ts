@@ -502,6 +502,6 @@ defineFamilySuite({
     },
   ],
   findings: [
-    "§27.3 note (M9, ADR-119): authorization is enforced inside the SECURITY DEFINER ledger functions (cg_fee_authorize: cashier role, campus scope, SoD assert) on the caller's own session, not by a TypeScript gate. Recorded, not accommodated.",
+    "§27.3 note (M9, ADR-150): authorization is enforced inside the SECURITY DEFINER ledger functions (cg_fee_authorize: cashier role, campus scope, SoD assert) on the caller's own session, not by a TypeScript gate. Recorded, not accommodated.",
   ],
 });

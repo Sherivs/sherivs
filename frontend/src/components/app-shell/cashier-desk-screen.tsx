@@ -1,5 +1,5 @@
 /**
- * M9 cashier desk (ADR-119): receive cash or POS against an open invoice, and close the day with a drawer count.
+ * M9 cashier desk (ADR-150): receive cash or POS against an open invoice, and close the day with a drawer count.
  * Works offline: every action is queued in the SV1-LITE outbox (ADR-109) with an idempotency key made when the
  * button is pressed, and sent when the connection returns. The server decides what is owed, the receipt number and
  * the expected drawer total; a refusal is shown on the queued item and never retried (server wins).

@@ -1,4 +1,4 @@
-# ADR-119: Finance Separation of Duties and Ledger Integrity (M9 part A)
+# ADR-150: Finance Separation of Duties and Ledger Integrity (M9 part A)
 
 | Field                      | Value                                                                                                                                    |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |

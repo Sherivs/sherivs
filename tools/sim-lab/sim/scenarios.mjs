@@ -1589,7 +1589,7 @@ const inTx = async (uid, fn, role = "authenticated") => {
       "insert into school_expenses (school_id,expense_title,expense_category,amount,expense_date,created_by,approved_by) values ($1,'Diesel','utilities',90000,current_date,$2,$2)",
       [A.schoolId, A.bursar],
     );
-    // M9 (ADR-119): the raiser is always the caller, never a client-sent created_by, so the
+    // M9 (ADR-150): the raiser is always the caller, never a client-sent created_by, so the
     // admin raises these two expenses and the bursar then approves them.
     await act(A.admin);
     const ex = await t(

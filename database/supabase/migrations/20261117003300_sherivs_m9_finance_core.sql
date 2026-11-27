@@ -1,5 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
--- M9 finance core, part A (ADR-119). Rollback: database/supabase/rollbacks/20261117003300_sherivs_m9_finance_core.sql
+-- M9 finance core, part A (ADR-150). Rollback: database/supabase/rollbacks/20261117003300_sherivs_m9_finance_core.sql
 -- Test: tests/sql/m9-finance-core.sql (reproduces every gap below before this file, proves the fix after it).
 --
 -- Extends what is already applied in production; creates no second fees engine and no second approval engine:
