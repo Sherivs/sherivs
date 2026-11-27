@@ -1,0 +1,55 @@
+{
+  "school": {
+    "tabs": {
+      "home": "Home",
+      "results": "Results",
+      "attendance": "Attendance",
+      "fees": "Fees",
+      "messages": "Messages",
+      "cbt": "CBT"
+    },
+    "home": {
+      "welcome": "Welcome",
+      "labels": {
+        "school": "School",
+        "role": "Role",
+        "workspace": "Workspace",
+        "children": "Children",
+        "admissionNumber": "Admission no."
+      },
+      "platformConsoleTitle": "Platform console",
+      "platformConsoleSubtitle": "Organization, missions, evidence",
+      "signOut": "Sign out"
+    },
+    "results": {
+      "empty": "No published results yet."
+    },
+    "fees": {
+      "empty": "No fees on record.",
+      "outstanding": "Outstanding",
+      "due": "due {{date}}",
+      "payOnWeb": "Pay securely on the web"
+    },
+    "messages": {
+      "empty": "No messages.",
+      "unreadPrefix": "● ",
+      "noSubject": "(no subject)"
+    },
+    "cbt": {
+      "cannotStart": "Could not start the test",
+      "submitFailed": "Submit failed",
+      "savedOnDeviceRetry": "your answers are saved on this phone; try again when online.",
+      "submitted": "Submitted. {{payload}}",
+      "deadline": "Deadline {{time}}",
+      "notSavedToServer": "Not saved to server yet",
+      "errorHeadline": "CBT",
+      "submit": "Submit",
+      "empty": "No open tests for your class.",
+      "durationAndClose": "{{minutes}} min · closes {{time}}"
+    },
+    "attendance": {
+      "empty": "No attendance recorded in the last 60 days.",
+      "summary": "{{percent}}% present · {{days}} school days"
+    }
+  }
+}
