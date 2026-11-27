@@ -306,6 +306,13 @@ jobs:
             -f tests/integration/wf12-quotas-retention.local.sql 2>&1 | tee /tmp/wf12-quotas-retention.out
           ! grep -Fq 'WF12 FAIL' /tmp/wf12-quotas-retention.out
           grep -Eq 'WF12 ALL PASS: [0-9]+ checks' /tmp/wf12-quotas-retention.out
+      - name: M2b resolver honours approved overrides (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m2b-resolver-overrides.local.sql 2>&1 | tee /tmp/m2r.out
+          ! grep -Fq 'M2R FAIL' /tmp/m2r.out
+          grep -Eq 'M2R ALL PASS: [0-9]+ checks' /tmp/m2r.out
       - name: WF-08 and WF-12 privileges under Supabase default privileges (scratch database, WF-12 and WF-08 re-applied)
         run: |
           set -euo pipefail
