@@ -56,7 +56,7 @@
  */
 
 import { z } from "zod";
-import type { AuthorizationDecision } from "../identity";
+import type { AuthorizationDecision } from "../../identity";
 
 /* ─────────────────────────────────────────────────────────────
  * Version and bounds (no unbounded artifacts)
@@ -142,15 +142,14 @@ export type FederationState = (typeof FEDERATION_STATES)[number];
  * Allowed federation lifecycle transitions. Approval precedes activation;
  * revocation is terminal — a revoked federation never resurrects.
  */
-export const FEDERATION_TRANSITIONS: Readonly<
-  Record<FederationState, readonly FederationState[]>
-> = {
-  PROPOSED: ["APPROVED", "REVOKED"],
-  APPROVED: ["ACTIVE", "SUSPENDED", "REVOKED"],
-  ACTIVE: ["SUSPENDED", "REVOKED"],
-  SUSPENDED: ["ACTIVE", "REVOKED"],
-  REVOKED: [],
-};
+export const FEDERATION_TRANSITIONS: Readonly<Record<FederationState, readonly FederationState[]>> =
+  {
+    PROPOSED: ["APPROVED", "REVOKED"],
+    APPROVED: ["ACTIVE", "SUSPENDED", "REVOKED"],
+    ACTIVE: ["SUSPENDED", "REVOKED"],
+    SUSPENDED: ["ACTIVE", "REVOKED"],
+    REVOKED: [],
+  };
 
 /** Neutral cross-twin relationship kinds (phase doc relationship mapping). */
 export const TWIN_RELATIONSHIP_KINDS = [
@@ -390,10 +389,7 @@ export function parseFederationAgreement(input: unknown): TwinParseResult<Federa
  * A transition outside the graph is refused — approval precedes activation,
  * and revocation is terminal (a revoked federation never resurrects).
  */
-export function isFederationTransitionAllowed(
-  from: FederationState,
-  to: FederationState,
-): boolean {
+export function isFederationTransitionAllowed(from: FederationState, to: FederationState): boolean {
   return FEDERATION_TRANSITIONS[from].includes(to);
 }
 
@@ -579,21 +575,24 @@ export function federationGate(request: FederationGateRequest): FederationGateRe
         return {
           decision: "DENY",
           action,
-          reason: "agreement has expired — expired federation fails closed and must be re-ratified, never silently extended",
+          reason:
+            "agreement has expired — expired federation fails closed and must be re-ratified, never silently extended",
         };
       }
       if (request.fieldPath === undefined) {
         return {
           decision: "DENY",
           action,
-          reason: "no field path presented — shared state is exchanged per explicit field path only",
+          reason:
+            "no field path presented — shared state is exchanged per explicit field path only",
         };
       }
       if (!isFieldPathInScope(request.agreement, request.fieldPath)) {
         return {
           decision: "DENY",
           action,
-          reason: "field path is outside the agreement's shared scope — undeclared mirroring fails closed",
+          reason:
+            "field path is outside the agreement's shared scope — undeclared mirroring fails closed",
         };
       }
       return { decision: "ALLOW", action };
@@ -652,7 +651,9 @@ export type TwinDataGrantVerdict = {
  * identity, tenant, role, relationship, policy and context — never from
  * what a twin happens to mirror.
  */
-export function evaluateTwinDataAccessRequest(attempt: TwinDataAccessAttempt): TwinDataGrantVerdict {
+export function evaluateTwinDataAccessRequest(
+  attempt: TwinDataAccessAttempt,
+): TwinDataGrantVerdict {
   return {
     granted: false,
     reason: "TWIN_PRESENCE_IS_NOT_A_GRANT",

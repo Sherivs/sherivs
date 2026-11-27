@@ -2,7 +2,7 @@
  * Sherivs — H3-072 phase-34 cognitive-architecture ADVERSARIAL VERIFICATION
  * suite (mission G-072, Verifier role, Squad G; H3-WAVE-CAMPAIGN.md).
  *
- * Target: frontend/src/lib/cognitive-architecture/contracts.ts (landed by
+ * Target: frontend/src/lib/_quarantine/cognitive-architecture/contracts.ts (landed by
  * H3-054). Imported READ-ONLY — this mission never modifies the module. The
  * architect's own suite (tests/unit/h3-054-cognitive-architecture.test.ts)
  * proves the happy paths; this suite DEEPENS, never duplicates: every test
@@ -70,7 +70,7 @@ import {
   type Confidence,
   type EvidenceCitation,
   type WorldModel,
-} from "../../frontend/src/lib/cognitive-architecture/contracts";
+} from "../../frontend/src/lib/_quarantine/cognitive-architecture/contracts";
 
 /* ─────────────────────────────────────────────────────────────
  * Fixtures (valid, schema-conformant baselines)
@@ -220,7 +220,7 @@ const FINDINGS: readonly VerificationFinding[] = [
     severity: "medium",
     title: "cognitionGate is non-total: a forged impact tier yields no typed denial",
     observed:
-      "cognitionGate switch covers only the four declared tiers. A runtime-forged tier (any string outside the enum — e.g. \"LOW\", \"critical \") matches no case and the function returns undefined instead of a typed non-ALLOW decision. The gate is the §16 policy boundary and untrusted JSON crosses it; a non-total gate fails by crash-or-absorption rather than by typed denial.",
+      'cognitionGate switch covers only the four declared tiers. A runtime-forged tier (any string outside the enum — e.g. "LOW", "critical ") matches no case and the function returns undefined instead of a typed non-ALLOW decision. The gate is the §16 policy boundary and untrusted JSON crosses it; a non-total gate fails by crash-or-absorption rather than by typed denial.',
   },
   {
     id: "F-072-02",
@@ -242,7 +242,8 @@ const FINDINGS: readonly VerificationFinding[] = [
     id: "F-072-04",
     attackClass: "tenant/actor boundary in belief revision",
     severity: "medium",
-    title: "confidence-downgrade escalation is enforced only against actorKind 'agent' and is bypassed by claiming a different kind",
+    title:
+      "confidence-downgrade escalation is enforced only against actorKind 'agent' and is bypassed by claiming a different kind",
     observed:
       "reviseBelief refuses an agent-authored confidence downgrade (contested cognition must escalate) but applies that check only when incoming.provenance.actorKind === 'agent'. The same downgrade authored under actorKind 'service' is accepted. Provenance is caller-supplied and the contract verifies nothing about the claim, so the escalation invariant reduces to an unverified string on the revision itself.",
   },
@@ -295,7 +296,7 @@ describe("attack 1: schema forgery", () => {
       "tab\tinjected",
       "newline\ninjected",
       "semi;colon",
-      "quote\"injected",
+      'quote"injected',
       "a".repeat(129),
       "",
     ]) {
@@ -322,7 +323,13 @@ describe("attack 1: schema forgery", () => {
   });
 
   it("rejects forged datetimes: non-dates, local times, non-UTC offsets", () => {
-    for (const forgedAt of ["not-a-date", "2026-10-03", "2026-10-03T00:00:00", "2026-10-03T00:00:00+01:00", ""]) {
+    for (const forgedAt of [
+      "not-a-date",
+      "2026-10-03",
+      "2026-10-03T00:00:00",
+      "2026-10-03T00:00:00+01:00",
+      "",
+    ]) {
       const parsed = cognitiveProvenanceSchema.safeParse(provenance({ recordedAt: forgedAt }));
       expect(parsed.success).toBe(false);
     }
@@ -331,12 +338,15 @@ describe("attack 1: schema forgery", () => {
   it("rejects unknown-key forgery on every strict artifact surface", () => {
     const attack = (key: string, value: unknown) => ({ [key]: value });
     expect(
-      cognitiveOperationSchema.safeParse({ ...validOperation(), ...attack("adminBypass", true) }).success,
+      cognitiveOperationSchema.safeParse({ ...validOperation(), ...attack("adminBypass", true) })
+        .success,
     ).toBe(false);
     expect(
       cognitiveOutputSchema.safeParse({ ...validOutput(), ...attack("canonical", true) }).success,
     ).toBe(false);
-    expect(worldModelSchema.safeParse({ ...worldModel(), ...attack("crossTenant", "*") }).success).toBe(false);
+    expect(
+      worldModelSchema.safeParse({ ...worldModel(), ...attack("crossTenant", "*") }).success,
+    ).toBe(false);
     const forgedHypothesis = {
       hypothesisId: "hyp:h1",
       operationId: "op:1",
@@ -349,7 +359,9 @@ describe("attack 1: schema forgery", () => {
       selfApproved: true,
     };
     expect(hypothesisSchema.safeParse(forgedHypothesis).success).toBe(false);
-    expect(ensembleResponseSchema.safeParse({ ...attack("modelRef", "model:a") }).success).toBe(false);
+    expect(ensembleResponseSchema.safeParse({ ...attack("modelRef", "model:a") }).success).toBe(
+      false,
+    );
   });
 
   it("rejects type forgery: scalars, arrays and nulls where structured objects are required", () => {
@@ -412,7 +424,13 @@ describe("attack 2: provenance bypass", () => {
   });
 
   it("rejects tenant forgery with whitespace or illegal characters", () => {
-    for (const tenantId of [" tenant_a", "tenant_a ", "tenant a", "tenant_a; DROP", "tenant/*a*/"]) {
+    for (const tenantId of [
+      " tenant_a",
+      "tenant_a ",
+      "tenant a",
+      "tenant_a; DROP",
+      "tenant/*a*/",
+    ]) {
       expect(cognitiveProvenanceSchema.safeParse(provenance({ tenantId })).success).toBe(false);
     }
   });
@@ -514,7 +532,10 @@ describe("attack 3: chain-of-thought key smuggling at depth", () => {
 
     const inCitations = parseReasoningTrace(
       traceInput({
-        citations: [citation(), { ...citation(), evidenceId: "evidence:obs-2", scratchpad: "hidden" }],
+        citations: [
+          citation(),
+          { ...citation(), evidenceId: "evidence:obs-2", scratchpad: "hidden" },
+        ],
       }),
     );
     expect(inCitations.ok).toBe(false);
@@ -525,7 +546,9 @@ describe("attack 3: chain-of-thought key smuggling at depth", () => {
     const parsed = parseReasoningTrace(
       traceInput({
         scratchpad: "a",
-        steps: [{ stepIndex: 0, summary: "s", consumes: [], produces: [], internal_monologue: "b" }],
+        steps: [
+          { stepIndex: 0, summary: "s", consumes: [], produces: [], internal_monologue: "b" },
+        ],
       }),
     );
     expect(parsed.ok).toBe(false);
@@ -609,9 +632,12 @@ describe("attack 4: cognition-gate bypass (missing safeguards)", () => {
   it("DENIES critical impact when every safeguard is missing — no partial-evidence allowance", () => {
     const denied = cognitionGate("critical", {});
     expect(denied.decision).toBe("DENY");
-    expect(cognitionGate("critical", { verifiedModels: ["model:a", "model:b"] }).decision).toBe("DENY");
+    expect(cognitionGate("critical", { verifiedModels: ["model:a", "model:b"] }).decision).toBe(
+      "DENY",
+    );
     expect(
-      cognitionGate("critical", { validationRef: "validation:v1", approvalRef: "approval:ap1" }).decision,
+      cognitionGate("critical", { validationRef: "validation:v1", approvalRef: "approval:ap1" })
+        .decision,
     ).not.toBe("ALLOW");
   });
 
@@ -719,8 +745,9 @@ describe("attack 6: hallucination-label bypass", () => {
   it("refuses label forgery variants on outputs and beliefs", () => {
     for (const forgedLabel of ["canonical", "verified", "ground_truth", "DERIVED", "derived "]) {
       expect(
-        cognitiveOutputSchema.safeParse(forged<CognitiveOutput>({ ...validOutput(), derivation: forgedLabel }))
-          .success,
+        cognitiveOutputSchema.safeParse(
+          forged<CognitiveOutput>({ ...validOutput(), derivation: forgedLabel }),
+        ).success,
       ).toBe(false);
       expect(
         worldModelSchema.safeParse(
@@ -760,14 +787,17 @@ describe("attack 7: cardinality and oversize attacks", () => {
     Array.from({ length: count }, (_, index) => item(index));
 
   it("citations: MAX_CITATIONS accepted, one past rejected", () => {
-    const at = validOutput({ citations: many((i) => citation({ evidenceId: `evidence:c-${i}` }), MAX_CITATIONS) });
+    const at = validOutput({
+      citations: many((i) => citation({ evidenceId: `evidence:c-${i}` }), MAX_CITATIONS),
+    });
     expect(parseCognitiveOutput(at).ok).toBe(true);
     const over = validOutput({
       citations: many((i) => citation({ evidenceId: `evidence:c-${i}` }), MAX_CITATIONS + 1),
     });
     const parsed = parseCognitiveOutput(over);
     expect(parsed.ok).toBe(false);
-    if (!parsed.ok) expect(parsed.issues.some((issue) => issue.path.includes("citations"))).toBe(true);
+    if (!parsed.ok)
+      expect(parsed.issues.some((issue) => issue.path.includes("citations"))).toBe(true);
   });
 
   it("trace steps: MAX_TRACE_STEPS accepted, one past rejected with a typed issue", () => {
@@ -789,19 +819,25 @@ describe("attack 7: cardinality and oversize attacks", () => {
       invalidationCondition: "contradicted by a verified observation",
     });
     expect(
-      parseCognitiveOperation(validOperation({ assumptions: many(assumption, MAX_ASSUMPTIONS) })).ok,
+      parseCognitiveOperation(validOperation({ assumptions: many(assumption, MAX_ASSUMPTIONS) }))
+        .ok,
     ).toBe(true);
     expect(
-      parseCognitiveOperation(validOperation({ assumptions: many(assumption, MAX_ASSUMPTIONS + 1) })).ok,
+      parseCognitiveOperation(
+        validOperation({ assumptions: many(assumption, MAX_ASSUMPTIONS + 1) }),
+      ).ok,
     ).toBe(false);
   });
 
   it("alternatives: MAX_HYPOTHESES accepted, one past rejected", () => {
     expect(
-      parseReasoningTrace(traceInput({ alternatives: many((i) => `hyp:h-${i}`, MAX_HYPOTHESES) })).ok,
+      parseReasoningTrace(traceInput({ alternatives: many((i) => `hyp:h-${i}`, MAX_HYPOTHESES) }))
+        .ok,
     ).toBe(true);
     expect(
-      parseReasoningTrace(traceInput({ alternatives: many((i) => `hyp:h-${i}`, MAX_HYPOTHESES + 1) })).ok,
+      parseReasoningTrace(
+        traceInput({ alternatives: many((i) => `hyp:h-${i}`, MAX_HYPOTHESES + 1) }),
+      ).ok,
     ).toBe(false);
   });
 
@@ -811,14 +847,16 @@ describe("attack 7: cardinality and oversize attacks", () => {
       safeguardEvidenceSchema.safeParse({ verifiedModels: models(MAX_ENSEMBLE_RESPONSES) }).success,
     ).toBe(true);
     expect(
-      safeguardEvidenceSchema.safeParse({ verifiedModels: models(MAX_ENSEMBLE_RESPONSES + 1) }).success,
+      safeguardEvidenceSchema.safeParse({ verifiedModels: models(MAX_ENSEMBLE_RESPONSES + 1) })
+        .success,
     ).toBe(false);
   });
 
   it("beliefs: MAX_BELIEFS accepted, one past rejected — no unbounded world model", () => {
     expect(
-      worldModelSchema.safeParse(worldModel(many((i) => belief({ beliefId: `belief:b-${i}` }), MAX_BELIEFS)))
-        .success,
+      worldModelSchema.safeParse(
+        worldModel(many((i) => belief({ beliefId: `belief:b-${i}` }), MAX_BELIEFS)),
+      ).success,
     ).toBe(true);
     expect(
       worldModelSchema.safeParse(
@@ -834,10 +872,12 @@ describe("attack 7: cardinality and oversize attacks", () => {
       rationale: `uncertainty ${i}`,
     });
     expect(
-      cognitiveOutputSchema.safeParse(validOutput({ uncertainties: many(uncertainty, 16) })).success,
+      cognitiveOutputSchema.safeParse(validOutput({ uncertainties: many(uncertainty, 16) }))
+        .success,
     ).toBe(true);
     expect(
-      cognitiveOutputSchema.safeParse(validOutput({ uncertainties: many(uncertainty, 17) })).success,
+      cognitiveOutputSchema.safeParse(validOutput({ uncertainties: many(uncertainty, 17) }))
+        .success,
     ).toBe(false);
   });
 

@@ -99,10 +99,7 @@ function nonEmptyBounded(label: string, maxLength: number) {
     .string()
     .min(1, `${label} must be a non-empty string`)
     .refine((value) => value.trim().length > 0, `${label} must not be blank`)
-    .max(
-      maxLength,
-      `${label} exceeds the bounded maximum of ${maxLength} characters`,
-    );
+    .max(maxLength, `${label} exceeds the bounded maximum of ${maxLength} characters`);
 }
 
 /**
@@ -172,9 +169,7 @@ export const distributedNodeIdentitySchema = z.strictObject({
   keyFingerprint: keyFingerprintSchema,
   lifecycleState: nodeLifecycleStateSchema,
   /** Declared capabilities; admission matching never widens this set. */
-  capabilities: z
-    .array(identifierSchema)
-    .max(MAX_CAPABILITIES_PER_NODE),
+  capabilities: z.array(identifierSchema).max(MAX_CAPABILITIES_PER_NODE),
   provenance: provenanceSchema,
 });
 
@@ -195,9 +190,7 @@ export const humanApprovalSchema = z.strictObject({
 export type HumanApproval = z.infer<typeof humanApprovalSchema>;
 
 export type LifecycleTransitionRejectionReason =
-  | "transition_not_permitted"
-  | "human_approval_required"
-  | "human_approval_invalid";
+  "transition_not_permitted" | "human_approval_required" | "human_approval_invalid";
 
 export type LifecycleTransitionDecision =
   | { readonly ok: true; readonly from: NodeLifecycleState; readonly to: NodeLifecycleState }
@@ -209,9 +202,7 @@ export type LifecycleTransitionDecision =
       readonly detail: string;
     };
 
-const LIFECYCLE_TRANSITIONS: Readonly<
-  Record<NodeLifecycleState, readonly NodeLifecycleState[]>
-> = {
+const LIFECYCLE_TRANSITIONS: Readonly<Record<NodeLifecycleState, readonly NodeLifecycleState[]>> = {
   proposed: ["reviewed", "retired"],
   reviewed: ["approved", "retired"],
   approved: ["deployed", "suspended", "retired"],
@@ -278,20 +269,11 @@ export function decideNodeLifecycleTransition(
  * execution or presence surfaces and can never declare tenant-data
  * eligibility (residency beats availability).
  */
-export const regionKindSchema = z.enum([
-  "control",
-  "storage",
-  "compute",
-  "edge",
-  "worker",
-]);
+export const regionKindSchema = z.enum(["control", "storage", "compute", "edge", "worker"]);
 
 export type RegionKind = z.infer<typeof regionKindSchema>;
 
-export const TENANT_DATA_ELIGIBLE_REGION_KINDS: readonly RegionKind[] = [
-  "control",
-  "storage",
-];
+export const TENANT_DATA_ELIGIBLE_REGION_KINDS: readonly RegionKind[] = ["control", "storage"];
 
 export const regionSchema = z
   .strictObject({
@@ -322,9 +304,7 @@ export type Region = z.infer<typeof regionSchema>;
 
 /** True only when the region's kind and declaration both permit tenant data. */
 export function canHostTenantData(region: Region): boolean {
-  return (
-    region.tenantDataEligible && TENANT_DATA_ELIGIBLE_REGION_KINDS.includes(region.kind)
-  );
+  return region.tenantDataEligible && TENANT_DATA_ELIGIBLE_REGION_KINDS.includes(region.kind);
 }
 
 export const topologyLinkKindSchema = z.enum(["backbone", "regional", "edge_uplink"]);
@@ -511,9 +491,7 @@ export const admissionRequestSchema = z.strictObject({
   requestedAt: z.string().datetime(),
   /** Whether the requester intends to place tenant data on the region. */
   tenantDataIntended: z.boolean(),
-  capabilities: z
-    .array(identifierSchema)
-    .max(MAX_CAPABILITIES_PER_NODE),
+  capabilities: z.array(identifierSchema).max(MAX_CAPABILITIES_PER_NODE),
 });
 
 export type AdmissionRequest = z.infer<typeof admissionRequestSchema>;
@@ -549,9 +527,10 @@ export type AdmissionDecision =
  * untrusted decision input. Absent or malformed decisions never widen to
  * `trusted` — the verdict degrades to `unproven` (E-060).
  */
-export function effectiveTrustVerdict(
-  decisionInput: unknown,
-): { readonly verdict: AutomaticTrustVerdict | "trusted"; readonly valid: boolean } {
+export function effectiveTrustVerdict(decisionInput: unknown): {
+  readonly verdict: AutomaticTrustVerdict | "trusted";
+  readonly valid: boolean;
+} {
   const parsed = trustDecisionSchema.safeParse(decisionInput);
   if (!parsed.success) {
     return { verdict: "unproven", valid: false };
@@ -625,7 +604,8 @@ export function decideRegionAdmission(
     const missing =
       trustDecisionInput === undefined ||
       trustDecisionInput === null ||
-      (typeof trustDecisionInput === "object" && Object.keys(trustDecisionInput as object).length === 0);
+      (typeof trustDecisionInput === "object" &&
+        Object.keys(trustDecisionInput as object).length === 0);
     return {
       ok: false,
       verdict: "denied",

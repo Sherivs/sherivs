@@ -241,7 +241,10 @@ export interface ValidateSimulationBundleOptions {
   maxHorizonSteps?: number;
 }
 
-function crossFieldIssues(bundle: SimulationRunBundle, options: ValidateSimulationBundleOptions): SimulationIssue[] {
+function crossFieldIssues(
+  bundle: SimulationRunBundle,
+  options: ValidateSimulationBundleOptions,
+): SimulationIssue[] {
   const issues: SimulationIssue[] = [];
   const { scenario, run, status, outcomes } = bundle;
 
@@ -254,7 +257,8 @@ function crossFieldIssues(bundle: SimulationRunBundle, options: ValidateSimulati
   if (run.tenantRef !== scenario.tenantRef) {
     issues.push({
       code: "tenant_mismatch",
-      detail: "run tenant context differs from the scenario's tenant context; tenant isolation fails closed",
+      detail:
+        "run tenant context differs from the scenario's tenant context; tenant isolation fails closed",
     });
   }
   if (run.horizonSteps > scenario.horizonSteps) {
@@ -379,10 +383,7 @@ export function validateSimulationRunBundle(
  * ────────────────────────────────────────────────────────────*/
 
 export type OutcomeUsabilityCode =
-  | "usable"
-  | "not_completed"
-  | "expired"
-  | "confidence_below_threshold";
+  "usable" | "not_completed" | "expired" | "confidence_below_threshold";
 
 export interface OutcomeUsability {
   readonly usable: boolean;
@@ -397,7 +398,7 @@ export interface OutcomeUsability {
 export function usabilityForDecisionSupport(
   bundle: SimulationRunBundle,
   outcome: SimulatedOutcome,
-  options: { nowMs: number; minConfidence?: number } ,
+  options: { nowMs: number; minConfidence?: number },
 ): OutcomeUsability {
   if (bundle.status !== "completed") {
     return { usable: false, reason: "not_completed" };
@@ -439,7 +440,8 @@ export function compareAgainstObservation(
     label: DERIVED_ORIGIN,
     outcomeId: outcome.outcomeId,
     observedValue,
-    withinPredictedBounds: observedValue >= outcome.lowerBound && observedValue <= outcome.upperBound,
+    withinPredictedBounds:
+      observedValue >= outcome.lowerBound && observedValue <= outcome.upperBound,
     divergence: observedValue - outcome.estimate,
   };
 }
@@ -541,7 +543,10 @@ export function decideSimulatedWriteback(
     return { decision: "REQUIRE_APPROVAL" };
   }
 
-  if (approval.tenantRef !== proposal.tenantRef || proposal.outcome.tenantRef !== proposal.tenantRef) {
+  if (
+    approval.tenantRef !== proposal.tenantRef ||
+    proposal.outcome.tenantRef !== proposal.tenantRef
+  ) {
     return { decision: "DENY", reason: "approval_mismatch_tenant" };
   }
   const covered =

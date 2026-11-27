@@ -56,8 +56,8 @@ import {
   type KernelObjectEnvelope,
   type KernelObjectEnvelopeInput,
   type RelationshipDraftInput,
-} from "../kernel/reality";
-import { canonicalKernelObjectTypes } from "../kernel/object-type-registry";
+} from "../../kernel/reality";
+import { canonicalKernelObjectTypes } from "../../kernel/object-type-registry";
 
 /* ─────────────────────────────────────────────────────────────
  * Version, bounds and boundary statement
@@ -309,7 +309,11 @@ function lawFailure(issues: readonly CompositionLawIssue[]): CompositionParseRes
 }
 
 /** Declared tenant alignment: provenance may never cross the unit tenant. */
-function tenantScopeIssues(tenantId: string, envelope: KernelObjectEnvelopeInput, path: string): CompositionLawIssue[] {
+function tenantScopeIssues(
+  tenantId: string,
+  envelope: KernelObjectEnvelopeInput,
+  path: string,
+): CompositionLawIssue[] {
   const origin = envelope.provenance.originTenantId?.trim();
   if (origin != null && origin !== "" && origin !== tenantId) {
     return [
@@ -372,12 +376,14 @@ function crossMemberIssues(declaration: CompositionDeclaration): CompositionLawI
       message: `entry key "${declaration.entryKey}" does not resolve to an OBJECT member — the governed entry point is an object, never a relationship or event`,
     });
   }
-  issues.push(
-    ...tenantScopeIssues(declaration.tenantId, declaration.envelope, "envelope"),
-  );
+  issues.push(...tenantScopeIssues(declaration.tenantId, declaration.envelope, "envelope"));
   for (const member of declaration.members) {
     issues.push(
-      ...tenantScopeIssues(declaration.tenantId, member.envelope, `members[${member.key}].envelope`),
+      ...tenantScopeIssues(
+        declaration.tenantId,
+        member.envelope,
+        `members[${member.key}].envelope`,
+      ),
     );
   }
   return issues;
@@ -517,12 +523,21 @@ function composeUnit(
 
   for (const member of declaration.members) {
     const path = `members[${member.key}]`;
-    const envelope = stampedTenantEnvelope(member.envelope, declaration.tenantId, `${path}.envelope`, knownObjectTypes);
+    const envelope = stampedTenantEnvelope(
+      member.envelope,
+      declaration.tenantId,
+      `${path}.envelope`,
+      knownObjectTypes,
+    );
     if (member.kind === "object") {
       const built = entityDraft(member.draft, now);
       objects.push({
         key: member.key,
-        draft: stampKernelDraft({ ...built, tenant_id: declaration.tenantId }, member.envelope, knownObjectTypes),
+        draft: stampKernelDraft(
+          { ...built, tenant_id: declaration.tenantId },
+          member.envelope,
+          knownObjectTypes,
+        ),
       });
       continue;
     }
@@ -553,7 +568,11 @@ function composeUnit(
     const built = eventDraft(member.draft, now);
     events.push({
       key: member.key,
-      draft: stampKernelDraft({ ...built, tenant_id: declaration.tenantId }, member.envelope, knownObjectTypes),
+      draft: stampKernelDraft(
+        { ...built, tenant_id: declaration.tenantId },
+        member.envelope,
+        knownObjectTypes,
+      ),
     });
   }
 
@@ -686,7 +705,9 @@ function envelopeStamped(draft: Record<string, unknown>): boolean {
  * invariant by construction; the report exists so units arriving from other
  * paths are proven, never presumed.
  */
-export function evaluateCompositionInvariants(unit: ComposedKernelUnit): CompositionInvariantReport {
+export function evaluateCompositionInvariants(
+  unit: ComposedKernelUnit,
+): CompositionInvariantReport {
   const checks: CompositionInvariantCheck[] = [];
   const memberCount = unit.objects.length + unit.relationships.length + unit.events.length;
 
@@ -698,7 +719,9 @@ export function evaluateCompositionInvariants(unit: ComposedKernelUnit): Composi
 
   const memberDrafts: Record<string, unknown>[] = [
     ...unit.objects.map((object) => object.draft as unknown as Record<string, unknown>),
-    ...unit.relationships.map((relationship) => relationship.draft as unknown as Record<string, unknown>),
+    ...unit.relationships.map(
+      (relationship) => relationship.draft as unknown as Record<string, unknown>,
+    ),
     ...unit.events.map((event) => event.draft as unknown as Record<string, unknown>),
   ];
   const offTenant = memberDrafts.filter((draft) => draft.tenant_id !== unit.tenantId);
