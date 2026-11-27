@@ -1,6 +1,6 @@
 -- WF-07 follow-up: in-app notification to the people who can decide a pending approval. NOT APPLIED.
 -- Founder approval and a backup are required first. In-app only: SMS and WhatsApp are held until Tumi's reset.
--- The message names no student, guardian, amount or step: only that a decision is waiting and how risky it is.
+-- The message names no person, amount or step: only that a decision is waiting and how risky it is.
 -- One notification per (approval, person), by idempotency key, so a repeated scan sends nothing twice.
 
 CREATE FUNCTION public.wf_approval_notify_scan(p_limit integer DEFAULT 50)
