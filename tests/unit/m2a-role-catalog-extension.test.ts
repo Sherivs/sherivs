@@ -20,7 +20,7 @@ const MIGRATION =
 const ROLLBACK =
   "database/supabase/rollbacks/20261117001000_sherivs_m2a_role_catalog_extension.sql";
 
-describe("M2a catalogue extension (ADR-113)", () => {
+describe("M2a catalogue extension (ADR-145)", () => {
   it("pins the exact totals", () => {
     expect(NG_ROLE_CATALOG_STATS).toMatchObject({
       roles: 649,

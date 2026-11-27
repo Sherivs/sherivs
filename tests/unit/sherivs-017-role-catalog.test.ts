@@ -89,7 +89,7 @@ describe("SHERIVS-017 Nigerian role catalog", () => {
 
 describe("SHERIVS-017 migration guardrails", () => {
   it("seed in the migration is the generated one", () => {
-    // M2a (ADR-113): 017 is applied, so the extended generated seed now ships in the reserved
+    // M2a (ADR-145): 017 is applied, so the extended generated seed now ships in the reserved
     // M2a migration; 017 keeps its original seed unchanged.
     const seed = readFileSync("tools/role-catalog/seed.generated.sql", "utf8").trim();
     const m2a = readFileSync(
