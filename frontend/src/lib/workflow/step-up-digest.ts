@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 
-export type StepUpKind = "agent_promotion" | "production_change";
+export type StepUpKind = "agent_promotion" | "production_change" | "support_write";
 const SEPARATOR = "\u001f";
 
 export function stepUpDigest(kind: StepUpKind, parts: readonly string[]): string {
@@ -32,4 +32,9 @@ export function agentPromotionDigest(input: {
     input.toLevel,
     input.evidenceId,
   ]);
+}
+
+/** SUP-01: the second platform approver of a support write grant signs the digest of that one grant. */
+export function supportWriteDigest(grantId: string): string {
+  return stepUpDigest("support_write", [grantId]);
 }
