@@ -1,0 +1,40 @@
+{
+  "$comment": "Lazily loaded chunks allowed over the 60 KiB gzip per-chunk limit (mission M23, ADR-110). Each entry is held to maxGzipBytes (measured size + about 2%, rounded up to a whole KiB) so it cannot grow unnoticed. measuredGzipBytes is the size seen when listed, gzip level 9, on master 24ed7825 (2026-11-17). REVIEW PENDING: the founder (or a reviewer the founder names) must confirm each entry before scripts/verify-route-budgets.mjs joins npm run verify.",
+  "review": {
+    "status": "PENDING",
+    "reviewedBy": null,
+    "reviewedOn": null
+  },
+  "entries": [
+    {
+      "key": "frontend/src/routes/home/s.$section.tsx?tsr-split=component",
+      "measuredGzipBytes": 198768,
+      "maxGzipBytes": 202752,
+      "reason": "Workspace section router: one chunk carries every section screen (own file about 164 KiB gzip). Split per section to get under 60 KiB."
+    },
+    {
+      "key": "frontend/src/routes/index.tsx?tsr-split=component",
+      "measuredGzipBytes": 71273,
+      "maxGzipBytes": 72704,
+      "reason": "Public home and splash sign-in: own file about 13 KiB; the rest is shared imports not in the /home shell."
+    },
+    {
+      "key": "node_modules/@sentry/tanstackstart-react/build/esm/index.client.js",
+      "measuredGzipBytes": 151451,
+      "maxGzipBytes": 154624,
+      "reason": "Sentry browser SDK. Loaded only when the app environment is staging (vendor-telemetry.ts); production never requests it."
+    },
+    {
+      "key": "node_modules/canvg/lib/index.es.js",
+      "measuredGzipBytes": 247163,
+      "maxGzipBytes": 252928,
+      "reason": "Pulled in by jspdf for PDF document export; loaded only when a document is generated."
+    },
+    {
+      "key": "node_modules/posthog-js/dist/module.mjs",
+      "measuredGzipBytes": 102522,
+      "maxGzipBytes": 105472,
+      "reason": "PostHog browser SDK. Loaded only when the app environment is staging (vendor-telemetry.ts); production never requests it."
+    }
+  ]
+}

@@ -29,7 +29,7 @@ The only backup job is a GitHub Actions workflow (`nightly-db-backup.yml`). Acti
 4. Add an upload step to `nightly-db-backup.yml` after the existing encryption step, keeping the artifact upload as a second copy. Pin the action by commit SHA as the workflow already does.
 5. Until Actions billing is fixed, run step 1 by hand each day there is a production change.
 6. Add the freshness alarm and send it to the owner-alert email.
-7. **Restore drill**: restore the newest copy into the staging project following `docs/runbooks/restore-recovery.md`, compare table and row counts with production, and record the evidence. A backup that has never been restored is not yet a backup.
+7. **Restore drill**: restore the newest copy into the staging project following `docs/runbooks/restore-recovery.md`, compare table and row counts with production, and record the evidence. The copy-ready steps and evidence template are in `docs/runbooks/backup-restore-drill-checklist.md` (mission M23); use a scratch database, not staging, when staging is paused. A backup that has never been restored is not yet a backup.
 
 ## Evidence to record
 
