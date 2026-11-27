@@ -36,6 +36,8 @@ import {
   retireConsoleMemory,
   reviewConsoleSafety,
 } from "@/lib/workflow-agent-console.functions";
+import { offeredPromotion } from "@/lib/workflow/agent-promotion";
+import { AgentPromotionControl } from "./agent-promotion-control";
 import "./approval-inbox.css";
 
 type Tab = "agents" | "memory" | "review";
@@ -342,6 +344,18 @@ export default function AgentConsoleScreen() {
                     .map((c) => `${words(c.kind)} to ${AGENT_LEVEL_LABELS[c.to]} (${when(c.at)})`)
                     .join("; ")}
                 </span>
+              ) : null}
+              {agents && offeredPromotion(a, agents.is_founder) ? (
+                <AgentPromotionControl
+                  orgId={agents.org_id}
+                  agentRef={a.agent_ref}
+                  codename={a.codename}
+                  to={offeredPromotion(a, agents.is_founder) as AutonomyLevel}
+                  onDone={(message) => {
+                    setNotice(message);
+                    void loadAgents();
+                  }}
+                />
               ) : null}
               {canManage
                 ? lowerTargets(a).map((to) => (
