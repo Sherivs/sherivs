@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 /**
- * Pins the safety statements of the M2 Roles Pack Engine migration (ADR-114). The behaviour is
+ * Pins the safety statements of the M2 Roles Pack Engine migration (ADR-146). The behaviour is
  * proven by tests/sql/m2-role-pack-engine.sql; this test fails fast if a statement is removed.
  */
 const NAME = "20261117001100_sherivs_m2_role_pack_engine.sql";
@@ -31,7 +31,7 @@ const GUARD_TRIGGERS: ReadonlyArray<[string, string, string]> = [
   ["org_custom_roles_guard_trg", "org_custom_roles", "org_custom_roles_guard"],
 ];
 
-describe("M2 role pack engine migration (ADR-114)", () => {
+describe("M2 role pack engine migration (ADR-146)", () => {
   it("is marked NOT APPLIED on its first line and names its rollback", () => {
     expect(migration.split("\n")[0]).toBe(
       "-- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.",
