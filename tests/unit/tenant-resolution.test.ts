@@ -23,6 +23,8 @@ describe("classifyTenantHost", () => {
   it("classifies platform hosts as platform", () => {
     expect(classifyTenantHost("sherivs.com")).toEqual({ kind: "platform" });
     expect(classifyTenantHost("www.sherivs.com")).toEqual({ kind: "platform" });
+    expect(classifyTenantHost("sherivs.ng")).toEqual({ kind: "platform" });
+    expect(classifyTenantHost("www.sherivs.ng")).toEqual({ kind: "platform" });
     expect(classifyTenantHost("app.sherivs.com")).toEqual({ kind: "platform" });
     expect(classifyTenantHost("console.sherivs.com")).toEqual({ kind: "platform" });
     expect(classifyTenantHost("internal.sherivs.com")).toEqual({ kind: "platform" });
@@ -34,6 +36,7 @@ describe("classifyTenantHost", () => {
   it("is case-insensitive for platform hosts", () => {
     expect(classifyTenantHost("SHERIVS.COM")).toEqual({ kind: "platform" });
     expect(classifyTenantHost("App.Sherivs.Com")).toEqual({ kind: "platform" });
+    expect(classifyTenantHost("WWW.SHERIVS.NG")).toEqual({ kind: "platform" });
   });
 
   it("classifies bare IP addresses and IPv6 loopback as platform", () => {
@@ -44,6 +47,7 @@ describe("classifyTenantHost", () => {
   it("classifies reserved subdomains of platform roots as platform", () => {
     for (const sub of ["www", "app", "api", "admin", "dashboard", "console", "internal", "gov"]) {
       expect(classifyTenantHost(`${sub}.sherivs.com`)).toEqual({ kind: "platform" });
+      expect(classifyTenantHost(`${sub}.sherivs.ng`)).toEqual({ kind: "platform" });
     }
   });
 
@@ -62,21 +66,43 @@ describe("classifyTenantHost", () => {
 
   it("classifies a first subdomain label as a tenant slug", () => {
     expect(classifyTenantHost("acme.sherivs.com")).toEqual({ kind: "subdomain", slug: "acme" });
+    expect(classifyTenantHost("acme.sherivs.ng")).toEqual({ kind: "subdomain", slug: "acme" });
     expect(classifyTenantHost("lincoln.universalschoolos.com")).toEqual({
       kind: "subdomain",
       slug: "lincoln",
     });
     // Outside the platform roots a multi-label host is the school's own domain, not a slug.
-    expect(classifyTenantHost("acme.example.com")).toEqual({ kind: "custom-domain", domain: "acme.example.com" });
+    expect(classifyTenantHost("acme.example.com")).toEqual({
+      kind: "custom-domain",
+      domain: "acme.example.com",
+    });
   });
 
   it("classifies Nigerian school domains as custom domains, never as bogus slugs (SHERIVS-029)", () => {
-    expect(classifyTenantHost("portal.kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
-    expect(classifyTenantHost("kingsschool.sch.ng")).toEqual({ kind: "custom-domain", domain: "kingsschool.sch.ng" });
-    expect(classifyTenantHost("unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "unimaid.edu.ng" });
-    expect(classifyTenantHost("portal.unimaid.edu.ng")).toEqual({ kind: "custom-domain", domain: "portal.unimaid.edu.ng" });
-    expect(classifyTenantHost("www.kingsschool.com.ng")).toEqual({ kind: "custom-domain", domain: "www.kingsschool.com.ng" });
-    expect(classifyTenantHost("PORTAL.KingsSchool.SCH.NG")).toEqual({ kind: "custom-domain", domain: "portal.kingsschool.sch.ng" });
+    expect(classifyTenantHost("portal.kingsschool.sch.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.kingsschool.sch.ng",
+    });
+    expect(classifyTenantHost("kingsschool.sch.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "kingsschool.sch.ng",
+    });
+    expect(classifyTenantHost("unimaid.edu.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "unimaid.edu.ng",
+    });
+    expect(classifyTenantHost("portal.unimaid.edu.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.unimaid.edu.ng",
+    });
+    expect(classifyTenantHost("www.kingsschool.com.ng")).toEqual({
+      kind: "custom-domain",
+      domain: "www.kingsschool.com.ng",
+    });
+    expect(classifyTenantHost("PORTAL.KingsSchool.SCH.NG")).toEqual({
+      kind: "custom-domain",
+      domain: "portal.kingsschool.sch.ng",
+    });
   });
 
   it("classifies non-subdomain hostnames as tenant custom domains", () => {
@@ -110,6 +136,8 @@ describe("resolveTenantSlug", () => {
   it("returns null on platform hosts and custom domains", () => {
     withLocation("https://sherivs.com/");
     expect(resolveTenantSlug()).toBeNull();
+    withLocation("https://www.sherivs.ng/");
+    expect(resolveTenantSlug()).toBeNull();
     withLocation("https://console.sherivs.com/");
     expect(resolveTenantSlug()).toBeNull();
     withLocation("https://app.sherivs.com/");
@@ -132,6 +160,8 @@ describe("resolveTenantDomain", () => {
 
   it("returns null on platform hosts and slug subdomains", () => {
     withLocation("https://sherivs.com/");
+    expect(resolveTenantDomain()).toBeNull();
+    withLocation("https://www.sherivs.ng/");
     expect(resolveTenantDomain()).toBeNull();
     withLocation("https://acme.sherivs.com/");
     expect(resolveTenantDomain()).toBeNull();

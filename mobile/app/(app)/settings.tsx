@@ -78,7 +78,7 @@ function PasskeySettings() {
     <Card>
       <Text style={typography.subtitle}>Passkeys</Text>
       <Text style={typography.muted}>
-        Register a passkey on this iOS or Android device. Sherivs never stores a fingerprint or face
+        Register a passkey on this iOS or Android device. Scholar never stores a fingerprint or face
         image. Browser sign-in stays password, Google, and Cloudflare Turnstile.
       </Text>
       {items.map((item) => (
