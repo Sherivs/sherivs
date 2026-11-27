@@ -128,6 +128,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | 007 | Audit architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-007 Audit architecture" as planned | **No ADR-007 file exists anywhere in the repository.** The planned decision record was never authored. |
 <<<<<<<<< Temporary merge branch 1
 <<<<<<<<< Temporary merge branch 1
+<<<<<<<<< Temporary merge branch 1
 | 106 | [ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md](./ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md) | Every Workspace Card Is a Contract | PROPOSED | 2026-11-17 | One registry entry per card; live cards open real screens, planned cards say so, unknown keys are not found; routes move to the shell (NOT APPLIED) |
 ||||||||| 2d1a0dc3
 =========
@@ -153,6 +154,10 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | 151 | [ADR-151_M22_ONE_IMPLEMENTATION_PER_CHANNEL.md](./ADR-151_M22_ONE_IMPLEMENTATION_PER_CHANNEL.md) | One Implementation per Channel, With Send-Time Consent, Evidence and Template Registry | PROPOSED | 2026-11-19 | One SMS port (BulkSMS Nigeria or BulkSMS.com by `SMS_PROVIDER`), one email send, one proactive WhatsApp gate with a template registry; send-time consent and quiet hours; `cg_delivery_evidence` for SMS/WhatsApp; USSD result check through `check_result`. Migration 20261117003400 NOT APPLIED. |
 | 144 | [ADR-144_COMMS03_BULKSMS_SMS_PROVIDER.md](./ADR-144_COMMS03_BULKSMS_SMS_PROVIDER.md) | SMS Goes Through One Provider Port, Starting With BulkSMS Nigeria | PROPOSED | 2026-11-13 | Adds an SMS provider port, explicit `SMS_PROVIDER` selection, a dispatcher for approved queued rows and an authenticated delivery-report route. At-most-once sends; fails closed without credentials. No migration in this PR. A 2026-11-13 review found the dispatcher's database writes are refused (F1) and simulated sends are charged (F2); a tested migration proposal awaits owner approval. `sms_live` stays off. |
 | 110 | [ADR-110_M23_HARDENING_BUDGETS_AND_TRACING_FACADE.md](./ADR-110_M23_HARDENING_BUDGETS_AND_TRACING_FACADE.md) | Production Hardening: Route Budgets, Tracing Facade, Freshness and Uptime Probes | PROPOSED | 2026-11-17 | Budgets enforced at 250 KiB shell / 60 KiB per chunk with a reviewed allowlist; vendor-neutral OTLP facade off by default; Datadog, alert routing and restore drill not done |
+||||||||| 2d1a0dc3
+=========
+>>>>>>>>> Temporary merge branch 2
+| 150 | [ADR-150_M9_FINANCE_SEPARATION_OF_DUTIES_AND_LEDGER_INTEGRITY.md](./ADR-150_M9_FINANCE_SEPARATION_OF_DUTIES_AND_LEDGER_INTEGRITY.md) | Finance Separation of Duties and Ledger Integrity (M9 part A) | PROPOSED | 2026-11-18 | Payroll/expense raiser is the caller; cashiers never decide refunds or reconcile; cash day close and independent reconciliation; A05 relief posts into the M07 ledger (NOT APPLIED) |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 

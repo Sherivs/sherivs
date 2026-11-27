@@ -1589,12 +1589,16 @@ const inTx = async (uid, fn, role = "authenticated") => {
       "insert into school_expenses (school_id,expense_title,expense_category,amount,expense_date,created_by,approved_by) values ($1,'Diesel','utilities',90000,current_date,$2,$2)",
       [A.schoolId, A.bursar],
     );
+    // M9 (ADR-150): the raiser is always the caller, never a client-sent created_by, so the
+    // admin raises these two expenses and the bursar then approves them.
+    await act(A.admin);
     const ex = await t(
       "insert into school_expenses (school_id,expense_title,expense_category,amount,expense_date,created_by) values ($1,'Roof','works',3000000,current_date,$2),($1,'Chalk','supplies',500000,current_date,$2) returning id, amount",
       [A.schoolId, A.admin],
     );
     const big = ex.r?.rows.find((r) => Number(r.amount) === 3000000)?.id,
       small = ex.r?.rows.find((r) => Number(r.amount) === 500000)?.id;
+    await act(A.bursar);
     T.exBig = await t("update school_expenses set approved_by=$2 where id=$1", [big, A.bursar]);
     T.exSmall = await t("update school_expenses set approved_by=$2 where id=$1", [small, A.bursar]);
     T.audit =
