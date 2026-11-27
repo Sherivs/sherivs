@@ -3,16 +3,28 @@
  *
  * These are admin/principal-callable server fns that create rows in
  * `notifications` for a set of users derived from a domain event. They are
- * intentionally idempotent at the row level (no dedup, the UI just shows
- * the newest entry) and are called after the originating action has
- * succeeded on the client.
+ * use a database uniqueness key so retries do not duplicate in-app rows.
+ * Web push is a lazy, failure-isolated side channel that runs only after the in-app insert; other external delivery stays disabled.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tokenMsRemaining } from "@/lib/auth-helpers";
 import { requireSchoolAdminScope } from "@/lib/security-role-gate";
+import { writeAuditRecord } from "@/lib/server/write-audit";
+import type { Database } from "@/integrations/supabase/types";
+import {
+  shouldDeliverInAppNotification,
+  type NotificationPreferenceCategory,
+  type NotificationPreferences,
+} from "@/lib/notifications/delivery-policy";
+import {
+  listActiveMembershipUserIds,
+  selectActiveMembershipRecipientIds,
+} from "@/lib/notifications/membership-recipients";
 import { SystemClock, TimeAuthority } from "../../kernel/time-authority";
+
+type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"];
 
 /** J-023: time enters only via the kernel time-authority — no direct wall-clock sampling. */
 const timeAuthority = new TimeAuthority(new SystemClock());
@@ -26,7 +38,7 @@ async function pushAfterInsert(
   supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary (pre-existing shape).
   userIds: string[],
   options: {
-    category: PrefCategory;
+    category: NotificationPreferenceCategory;
     route: string;
     title: string;
     body: string;
@@ -36,42 +48,106 @@ async function pushAfterInsert(
     const { deliverPushToUsers } = await import("@/lib/push.server");
     await deliverPushToUsers(supabase, userIds, options);
   } catch {
-    /* push is a side-channel — in-app notifications already succeeded */
+    /* push is a side-channel: in-app notifications already succeeded */
   }
 }
 
 /**
  * Filter target user_ids based on per-user notification_preferences.
- * - Drops users with `inapp_<category>` = false.
- * Push quiet-hours and push-category preferences are evaluated at send time in
- * the push sender. In-app creation is never suppressed by quiet hours.
- * Users with no preferences row are kept (defaults treated as opt-in).
+ * Push quiet hours and push category preferences are evaluated at send time in the push sender.
+ * Preference reads use the service client only after the caller has resolved
+ * and authorized the school scope. Missing rows retain the existing opt-in default.
  */
-type PrefCategory = "messages" | "announcements" | "grades" | "attendance" | "fees";
 async function filterByPrefs(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary (pre-existing shape).
   supabase: any,
+  schoolId: string,
   userIds: string[],
-  category: PrefCategory,
+  category: NotificationPreferenceCategory,
+  notificationType: string,
 ): Promise<string[]> {
-  if (!userIds.length) return [];
-  const { data } = await supabase
+  const candidates = Array.from(new Set(userIds.filter(Boolean)));
+  if (!candidates.length) return [];
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: activeUsers, error: activeUsersError } = await supabaseAdmin
+    .from("users")
+    .select("id")
+    .eq("is_active", true)
+    .in("id", candidates);
+  if (activeUsersError) throw new Error(activeUsersError.message);
+  const activeUserIds = (activeUsers ?? []).map((row) => row.id as string);
+  if (!activeUserIds.length) return [];
+
+  const { data: memberships, error: membershipError } = await supabaseAdmin
+    .from("organization_memberships")
+    .select("user_id, school_id, is_active")
+    .eq("school_id", schoolId)
+    .eq("is_active", true)
+    .in("user_id", activeUserIds);
+  if (membershipError) throw new Error(membershipError.message);
+  const targetIds = selectActiveMembershipRecipientIds(
+    candidates,
+    activeUserIds,
+    memberships ?? [],
+    schoolId,
+  );
+  if (!targetIds.length) return [];
+
+  const { data, error } = await supabaseAdmin
     .from("notification_preferences")
-    .select(`user_id, inapp_${category}`)
-    .in("user_id", userIds);
-  const rows = (data ?? []) as Array<{
-    user_id: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic preference column projection (pre-existing shape).
-    [k: string]: any;
-  }>;
+    .select(`user_id, inapp_${category}, quiet_hours_start, quiet_hours_end`)
+    .eq("school_id", schoolId)
+    .in("user_id", targetIds);
+  if (error) throw new Error(error.message);
+  const rows = (data ?? []) as Array<NotificationPreferences & { user_id: string }>;
   const prefMap = new Map(rows.map((r) => [r.user_id, r]));
 
-  return userIds.filter((uid) => {
-    const p = prefMap.get(uid);
-    if (!p) return true;
-    if (p[`inapp_${category}`] === false) return false;
-    return true;
+  const now = new Date(timeAuthority.now().atMs);
+  const nowMin = now.getUTCHours() * 60 + now.getUTCMinutes();
+  return targetIds.filter((uid) =>
+    shouldDeliverInAppNotification(notificationType, category, prefMap.get(uid), nowMin),
+  );
+}
+
+async function createNotificationIdempotencyKey(kind: string, sourceKey: string): Promise<string> {
+  const { createNotificationIdempotencyKey: createKey } =
+    await import("@/lib/notifications/delivery-key.server");
+  return createKey(kind, sourceKey);
+}
+
+async function insertNotificationRows(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Supabase query builder boundary.
+  supabase: any,
+  schoolId: string,
+  actorId: string,
+  action: string,
+  rows: NotificationInsert[],
+): Promise<number> {
+  let inserted = 0;
+  if (rows.length) {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("notifications")
+      .upsert(rows, {
+        onConflict: "school_id,user_id,idempotency_key",
+        ignoreDuplicates: true,
+      })
+      .select("id");
+    if (error) throw new Error(error.message);
+    inserted = (data ?? []).length;
+  }
+
+  await writeAuditRecord(supabase, {
+    action,
+    gate: "requireSchoolAdminScope",
+    tenantId: schoolId,
+    actorId,
+    table: "notifications",
+    outcome: "succeeded",
+    details: { attempted: rows.length, inserted },
   });
+  return inserted;
 }
 
 // ---------------- Grades published ----------------
@@ -86,7 +162,7 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => GradesInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, claims } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
     // Lifecycle threading (DEFECT-1 follow-through): the JWT carries no
@@ -98,48 +174,65 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    const { data: students } = await supabase
+    const { data: students, error: studentsError } = await supabase
       .from("students")
       .select("id, user_id")
       .eq("school_id", schoolId)
       .eq("class_id", data.class_id)
       .eq("is_active", true);
+    if (studentsError) throw new Error(studentsError.message);
     const sList = (students ?? []) as { id: string; user_id: string | null }[];
     const studentUids = sList.map((s) => s.user_id).filter((u): u is string => !!u);
     const sids = sList.map((s) => s.id);
 
     let parentUids: string[] = [];
     if (sids.length) {
-      const { data: pm } = await supabase
+      const { data: pm, error: parentMapError } = await supabase
         .from("parent_student_map")
-        .select("parent_id")
+        .select("student_id, parent_id")
         .in("student_id", sids);
+      if (parentMapError) throw new Error(parentMapError.message);
       parentUids = Array.from(new Set((pm ?? []).map((r) => r.parent_id as string)));
     }
 
     const rawTargets = Array.from(new Set([...studentUids, ...parentUids]));
-    const targets = await filterByPrefs(supabase, rawTargets, "grades");
-    if (!targets.length) return { notified: 0 };
+    const targets = await filterByPrefs(
+      supabase,
+      schoolId,
+      rawTargets,
+      "grades",
+      "grades_published",
+    );
 
     const title = `Report card published — ${data.term} term ${data.academic_year}`;
+    const idempotencyKey = await createNotificationIdempotencyKey(
+      "grades_published",
+      `${data.class_id}\u0000${data.term}\u0000${data.academic_year}`,
+    );
     const rows = targets.map((uid) => ({
       school_id: schoolId,
       user_id: uid,
+      idempotency_key: idempotencyKey,
       title,
       message: "Your latest grades are now available to view.",
       type: "grades_published",
       action_url: "/report-card",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
-    if (error) throw new Error(error.message);
+    const notified = await insertNotificationRows(
+      supabase,
+      schoolId,
+      userId,
+      "notifications.grades_published.fanout",
+      rows,
+    );
     await pushAfterInsert(supabase, targets, {
       category: "grades",
       route: "/results",
-      title,
+      title: title,
       body: "Your latest grades are now available to view.",
     });
-    return { notified: rows.length };
+    return { notified };
   });
 
 // ---------------- Fees due reminder ----------------
@@ -153,7 +246,7 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((i: unknown) => FeesInput.parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, claims } = context;
+    const { supabase, userId, claims } = context;
     // Canonical Phase 08 school-admin gate (fail closed). Replaces the legacy
     // inline users.role admin/principal read + check.
     // Lifecycle threading: see notifyGradesPublished for the signal semantics.
@@ -168,19 +261,21 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
 
     const q = supabase
       .from("fees")
-      .select("student_id, due_date, status, amount")
+      .select("id, student_id, due_date, status, amount")
       .eq("school_id", schoolId)
       .neq("status", "paid")
       .lte("due_date", cutoff);
-    const { data: fees } = await q;
-    let due = (fees ?? []) as { student_id: string }[];
+    const { data: fees, error: feesError } = await q;
+    if (feesError) throw new Error(feesError.message);
+    let due = (fees ?? []) as { id: string; student_id: string }[];
 
     if (data.class_id) {
-      const { data: students } = await supabase
+      const { data: students, error: studentsError } = await supabase
         .from("students")
         .select("id")
         .eq("school_id", schoolId)
         .eq("class_id", data.class_id);
+      if (studentsError) throw new Error(studentsError.message);
       const allow = new Set((students ?? []).map((s) => s.id as string));
       due = due.filter((f) => allow.has(f.student_id));
     }
@@ -188,32 +283,55 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
     const sids = Array.from(new Set(due.map((f) => f.student_id)));
     if (!sids.length) return { notified: 0 };
 
-    const { data: pm } = await supabase
+    const { data: pm, error: parentMapError } = await supabase
       .from("parent_student_map")
-      .select("parent_id")
+      .select("student_id, parent_id")
       .in("student_id", sids);
+    if (parentMapError) throw new Error(parentMapError.message);
     const rawParents = Array.from(new Set((pm ?? []).map((r) => r.parent_id as string)));
-    const parents = await filterByPrefs(supabase, rawParents, "fees");
-    if (!parents.length) return { notified: 0 };
+    const parents = await filterByPrefs(supabase, schoolId, rawParents, "fees", "fees_due");
 
-    const rows = parents.map((uid) => ({
-      school_id: schoolId,
-      user_id: uid,
-      title: "Outstanding school fees",
-      message: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
-      type: "fees_due",
-      action_url: "/parent/fees",
-      is_read: false,
-    }));
-    const { error } = await supabase.from("notifications").insert(rows);
-    if (error) throw new Error(error.message);
+    const feeIdsByStudent = new Map<string, string[]>();
+    for (const fee of due) {
+      const ids = feeIdsByStudent.get(fee.student_id) ?? [];
+      ids.push(fee.id);
+      feeIdsByStudent.set(fee.student_id, ids);
+    }
+    const feeIdsByParent = new Map<string, string[]>();
+    for (const row of pm ?? []) {
+      const ids = feeIdsByParent.get(row.parent_id as string) ?? [];
+      ids.push(...(feeIdsByStudent.get(row.student_id as string) ?? []));
+      feeIdsByParent.set(row.parent_id as string, ids);
+    }
+    const rows = await Promise.all(
+      parents.map(async (uid) => ({
+        school_id: schoolId,
+        user_id: uid,
+        idempotency_key: await createNotificationIdempotencyKey(
+          "fees_due",
+          `${cutoff}\u0000${data.class_id ?? "all"}\u0000${(feeIdsByParent.get(uid) ?? []).sort().join(",")}`,
+        ),
+        title: "Outstanding school fees",
+        message: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
+        type: "fees_due",
+        action_url: "/parent/fees",
+        is_read: false,
+      })),
+    );
+    const notified = await insertNotificationRows(
+      supabase,
+      schoolId,
+      userId,
+      "notifications.fees_due.fanout",
+      rows,
+    );
     await pushAfterInsert(supabase, parents, {
       category: "fees",
       route: "/fees",
       title: "Outstanding school fees",
       body: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
     });
-    return { notified: rows.length };
+    return { notified };
   });
 
 // ---------------- Generic announcement push ----------------
@@ -223,6 +341,7 @@ const PushInput = z.object({
   message: z.string().trim().min(1).max(2000),
   audience: z.enum(["all", "parents", "teachers", "students"]),
   action_url: z.string().max(200).optional(),
+  event_id: z.string().uuid().optional(),
 });
 
 export const pushNotification = createServerFn({ method: "POST" })
@@ -238,33 +357,46 @@ export const pushNotification = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    let q = supabase.from("users").select("id").eq("school_id", schoolId).eq("is_active", true);
-    if (data.audience === "parents") q = q.eq("role", "parent");
-    else if (data.audience === "teachers") q = q.eq("role", "teacher");
-    else if (data.audience === "students") q = q.eq("role", "student");
-    const { data: users } = await q;
-    const rawIds = (users ?? []).map((u) => u.id as string).filter((id) => id !== userId);
-    const ids = await filterByPrefs(supabase, rawIds, "announcements");
-    if (!ids.length) return { notified: 0 };
+    const roleByAudience = {
+      parents: "parent",
+      teachers: "teacher",
+      students: "student",
+    } as const;
+    const role = data.audience === "all" ? undefined : roleByAudience[data.audience];
+    const rawIds = (await listActiveMembershipUserIds(schoolId, role ? [role] : undefined)).filter(
+      (id) => id !== userId,
+    );
+    const ids = await filterByPrefs(supabase, schoolId, rawIds, "announcements", "announcement");
 
+    const idempotencyKey = await createNotificationIdempotencyKey(
+      "announcement",
+      data.event_id ??
+        JSON.stringify([data.title, data.message, data.audience, data.action_url ?? null]),
+    );
     const rows = ids.map((uid) => ({
       school_id: schoolId,
       user_id: uid,
+      idempotency_key: idempotencyKey,
       title: data.title,
       message: data.message,
       type: "announcement",
       action_url: data.action_url ?? "/home/notifications",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
-    if (error) throw new Error(error.message);
+    const notified = await insertNotificationRows(
+      supabase,
+      schoolId,
+      userId,
+      "notifications.announcement.fanout",
+      rows,
+    );
     await pushAfterInsert(supabase, ids, {
       category: "announcements",
       route: data.action_url ?? "/home/notifications",
       title: data.title,
       body: data.message,
     });
-    return { notified: rows.length };
+    return { notified };
   });
 
 // ---------------- Calendar event published ----------------
@@ -290,40 +422,44 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       sessionValid: typeof claims?.exp === "number" && tokenMsRemaining(claims.exp) > 0,
     });
 
-    let q = supabase
-      .from("users")
-      .select("id, role")
-      .eq("school_id", schoolId)
-      .eq("is_active", true);
-    if (data.target_audience === "parents") q = q.eq("role", "parent");
-    else if (data.target_audience === "teachers") q = q.eq("role", "teacher");
-    else if (data.target_audience === "students") q = q.eq("role", "student");
-    else q = q.in("role", ["parent", "teacher", "student"]);
+    const roleByAudience = {
+      parents: "parent",
+      teachers: "teacher",
+      students: "student",
+    } as const;
+    const roles =
+      data.target_audience === "all"
+        ? ["parent", "teacher", "student"]
+        : [roleByAudience[data.target_audience]];
+    const raw = (await listActiveMembershipUserIds(schoolId, roles)).filter((id) => id !== userId);
+    const targets = await filterByPrefs(supabase, schoolId, raw, "announcements", "calendar_event");
 
-    const { data: users } = await q;
-    const raw = (users ?? []).map((u: { id: string }) => u.id).filter((id) => id !== userId);
-    const targets = await filterByPrefs(supabase, raw, "announcements");
-    if (!targets.length) return { notified: 0 };
-
+    const idempotencyKey = await createNotificationIdempotencyKey("calendar_event", data.event_id);
     const typeLabel = data.event_type ? data.event_type.replace(/_/g, " ") : "event";
     const rows = targets.map((uid) => ({
       school_id: schoolId,
       user_id: uid,
+      idempotency_key: idempotencyKey,
       title: `New ${typeLabel}: ${data.title}`,
       message: `Scheduled for ${data.start_date}. Open the calendar for details.`,
       type: "calendar_event",
       action_url: "/home/notifications",
       is_read: false,
     }));
-    const { error } = await supabase.from("notifications").insert(rows);
-    if (error) throw new Error(error.message);
+    const notified = await insertNotificationRows(
+      supabase,
+      schoolId,
+      userId,
+      "notifications.calendar_event.fanout",
+      rows,
+    );
     await pushAfterInsert(supabase, targets, {
       category: "announcements",
       route: "/home/notifications",
       title: `New ${typeLabel}: ${data.title}`,
       body: `Scheduled for ${data.start_date}. Open the calendar for details.`,
     });
-    return { notified: rows.length };
+    return { notified };
   });
 
 // ---------------- Face lockout admin unlock ----------------

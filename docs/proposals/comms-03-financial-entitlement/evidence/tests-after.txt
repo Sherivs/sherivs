@@ -1,0 +1,22 @@
+ PASS  C2a school admin cannot self-upgrade the plan   [denied (42501); tier now trial]
+ PASS  C2b school admin can still edit non-commercial school fields   [motto update]
+ PASS  C3 service_role and super admin can still change the plan   [service=starter super=trial]
+ PASS  B0 four live sends were queued and debited   [four queued rows, wallet delta -40]
+ PASS  F1a only one worker wins the claim
+ PASS  F1b settle is compare-and-set on the claim held
+ PASS  F1c delivery report moves sent to delivered once
+ PASS  F1d service_role still cannot UPDATE the table directly   [direct UPDATE denied]
+ PASS  B2a provider-rejected message is refunded atomically with the close   [ balance 970.00]
+ PASS  B2b a second refund of the same message is a no-op
+ PASS  B2c an ambiguous failure (provider_error) is NOT auto-refunded   [ balance 970.00]
+ PASS  B2d a rejection before submission is refunded   [ balance 980.00]
+ PASS  B2e an operator can refund a reconciled ambiguous failure   [ balance 990.00]
+ PASS  B2f a provider-accepted message can never be refunded   [refund of accepted message refused]
+ PASS  B2g net charge is exactly the one accepted message   [wallet = start - 10]
+ PASS  B1 a simulated (sent_stub) SMS is not charged and records no usage   [status=sent_stub cost=0 wallet delta=0 usage_events=0]
+ PASS  B2h a pool-funded message refund restores the pool and not the wallet   [ pool 1->0]
+ PASS  D4a a Trial organization with sms_live ON is blocked by plan, not charged, not queued   [status=blocked_plan wallet delta=0 queued=0]
+ PASS  D4b plan function agrees with the TypeScript catalog (trial/starter no; growth/professional/enterprise yes)
+ PASS  A1 propose then approve (authenticated) on a Growth organization queues one message and debits NGN10   [ status=queued delta=-10.00]
+ PASS  C1 parent cannot meter/overdraw the wallet directly   [denied (42501)]
+ SUMMARY  pass=21  fail=0
