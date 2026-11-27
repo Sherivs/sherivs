@@ -1,5 +1,8 @@
 # ADR-142: Reporting Lines: JARVIS to the Founder, Organisation Agents to the Organisation Head (D-12)
 
+- Creator: Claude Code agent, mission A8 (reporting lines) (provenance id W-108); AI-generated
+- Origin: Mission: W-108; Authority: founder decision record 2026-11-26 (ADR-140) and the Sherivs Automation Vision blueprint
+
 - Status: ACCEPTED by the founder in chat, 27 Nov 2026 (to be added to the signed record at the next pack)
 - Date: 2026-11-27
 
