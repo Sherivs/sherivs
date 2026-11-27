@@ -238,16 +238,22 @@ SELECT wf07t.keep('verA', 'f0720000-0000-4000-8000-0000000000a1');
 SELECT wf07t.keep('verAP3', 'f0720000-0000-4000-8000-0000000000a2');
 SELECT wf07t.keep('verB', 'f0720000-0000-4000-8000-0000000000b2');
 
+-- CD-01: a run's autonomy comes from its template; a template-less run is advice only (suggest).
+-- The fixtures therefore run under a template that allows approval-gated action.
+INSERT INTO public.wf_template (template_key, version, name, description, graph, autonomy_max)
+VALUES ('wf07-fixture', 1, 'WF07 fixture', 'Fixture template for the approval harness.',
+  '{"steps":[]}', 'act_and_report');
 CREATE FUNCTION wf07t.mkrun(p_name text, p_version text, p_started_by text, p_agent text DEFAULT 'wf07-agent')
 RETURNS uuid LANGUAGE plpgsql AS $$
 DECLARE v_id uuid := gen_random_uuid(); v_ver public.wf_version%ROWTYPE;
 BEGIN
   SELECT * INTO v_ver FROM public.wf_version WHERE id = wf07t.id(p_version);
   INSERT INTO public.wf_run (id, org_id, definition_id, version_id, idempotency_key, status, max_depth,
-    max_steps, started_by, deadline_at, started_at, agent_ref)
+    max_steps, started_by, deadline_at, started_at, agent_ref, template_id)
   VALUES (v_id, v_ver.org_id, v_ver.definition_id, v_ver.id, 'wf07-run-' || p_name, 'running', 2, 20,
     CASE WHEN p_started_by IS NULL THEN NULL ELSE wf07t.id(p_started_by) END,
-    now() + interval '1 hour', now(), p_agent);
+    now() + interval '1 hour', now(), p_agent,
+    (SELECT id FROM public.wf_template WHERE template_key = 'wf07-fixture' AND version = 1));
   RETURN wf07t.keep('run_' || p_name, v_id);
 END $$;
 CREATE FUNCTION wf07t.mkstep(p_name text, p_run text, p_class text) RETURNS uuid LANGUAGE plpgsql AS $$
