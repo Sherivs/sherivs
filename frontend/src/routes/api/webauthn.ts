@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/webauthn")({
         try {
           const userId = await userIdFromBearer(request);
           const body = AuthedWebAuthnBodySchema.parse(await request.json());
-          const { service, origin } = await loadNativeWebAuthn();
+          const { service, origin, expectedOrigins } = await loadNativeWebAuthn();
           const rateKey = nativeRateKey(request, userId);
           if (body.action === "registration.options") {
             return Response.json(await service.registrationOptions({ userId, origin, rateKey }));
@@ -25,6 +25,7 @@ export const Route = createFileRoute("/api/webauthn")({
               await service.verifyRegistration({
                 userId,
                 origin,
+                expectedOrigins,
                 rateKey,
                 response: body.response as never,
                 label: body.label,
