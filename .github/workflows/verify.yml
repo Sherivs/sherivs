@@ -163,6 +163,17 @@ jobs:
           key: sim-lab-bin-pg17.2-pgrst12.2.3-k6v0.54.0
       - name: Apply all migrations (fresh DB)
         run: bash tools/sim-lab/up.sh
+      - name: M06 approval, amendment, and legacy publication SQL harness
+        run: node --input-type=module -e 'import pg from "pg";import{readFileSync}from"node:fs";const c=new pg.Client({host:"127.0.0.1",port:Number(process.env.SIM_PG_PORT??54329),user:"postgres"});await c.connect();try{await c.query(readFileSync("tests/integration/m06-ca-and-results.local.sql","utf8"));console.log("M06 SQL harness passed");}finally{await c.end()}'
+      - name: CORE-19 migration and rollback round-trip (disposable PostgreSQL)
+        working-directory: tools/sim-lab
+        run: node sim/core19-migration-rollback.mjs
+      - name: SV1-SCHED forced-RLS isolation (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" \
+            -v ON_ERROR_STOP=1 -f tests/integration/scheduling-rls.local.sql \
+            2>&1 | tee /tmp/sched-rls.out
+          grep -q 'SV1-SCHED RLS ALL PASS' /tmp/sched-rls.out
       - name: WhatsApp n8n RPC ambiguity fix (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
@@ -267,17 +278,281 @@ jobs:
             -f tests/integration/wf05-event-sources.local.sql 2>&1 | tee /tmp/wf05-sources.out
           ! grep -Fq 'WF05 FAIL' /tmp/wf05-sources.out
           grep -Eq 'WF05 ALL PASS: [0-9]+ checks' /tmp/wf05-sources.out
+      - name: WF-06 action catalogue, caps and tenant isolation (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf06-actions.local.sql 2>&1 | tee /tmp/wf06-actions.out
+          ! grep -Fq 'WF06 FAIL' /tmp/wf06-actions.out
+          grep -Eq 'WF06 ALL PASS: [0-9]+ checks' /tmp/wf06-actions.out
+      - name: WF-07 approval inbox, step-up evidence and two-person rule (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf07-approval-inbox.local.sql 2>&1 | tee /tmp/wf07-approvals.out
+          ! grep -Fq 'WF07 FAIL' /tmp/wf07-approvals.out
+          grep -Eq 'WF07 ALL PASS: [0-9]+ checks' /tmp/wf07-approvals.out
+      - name: WF-08 run history, redaction, retry and cancel (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf08-run-history.local.sql 2>&1 | tee /tmp/wf08-run-history.out
+          ! grep -Fq 'WF08 FAIL' /tmp/wf08-run-history.out
+          grep -Eq 'WF08 ALL PASS: [0-9]+ checks' /tmp/wf08-run-history.out
+      - name: WF-12 quotas, wallet caps and retention (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf12-quotas-retention.local.sql 2>&1 | tee /tmp/wf12-quotas-retention.out
+          ! grep -Fq 'WF12 FAIL' /tmp/wf12-quotas-retention.out
+          grep -Eq 'WF12 ALL PASS: [0-9]+ checks' /tmp/wf12-quotas-retention.out
+      - name: WF-08 and WF-12 privileges under Supabase default privileges (scratch database, WF-12 and WF-08 re-applied)
+        run: |
+          set -euo pipefail
+          # Supabase gives the migration role default privileges that grant everything to anon, authenticated and
+          # service_role on every new object, so a migration that forgets to revoke service_role is exposed there but
+          # not in this sim database. Copy the migrated database, undo WF-12 and WF-08, switch those defaults on for
+          # the migrator, apply both again and run their harnesses plus an exact list of what service_role may execute.
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS wfpriv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE wfpriv TEMPLATE postgres"
+          psql "$SU/wfpriv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE wfpriv SET search_path = public, extensions"
+          psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql
+          psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000950_sherivs_wf08_run_history.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000950_sherivs_wf08_run_history.sql
+          psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql
+          psql "$SU/wfpriv" -v ON_ERROR_STOP=1 -f tests/integration/wf08-run-history.local.sql 2>&1 | tee /tmp/wf08-priv.out
+          ! grep -Fq 'WF08 FAIL' /tmp/wf08-priv.out
+          grep -Eq 'WF08 ALL PASS: [0-9]+ checks' /tmp/wf08-priv.out
+          psql "$SU/wfpriv" -v ON_ERROR_STOP=1 -f tests/integration/wf12-quotas-retention.local.sql 2>&1 | tee /tmp/wf12-priv.out
+          ! grep -Fq 'WF12 FAIL' /tmp/wf12-priv.out
+          grep -Eq 'WF12 ALL PASS: [0-9]+ checks' /tmp/wf12-priv.out
+          psql "$SU/wfpriv" -v ON_ERROR_STOP=1 -f tests/integration/wf12-default-privileges.local.sql 2>&1 | tee /tmp/wf12-privlist.out
+          grep -Eq 'WF12-PRIV ALL PASS: [0-9]+ functions checked' /tmp/wf12-privlist.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE wfpriv"
+      - name: AIN-01 privileges under Supabase default privileges (scratch database, AIN-01 re-applied)
+        run: |
+          set -euo pipefail
+          # Same reason as the WF-08/WF-12 step above: copy the migrated database, undo AIN-01, switch Supabase's
+          # default privileges on for the migrator, apply AIN-01 again, run its harness and assert the ACLs.
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ainpriv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ainpriv TEMPLATE postgres"
+          psql "$SU/ainpriv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ainpriv SET search_path = public, extensions"
+          # AIN-02 and AIN-03 sit on top of AIN-01 (AIN-03 has a foreign key to wf_agent), so they are undone first and
+          # applied again last.
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000970_sherivs_ain01_agents_as_engine_actors.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000970_sherivs_ain01_agents_as_engine_actors.sql
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
+          psql "$MG/ainpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          psql "$SU/ainpriv" -v ON_ERROR_STOP=1 -f tests/integration/ain01-agent-actors.local.sql 2>&1 | tee /tmp/ain01-priv.out
+          ! grep -Fq 'AIN01 FAIL' /tmp/ain01-priv.out
+          grep -Eq 'AIN01 ALL PASS: [0-9]+ checks' /tmp/ain01-priv.out
+          psql "$SU/ainpriv" -v ON_ERROR_STOP=1 -f tests/integration/ain01-default-privileges.local.sql 2>&1 | tee /tmp/ain01-privacl.out
+          grep -Eq 'AIN01-PRIV ALL PASS: [0-9]+ checks' /tmp/ain01-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ainpriv"
+      - name: AIN-01 agents as engine actors (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain01-agent-actors.local.sql 2>&1 | tee /tmp/ain01-agent-actors.out
+          ! grep -Fq 'AIN01 FAIL' /tmp/ain01-agent-actors.out
+          grep -Eq 'AIN01 ALL PASS: [0-9]+ checks' /tmp/ain01-agent-actors.out
+      - name: AIN-02 privileges under Supabase default privileges (scratch database, AIN-02 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-02, switch those defaults on for the migrator, apply
+          # AIN-02 again, run its harness and assert the exact ACLs.
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain2priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain2priv TEMPLATE postgres"
+          psql "$SU/ain2priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain2priv SET search_path = public, extensions"
+          psql "$MG/ain2priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain2priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain2priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000980_sherivs_ain02_autonomy_scale_and_promotion_gate.sql
+          psql "$SU/ain2priv" -v ON_ERROR_STOP=1 -f tests/integration/ain02-autonomy-gate.local.sql 2>&1 | tee /tmp/ain02-priv.out
+          ! grep -Fq 'AIN02 FAIL' /tmp/ain02-priv.out
+          grep -Eq 'AIN02 ALL PASS: [0-9]+ checks' /tmp/ain02-priv.out
+          psql "$SU/ain2priv" -v ON_ERROR_STOP=1 -f tests/integration/ain02-default-privileges.local.sql 2>&1 | tee /tmp/ain02-privacl.out
+          grep -Eq 'AIN02-PRIV ALL PASS: [0-9]+ checks' /tmp/ain02-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain2priv"
+      - name: AIN-02 autonomy scale and promotion gate (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain02-autonomy-gate.local.sql 2>&1 | tee /tmp/ain02-autonomy-gate.out
+          ! grep -Fq 'AIN02 FAIL' /tmp/ain02-autonomy-gate.out
+          grep -Eq 'AIN02 ALL PASS: [0-9]+ checks' /tmp/ain02-autonomy-gate.out
+      - name: AIN-03 privileges under Supabase default privileges (scratch database, AIN-03 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01 and AIN-02: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-03, switch those defaults on for the migrator, apply
+          # AIN-03 again, run its harness and assert the exact ACLs (the service role may call six functions and has no
+          # privilege at all on wf_memory_item).
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain3priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain3priv TEMPLATE postgres"
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain3priv SET search_path = public, extensions"
+          psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain3priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000990_sherivs_ain03_tenant_memory_context_scopes.sql
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -f tests/integration/ain03-tenant-memory.local.sql 2>&1 | tee /tmp/ain03-priv.out
+          ! grep -Fq 'AIN03 FAIL' /tmp/ain03-priv.out
+          grep -Eq 'AIN03 ALL PASS: [0-9]+ checks' /tmp/ain03-priv.out
+          psql "$SU/ain3priv" -v ON_ERROR_STOP=1 -f tests/integration/ain03-default-privileges.local.sql 2>&1 | tee /tmp/ain03-privacl.out
+          grep -Eq 'AIN03-PRIV ALL PASS: [0-9]+ checks' /tmp/ain03-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain3priv"
+      - name: AIN-03 tenant memory and context scopes (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain03-tenant-memory.local.sql 2>&1 | tee /tmp/ain03-tenant-memory.out
+          ! grep -Fq 'AIN03 FAIL' /tmp/ain03-tenant-memory.out
+          grep -Eq 'AIN03 ALL PASS: [0-9]+ checks' /tmp/ain03-tenant-memory.out
+      - name: AIN-04 privileges under Supabase default privileges (scratch database, AIN-04 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01 to AIN-03: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-04, switch those defaults on for the migrator, apply
+          # AIN-04 again, run its harness and assert the exact ACLs (the service role may call four functions and has
+          # SELECT only on the six tables).
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain4priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain4priv TEMPLATE postgres"
+          psql "$SU/ain4priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain4priv SET search_path = public, extensions"
+          psql "$MG/ain4priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000995_sherivs_ain04_evaluation_guardrail_layer.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain4priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain4priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000995_sherivs_ain04_evaluation_guardrail_layer.sql
+          psql "$SU/ain4priv" -v ON_ERROR_STOP=1 -f tests/integration/ain04-guardrail-layer.local.sql 2>&1 | tee /tmp/ain04-priv.out
+          ! grep -Fq 'AIN04 FAIL' /tmp/ain04-priv.out
+          grep -Eq 'AIN04 ALL PASS: [0-9]+ checks' /tmp/ain04-priv.out
+          psql "$SU/ain4priv" -v ON_ERROR_STOP=1 -f tests/integration/ain04-default-privileges.local.sql 2>&1 | tee /tmp/ain04-privacl.out
+          grep -Eq 'AIN04-PRIV ALL PASS: [0-9]+ checks' /tmp/ain04-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain4priv"
+      - name: AIN-04 evaluation and guardrail layer (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain04-guardrail-layer.local.sql 2>&1 | tee /tmp/ain04-guardrail-layer.out
+          ! grep -Fq 'AIN04 FAIL' /tmp/ain04-guardrail-layer.out
+          grep -Eq 'AIN04 ALL PASS: [0-9]+ checks' /tmp/ain04-guardrail-layer.out
+      - name: AIN-05 privileges under Supabase default privileges (scratch database, AIN-05 re-applied)
+        run: |
+          set -euo pipefail
+          # Lesson from AIN-01 to AIN-03: Supabase's default privileges hand every new object to anon, authenticated and
+          # service_role. Copy the migrated database, undo AIN-05, switch those defaults on for the migrator, apply
+          # AIN-05 again, run its harness and assert the exact ACLs (the service role may call three functions and no table is added).
+          PORT="${SIM_PG_PORT:-54329}"
+          SU="postgresql://postgres@127.0.0.1:${PORT}"
+          MG="postgresql://sim_migrator@127.0.0.1:${PORT}"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE IF EXISTS ain5priv"
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "CREATE DATABASE ain5priv TEMPLATE postgres"
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -q -c "ALTER DATABASE ain5priv SET search_path = public, extensions"
+          psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -f database/supabase/rollbacks/20261117000996_sherivs_ain05_agent_console_read_models.sql
+          for kind in TABLES FUNCTIONS SEQUENCES; do
+            psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -c "ALTER DEFAULT PRIVILEGES FOR ROLE sim_migrator IN SCHEMA public GRANT ALL ON ${kind} TO anon, authenticated, service_role"
+          done
+          psql "$MG/ain5priv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000996_sherivs_ain05_agent_console_read_models.sql
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -f tests/integration/ain05-agent-console.local.sql 2>&1 | tee /tmp/ain05-priv.out
+          ! grep -Fq 'AIN05 FAIL' /tmp/ain05-priv.out
+          grep -Eq 'AIN05 ALL PASS: [0-9]+ checks' /tmp/ain05-priv.out
+          psql "$SU/ain5priv" -v ON_ERROR_STOP=1 -f tests/integration/ain05-default-privileges.local.sql 2>&1 | tee /tmp/ain05-privacl.out
+          grep -Eq 'AIN05-PRIV ALL PASS: [0-9]+ checks' /tmp/ain05-privacl.out
+          psql "$SU/template1" -v ON_ERROR_STOP=1 -q -c "DROP DATABASE ain5priv"
+      - name: AIN-05 agent console read models (local Postgres, rolled back)
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/ain05-agent-console.local.sql 2>&1 | tee /tmp/ain05-agent-console.out
+          ! grep -Fq 'AIN05 FAIL' /tmp/ain05-agent-console.out
+          grep -Eq 'AIN05 ALL PASS: [0-9]+ checks' /tmp/ain05-agent-console.out
+      - name: WF-15a Private School Pack install checks
+        run: |
+          set -euo pipefail
+          PORT="${SIM_PG_PORT:-54329}"
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf15a-pack-install.local.sql 2>&1 | tee /tmp/wf15a-pack.out
+          ! grep -Fq 'WF15A FAIL' /tmp/wf15a-pack.out
+          grep -Eq 'WF15A ALL PASS: [0-9]+ checks' /tmp/wf15a-pack.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/wf15a2-fee-reminders.local.sql 2>&1 | tee /tmp/wf15a2-reminders.out
+          ! grep -Fq 'WF15A2 FAIL' /tmp/wf15a2-reminders.out
+          grep -Eq 'WF15A2 ALL PASS: [0-9]+ checks' /tmp/wf15a2-reminders.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/a2-multi-org-student-isolation.local.sql 2>&1 | tee /tmp/a2-isolation.out
+          ! grep -Fq 'A2ISO FAIL' /tmp/a2-isolation.out
+          grep -Eq 'A2ISO ALL PASS: [0-9]+ checks' /tmp/a2-isolation.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/a3-sensitive-step-up.local.sql 2>&1 | tee /tmp/a3-step-up.out
+          ! grep -Fq 'A3 FAIL' /tmp/a3-step-up.out
+          grep -Eq 'A3 ALL PASS: [0-9]+ checks' /tmp/a3-step-up.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/a5-finished-at-write-once.local.sql 2>&1 | tee /tmp/a5-finished.out
+          ! grep -Fq 'A5 FAIL' /tmp/a5-finished.out
+          grep -Eq 'A5 ALL PASS: [0-9]+ checks' /tmp/a5-finished.out
       - name: WF-01 SKIP LOCKED claim under concurrency (real Postgres, many connections)
         working-directory: tools/sim-lab
         run: |
+          set -euo pipefail
           node ../../tests/integration/wf01-claim-concurrency.local.mjs 2>&1 | tee /tmp/wf01-conc.out
           grep -q 'WF01-CONC RESULT: pass=4 fail=0' /tmp/wf01-conc.out
+      - name: COMMS-03 SMS dispatch write path, refunds and plan gate (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/comms-03-sms-dispatch-financials.local.sql 2>&1 | tee /tmp/comms03.out
+          grep -q 'COMMS-03 RESULT: pass=65 fail=0' /tmp/comms03.out
+          test "$(grep -c 'COMMS-03 PASS' /tmp/comms03.out)" -ge 65
+          ! grep -q 'COMMS-03 FAIL' /tmp/comms03.out
+      - name: COMMS-03 concurrent claims, refunds and rollback (real Postgres, many connections)
+        working-directory: tools/sim-lab
+        run: |
+          node ../../tests/integration/comms-03-sms-concurrency.local.mjs 2>&1 | tee /tmp/comms03-conc.out
+          grep -q 'COMMS-03-CONC RESULT: pass=10 fail=0' /tmp/comms03-conc.out
+      - name: M10 ROPA/DPIA tenant isolation (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m10-ropa-dpia-register.local.sql 2>&1 | tee /tmp/m10-ropa-dpia.out
+          grep -q 'M10 ALL PASS' /tmp/m10-ropa-dpia.out
+      - name: M14 pilot metrics (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m14-pilot-metrics.local.sql 2>&1 | tee /tmp/m14-pilot.out
+          grep -q 'M14 ALL PASS' /tmp/m14-pilot.out
       - name: Seed synthetic schools (10% scale)
         working-directory: tools/sim-lab
         run: SIM_SCALE=0.1 node sim/gen.mjs && node sim/seed-flows.mjs
       - name: Scenarios
         working-directory: tools/sim-lab
         run: node sim/scenarios.mjs
+      - name: Scenario ratchet (fails on any new failing scenario or stale baseline entry; issue #465)
+        working-directory: tools/sim-lab
+        run: node sim/scenario-ratchet.mjs
       - name: Database security audit + RLS leak regression
         working-directory: tools/sim-lab
         run: |
@@ -300,6 +575,26 @@ jobs:
           grep -Eq 'steps_per_minute=[1-9][0-9]*' /tmp/wf04-load.out
           node load/wf05-event-e2e.mjs 2>&1 | tee /tmp/wf05-e2e.out
           grep -Eq 'WF05-E2E RESULT: .* dup=0$' /tmp/wf05-e2e.out
+          node load/wf06-action-e2e.mjs 2>&1 | tee /tmp/wf06-e2e.out
+          grep -Eq 'WF06-E2E RESULT: in_app_sandbox=1 drafts=1 refused_live=1 sent_live=0 dup=0$' /tmp/wf06-e2e.out
+          node load/wf07-approval-e2e.mjs 2>&1 | tee /tmp/wf07-e2e.out
+          grep -Eq 'WF07-E2E RESULT: approved_dispatched=1 single_approval_dispatched=0 rejected_dispatched=0 expired_dispatched=0 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf07-e2e.out
+          node load/wf08-run-history-e2e.mjs 2>&1 | tee /tmp/wf08-e2e.out
+          grep -Eq 'WF08-E2E RESULT: cancelled_dispatched=0 retried_dispatched=1 retry_runs=1 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf08-e2e.out
+          node load/wf12-quota-e2e.mjs 2>&1 | tee /tmp/wf12-e2e.out
+          grep -Eq 'WF12-E2E RESULT: hourly_executed=2 daily_runs=2->4 purged_runs=4 kept_pending_approvals=1 refusals=[0-9]+ sent_live=0 dup=0$' /tmp/wf12-e2e.out
+          node load/ain01-agent-e2e.mjs 2>&1 | tee /tmp/ain01-e2e.out
+          grep -Eq 'AIN01-E2E RESULT: budget=5 concurrent=20 inserted=5 refused=15 over_budget=0 replay_refused=0 paused_inserted=0 ungranted_inserted=0 ai_inserted=0 registry_org_agents=17 cross_org_leak=0 sent_live=0 dup=0$' /tmp/ain01-e2e.out
+          node load/ain02-autonomy-e2e.mjs 2>&1 | tee /tmp/ain02-e2e.out
+          grep -Eq 'AIN02-E2E RESULT: concurrent=20 promoted=1 refused=19 ledger_rows=1 rivals=10 rivals_promoted=1 nonfounder_promoted=0 direct_write_refused=4 auto_demoted=2 replay_demoted=0 race_demoted=1 race_level=draft rung_race_demoted=1 rung_race_level=suggest record_waited=true record_after_demotion=42501 step_after_promote=act_with_approval step_after_demote=suggest sent_live=0 dup=0$' /tmp/ain02-e2e.out
+          node load/ain03-memory-e2e.mjs 2>&1 | tee /tmp/ain03-e2e.out
+          grep -Eq 'AIN03-E2E RESULT: proposals=60 proposed=50 refused=10 over_cap=0 same_key=30 same_key_inserted=1 puts=20 live_after_puts=1 version_after_puts=20 org_scope_writes=320 org_scope_inserted=300 org_scope_refused=20 accepts=10 accepted=1 mixed_winners=1 purged=10 writes_during_purge=15 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0$' /tmp/ain03-e2e.out
+          node load/ain04-guardrail-e2e.mjs 2>&1 | tee /tmp/ain04-e2e.out
+          grep -Eq 'AIN04-E2E RESULT: concurrent_checks=250 landed=200 refused=50 over_cap=0 mixed=30 clean=10 flagged=10 blocked=10 usable=10 reviews=20 reviewed=1 review_refused=19 starter_refused=1 suite_runs=10 suite_reused=10 new_runs=0 direct_write_refused=4 member_sees_other_org=0 sent_live=0 dup=0$' /tmp/ain04-e2e.out
+          node load/ain05-console-e2e.mjs 2>&1 | tee /tmp/ain05-e2e.out
+          grep -Eq 'AIN05-E2E RESULT: concurrent_reads=60 read_ok=60 proposals=20 pending_before=20 decided=20 reads_during_decides_failed=0 pending_after=0 tenant_leaks=0 plain_refused=3 client_refused=3 reads_changed_rows=0 sent_live=0 dup=0$' /tmp/ain05-e2e.out
+          node load/wf15a-pack-e2e.mjs 2>&1 | tee /tmp/wf15a-e2e.out
+          grep -Eq 'WF15A-E2E RESULT: templates=8 events=8 dispatched=8 runs=8 replay_events=0 replay_runs=0 executor_calls_positive=1 sent_live=0 dup=0$' /tmp/wf15a-e2e.out
           cd load && SMOKE=1 PEAK=50 ../bin/k6 run --quiet flows.js
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -320,7 +615,12 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with: { node-version: "${{ env.NODE_VERSION }}", cache: npm, cache-dependency-path: mobile/package-lock.json }
+        with:
+          {
+            node-version: "${{ env.NODE_VERSION }}",
+            cache: npm,
+            cache-dependency-path: mobile/package-lock.json,
+          }
       - run: npm ci --no-audit --fund=false
       - run: npm run typecheck
 

@@ -29,6 +29,10 @@ function walk(value: unknown, depth: number): unknown {
     for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
       if (SECRET_KEY_PATTERN.test(k) || k === "__proto__" || k === "constructor") continue;
       if (n++ >= MAX_KEYS) break;
+      if (/^(recipient(ids?|refs?)|templateParams)$/i.test(k)) {
+        out[k] = "[withheld]";
+        continue;
+      }
       out[k] = walk(v, depth + 1);
     }
     return out;

@@ -86,8 +86,9 @@ function TrustPage() {
             </li>
             <li>
               <FeatureCard title="Responsible AI">
-                AI output is untrusted by default. Workers operate inside permissions and human
-                oversight. Unlimited autonomy is not offered.
+                No AI agent runs on its own today. AI agents exist only as written definitions. When
+                they are switched on, they will only suggest work, and a person will have to approve
+                it. AI output is treated as untrusted until a person checks it.
               </FeatureCard>
             </li>
             <li>

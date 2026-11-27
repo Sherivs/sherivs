@@ -20,6 +20,11 @@ function LegalBody({ doc }: { doc: LegalDocument }) {
               as contractual language. Unresolved facts are listed below.
             </Callout>
           ) : null}
+          {doc.status === "published" && doc.counselReviewed !== true ? (
+            <Callout title="Not yet reviewed by legal counsel" tone="warning">
+              This page has not yet been reviewed by legal counsel. It may change after that review.
+            </Callout>
+          ) : null}
           {doc.lastUpdated ? (
             <p className="text-sm text-sherivs-muted">Last updated: {doc.lastUpdated}</p>
           ) : null}

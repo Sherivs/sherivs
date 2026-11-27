@@ -1,4 +1,3 @@
-
 export const LAYER_PAGES: Record<
   string,
   { path: string; eyebrow: string; title: string; lead: string; extra: readonly string[] }
@@ -19,17 +18,17 @@ export const LAYER_PAGES: Record<
     title: "Coordinated workers, not unbounded autonomy",
     lead: "AI workers in Sherivs are designed as identities with owners, permissions, bounded tasks, execution tracking, and human oversight.",
     extra: [
-      "Do not expect unlimited autonomous execution. Some worker surfaces still require configured model credentials and are labelled in development.",
+      "No AI worker runs today. Workers exist only as definitions that are limited to suggesting work. There is no agent runtime or scheduler yet.",
       "Workers must not enlarge their own permissions or deploy themselves.",
     ],
   },
   "digital-twins": {
     path: "/product/digital-twins",
-    eyebrow: "Digital twins",
-    title: "Twins that remember, relate, and react",
-    lead: "A Sherivs twin is a governed digital model: identity, state, relationships, and events, with computation on change or on a schedule.",
+    eyebrow: "Personal twins",
+    title: "Personal twins: what exists today",
+    lead: "A personal twin is a stored record of a person's role and context. Today personal twins exist only as data and a short brief panel.",
     extra: [
-      "Administrative twin surfaces exist in the application. A complete twin runtime is in development.",
+      "Personal twins do not act on their own. A twin runtime is not built.",
       "Device and IoT twins are outside the current public product envelope.",
     ],
   },

@@ -38,6 +38,13 @@ const NONE_CONFIGURED: ChannelAvailability = {
   web_push: false,
 };
 
+const CORE19_TEST_MODE: ChannelAvailability = {
+  in_app: true,
+  email: false,
+  sms: false,
+  web_push: false,
+};
+
 describe("planNotificationDispatch — dispatch path", () => {
   it("selects every configured, policy-permitted channel", () => {
     const plan = planNotificationDispatch(makeNotification(), ALL_CONFIGURED);
@@ -76,6 +83,19 @@ describe("planNotificationDispatch — dispatch path", () => {
     expect(plan.decision).toBe("dispatch");
     if (plan.decision === "dispatch") {
       expect(plan.selectedChannels).toEqual(["in_app", "email"]);
+    }
+  });
+
+  it("keeps CORE-19 delivery in-app only while external channels remain test-only", () => {
+    const plan = planNotificationDispatch(makeNotification(), CORE19_TEST_MODE);
+    expect(plan.decision).toBe("dispatch");
+    if (plan.decision === "dispatch") {
+      expect(plan.selectedChannels).toEqual(["in_app"]);
+      expect(plan.omissions).toEqual([
+        { channel: "email", reason: "channel_not_configured" },
+        { channel: "sms", reason: "channel_not_configured" },
+        { channel: "web_push", reason: "channel_not_configured" },
+      ]);
     }
   });
 });

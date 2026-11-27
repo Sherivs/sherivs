@@ -10,7 +10,7 @@ export const Route = createFileRoute("/(site)/integrations")({
     publicHead({
       title: "Integrations",
       description:
-        "Verified Sherivs integration paths such as Paystack and WhatsApp when configured. These are not commercial partnership announcements.",
+        "Integrations Sherivs is building, such as Paystack and WhatsApp. Neither is live for customers yet. These are not partnership announcements.",
       path: "/integrations",
     }),
 });
@@ -20,8 +20,8 @@ function IntegrationsPage() {
   return (
     <MarketingPage
       eyebrow="Integrations"
-      title="Verified integration paths"
-      lead="A technology listed here is something Sherivs can connect to when credentials and entitlements exist. It is not evidence of a commercial partnership."
+      title="Integrations in progress"
+      lead="A technology listed here is one Sherivs has started to connect to. Each card says whether it is live. A listing is not evidence of a commercial partnership."
       crumbs={[
         { href: "/", label: "Home" },
         { href: "/integrations", label: "Integrations" },

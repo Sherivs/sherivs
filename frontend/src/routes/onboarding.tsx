@@ -28,7 +28,7 @@ export const Route = createFileRoute("/onboarding")({
       {
         name: "description",
         content:
-          "Request an administrator account to set up your organization, configure school operations, and invite your community into Sherivs Scholar. This page opens your email app. It does not create an account or a ticket.",
+          "Request an administrator account to set up your organization, configure school operations, and invite your community into Sherivs Scholar. This page records your request for the Sherivs team. It does not create an account.",
       },
       { name: "robots", content: "noindex, nofollow" },
     ],

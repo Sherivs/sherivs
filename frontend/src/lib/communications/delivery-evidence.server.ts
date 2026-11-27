@@ -66,14 +66,17 @@ export const DELIVERY_EVIDENCE_MAX = {
   triggeredBy: 160,
 } as const;
 
+/** Channels the substrate accepts (sms/whatsapp need migration 20261117003400, ADR-151). */
+export type DeliveryEvidenceChannel = "email" | "voice" | "sms" | "whatsapp";
+
 /** One outbound delivery attempt — the unit of evidence. */
 export interface DeliveryEvidenceRecord {
   /** Evidence row id (uuid v4, generated at record time). */
   id: string;
   /** Tenant the attempted communication belongs to (resolved server-side). */
   tenantId: string;
-  /** Communication channel the attempt ran on. */
-  channel: "email" | "voice";
+  /** Communication channel the attempt ran on (sms and whatsapp added by M22, ADR-151). */
+  channel: DeliveryEvidenceChannel;
   /** The adapter that performed the attempt (registry provider id). */
   adapter: string;
   /** Correlation to the originating notification, when one exists. */
@@ -146,7 +149,7 @@ function truncateReason(reason: string): string {
 
 export interface DeliveryEvidenceAttemptFacts {
   tenantId: string;
-  channel: "email" | "voice";
+  channel: DeliveryEvidenceChannel;
   adapter: string;
   notificationRef: string | null;
   recipientRedacted: string;
@@ -154,7 +157,10 @@ export interface DeliveryEvidenceAttemptFacts {
   triggeredBy?: string;
 }
 
-function deliveredRecord(facts: DeliveryEvidenceAttemptFacts, providerMessageId: string | null): DeliveryEvidenceRecord {
+function deliveredRecord(
+  facts: DeliveryEvidenceAttemptFacts,
+  providerMessageId: string | null,
+): DeliveryEvidenceRecord {
   return {
     id: crypto.randomUUID(),
     tenantId: facts.tenantId,
@@ -233,6 +239,47 @@ export function telephonyEvidenceRecord(
     : failureRecord(facts, result);
 }
 
+/**
+ * Generic attempt → evidence record for the SMS and WhatsApp send paths (M22). `providerMessageId`
+ * non-null means the provider confirmed acceptance; otherwise the failure code and reason are kept.
+ * The recipient must already be redacted by the caller with `redactPhoneRecipient`.
+ */
+export function attemptEvidenceRecord(
+  facts: DeliveryEvidenceAttemptFacts,
+  attempt:
+    | { outcome: "delivered"; providerMessageId: string }
+    | { outcome: "failed" | "undeliverable"; code: string; reason: string },
+): DeliveryEvidenceRecord {
+  return attempt.outcome === "delivered"
+    ? deliveredRecord(facts, attempt.providerMessageId)
+    : failureRecord(facts, attempt);
+}
+
+/**
+ * Append one evidence row, non-fatally (same posture as the email/telephony wrappers): a sink
+ * failure is logged as `evidence_write_failed` and never changes the send result. A null sink
+ * (substrate not configured) records nothing.
+ */
+export async function recordDeliveryEvidence(
+  sink: DeliveryEvidenceSink | null | undefined,
+  record: DeliveryEvidenceRecord,
+): Promise<void> {
+  if (!sink) return;
+  try {
+    await sink.record(record);
+  } catch (err) {
+    logStructured({
+      level: "warn",
+      msg: "evidence_write_failed: delivery attempt completed but its evidence row could not be recorded",
+      component: DELIVERY_EVIDENCE_COMPONENT,
+      tenant_id: record.tenantId,
+      err,
+      notification_ref: record.notificationRef,
+      evidence_outcome: record.outcome === "delivered" ? "delivered" : "not_delivered",
+    });
+  }
+}
+
 /* ─────────────────────────────────────────────────────────────
  * J-045-style composition: evidence wrap (non-fatal, fail-closed)
  * ────────────────────────────────────────────────────────────*/
@@ -245,7 +292,10 @@ export function telephonyEvidenceRecord(
  * When no sink is configured (substrate absent), the adapter is returned
  * unchanged — the send result stays exactly as typed.
  */
-export function withEmailDeliveryEvidence(adapter: EmailAdapter, sink: DeliveryEvidenceSink | null): EmailAdapter {
+export function withEmailDeliveryEvidence(
+  adapter: EmailAdapter,
+  sink: DeliveryEvidenceSink | null,
+): EmailAdapter {
   if (sink === null) return adapter;
   return {
     providerId: adapter.providerId,
@@ -261,7 +311,8 @@ export function withEmailDeliveryEvidence(adapter: EmailAdapter, sink: DeliveryE
           tenant_id: command.notification.tenantRef,
           err,
           notification_ref: command.notification.id,
-          evidence_outcome: "providerMessageId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
+          evidence_outcome:
+            "providerMessageId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
         });
       }
       return result;
@@ -294,7 +345,8 @@ export function withTelephonyDeliveryEvidence(
           tenant_id: command.tenantRef,
           err,
           notification_ref: command.triggerEvent,
-          evidence_outcome: "callId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
+          evidence_outcome:
+            "callId" in result && !("outcome" in result) ? "delivered" : "not_delivered",
         });
       }
       return result;
@@ -340,7 +392,9 @@ export interface PostgrestDeliveryEvidenceConfig {
  * recording is UNAVAILABLE (attempts still surface their typed results; the
  * missing substrate is visible in structured logs at composition time).
  */
-export function deliveryEvidenceConfigFromEnv(env: ServerEnv): PostgrestDeliveryEvidenceConfig | null {
+export function deliveryEvidenceConfigFromEnv(
+  env: ServerEnv,
+): PostgrestDeliveryEvidenceConfig | null {
   const supabaseUrl = env[SUPABASE_URL_ENV];
   const serviceRoleKey = env[SUPABASE_SERVICE_ROLE_KEY_ENV];
   if (!supabaseUrl || supabaseUrl.trim().length === 0) return null;
@@ -355,23 +409,22 @@ export function deliveryEvidenceConfigFromEnv(env: ServerEnv): PostgrestDelivery
  * never logged. No vendor SDK import — the substrate is reached the same
  * adapter way the providers are (§25).
  */
-export function createPostgrestDeliveryEvidenceSink(config: PostgrestDeliveryEvidenceConfig): DeliveryEvidenceSink {
+export function createPostgrestDeliveryEvidenceSink(
+  config: PostgrestDeliveryEvidenceConfig,
+): DeliveryEvidenceSink {
   return {
     kind: "postgrest",
     async record(record: DeliveryEvidenceRecord): Promise<void> {
-      const response = await fetch(
-        `${config.supabaseUrl}/rest/v1/${DELIVERY_EVIDENCE_TABLE}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${config.serviceRoleKey}`,
-            apikey: config.serviceRoleKey,
-            "Content-Type": "application/json",
-            Prefer: "return=minimal",
-          },
-          body: JSON.stringify(toDeliveryEvidenceRow(record)),
+      const response = await fetch(`${config.supabaseUrl}/rest/v1/${DELIVERY_EVIDENCE_TABLE}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.serviceRoleKey}`,
+          apikey: config.serviceRoleKey,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
         },
-      );
+        body: JSON.stringify(toDeliveryEvidenceRow(record)),
+      });
       if (!response.ok) {
         // The response body is untrusted and may echo tenant data; report
         // only the status. Secret values never enter this message (§30).

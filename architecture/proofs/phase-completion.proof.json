@@ -2,7 +2,7 @@
   "artifact": "phase-completion",
   "wave": "AUDIT-1",
   "owner": "kernel (Phase 01 governance)",
-  "generatedAt": "2026-11-13T18:31:06.055Z",
+  "generatedAt": "2026-11-27T18:33:38.622Z",
   "authority": [
     "CONSTITUTION.md",
     "architecture/registry.json",
@@ -18,12 +18,12 @@
   },
   "summary": {
     "phasesAudited": 51,
-    "complete": 5,
-    "implementing": 28,
+    "complete": 4,
+    "implementing": 29,
     "architectureDefined": 18,
     "withModules": 33,
     "withResolvedModules": 33,
-    "totalTestsCited": 2265,
+    "totalTestsCited": 2274,
     "registryBeyondAudit": [
       "14",
       "15",
@@ -110,6 +110,12 @@
         ]
       },
       {
+        "id": "12",
+        "levels": [
+          "L4 frontend/workspace integration"
+        ]
+      },
+      {
         "id": "13",
         "levels": [
           "L4 frontend/workspace integration"
@@ -130,7 +136,7 @@
     ],
     "exemptionSource": "architecture/phase-completion-exemptions.json",
     "missingLevelFrequency": {
-      "L4 frontend/workspace integration": 46,
+      "L4 frontend/workspace integration": 47,
       "L3 backend": 18,
       "L2 data model": 12,
       "L1 conceptual": 1
@@ -316,7 +322,7 @@
       ],
       "modulesResolve": true,
       "citedTestFiles": 4,
-      "testsCounted": 100,
+      "testsCounted": 109,
       "executableEvidence": 4,
       "evidence": {
         "L1 conceptual": true,
@@ -617,7 +623,7 @@
         "L1 conceptual": true,
         "L2 data model": true,
         "L3 backend": true,
-        "L4 frontend/workspace integration": true,
+        "L4 frontend/workspace integration": false,
         "L5 operational maturity": true
       },
       "registryLevels": [
@@ -628,11 +634,15 @@
         true
       ],
       "registryStatus": "COMPLETE",
-      "derivedStatus": "COMPLETE",
-      "complete": true,
-      "missingLevels": [],
+      "derivedStatus": "IMPLEMENTING",
+      "complete": false,
+      "missingLevels": [
+        "L4 frontend/workspace integration"
+      ],
       "exemptedLevels": [],
-      "unconfirmedLevels": []
+      "unconfirmedLevels": [
+        "L4 frontend/workspace integration"
+      ]
     },
     {
       "id": "13",

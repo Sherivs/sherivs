@@ -180,7 +180,7 @@ BEGIN
   -- Append-only
   PERFORM eng3.throws('no update', $q$UPDATE public.cg_tool_call_ledger SET tier='T0'$q$, '%append-only%');
   PERFORM eng3.throws('no delete', $q$DELETE FROM public.cg_tool_call_ledger$q$, '%append-only%');
-  PERFORM eng3.throws('no truncate', $q$TRUNCATE public.cg_tool_call_ledger$q$, '%append-only%');
+  PERFORM eng3.throws('no truncate', $q$TRUNCATE public.cg_tool_call_ledger CASCADE$q$, '%cg_tool_call_ledger is append-only%');
 
   -- A suspended context cannot be cleared to act.
   UPDATE public.cg_twin_context SET status = 'suspended';

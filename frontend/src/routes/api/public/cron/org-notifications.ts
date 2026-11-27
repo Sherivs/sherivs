@@ -5,7 +5,8 @@
  * any scheduler. Returns 503 until CRON_SECRET is set and the ENGINE-20 tables exist.
  *
  * Email goes through the Resend adapter and needs RESEND_API_KEY and RESEND_FROM_ADDRESS; without
- * them every email row is failed with a reason code and nothing is sent. WhatsApp has no sender
+ * them every email row is failed with a reason code and nothing is sent. Every attempt records a
+ * `cg_delivery_evidence` row when the substrate is configured (M22, ADR-151). WhatsApp has no sender
  * wired (see notification-worker.server.ts). SMS cannot be queued.
  */
 import { createFileRoute } from "@tanstack/react-router";
@@ -16,13 +17,8 @@ import {
   type SendOutcome,
   type WorkerClient,
 } from "@/lib/org-workforce/notification-worker.server";
-import {
-  createResendEmailAdapter,
-  createResendEmailProviderRegistry,
-  resendEmailConfigFromEnv,
-} from "@/lib/communications/resend-email.server";
+import { createTransactionalEmailSender } from "@/lib/communications/email-send.server";
 import { SystemClock, TimeAuthority } from "@/lib/kernel/time-authority";
-import { isEmailDeliveryReceipt } from "@/lib/notifications/email-adapter-contract";
 import {
   isTruthyFlag,
   pollExpoPushReceipts,
@@ -38,33 +34,20 @@ function authorized(header: string | null, secret: string): boolean {
   return got.length === want.length && timingSafeEqual(got, want);
 }
 
+/** Email goes through the one transactional email path (Resend + delivery evidence, M22). */
 function emailPort() {
-  const adapter = createResendEmailAdapter(resendEmailConfigFromEnv(process.env));
-  const registry = createResendEmailProviderRegistry(process.env);
+  const send = createTransactionalEmailSender(process.env);
   return async (m: EmailSend): Promise<SendOutcome> => {
-    const result = await adapter.send(
-      {
-        notification: {
-          id: m.id,
-          tenantRef: m.orgId,
-          recipientRef: m.recipientId,
-          audienceKind: "user",
-          category: m.category,
-          subject: m.subject,
-          body: m.text,
-          actionRef: null,
-          state: "queued",
-          createdAt: timeAuthority.now().at,
-        },
-        recipientAddress: m.to,
-        subject: m.subject,
-        body: m.text,
-      },
-      registry,
-    );
-    if (isEmailDeliveryReceipt(result)) return { ok: true };
-    // Codes only: the provider's own wording can echo an address.
-    return { ok: false, reason: `email_${result.code}` };
+    const out = await send({
+      id: m.id,
+      tenantRef: m.orgId,
+      recipientRef: m.recipientId,
+      category: m.category,
+      to: m.to,
+      subject: m.subject,
+      body: m.text,
+    });
+    return out.ok ? { ok: true } : { ok: false, reason: `email_${out.code}` };
   };
 }
 
