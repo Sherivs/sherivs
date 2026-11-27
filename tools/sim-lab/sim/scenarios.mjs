@@ -3492,9 +3492,8 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       [A.schoolId],
     );
     // A7: a department-scoped template accepts only an equal or narrower scope, so the chief is assigned to a class.
-    const chiefClass = (
-      await asOwner("select id from classes where school_id=$1 order by id limit 1", [A.schoolId])
-    ).row?.id;
+    // CS-01: that class is the class of the reported student, which is what the approval is now checked against.
+    const chiefClass = tc;
     await t("select public.role_assign($1,$2,'ng.chief_invigilator','class',$3)", [
       A.schoolId,
       chief,
@@ -3637,8 +3636,8 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     await act(A.teacher);
     out.bioUser = await t("select public.biometric_checkin($1,$2,0.99)", [dev, A.teacher]);
     out.consentPurpose = await asOwner(
-      "insert into consent_records (school_id, student_id, purpose, status, policy_version, granted_at, capture_method) values ($1,$2,'biometric_attendance','granted','v1',now(),'paper_signed')",
-      [A.schoolId, studs[0].id],
+      "insert into consent_records (school_id, student_id, purpose, status, policy_version, granted_at, capture_method, lawful_basis, granted_by) values ($1,$2,'biometric_attendance','granted','v1',now(),'paper_signed','consent',$3)",
+      [A.schoolId, studs[0].id, A.admin],
     );
     // offline sync
     const otherStud = (await asOwner("select id from students where class_id=$1 limit 1", [other]))
