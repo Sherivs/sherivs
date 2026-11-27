@@ -990,7 +990,7 @@ const inTx = async (uid, fn, role = "authenticated") => {
         D.schoolId,
       ])
     ).rows[0].id;
-    await c.query("update grades set ca_score=5, exam_score=10 where student_id=$1", [s]);
+    await c.query("update grades set ca_score=5, exam_score=10, total_score=15 where student_id=$1", [s]);
     const r = (
       await c.query(
         "select public.session_rollover($1,'2025/2026','2026/2027',false, jsonb_build_object($2::text,'withdraw')) r",
@@ -1098,7 +1098,7 @@ const inTx = async (uid, fn, role = "authenticated") => {
   );
   const co = await inTx(E.admin, async (c) => {
     await c.query(
-      "update grades set ca_score=5, exam_score=10 where student_id=$1 and subject='MTH101'",
+      "update grades set ca_score=5, exam_score=10, total_score=15 where student_id=$1 and subject='MTH101'",
       [stu.id],
     );
     const failed = (
@@ -1106,6 +1106,7 @@ const inTx = async (uid, fn, role = "authenticated") => {
         stu.id,
       ])
     ).rows[0].n;
+    // M06 made total_score a stored column, so a score edit sets it too.
     // A7: the retake row is written on the trusted system path (no end-user identity) so the author-cannot-publish
     // rule is not tripped by the scenario's own setup; the carry-over arithmetic is what this scenario measures.
     const claims = (await c.query("select current_setting('request.jwt.claims', true) v")).rows[0]
@@ -3845,9 +3846,9 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       mth101 = await cid("MTH101"),
       phy101 = await cid("PHY101");
     // scores drive grade points through the grades triggers: pass everything, then fail MTH101
-    await asOwner("update grades set ca_score = 30, exam_score = 40 where student_id=$1", [s1.id]);
+    await asOwner("update grades set ca_score = 30, exam_score = 40, total_score = 70 where student_id=$1", [s1.id]);
     await asOwner(
-      "update grades set ca_score = 5, exam_score = 10 where student_id=$1 and course_id=$2",
+      "update grades set ca_score = 5, exam_score = 10, total_score = 15 where student_id=$1 and course_id=$2",
       [s1.id, mth101],
     );
     out.gpDbg = (
@@ -3989,7 +3990,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       [A.schoolId, kid.id],
     );
     await asOwner(
-      "update grades set ca_score = 10, exam_score = 20 where student_id=$1 and term='First Term'",
+      "update grades set ca_score = 10, exam_score = 20, total_score = 30 where student_id=$1 and term='First Term'",
       [kid.id],
     );
     out.run = (
