@@ -47,6 +47,8 @@ describe("sherivs-cron scheduler", () => {
     ["workflow-tick", "2026-11-17T12:21:00.000Z", true],
     ["org-notifications", "2026-11-17T12:20:00.000Z", true],
     ["org-notifications", "2026-11-17T12:21:00.000Z", false],
+    ["push-expo-receipts", "2026-11-17T12:20:00.000Z", true],
+    ["push-expo-receipts", "2026-11-17T12:21:00.000Z", false],
     ["jarvis-tick", "2026-11-17T12:20:00.000Z", true],
     ["integrations-sync", "2026-11-17T12:30:00.000Z", true],
     ["integrations-sync", "2026-11-17T12:20:00.000Z", false],
@@ -57,9 +59,11 @@ describe("sherivs-cron scheduler", () => {
     const route = ROUTES.find((candidate) => candidate.name === name);
     if (!route) throw new Error("test_route_missing");
     const { fetchImpl } = await runScheduled({ ...allEnabled, CRON_SECRET: secret }, time);
-    expect(fetchImpl.mock.calls.some(([url]) => new URL(String(url)).pathname === route.path)).toBe(
-      due,
-    );
+    expect(
+      fetchImpl.mock.calls.some(
+        ([url]) => `${new URL(String(url)).pathname}${new URL(String(url)).search}` === route.path,
+      ),
+    ).toBe(due);
   });
 
   it("only calls enabled routes and treats non-true values as disabled", async () => {
@@ -149,7 +153,7 @@ describe("sherivs-cron scheduler", () => {
       fetchImpl,
     );
     const output = log.mock.calls.flat().join(" ");
-    expect(fetchImpl).toHaveBeenCalledTimes(6);
+    expect(fetchImpl).toHaveBeenCalledTimes(7);
     expect(output).not.toContain(secret);
     expect(output).not.toContain("private response body");
     expect(output).toContain("cron route=workflow-tick http=0");
