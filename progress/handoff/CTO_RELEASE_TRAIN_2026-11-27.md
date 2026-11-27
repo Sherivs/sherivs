@@ -2,12 +2,11 @@
 
 Status: NOTHING here is applied to any hosted database. Every claim below was produced on a disposable local PG16 chain DB built from the merged tree. Evidence line = the command and its result.
 
-## 1. What was proven (one merged tree, one chain DB)
-- Trial-merged all 13 draft branches in order onto origin/master (1cf981ef). Only registry files conflicted (verify.yml, adr/INDEX.md): resolved by keeping both sides; verify.yml parses.
-- 234/234 migrations apply in order (…000100 CS-01 → …000800 M4).
-- Every harness registered in verify.yml was run on that one DB. All eight new/changed harnesses pass: cs01, sup01 (48), grp01 (44), m2b (14), m9b (20), m4 (7), wf07 (103), wf12 quotas (219). Others that ran also pass (a2, a3, a5, ain01–05, wf01–08, wf12-priv, wf15a/a2, m06, m10–m14, db12, scheduling, sec02).
-- Not run (they refuse any DB not named for them or not marked disposable; pre-existing guard, not a failure): comms-03, ent-01, fin-01, engine01–03, sv1-twin, whatsapp-fix. They need their own named scratch DBs.
-- Rollbacks: all 8 rollback files run cleanly in reverse order (…000800 → …000100) on the same DB, then all 8 migrations re-apply cleanly forward (round trip proven).
+## 1. What was proven (one merged tree, one chain DB) - updated 2026-11-28
+- Trial-merged all 14 draft branches in order onto origin/master (1cf981ef). Only registry files conflicted (verify.yml, adr/INDEX.md, the neutrality baseline). Registry conflicts keep both sides; baseline conflicts are resolved by `tools/merge-neutrality-baseline.py <merge-base> <branch>` (adds only that branch's new entries and counter deltas, keeps formatting). Merged tree: verify.yml parses, baseline JSON parses, neutrality guard reports 0 new violations.
+- 235/235 migrations apply in order (...000100 CS-01 to ...000900 cash path).
+- ALL 46 harnesses registered in verify.yml pass on the merged tree. Guarded ones were run on the database names their own guards require: sim_chain (comms-03, ent-01, fin-01, whatsapp-fix), engine_chain with coregrid.test_disposable_database=on (engine01-03), coregrid_twin_test (sv1-twin-personal). New harnesses: cs01, sup01 48, grp01 44, m2b 14, m9b 20, m4 7, wf07 103, wf12 quotas 219, cash path 20.
+- Rollbacks: the eight rollback files (000800 to 000100) round-trip cleanly on the chain DB; the cash-path rollback is proven separately (harness fails without the migration, passes after re-apply).
 - Unit: ain06a (8), ain07 (5), model-router (8) pass on the merged tree.
 
 ## 2. Defects found only by combining (and fixed)
@@ -16,16 +15,12 @@ Status: NOTHING here is applied to any hosted database. Every claim below was pr
 3. PR #523 (CS-01) was conflicting with master in NEUTRALITY_GUARD_BASELINE.json. Rebased onto current master; its 2 baseline entries (5 hits) re-added textually. Force-pushed to claude/class-scope-approvals (only my own branch).
 Individually these PRs were green; together they were not. That is the argument for always running the combined chain before any merge.
 
-## 3. Gate that blocks the release: neutrality guard
-Merged tree reports 16 NEW hits (shrink-only ratchet, so CI will fail without a founder decision):
-- M9B (#533): 1 — literal `'bursar'` in the cg_fee_authorize call.
-- WF-07 (#535): 5 — `school_id` column on notifications (unavoidable, the table is legacy-shaped) + 2 comment words (student, guardian; rewordable).
-- M4 (#537): 10 — role-name literals copied from the function it replaces (the same literals are baselined against the OLD file; new file = new hits) + 1 comment word.
-Decision needed: extend the baseline for the 12 unavoidable hits (my recommendation: yes, with each hit tagged to its stream and a removal condition), and I reword the 3 comment-only hits first. CS-01's 5 hits are already in the rebased baseline.
+## 3. Gate: neutrality guard (resolved with founder approval, 2026-11-28)
+The ratchet is shrink-only, so each mission's unavoidable hits were baselined on its own branch, tagged with its mission id and a removal condition, after the 3 comment-only hits were reworded: M9B 1 hit, WF-07 3 (school_id on the legacy notifications table), M4 9 (role-name literals carried from the function it replaces), cash path 21 (legacy table vocabulary it still writes). Merged tree: 0 new violations.
 
 ## 4. Merge order (when you approve)
-1. #525 docs.  2. #523 CS-01 (rebased) + baseline.  3. #526 A3 → #527 A4.  4. #528 SUP-01.  5. #529 GRP-01 (now fixed).  6. #532 M2b resolver.  7. #533 M9B.  8. #534 AIN-01 deferral.  9. #535 WF-07.  10. #537 M4.  11. #530 AIN-06/07, #531 router, #536 design note (no DB).
-Rule: merge one, let CI go green on master, then the next. Never merge two migrations in one push.
+1. #525 docs.  2. #523 CS-01 (rebased) + baseline.  3. #526 A3 then #527 A4.  4. #528 SUP-01.  5. #529 GRP-01 (fixed).  6. #532 M2b resolver.  7. #533 M9B refund.  8. #539 M9B cash path.  9. #534 AIN-01 deferral.  10. #535 WF-07.  11. #537 M4.  12. #530 AIN-06/07, #531 router, #536 design note, #538 this memo (no DB).
+Rule: merge one, let CI go green on master, then the next. Never merge two migrations in one push. After each merge the next PR's baseline/INDEX/verify.yml may conflict: update that branch with master and run tools/merge-neutrality-baseline.py rather than editing the JSON by hand.
 
 ## 5. Hosted-DB apply plan (not executed — needs your yes per step)
 Before step 1: point-in-time backup + restore proof on a throwaway project; record the migration ledger order. Apply 000100…000800 in timestamp order, one at a time, running the matching harness against a restored copy first. Rollback files exist for all eight and are proven.
@@ -40,5 +35,7 @@ Cron needed (Tumi): wf_approval_notify_scan (WF-07), wf_group_event_scan (GRP-01
 | No browser verification of A3/A4 | No working preview | Fix Vercel setting, then browser-agent run |
 | Messaging | Held until Tumi resets | Nothing in this train sends messages |
 
-## 7. What I still need from you (and nothing else)
-1. Baseline decision for the 12 unavoidable hits (section 3).  2. Cash-path decision.  3. Vercel Hobby commit-author setting.  4. Per-provider data-class clearance and which BulkSMS company.  5. Decisions on #508–#511 and #495.
+## 7. What still needs a person
+Tumi: review each migration; backup and restore proof; cron entries; confirm ng.cashier is assigned at campus scope wherever cash is taken (the ledger checks campus authority separately); per-provider data-class clearance; which BulkSMS company.
+Founder: Vercel Hobby commit-author setting; decisions on #508-#511 and #495; Track B/C blueprint (or leave to Tumi on Monday).
+Decided 2026-11-28: baseline extended; cash path redirected into the ledger (#539).
