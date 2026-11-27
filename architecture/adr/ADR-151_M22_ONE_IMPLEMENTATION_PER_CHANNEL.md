@@ -1,4 +1,4 @@
-# ADR-120: One Implementation per Channel, With Send-Time Consent, Evidence and Template Registry
+# ADR-151: One Implementation per Channel, With Send-Time Consent, Evidence and Template Registry
 
 | Field                      | Value                                                                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |

@@ -1,5 +1,5 @@
 /**
- * M22 (ADR-120): ONE SMS provider port. BulkSMS.com is now an adapter behind the same port as BulkSMS
+ * M22 (ADR-151): ONE SMS provider port. BulkSMS.com is now an adapter behind the same port as BulkSMS
  * Nigeria, chosen only by SMS_PROVIDER; the owner-alert sender no longer has its own SMS sender.
  * No provider keys: every credential below is a runtime-built sentinel and fetch is mocked.
  */

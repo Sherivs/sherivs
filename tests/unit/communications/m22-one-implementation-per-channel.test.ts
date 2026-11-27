@@ -1,5 +1,5 @@
 /**
- * M22 (ADR-120) guard: one implementation per channel. Scans production code under frontend/src and fails when a
+ * M22 (ADR-151) guard: one implementation per channel. Scans production code under frontend/src and fails when a
  * second sender for a channel appears: a provider endpoint outside its adapter, a provider adapter constructed outside
  * the port that owns it, or the retired duplicate modules coming back. Voice is out of scope (founder pause).
  */

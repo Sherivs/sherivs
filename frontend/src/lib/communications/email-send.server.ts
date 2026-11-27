@@ -1,5 +1,5 @@
 /**
- * Sherivs — the one transactional email send (M22, ADR-120). Server only.
+ * Sherivs — the one transactional email send (M22, ADR-151). Server only.
  *
  * Before M22 the ENGINE-23 notification worker cron and the JARVIS owner-alert sender each built
  * their own Resend command and adapter, and neither recorded delivery evidence. Both now call

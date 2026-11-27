@@ -1,5 +1,5 @@
 /**
- * Sherivs — WhatsApp template registry and the proactive-send gate (M22, ADR-120).
+ * Sherivs — WhatsApp template registry and the proactive-send gate (M22, ADR-151).
  *
  * A business-initiated (proactive) WhatsApp message outside a 24-hour customer window must use a
  * template the platform has approved. Free text there is refused by the platform or, worse, fails

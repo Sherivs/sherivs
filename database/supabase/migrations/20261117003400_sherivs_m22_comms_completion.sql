@@ -1,5 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
--- M22 (ADR-120): communications completion. Depends on COMMS-03 (20261117002600, PR #351: _comms_refund_charge,
+-- M22 (ADR-151): communications completion. Depends on COMMS-03 (20261117002600, PR #351: _comms_refund_charge,
 -- outbound status 'blocked_plan') and on the production comms fabric (20261024000270, 20261101001000).
 --
 -- What this migration does:

@@ -69,7 +69,7 @@ describe("owner-alert sender is dormant until destination AND provider secrets e
       (["email", "whatsapp", "sms", "voice"] as const).map((c) => send(req(c))),
     );
     expect(results.every((r) => !r.ok)).toBe(true);
-    // M22 (ADR-120): SMS goes through the one SMS port, which first needs SMS_PROVIDER to be named.
+    // M22 (ADR-151): SMS goes through the one SMS port, which first needs SMS_PROVIDER to be named.
     expect(results.map((r) => (r.ok ? "" : r.code))).toEqual([
       "provider_not_configured",
       "provider_not_configured",

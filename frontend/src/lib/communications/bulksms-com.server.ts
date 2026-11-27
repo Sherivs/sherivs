@@ -1,5 +1,5 @@
 /**
- * Sherivs — BulkSMS.com SMS adapter (M22, ADR-120). Server only.
+ * Sherivs — BulkSMS.com SMS adapter (M22, ADR-151). Server only.
  *
  * The second concrete provider behind the ONE SMS gateway port (`sms-gateway-contract.ts`).
  * It replaces the owner-alert-only sender that lived in `jarvis-bridge/owner-alert-bulksms.server.ts`

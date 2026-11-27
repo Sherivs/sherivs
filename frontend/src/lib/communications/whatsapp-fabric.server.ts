@@ -1,5 +1,5 @@
 /**
- * Sherivs — proactive WhatsApp through the tenant-scoped communication fabric (M22, ADR-120). Server only.
+ * Sherivs — proactive WhatsApp through the tenant-scoped communication fabric (M22, ADR-151). Server only.
  *
  * The database fabric (`comms_propose_send` → `comms_approve_send` → `comms_send`) decides WHAT may be
  * sent and charges it once (`meter_usage`, item whatsapp_utility / whatsapp_marketing). It queues an

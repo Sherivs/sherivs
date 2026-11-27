@@ -4,7 +4,7 @@
  *
  * Channels: Resend (email), WhatsApp Cloud (existing adapters), the one SMS port (M22: BulkSMS
  * Nigeria or BulkSMS.com, chosen by SMS_PROVIDER) and Africa's Talking (voice, paused).
- * M22 (ADR-120): email, SMS and WhatsApp go through the same shared send paths the tenant fabric
+ * M22 (ADR-151): email, SMS and WhatsApp go through the same shared send paths the tenant fabric
  * uses (no second sender), and every SMS/WhatsApp/email attempt records `cg_delivery_evidence`
  * under the tenant reference `platform`. Each channel is dormant (returns a code, makes no network
  * call) until BOTH the owner's destination and that provider's secrets are present in server

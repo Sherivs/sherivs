@@ -1,5 +1,5 @@
 /**
- * M22 (ADR-120): every proactive WhatsApp send goes through the template registry gate; the tenant fabric dispatcher
+ * M22 (ADR-151): every proactive WhatsApp send goes through the template registry gate; the tenant fabric dispatcher
  * honours opt-in/opt-out at send time, records evidence, claims before sending, never retries, and never sends twice.
  * The Cloud adapter runs over a mocked fetch with a sentinel token: nothing can reach Meta.
  */

@@ -1,4 +1,4 @@
--- Disposable proof for 20261117003400_sherivs_m22_comms_completion.sql (M22, ADR-120).
+-- Disposable proof for 20261117003400_sherivs_m22_comms_completion.sql (M22, ADR-151).
 -- A small production-shaped fixture (only the columns and functions the migration touches or calls), then positive,
 -- negative and cross-organization cases, a second run, and the rollback. It is a fixture, not a replay of production.
 -- Run as a superuser against an EMPTY database, from the repository root:

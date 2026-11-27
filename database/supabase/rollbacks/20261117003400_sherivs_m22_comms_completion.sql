@@ -1,4 +1,4 @@
--- NOT APPLIED. Rollback for 20261117003400_sherivs_m22_comms_completion.sql (M22, ADR-120). Founder approval required.
+-- NOT APPLIED. Rollback for 20261117003400_sherivs_m22_comms_completion.sql (M22, ADR-151). Founder approval required.
 -- Restores the pre-M22 definitions. Evidence rows already written for sms/whatsapp are append-only and are KEPT: the
 -- restored channel check is NOT VALID, so it binds new rows only.
 

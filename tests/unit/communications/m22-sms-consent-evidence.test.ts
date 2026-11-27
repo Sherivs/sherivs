@@ -1,5 +1,5 @@
 /**
- * M22 (ADR-120): the SMS fabric dispatcher re-checks consent and quiet hours at send time, records delivery evidence
+ * M22 (ADR-151): the SMS fabric dispatcher re-checks consent and quiet hours at send time, records delivery evidence
  * for every attempt and refusal, never meters (the charge is taken once, at queue time, by comms_send/meter_usage), and
  * never sends a row twice. Nothing here can send a real message: fetch is mocked and credentials are sentinels.
  */

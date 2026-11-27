@@ -66,7 +66,7 @@ export const DELIVERY_EVIDENCE_MAX = {
   triggeredBy: 160,
 } as const;
 
-/** Channels the substrate accepts (sms/whatsapp need migration 20261117003400, ADR-120). */
+/** Channels the substrate accepts (sms/whatsapp need migration 20261117003400, ADR-151). */
 export type DeliveryEvidenceChannel = "email" | "voice" | "sms" | "whatsapp";
 
 /** One outbound delivery attempt — the unit of evidence. */
@@ -75,7 +75,7 @@ export interface DeliveryEvidenceRecord {
   id: string;
   /** Tenant the attempted communication belongs to (resolved server-side). */
   tenantId: string;
-  /** Communication channel the attempt ran on (sms and whatsapp added by M22, ADR-120). */
+  /** Communication channel the attempt ran on (sms and whatsapp added by M22, ADR-151). */
   channel: DeliveryEvidenceChannel;
   /** The adapter that performed the attempt (registry provider id). */
   adapter: string;

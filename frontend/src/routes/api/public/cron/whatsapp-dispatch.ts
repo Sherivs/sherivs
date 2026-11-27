@@ -1,5 +1,5 @@
 /**
- * Scheduled proactive WhatsApp dispatcher (M22, ADR-120). Call with `Authorization: Bearer $CRON_SECRET`.
+ * Scheduled proactive WhatsApp dispatcher (M22, ADR-151). Call with `Authorization: Bearer $CRON_SECRET`.
  * Returns 503 until CRON_SECRET is set; sends nothing unless WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID
  * are configured, the organization's `whatsapp_live` flag is on, and each message has an approved,
  * registered template. Not scheduled by this change.

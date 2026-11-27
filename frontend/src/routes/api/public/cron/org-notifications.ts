@@ -6,7 +6,7 @@
  *
  * Email goes through the Resend adapter and needs RESEND_API_KEY and RESEND_FROM_ADDRESS; without
  * them every email row is failed with a reason code and nothing is sent. Every attempt records a
- * `cg_delivery_evidence` row when the substrate is configured (M22, ADR-120). WhatsApp has no sender
+ * `cg_delivery_evidence` row when the substrate is configured (M22, ADR-151). WhatsApp has no sender
  * wired (see notification-worker.server.ts). SMS cannot be queued.
  */
 import { createFileRoute } from "@tanstack/react-router";

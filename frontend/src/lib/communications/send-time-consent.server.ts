@@ -1,5 +1,5 @@
 /**
- * Sherivs — send-time consent, opt-out and quiet hours for SMS and WhatsApp (M22, ADR-120). Server only.
+ * Sherivs — send-time consent, opt-out and quiet hours for SMS and WhatsApp (M22, ADR-151). Server only.
  *
  * The database fabric (`comms_send`) checks consent when a message is QUEUED. A recipient can opt out
  * (STOP reply, admin entry) after that, so both dispatchers (`sms-fabric.server.ts`,
