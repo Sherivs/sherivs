@@ -168,6 +168,12 @@ jobs:
       - name: CORE-19 migration and rollback round-trip (disposable PostgreSQL)
         working-directory: tools/sim-lab
         run: node sim/core19-migration-rollback.mjs
+      - name: SV1-SCHED forced-RLS isolation (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" \
+            -v ON_ERROR_STOP=1 -f tests/integration/scheduling-rls.local.sql \
+            2>&1 | tee /tmp/sched-rls.out
+          grep -q 'SV1-SCHED RLS ALL PASS' /tmp/sched-rls.out
       - name: WhatsApp n8n RPC ambiguity fix (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
