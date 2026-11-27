@@ -8,6 +8,8 @@ import {
   hostnameIsRpSuffix,
   originAllowedForRp,
   parseWebAuthnConfig,
+  SHERIVS_PLATFORM_RELATED_ORIGINS,
+  webauthnRelatedOriginsDocument,
   sanitizePasskeyLabel,
   shouldOfferPasskeyEnrollment,
   shouldPrioritizePasskeyLogin,
@@ -63,6 +65,34 @@ describe("WebAuthn RP policy", () => {
       WEBAUTHN_ORIGIN: "https://example.com",
     });
     expect(parsed.ok).toBe(false);
+  });
+
+  it("accepts sherivs.ng as a related origin while keeping RP ID sherivs.com", () => {
+    const parsed = parseWebAuthnConfig({
+      WEBAUTHN_RP_ID: "sherivs.com",
+      WEBAUTHN_ORIGIN: "https://app.sherivs.com",
+    });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    expect(parsed.config.rpID).toBe("sherivs.com");
+    expect(parsed.config.allowedOrigins).toEqual(
+      expect.arrayContaining(["https://www.sherivs.ng", "https://sherivs.ng"]),
+    );
+    expect(originAllowedForRp("https://www.sherivs.ng", parsed.config)).toBe(true);
+    expect(originAllowedForRp("https://sherivs.ng", parsed.config)).toBe(true);
+    expect(originAllowedForRp("https://www.sherivs.com", parsed.config)).toBe(true);
+    expect(originAllowedForRp("http://www.sherivs.ng", parsed.config)).toBe(false);
+    expect(originAllowedForRp("https://evil.example", parsed.config)).toBe(false);
+    expect(originAllowedForRp("https://sherivs.ng.evil.com", parsed.config)).toBe(false);
+  });
+
+  it("does not treat an unlisted foreign origin as related", () => {
+    expect(
+      originAllowedForRp("https://www.sherivs.ng", {
+        ...production,
+        allowedOrigins: ["https://app.sherivs.com"],
+      }),
+    ).toBe(false);
   });
 });
 
@@ -144,5 +174,24 @@ describe("passkey onboarding eligibility", () => {
     expect(
       shouldShowCompactPasskeyAction({ webauthnSupported: true, devicePasskeyHint: false }),
     ).toBe(false);
+  });
+});
+
+describe("related origins document", () => {
+  it("lists .ng and existing .com origins for the sherivs.com RP ID", () => {
+    const { origins } = webauthnRelatedOriginsDocument({
+      WEBAUTHN_RP_ID: "sherivs.com",
+      WEBAUTHN_ORIGIN: "https://app.sherivs.com",
+    });
+    expect(origins).toEqual(expect.arrayContaining([...SHERIVS_PLATFORM_RELATED_ORIGINS]));
+    expect(origins.every((origin) => origin.startsWith("https:"))).toBe(true);
+    expect(new Set(origins).size).toBe(origins.length);
+  });
+
+  it("still advertises the platform related origins when env is unset", () => {
+    const { origins } = webauthnRelatedOriginsDocument({});
+    expect(origins).toEqual(
+      expect.arrayContaining(["https://www.sherivs.ng", "https://sherivs.ng"]),
+    );
   });
 });

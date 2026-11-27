@@ -171,7 +171,7 @@ describe("notification worker", () => {
     expect(r).toMatchObject({ sent: 1, failed: 0 });
   });
 
-  it("fails push and in_app instead of dropping them silently", async () => {
+  it("fails push when no sender is wired, and keeps in_app unsupported", async () => {
     const { c } = client({
       claimed: [row({ channel: "push" }), row({ id: "6", channel: "in_app" })],
     });
@@ -179,7 +179,27 @@ describe("notification worker", () => {
       admin: c,
       ports: { sendEmail: async () => ({ ok: true }) },
     });
-    expect(r).toMatchObject({ failed: 2, reasons: { channel_not_supported: 2 } });
+    expect(r).toMatchObject({
+      failed: 2,
+      reasons: { push_not_configured: 1, channel_not_supported: 1 },
+    });
+  });
+
+  it("sends push through the injected sender port", async () => {
+    const { c } = client({ claimed: [row({ channel: "push", payload: { kind: "fee" } })] });
+    const sent: Array<{ route: string; category: string; title: string }> = [];
+    const r = await runNotificationWorker({
+      admin: c,
+      ports: {
+        sendEmail: async () => ({ ok: true }),
+        sendPush: async (m) => {
+          sent.push({ route: m.route, category: m.category, title: m.title });
+          return { ok: true };
+        },
+      },
+    });
+    expect(r).toMatchObject({ sent: 1, failed: 0 });
+    expect(sent[0]).toMatchObject({ route: "/home/notifications", category: "fees" });
   });
 
   it("turns a throwing port into a failed row and keeps going", async () => {
