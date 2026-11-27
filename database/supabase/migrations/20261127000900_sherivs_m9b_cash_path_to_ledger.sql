@@ -1,0 +1,63 @@
+-- M9B cash path: the legacy cashier function posts into the M07 fee ledger.
+-- Creator: Claude Code agent, mission M9 part B (cash path) (provenance id W-020); AI-generated.
+-- Before this, record_cash_payment wrote offline_payments and fees only, so the cashier desk and the
+-- day close (which read the M07 ledger) never saw the money. It now finds the student's one open M07
+-- invoice for that year and term and posts the payment through cg_fee_record_payment, in the same
+-- transaction as the legacy writes and the platform-share wallet debit. Same signature, same grants.
+-- Not applied anywhere. Rollback restores the previous body.
+BEGIN;
+
+CREATE OR REPLACE FUNCTION public.record_cash_payment(p_school uuid, p_student uuid, p_year text, p_term text, p_amount numeric,
+  p_method text DEFAULT 'cash', p_receipt_url text DEFAULT NULL, p_receipt_no text DEFAULT NULL, p_fee uuid DEFAULT NULL)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
+DECLARE v_id uuid; v_share numeric; v_new boolean := false; v_bal numeric;
+  v_method text; v_invoices uuid[]; v_ledger jsonb;
+BEGIN
+  IF NOT public.scholar_can(p_school, 'payments.record_cash') THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
+  IF NOT EXISTS (SELECT 1 FROM public.students WHERE id = p_student AND school_id = p_school) THEN RAISE EXCEPTION 'student not in this school'; END IF;
+  IF p_fee IS NOT NULL AND NOT EXISTS (SELECT 1 FROM public.fees WHERE id = p_fee AND school_id = p_school AND student_id = p_student) THEN RAISE EXCEPTION 'fee does not belong to this student'; END IF;
+  IF p_receipt_url IS NULL AND p_receipt_no IS NULL THEN RAISE EXCEPTION 'receipt photo or receipt number required'; END IF;
+  IF p_amount IS NULL OR p_amount <= 0 OR p_amount <> round(p_amount, 2) THEN
+    RAISE EXCEPTION 'amount must be positive and in whole kobo' USING ERRCODE = '22023';
+  END IF;
+  v_method := CASE p_method WHEN 'cash' THEN 'cash' WHEN 'pos' THEN 'pos' WHEN 'bank_deposit' THEN 'bank_transfer' END;
+  IF v_method IS NULL THEN
+    RAISE EXCEPTION 'payment method % cannot be posted to the fee ledger', p_method USING ERRCODE = '22023';
+  END IF;
+  SELECT array_agg(i.id ORDER BY i.id) INTO v_invoices
+    FROM public.cg_fee_invoice i
+    JOIN public.cg_fee_schedule s ON s.id = i.schedule_id
+   WHERE i.school_id = p_school AND i.subject_ref = p_student::text
+     AND s.academic_year = p_year AND s.term = p_term
+     AND coalesce((SELECT sum(l.debit_kobo - l.credit_kobo)
+                     FROM public.cg_fee_ledger_posting p JOIN public.cg_fee_ledger_line l ON l.posting_id = p.id
+                    WHERE p.invoice_id = i.id AND l.account_code = 'accounts_receivable'), 0) > 0;
+  IF v_invoices IS NULL THEN
+    RAISE EXCEPTION 'no open fee invoice for this student, year and term' USING ERRCODE = 'P0002';
+  END IF;
+  IF array_length(v_invoices, 1) > 1 THEN
+    RAISE EXCEPTION 'more than one open fee invoice for this student, year and term' USING ERRCODE = '22023';
+  END IF;
+  INSERT INTO public.offline_payments (school_id, student_id, fee_id, academic_year, term, amount, method, receipt_url, receipt_no, recorded_by)
+  VALUES (p_school, p_student, p_fee, p_year, p_term, p_amount, p_method, p_receipt_url, p_receipt_no, auth.uid()) RETURNING id INTO v_id;
+  v_ledger := public.cg_fee_record_payment(v_invoices[1], round(p_amount * 100)::bigint, v_method, 'legacy-cash:' || v_id::text, nullif(btrim(p_receipt_no), ''));
+  IF p_fee IS NOT NULL THEN
+    UPDATE public.fees SET paid_amount = coalesce(paid_amount, 0) + p_amount,
+           status = CASE WHEN coalesce(paid_amount, 0) + p_amount >= amount THEN 'paid' ELSE 'partial' END,
+           paid_at = CASE WHEN coalesce(paid_amount, 0) + p_amount >= amount THEN now() ELSE paid_at END WHERE id = p_fee;
+  END IF;
+  v_share := public.platform_share_per_student(p_school);
+  IF coalesce(v_share, 0) > 0 AND NOT EXISTS (SELECT 1 FROM public.student_platform_fee_ledger
+       WHERE school_id = p_school AND student_id = p_student AND academic_year = p_year AND term = p_term AND fee_type = 'platform_share' AND status IN ('collected', 'waived')) THEN
+    v_bal := public._wallet_post(p_school, 'platform_share', -v_share, 'share:' || p_student || ':' || p_year || ':' || p_term, NULL, 1, p_student,
+                                 jsonb_build_object('offline_payment', v_id), true);
+    INSERT INTO public.student_platform_fee_ledger (school_id, student_id, academic_year, term, fee_type, amount, status, collected_at, payment_reference)
+    VALUES (p_school, p_student, p_year, p_term, 'platform_share', v_share, 'collected', now(), 'wallet:' || v_id)
+    ON CONFLICT (school_id, student_id, academic_year, term, fee_type) DO UPDATE SET status = 'collected', collected_at = now(), payment_reference = EXCLUDED.payment_reference, amount = EXCLUDED.amount;
+    v_new := true;
+  END IF;
+  RETURN jsonb_build_object('offline_payment', v_id, 'share_debited', v_new, 'share', CASE WHEN v_new THEN v_share ELSE 0 END, 'balance', v_bal,
+                            'ledger_payment', v_ledger->'payment_id', 'receipt_number', v_ledger->'receipt_number');
+END $$;
+
+COMMIT;
