@@ -932,6 +932,23 @@ SELECT wf07t.expect_true('the candidate list contains eligible approvers only',
   AND NOT EXISTS (SELECT 1 FROM public.wf_approver_candidates(wf07t.id('apr_inbox'), 25) c
                    WHERE c.approver_id IN (wf07t.id('ap1'), wf07t.id('starter'), wf07t.id('teacher'),
                                            wf07t.id('author'), wf07t.id('bp1'))));
+-- Approver notification (in-app only): eligible approvers are told once; nobody else is.
+SELECT wf07t.expect_true('the notify scan is not callable by a signed-in user or anon',
+  NOT has_function_privilege('authenticated', 'public.wf_approval_notify_scan(integer)', 'EXECUTE')
+  AND NOT has_function_privilege('anon', 'public.wf_approval_notify_scan(integer)', 'EXECUTE')
+  AND has_function_privilege('service_role', 'public.wf_approval_notify_scan(integer)', 'EXECUTE'));
+SELECT public.wf_approval_notify_scan(200);
+SELECT wf07t.expect_true('both eligible approvers are notified of the pending approval',
+  (SELECT count(*) = 1 FROM public.notifications WHERE user_id = wf07t.id('ap2') AND idempotency_key = 'wf-approval:' || wf07t.id('apr_inbox')::text || ':' || wf07t.id('ap2')::text)
+  AND (SELECT count(*) = 1 FROM public.notifications WHERE user_id = wf07t.id('ap3') AND idempotency_key = 'wf-approval:' || wf07t.id('apr_inbox')::text || ':' || wf07t.id('ap3')::text));
+SELECT wf07t.expect_true('the requester-side and ineligible people are not notified',
+  NOT EXISTS (SELECT 1 FROM public.notifications WHERE idempotency_key LIKE 'wf-approval:' || wf07t.id('apr_inbox')::text || ':%'
+                 AND user_id IN (wf07t.id('ap1'), wf07t.id('starter'), wf07t.id('teacher'), wf07t.id('author'))));
+SELECT wf07t.expect_true('the message carries no identifier, amount or step name and links to the inbox',
+  (SELECT bool_and(message ~ '^A (high-risk )?workflow step is waiting for your decision\.$' AND action_url = '/home/s/approvals' AND type = 'approval')
+     FROM public.notifications WHERE idempotency_key LIKE 'wf-approval:' || wf07t.id('apr_inbox')::text || ':%'));
+SELECT wf07t.expect_true('a second scan sends nothing again for the same approval',
+  (public.wf_approval_notify_scan(200) ->> 'notified')::integer = 0);
 SELECT public.wf_audit_step_up_failed(wf07t.id('ap2'), wf07t.id('apr_inbox'), 'assertion_invalid');
 SELECT wf07t.expect_error('a free-text failure reason is refused',
   $q$SELECT public.wf_audit_step_up_failed(wf07t.id('ap2'), wf07t.id('apr_inbox'), 'my passkey broke')$q$, '22023');
