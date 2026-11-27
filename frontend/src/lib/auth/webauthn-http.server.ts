@@ -11,6 +11,7 @@
 import { z } from "zod";
 import { clientIpFromHeaders } from "@/lib/security/request-safety";
 import { WEBAUTHN_PUBLIC_ERROR } from "./webauthn-policy";
+import { androidApkKeyHashOrigins } from "./webauthn-associated-domains";
 import { nativeCeremonyOrigin } from "./webauthn-relying-party";
 import { WebAuthnServiceError } from "./webauthn.server";
 
@@ -94,7 +95,10 @@ export async function loadNativeWebAuthn() {
   const { createProductionWebAuthnService } = await import("./webauthn-supabase.server");
   const service = await createProductionWebAuthnService();
   const origin = nativeCeremonyOrigin(service.platformConfig);
-  return { service, origin };
+  const expectedOrigins = origin.startsWith("https:")
+    ? [origin, ...androidApkKeyHashOrigins()]
+    : [origin];
+  return { service, origin, expectedOrigins };
 }
 
 export function nativeRateKey(request: Request, userId?: string): string {

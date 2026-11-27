@@ -46,6 +46,7 @@ import type {
   WebAuthnSessionMinter,
   WebAuthnStore,
 } from "./webauthn-store";
+import { nativeCeremonyOrigin } from "./webauthn-relying-party";
 
 export class WebAuthnServiceError extends Error {
   readonly code: WebAuthnPublicErrorCode;
@@ -97,6 +98,30 @@ const ALLOWED_TRANSPORTS = new Set([
   "smart-card",
   "usb",
 ]);
+const ANDROID_APK_KEY_HASH_ORIGIN = /^android:apk-key-hash:[A-Za-z0-9_-]{43}$/;
+
+function verificationOrigins(
+  origin: string,
+  config: WebAuthnConfig,
+  requestedOrigins?: readonly string[],
+): string[] | null {
+  if (requestedOrigins === undefined) return [origin];
+  const nativeOrigin = nativeCeremonyOrigin(config);
+  const supportsAndroidNativeOrigin = config.rpID !== "localhost" && origin === nativeOrigin;
+  if (
+    origin !== nativeOrigin ||
+    requestedOrigins.length === 0 ||
+    !requestedOrigins.includes(origin) ||
+    requestedOrigins.some(
+      (candidate) =>
+        candidate !== origin &&
+        (!supportsAndroidNativeOrigin || !ANDROID_APK_KEY_HASH_ORIGIN.test(candidate)),
+    )
+  ) {
+    return null;
+  }
+  return Array.from(new Set(requestedOrigins));
+}
 
 function sanitizeTransports(raw: unknown): AuthenticatorTransportFuture[] {
   if (!Array.isArray(raw)) return [];
@@ -300,12 +325,15 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
     async verifyRegistration(input: {
       userId: string;
       origin: string;
+      expectedOrigins?: readonly string[];
       rateKey: string;
       response: RegistrationResponseJSON;
       label?: string;
     }): Promise<PasskeyListItem> {
       await enforceRate("register-verify", input.rateKey);
       const { origin, config } = await ceremonyFor(input.origin);
+      const expectedOrigins = verificationOrigins(origin, config, input.expectedOrigins);
+      if (!expectedOrigins) throw new WebAuthnServiceError("register_failed");
       const profile = await deps.directory.getUser(input.userId);
       if (!profile) throw new WebAuthnServiceError("unauthorized", 401);
       const challenge = challengeFromClientDataJSON(input.response.response.clientDataJSON);
@@ -328,7 +356,8 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
       if (
         stored.userId !== input.userId ||
         stored.rpId !== config.rpID ||
-        stored.origin !== origin
+        stored.origin !== origin ||
+        !expectedOrigins.includes(stored.origin)
       ) {
         throw new WebAuthnServiceError("register_failed");
       }
@@ -340,7 +369,7 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
         verification = await verify.verifyRegistrationResponse({
           response: input.response,
           expectedChallenge: stored.challenge,
-          expectedOrigin: origin,
+          expectedOrigin: expectedOrigins,
           expectedRPID: config.rpID,
           requireUserVerification: true,
         });
@@ -361,7 +390,7 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
         throw new WebAuthnServiceError("register_failed");
       }
       const info = verification.registrationInfo;
-      if (info.origin !== origin || (info.rpID && info.rpID !== config.rpID)) {
+      if (!expectedOrigins.includes(info.origin) || (info.rpID && info.rpID !== config.rpID)) {
         throw new WebAuthnServiceError("register_failed");
       }
       const credentialId = info.credential.id;
@@ -432,16 +461,24 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
 
     async verifyAuthentication(input: {
       origin: string;
+      expectedOrigins?: readonly string[];
       rateKey: string;
       response: AuthenticationResponseJSON;
     }): Promise<MintedSupabaseSession> {
       await enforceRate("auth-verify", input.rateKey);
       const { origin, config } = await ceremonyFor(input.origin);
+      const expectedOrigins = verificationOrigins(origin, config, input.expectedOrigins);
+      if (!expectedOrigins) throw new WebAuthnServiceError("auth_failed");
       const challenge = challengeFromClientDataJSON(input.response.response.clientDataJSON);
       if (!challenge) throw new WebAuthnServiceError("auth_failed");
       const now = deps.time.now();
       const stored = await deps.store.consumeChallenge(challenge, "authentication", now.atMs);
-      if (!stored || stored.rpId !== config.rpID || stored.origin !== origin) {
+      if (
+        !stored ||
+        stored.rpId !== config.rpID ||
+        stored.origin !== origin ||
+        !expectedOrigins.includes(stored.origin)
+      ) {
         throw new WebAuthnServiceError("auth_failed");
       }
       const credential = await deps.store.getCredentialByCredentialId(input.response.id);
@@ -477,7 +514,7 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
         verification = await verify.verifyAuthenticationResponse({
           response: input.response,
           expectedChallenge: stored.challenge,
-          expectedOrigin: origin,
+          expectedOrigin: expectedOrigins,
           expectedRPID: config.rpID,
           credential: toWebAuthnCredential(credential),
           requireUserVerification: true,
@@ -487,7 +524,7 @@ export function createWebAuthnService(deps: WebAuthnServiceDeps) {
       }
       if (!verification.verified) throw new WebAuthnServiceError("auth_failed");
       const info = verification.authenticationInfo;
-      if (info.origin !== origin || info.rpID !== config.rpID) {
+      if (!expectedOrigins.includes(info.origin) || info.rpID !== config.rpID) {
         throw new WebAuthnServiceError("auth_failed");
       }
       const counter = decideSignatureCounter(credential.counter, info.newCounter);
