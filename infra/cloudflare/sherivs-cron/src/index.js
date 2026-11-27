@@ -26,6 +26,14 @@ const ROUTES = [
     timeoutMs: 25_000,
   },
   {
+    name: "push-expo-receipts",
+    path: "/api/public/cron/org-notifications?mode=expo-receipts",
+    setting: "ROUTE_PUSH_EXPO_RECEIPTS",
+    defaultEnabled: false,
+    cadence: { everyMinutes: 5 },
+    timeoutMs: 25_000,
+  },
+  {
     name: "jarvis-tick",
     path: "/api/public/cron/jarvis-tick",
     setting: "ROUTE_JARVIS_TICK",
