@@ -130,6 +130,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | 146 | [ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md](./ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md) | Roles Pack Engine Data Model and Database Functions | PROPOSED | 2026-11-17 | Institution packs in cg_role_pack; tenant installs and upgrades with a preview diff; overrides only narrow; custom roles need four-eyes |
 >>>>>>>>> Temporary merge branch 2
 | 107 | [ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md](./ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md) | Reality Interview Question Graph, Predicate Language and Versioning | PROPOSED | 2026-11-17 | Versioned directed question graph with a safe declarative predicate language; pure deterministic answers-to-plan with placeholder packs and unverified links |
+| 108 | [ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md](./ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md) | Pre-Tenant Onboarding Requests and Resumable Interview Sessions | PROPOSED | 2026-11-17 | Platform tables with no client privilege; rate-limited, captcha-checked server intake; hashed resume token; 30-day session purge |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 

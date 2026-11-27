@@ -4,7 +4,7 @@ import { publicHead } from "@/lib/public-site/seo";
 import { PUBLIC_CONTACTS } from "@/lib/public-site/contacts";
 import { MarketingPage } from "@/components/public/marketing-page";
 import { GlassPanel, PageContainer, PublicButton, Section } from "@/components/public/ui";
-import { MailtoForm } from "@/components/public/mailto-form";
+import { DemoRequestForm } from "@/components/public/demo-request-form";
 
 export const Route = createFileRoute("/(site)/request-demo")({
   component: RequestDemoPage,
@@ -33,7 +33,7 @@ function RequestDemoPage() {
           <div className="grid gap-4">
             <GlassPanel>
               <h2 id="demo-form-heading" className="font-display text-xl font-semibold">
-                Email the Sherivs team
+                Prefer email?
               </h2>
               <p className="mt-3 text-sm leading-relaxed text-sherivs-muted">
                 Direct address:{" "}
@@ -63,7 +63,7 @@ function RequestDemoPage() {
               </PublicButton>
             </GlassPanel>
           </div>
-          <MailtoForm kind="demo" />
+          <DemoRequestForm />
         </PageContainer>
       </Section>
     </MarketingPage>
