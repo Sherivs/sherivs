@@ -743,7 +743,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: false,
     status: "OPERATIONAL",
     verificationLevel: "none",
-    note: "Default com.coregrid.app. Not a secret.",
+    note: "Default com.sherivs.scholar. Not a secret.",
   },
   {
     envVar: "WEBAUTHN_ANDROID_PACKAGE",
@@ -755,7 +755,7 @@ export const PROVIDER_CREDENTIAL_REGISTRY: readonly ProviderCredentialEntry[] = 
     hasHealthCheck: false,
     status: "OPERATIONAL",
     verificationLevel: "none",
-    note: "Default com.coregrid.app. Not a secret.",
+    note: "Default com.sherivs.scholar. Not a secret.",
   },
   {
     envVar: "WEBAUTHN_ANDROID_SHA256_CERTS",

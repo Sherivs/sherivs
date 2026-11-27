@@ -4988,6 +4988,69 @@ export type Database = {
           },
         ];
       };
+      mobile_push_devices: {
+        Row: {
+          app_version: string;
+          build_number: string;
+          created_at: string;
+          device_label: string | null;
+          enabled: boolean;
+          expo_push_token: string;
+          id: string;
+          last_seen_at: string;
+          platform: string;
+          revoked_at: string | null;
+          org_id: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          app_version: string;
+          build_number: string;
+          created_at?: string;
+          device_label?: string | null;
+          enabled?: boolean;
+          expo_push_token: string;
+          id?: string;
+          last_seen_at?: string;
+          platform: string;
+          revoked_at?: string | null;
+          org_id: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          app_version?: string;
+          build_number?: string;
+          created_at?: string;
+          device_label?: string | null;
+          enabled?: boolean;
+          expo_push_token?: string;
+          id?: string;
+          last_seen_at?: string;
+          platform?: string;
+          revoked_at?: string | null;
+          org_id?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "mobile_push_devices_org_id_fkey";
+            columns: ["org_id"];
+            isOneToOne: false;
+            referencedRelation: "schools";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "mobile_push_devices_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       news: {
         Row: {
           author_id: string | null;
@@ -5117,9 +5180,15 @@ export type Database = {
           inapp_fees: boolean;
           inapp_grades: boolean;
           inapp_messages: boolean;
+          push_announcements: boolean;
+          push_attendance: boolean;
+          push_fees: boolean;
+          push_grades: boolean;
+          push_messages: boolean;
           quiet_hours_end: string | null;
           quiet_hours_start: string | null;
           school_id: string;
+          timezone: string;
           updated_at: string;
           user_id: string;
         };
@@ -5136,9 +5205,15 @@ export type Database = {
           inapp_fees?: boolean;
           inapp_grades?: boolean;
           inapp_messages?: boolean;
+          push_announcements?: boolean;
+          push_attendance?: boolean;
+          push_fees?: boolean;
+          push_grades?: boolean;
+          push_messages?: boolean;
           quiet_hours_end?: string | null;
           quiet_hours_start?: string | null;
           school_id: string;
+          timezone?: string;
           updated_at?: string;
           user_id: string;
         };
@@ -5155,9 +5230,15 @@ export type Database = {
           inapp_fees?: boolean;
           inapp_grades?: boolean;
           inapp_messages?: boolean;
+          push_announcements?: boolean;
+          push_attendance?: boolean;
+          push_fees?: boolean;
+          push_grades?: boolean;
+          push_messages?: boolean;
           quiet_hours_end?: string | null;
           quiet_hours_start?: string | null;
           school_id?: string;
+          timezone?: string;
           updated_at?: string;
           user_id?: string;
         };
@@ -7781,6 +7862,10 @@ export type Database = {
       get_my_role: { Args: never; Returns: string };
       get_my_school_id: { Args: never; Returns: string };
       read_my_tenant_hierarchy: { Args: never; Returns: Json };
+      register_push_device: {
+        Args: { p_app_version: string; p_build: string; p_platform: string; p_token: string };
+        Returns: string;
+      };
       session_rollover: {
         Args: {
           p_school: string;
@@ -7916,6 +8001,7 @@ export type Database = {
         }[];
       };
       revoke_role_capability: { Args: { p_grant_id: string }; Returns: boolean };
+      unregister_push_device: { Args: { p_token: string }; Returns: boolean };
       seed_default_staff_types: {
         Args: { _school_id: string };
         Returns: undefined;

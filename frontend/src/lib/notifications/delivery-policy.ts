@@ -70,12 +70,9 @@ export function shouldDeliverInAppNotification(
 ): boolean {
   if (isMandatoryNotificationType(type)) return true;
   if (!preferences) return true;
-  if (preferences[`inapp_${category}`] === false) return false;
-  return !isWithinQuietHours(
-    preferences.quiet_hours_start,
-    preferences.quiet_hours_end,
-    utcMinuteOfDay,
-  );
+  // Quiet hours gate push only (decided in push01): an in-app row is a record, not an interruption.
+  void utcMinuteOfDay;
+  return preferences[`inapp_${category}`] !== false;
 }
 
 export function digestWindowKey(frequency: "daily" | "weekly", atMs: number): string {

@@ -4,7 +4,7 @@
  * These are admin/principal-callable server fns that create rows in
  * `notifications` for a set of users derived from a domain event. They are
  * use a database uniqueness key so retries do not duplicate in-app rows.
- * External delivery remains disabled for this V1 path.
+ * Web push is a lazy, failure-isolated side channel that runs only after the in-app insert; other external delivery stays disabled.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -30,7 +30,31 @@ type NotificationInsert = Database["public"]["Tables"]["notifications"]["Insert"
 const timeAuthority = new TimeAuthority(new SystemClock());
 
 /**
+ * Best-effort web-push ping after in-app notification rows are created.
+ * Loaded lazily so the server-only push module never enters a client bundle,
+ * and never allowed to fail the notification fan-out itself.
+ */
+async function pushAfterInsert(
+  supabase: any, // eslint-disable-line @typescript-eslint/no-explicit-any -- supabase client param; server-side helper boundary (pre-existing shape).
+  userIds: string[],
+  options: {
+    category: NotificationPreferenceCategory;
+    route: string;
+    title: string;
+    body: string;
+  },
+) {
+  try {
+    const { deliverPushToUsers } = await import("@/lib/push.server");
+    await deliverPushToUsers(supabase, userIds, options);
+  } catch {
+    /* push is a side-channel: in-app notifications already succeeded */
+  }
+}
+
+/**
  * Filter target user_ids based on per-user notification_preferences.
+ * Push quiet hours and push category preferences are evaluated at send time in the push sender.
  * Preference reads use the service client only after the caller has resolved
  * and authorized the school scope. Missing rows retain the existing opt-in default.
  */
@@ -202,6 +226,12 @@ export const notifyGradesPublished = createServerFn({ method: "POST" })
       "notifications.grades_published.fanout",
       rows,
     );
+    await pushAfterInsert(supabase, targets, {
+      category: "grades",
+      route: "/results",
+      title: title,
+      body: "Your latest grades are now available to view.",
+    });
     return { notified };
   });
 
@@ -295,6 +325,12 @@ export const notifyFeesDue = createServerFn({ method: "POST" })
       "notifications.fees_due.fanout",
       rows,
     );
+    await pushAfterInsert(supabase, parents, {
+      category: "fees",
+      route: "/fees",
+      title: "Outstanding school fees",
+      body: `You have unpaid invoices due within ${data.days_until_due} day(s). Please review.`,
+    });
     return { notified };
   });
 
@@ -354,6 +390,12 @@ export const pushNotification = createServerFn({ method: "POST" })
       "notifications.announcement.fanout",
       rows,
     );
+    await pushAfterInsert(supabase, ids, {
+      category: "announcements",
+      route: data.action_url ?? "/home/notifications",
+      title: data.title,
+      body: data.message,
+    });
     return { notified };
   });
 
@@ -411,6 +453,12 @@ export const notifyCalendarEvent = createServerFn({ method: "POST" })
       "notifications.calendar_event.fanout",
       rows,
     );
+    await pushAfterInsert(supabase, targets, {
+      category: "announcements",
+      route: "/home/notifications",
+      title: `New ${typeLabel}: ${data.title}`,
+      body: `Scheduled for ${data.start_date}. Open the calendar for details.`,
+    });
     return { notified };
   });
 
