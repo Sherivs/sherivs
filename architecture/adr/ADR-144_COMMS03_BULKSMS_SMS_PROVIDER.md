@@ -1,4 +1,4 @@
-# ADR-112: SMS Goes Through One Provider Port, Starting With BulkSMS Nigeria
+# ADR-144: SMS Goes Through One Provider Port, Starting With BulkSMS Nigeria
 
 || Field | Value |
 ||---|---|

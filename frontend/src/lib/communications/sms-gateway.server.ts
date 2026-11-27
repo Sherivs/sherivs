@@ -1,5 +1,5 @@
 /**
- * Sherivs — SMS provider selection (COMMS-03, ADR-112; unified in M22, ADR-151). Server only.
+ * Sherivs — SMS provider selection (COMMS-03, ADR-144; unified in M22, ADR-151). Server only.
  *
  * This is the ONE place an SMS provider is chosen, for every SMS Sherivs sends: the tenant fabric
  * dispatcher (`sms-fabric.server.ts`) and the platform owner alerts
