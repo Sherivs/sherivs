@@ -149,3 +149,43 @@ export const finishAgentPromotion = createServerFn({ method: "POST" })
       throw new Error(publicMessage(err));
     }
   });
+
+/** The newest recorded evaluation for an agent. The database still checks it against the bar when promoting. */
+export const latestPromotionEvidence = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((input: unknown) =>
+    z.object({ agentRef: z.string().regex(/^[A-Za-z0-9._:-]{1,128}$/) }).parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    await assertFounder(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const db = supabaseAdmin as unknown as {
+      from: (t: string) => {
+        select: (c: string) => {
+          eq: (
+            c: string,
+            v: string,
+          ) => {
+            order: (
+              c: string,
+              o: { ascending: boolean },
+            ) => {
+              limit: (n: number) => PromiseLike<{
+                data: Array<{ id: string }> | null;
+                error: unknown;
+              }>;
+            };
+          };
+        };
+      };
+    };
+    const { data: rows, error } = await db
+      .from("wf_autonomy_evidence")
+      .select("id")
+      .eq("agent_ref", data.agentRef)
+      .order("evaluated_at", { ascending: false })
+      .limit(1);
+    const id = rows?.[0]?.id;
+    if (error || !id) throw new Error("There is no evaluation to promote on.");
+    return { evidenceId: id };
+  });
