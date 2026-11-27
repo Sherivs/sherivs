@@ -1,29 +1,15 @@
 {
   "_comment": "Sim scenarios known to fail (issue #465). The ratchet job fails on any failure not listed here and on any entry here that now passes or no longer exists: remove an entry when you fix its scenario. Never add an entry to make a red build green without a linked issue.",
   "issue": "https://github.com/Sherivs/sherivs/issues/465",
-  "recorded": "2026-11-26",
+  "recorded": "2026-11-26 | 27 Nov 2026 (A7 triage): 14 stale scenarios fixed, 7 remain",
   "min_total": 300,
   "known_failing": [
     "attendance :: Biometric: refused without consent, works with consent, low match refused, withdrawal stops it; device gateway only",
     "courses :: Adviser approves once; students cannot approve or drop others' courses or read them",
     "exams :: Malpractice: only that paper's invigilator reports; admin, principal-bridge and reporter cannot decide; decided once",
-    "grading :: Failed course becomes a carry-over; passing the retake clears it (both attempts count)",
-    "leakage :: With the contract flag on, results cannot be published until leakage is settled",
-    "payroll :: Payroll line: PAYE ₦62,420, pension 8% ₦36,000, loan ₦40,000 deducted; net ₦361,580",
-    "payroll :: SoD: no own salary, no self or admin loan approval, approver ≠ preparer; approval reduces loan balance",
-    "results :: Result checker: correct card shows published results; wrong PIN refused; card binds to first student; use limit",
     "scope_sets :: A restricted assigner cannot widen by removing: not the last set, not a set outside their area; inside is fine",
     "scope_sets :: Caller sees own area; class filter returns only in-area classes; admins get all (NULL)",
     "scope_sets :: Every scope-set add/remove is written to an append-only audit",
-    "scope_sets :: Only role managers list scope sets; other schools see neither sets nor audit",
-    "scope_sets :: Subject dimension matches the class timetable",
-    "scopes :: Assigner can never grant wider than own scope, cannot leave their restricted dimension open, cannot widen self",
-    "scopes :: Multi-select: OR within a dimension, AND across dimensions (campus North|South AND girls section)",
-    "scopes :: Scope set limits a role to its campus: same role allowed in North, refused in South (decided by scope layer)",
-    "structure :: Deletes are refused while classes or a role operating area use the item; allowed once free",
-    "tertiary :: Academic standing: two consecutive probation sessions advise withdrawal; a stricter floor puts a student on probation",
-    "tertiary :: Degree class follows NUC defaults, or the school's own bands when set",
-    "tertiary :: Semester GPA and running CGPA use published grades only, one row per course attempt",
-    "tertiary :: Standing report lists students needing attention"
+    "scopes :: Assigner can never grant wider than own scope, cannot leave their restricted dimension open, cannot widen self"
   ]
 }
