@@ -1,5 +1,7 @@
 # ADR-139: finished_at Is Write-Once on Runs and Steps (A5)
 
+- Creator: Claude Code agent, mission A5 (finished_at write-once) (provenance id W-105); AI-generated
+
 - Status: PROPOSED
 - Date: 2026-11-26
 - Builds on: ADR-103 (WF-01)
