@@ -1,6 +1,6 @@
 -- M9 part B (ADR-155): an online refund (cg_financial_reversal) needs a second person before it can go to the provider.
 -- Until now the service role moved a requested reversal to 'processing' with no decision by anyone. After this migration the
--- move needs one approved decision by a bursar holding payments.refund who is not the requester and holds no cash permission.
+-- move needs one approved decision by a finance approver holding payments.refund who is not the requester and holds no cash permission.
 -- A rejection cancels the reversal. NOT APPLIED. Founder approval and a backup are required first.
 
 CREATE TABLE public.cg_financial_reversal_decision (
