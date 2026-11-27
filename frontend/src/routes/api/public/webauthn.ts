@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/webauthn")({
       POST: async ({ request }) => {
         try {
           const body = PublicWebAuthnBodySchema.parse(await request.json());
-          const { service, origin } = await loadNativeWebAuthn();
+          const { service, origin, expectedOrigins } = await loadNativeWebAuthn();
           const rateKey = nativeRateKey(request);
           if (body.action === "authentication.options") {
             const options = await service.authenticationOptions({ origin, rateKey });
@@ -21,6 +21,7 @@ export const Route = createFileRoute("/api/public/webauthn")({
           }
           const session = await service.verifyAuthentication({
             origin,
+            expectedOrigins,
             rateKey,
             response: body.response as never,
           });
