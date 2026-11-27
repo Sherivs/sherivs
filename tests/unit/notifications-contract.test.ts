@@ -163,7 +163,7 @@ describe("notification contract (tenant isolation, §17)", () => {
   });
 
   describe("V1 notification delivery policy", () => {
-    it("honors category opt-outs and quiet hours, including windows crossing midnight", () => {
+    it("honors category opt-outs; quiet hours (incl. windows crossing midnight) gate push only", () => {
       expect(
         shouldDeliverInAppNotification("grades_published", "grades", { inapp_grades: false }, 600),
       ).toBe(false);
@@ -175,7 +175,7 @@ describe("notification contract (tenant isolation, §17)", () => {
           { quiet_hours_start: "22:00:00", quiet_hours_end: "07:00:00" },
           30,
         ),
-      ).toBe(false);
+      ).toBe(true); // quiet hours gate push only; in-app rows are still created
       expect(shouldDeliverInAppNotification("grades_published", "grades", undefined, 600)).toBe(
         true,
       );
@@ -220,7 +220,7 @@ describe("notification contract (tenant isolation, §17)", () => {
       );
     });
 
-    it("keeps CORE-19 runtime in-app only and preserves database tenant/idempotency guards", () => {
+    it("keeps CORE-19 in-app-first (push is a lazy side channel) and preserves database tenant/idempotency guards", () => {
       const fanout = readFileSync(
         new URL(
           "../../frontend/src/lib/runtime/scholar/notifications-fanout.functions.ts",
@@ -272,8 +272,10 @@ describe("notification contract (tenant isolation, §17)", () => {
         "utf8",
       );
 
-      expect(fanout).not.toContain("deliverPushToUsers");
-      expect(fanout).not.toContain("@/lib/push.server");
+      // push01: web push is a lazy, failure-isolated side channel that runs only after the idempotent in-app insert.
+      expect(fanout).toContain('await import("@/lib/push.server")');
+      expect(fanout).toContain("push is a side-channel");
+      expect(fanout).not.toMatch(/^import .*push\.server/m);
       expect(fanout).toContain("listActiveMembershipUserIds(schoolId");
       expect(fanout).toContain('.from("organization_memberships")');
       expect(fanout).toContain('.eq("school_id", schoolId)');
