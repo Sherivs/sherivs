@@ -1,0 +1,11 @@
+{
+  "periodStart": "2026-10-01",
+  "periodEnd": "2026-10-31",
+  "minObservations": 5,
+  "metrics": [
+    { "metricKey": "asc_export_completeness", "title": "ASC export completeness", "kind": "rate", "unit": "ratio", "captureMethod": "Synthetic fixture for tests only; not real pilot data.", "samples": 1, "numerator": 95, "denominator": 100, "suppressed": false, "value": 0.95 },
+    { "metricKey": "attendance_capture_rate", "title": "Attendance capture rate", "kind": "rate", "unit": "ratio", "captureMethod": "Synthetic fixture for tests only; not real pilot data.", "samples": 1, "numerator": 9, "denominator": 12, "suppressed": false, "value": 0.75 },
+    { "metricKey": "fee_reconciliation_time", "title": "Fee reconciliation time", "kind": "duration", "unit": "seconds", "captureMethod": "Synthetic fixture for tests only; not real pilot data.", "samples": 1, "numerator": 9000, "denominator": 3, "suppressed": true, "value": null },
+    { "metricKey": "result_turnaround", "title": "Result turnaround", "kind": "duration", "unit": "seconds", "captureMethod": "Synthetic fixture for tests only; not real pilot data.", "samples": 1, "numerator": 360000, "denominator": 10, "suppressed": false, "value": 36000 }
+  ]
+}
