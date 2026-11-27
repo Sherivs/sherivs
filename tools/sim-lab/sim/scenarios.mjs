@@ -990,7 +990,10 @@ const inTx = async (uid, fn, role = "authenticated") => {
         D.schoolId,
       ])
     ).rows[0].id;
-    await c.query("update grades set ca_score=5, exam_score=10, total_score=15 where student_id=$1", [s]);
+    await c.query(
+      "update grades set ca_score=5, exam_score=10, total_score=15 where student_id=$1",
+      [s],
+    );
     const r = (
       await c.query(
         "select public.session_rollover($1,'2025/2026','2026/2027',false, jsonb_build_object($2::text,'withdraw')) r",
@@ -3846,7 +3849,10 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       mth101 = await cid("MTH101"),
       phy101 = await cid("PHY101");
     // scores drive grade points through the grades triggers: pass everything, then fail MTH101
-    await asOwner("update grades set ca_score = 30, exam_score = 40, total_score = 70 where student_id=$1", [s1.id]);
+    await asOwner(
+      "update grades set ca_score = 30, exam_score = 40, total_score = 70 where student_id=$1",
+      [s1.id],
+    );
     await asOwner(
       "update grades set ca_score = 5, exam_score = 10, total_score = 15 where student_id=$1 and course_id=$2",
       [s1.id, mth101],
