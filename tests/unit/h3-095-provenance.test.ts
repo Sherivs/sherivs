@@ -336,6 +336,25 @@ describe("H3-095 provenance checker — CLI exit-code contracts (synthetic tree)
     expect(finding?.missing).not.toContain("creator");
   });
 
+  it("recognizes an explicitly attributed Cursor Cloud Agent identity", () => {
+    const tree = makeTree("cursor-cloud-creator");
+    const attributed = ADR_STUB.replace(
+      "| Author | SYNTHETIC STRATEGIST (TEAM H3-990, A-990) |",
+      "| Author | Cursor Cloud Agent (prod-migrate ledger pre-check) |",
+    ).replace(
+      "| Mission | H3-990 (Squad J, mission A-990) |",
+      "| Mission | prod-migrate ledger pre-check |",
+    );
+    writeFileSync(join(tree.root, "architecture", "adr", "ADR-992_CURSOR_CLOUD.md"), attributed);
+    const run = runScript(["--root", tree.root, "--json"], {
+      COREGRID_ARTIFACTS_DIR: tree.artifactsDir,
+    });
+    expect(run.status).toBe(0);
+    expect(
+      findingFor(parseJson(run.stdout), "architecture/adr/ADR-992_CURSOR_CLOUD.md"),
+    ).toBeUndefined();
+  });
+
   it("recognizes an explicitly attributed GitHub Copilot coding-agent identity", () => {
     const tree = makeTree("copilot-creator");
     const attributed = ADR_STUB.replace(
