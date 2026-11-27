@@ -1,5 +1,7 @@
 # ADR-130: Private School Pack v1, First Three Templates (WF-15a)
 
+- Creator: Claude Code agent, mission WF-15a (provenance id W-015); AI-generated
+
 | Field          | Value                                                                                                                             |
 | -------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | Status         | PROPOSED in the WF-15a PR; nothing applied to any hosted database, nothing enabled                                                |
