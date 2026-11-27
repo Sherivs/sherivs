@@ -6,7 +6,7 @@
 | Date       | 2026-11-26                                                                                  |
 | Creator    | Claude Code agent, mission CD-01; AI-generated                                              |
 | Decision   | Founder, Decision Pack consent agenda, 26 Nov 2026 ("decide as a cautious CTO would")       |
-| Depends on | [ADR-116](ADR-116_WF06_ACTIONS_V1.md), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) |
+| Depends on | [ADR-147](ADR-147_WF06_ACTIONS_V1.md), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) |
 | Migration  | `database/supabase/migrations/20261117000901_sherivs_cd01_approval_ceiling_guard.sql`        |
 | Rollback   | `database/supabase/rollbacks/20261117000901_sherivs_cd01_approval_ceiling_guard.sql`         |
 
