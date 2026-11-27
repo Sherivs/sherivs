@@ -139,6 +139,7 @@ const CREATOR_MATCHERS = [
   /\bH2-\d{2,3}\b/,
   /\bmr\d{3}\b/i,
   /\bcopilot-swe-agent\[bot\]/i, // authenticated GitHub Copilot coding-agent account
+  /\bCursor Cloud Agent\b/, // Cursor cloud coding agent; role identity, not a person's name
 ];
 
 /** @type {readonly RegExp[]} */
