@@ -177,6 +177,7 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 =========
 >>>>>>>>> Temporary merge branch 2
 | 150 | [ADR-150_M9_FINANCE_SEPARATION_OF_DUTIES_AND_LEDGER_INTEGRITY.md](./ADR-150_M9_FINANCE_SEPARATION_OF_DUTIES_AND_LEDGER_INTEGRITY.md) | Finance Separation of Duties and Ledger Integrity (M9 part A) | PROPOSED | 2026-11-18 | Payroll/expense raiser is the caller; cashiers never decide refunds or reconcile; cash day close and independent reconciliation; A05 relief posts into the M07 ledger (NOT APPLIED) |
+| 157 | [ADR-157_M9B_RELIEF_REVERSAL.md](./ADR-157_M9B_RELIEF_REVERSAL.md) | Relief Reversal in the Fee Ledger (M9 part B) | PROPOSED | 2026-11-28 | A posted relief is reversed by a second bursar before it can be revoked, so revoking no longer leaves the ledger saying the student owes less |
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 
