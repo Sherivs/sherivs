@@ -6,7 +6,7 @@
 | Date           | 2026-11-19                                                                                                                                                                                                                                                         |
 | Creator        | Claude Code agent, mission WF-08 (provenance id W-008, issue #468); AI-generated                                                                                                                                                                                   |
 | Version target | V1 organizational workflows                                                                                                                                                                                                                                        |
-| Depends on     | [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md), [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-116](ADR-116_WF06_ACTIONS_V1.md) (stacked on #455), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) (stacked on #467)                  |
+| Depends on     | [ADR-104](ADR-104_WF02_WORKFLOW_PERMISSIONS_AND_TEMPLATES.md), [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-147](ADR-147_WF06_ACTIONS_V1.md) (stacked on #455), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) (stacked on #467)                  |
 | Migration      | `database/supabase/migrations/20261117000950_sherivs_wf08_run_history.sql` (the number first reserved, `20261117001000`, is already used by `..001000_sherivs_m2a_role_catalog_extension.sql` on the PR #448 branch; the founder confirms the number before apply) |
 | Rollback       | `database/supabase/rollbacks/20261117000950_sherivs_wf08_run_history.sql`                                                                                                                                                                                          |
 
@@ -17,7 +17,7 @@
 | Requirement               | Issue #468 "WF-08: run history, PII redaction, retry and cancel"; the WF-08 roadmap entry in the workflow hand-off                                                 |
 | Run, step and event model | WF-01 to WF-03: `wf_run`, `wf_step_run`, `wf_run_event`, the immutable-when-finished guards (`wf_run_guard`, `wf_step_run_guard`) and the engine's terminal states |
 | Permissions and audit     | `wf_can`, `workflows.view`, `workflows.run`, `workflows.manage`, `wf_audit_append` (ADR-104)                                                                       |
-| Actions, drafts, outbox   | WF-06 `wf_action_draft`, `wf_action_sandbox_outbox`, the broker decision ledger, and the delivery gate (ADR-116)                                                   |
+| Actions, drafts, outbox   | WF-06 `wf_action_draft`, `wf_action_sandbox_outbox`, the broker decision ledger, and the delivery gate (ADR-147)                                                   |
 | Run end closes approvals  | WF-07 `wf_run_80_close_approvals` (ADR-122)                                                                                                                        |
 | Identity binding pattern  | WF-07 `wf_act_as` / `wf_act_restore` and the server-passes-the-verified-user rule                                                                                  |
 

@@ -1,26 +1,45 @@
 import { Text } from "react-native";
-import { Card, ScreenShell } from "@/ui/components";
-import { useSession } from "@/providers/session-provider";
+import { useI18n } from "@/i18n/hook";
 import { attendance } from "@/api/school.client";
 import { useCachedQuery } from "@/lib/offline-cache";
-import { useSchool } from "@/workspace/use-school";
-import { QueryScreen, Row } from "@/workspace/screen-kit";
+import { useSession } from "@/providers/session-provider";
+import { Card, ScreenShell } from "@/ui/components";
 import { palette } from "@/ui/theme";
+import { QueryScreen, Row } from "@/workspace/screen-kit";
+import { useSchool } from "@/workspace/use-school";
 
 export default function AttendanceScreen() {
+  const { t } = useI18n();
   const { client } = useSession();
   const { students, key } = useSchool();
   const ids = (students.data ?? []).map((s) => s.id);
-  const q = useCachedQuery(students.data ? key("attendance") : null, () => attendance(client, ids), [ids.join()]);
+  const q = useCachedQuery(
+    students.data ? key("attendance") : null,
+    () => attendance(client, ids),
+    [ids.join()],
+  );
   return (
     <ScreenShell>
-      <QueryScreen q={q} empty="No attendance recorded in the last 60 days.">
+      <QueryScreen q={q} empty={t("school.attendance.empty")}>
         {(rows) => {
-          const present = rows.filter((r) => r.status === "present" || r.status === "late").length;
+          const present = rows.filter(
+            (row) => row.status === "present" || row.status === "late",
+          ).length;
+          const percent = rows.length ? Math.round((present / rows.length) * 100) : 0;
           return (
             <>
-              <Card><Text style={{ color: palette.text, fontSize: 18 }}>{rows.length ? Math.round((present / rows.length) * 100) : 0}% present · {rows.length} school days</Text></Card>
-              {rows.map((r) => <Row key={`${r.student_id}-${r.date}`} title={new Date(r.date).toDateString()} right={r.status} />)}
+              <Card>
+                <Text style={{ color: palette.text, fontSize: 18 }}>
+                  {t("school.attendance.summary", { percent, days: rows.length })}
+                </Text>
+              </Card>
+              {rows.map((row) => (
+                <Row
+                  key={`${row.student_id}-${row.date}`}
+                  title={new Date(row.date).toDateString()}
+                  right={row.status}
+                />
+              ))}
             </>
           );
         }}
