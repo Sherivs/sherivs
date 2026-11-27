@@ -91,6 +91,13 @@ export const CONSOLE_NAV: readonly ConsoleNavItem[] = [
         anyOf: ["platform.tenants.read", "platform.operations.read"],
       },
       {
+        key: "onboarding-requests",
+        label: "Onboarding requests",
+        href: CONSOLE_PATHS.onboarding,
+        capability: "platform.onboarding.read",
+        anyOf: ["platform.onboarding.read", "platform.tenants.manage"],
+      },
+      {
         key: "organization-onboard",
         label: "Onboard organization",
         href: CONSOLE_PATHS.organizationNew,

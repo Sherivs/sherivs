@@ -126,11 +126,21 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 ||||||||| 2d1a0dc3
 =========
 | 121 | [ADR-121_M4_CUSTOM_ROLE_BUILDER_ACCESS_REVIEWS_AND_DELEGATION.md](./ADR-121_M4_CUSTOM_ROLE_BUILDER_ACCESS_REVIEWS_AND_DELEGATION.md) | Custom Role Builder, Access Reviews and Delegation Bounds | PROPOSED | 2026-11-18 | JWT-preserving definer functions drive the ADR-114 four-eyes machine; activation makes a role assignable with exactly three nav sections; delegations never outlive their source (NOT APPLIED) |
+<<<<<<<<< Temporary merge branch 1
+<<<<<<<<< Temporary merge branch 1
+<<<<<<<<< Temporary merge branch 1
+| 108 | [ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md](./ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md) | Pre-Tenant Onboarding Requests and Resumable Interview Sessions | PROPOSED | 2026-11-17 | Platform tables with no client privilege; rate-limited, captcha-checked server intake; hashed resume token; 30-day session purge |
+||||||||| 2d1a0dc3
+=========
+| 107 | [ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md](./ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md) | Reality Interview Question Graph, Predicate Language and Versioning | PROPOSED | 2026-11-17 | Versioned directed question graph with a safe declarative predicate language; pure deterministic answers-to-plan with placeholder packs and unverified links |
+>>>>>>>>> Temporary merge branch 2
+||||||||| 2d1a0dc3
+=========
+| 148 | [ADR-148_M6_CONSOLE_ONBOARDING_AND_ATOMIC_PROVISIONING.md](./ADR-148_M6_CONSOLE_ONBOARDING_AND_ATOMIC_PROVISIONING.md) | Console Onboarding Review and One-Transaction Provisioning | PROPOSED | 2026-11-18 | Plan hash bound to passkey step-up; service-role definer provisions root, kernel, console, profile, units, pack, invite and website draft atomically; self-serve flag off |
 | 145 | [ADR-145_M2A_ROLE_CATALOGUE_EXTENSION_AND_WORKSPACE_MODE.md](./ADR-145_M2A_ROLE_CATALOGUE_EXTENSION_AND_WORKSPACE_MODE.md) | Role Catalogue Extension and the workspace_mode Rule | PROPOSED | 2026-11-17 | 65 institution types, 108 templates, 160 permissions; oversight roles off until mandate verified; workspace_mode per role |
 | 146 | [ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md](./ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md) | Roles Pack Engine Data Model and Database Functions | PROPOSED | 2026-11-17 | Institution packs in cg_role_pack; tenant installs and upgrades with a preview diff; overrides only narrow; custom roles need four-eyes |
 >>>>>>>>> Temporary merge branch 2
-| 107 | [ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md](./ADR-107_M5A_REALITY_INTERVIEW_QUESTION_GRAPH.md) | Reality Interview Question Graph, Predicate Language and Versioning | PROPOSED | 2026-11-17 | Versioned directed question graph with a safe declarative predicate language; pure deterministic answers-to-plan with placeholder packs and unverified links |
-| 108 | [ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md](./ADR-108_M5_PRE_TENANT_ONBOARDING_REQUESTS.md) | Pre-Tenant Onboarding Requests and Resumable Interview Sessions | PROPOSED | 2026-11-17 | Platform tables with no client privilege; rate-limited, captcha-checked server intake; hashed resume token; 30-day session purge |
+>>>>>>>>> Temporary merge branch 2
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 
