@@ -391,12 +391,12 @@ GRANT INSERT, SELECT ON TABLE public.wf_action_sandbox_outbox TO service_role;
 GRANT INSERT, SELECT, UPDATE ON TABLE public.wf_webhook_target TO service_role;
 
 COMMENT ON TABLE public.wf_action_type IS
-  'WF-06 / ADR-116: versioned workflow action kinds, broker tool bindings and maximum autonomy.';
+  'WF-06 / ADR-147: versioned workflow action kinds, broker tool bindings and maximum autonomy.';
 COMMENT ON TABLE public.wf_action_template IS
-  'WF-06 / ADR-116: service-managed in-app templates; only approved references may be used by actions.';
+  'WF-06 / ADR-147: service-managed in-app templates; only approved references may be used by actions.';
 COMMENT ON TABLE public.wf_action_draft IS
-  'WF-06 / ADR-116: tenant-scoped approval drafts. Contains template references and parameters, never rendered message text or recipient addresses.';
+  'WF-06 / ADR-147: tenant-scoped approval drafts. Contains template references and parameters, never rendered message text or recipient addresses.';
 COMMENT ON TABLE public.wf_action_sandbox_outbox IS
-  'WF-06 / ADR-116: service-only simulated deliveries. Rows are never dispatched to a provider.';
+  'WF-06 / ADR-147: service-only simulated deliveries. Rows are never dispatched to a provider.';
 
 COMMIT;
