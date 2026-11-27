@@ -88,7 +88,7 @@ const LIVE_SCREENS: Record<string, string> = {
   students: "StudentMobilityScreen",
   "nav.students": "StudentMobilityScreen",
   "nav.reports": "AscExportScreen",
-  // M7 (ADR-118) teaching screens.
+  // M7 (ADR-149) teaching screens.
   "w.today_classes": "TodayClassesScreen",
   "nav.my_classes": "TodayClassesScreen",
   "nav.attendance": "AttendanceScreen",

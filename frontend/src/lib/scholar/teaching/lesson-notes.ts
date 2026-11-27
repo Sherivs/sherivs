@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) lesson notes: pure rules for the screen. The database is the authority
+ * M7 (ADR-149) lesson notes: pure rules for the screen. The database is the authority
  * (`lesson_note_submit`, `lesson_note_review`, the reviewer <> submitter CHECK, and the
  * m7_lesson_plan_guard trigger); these helpers only decide what the screen offers.
  */

@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) Gradebook / CA entry. Reads the class sheet through `m7_class_gradebook` (own
+ * M7 (ADR-149) Gradebook / CA entry. Reads the class sheet through `m7_class_gradebook` (own
  * classes only) and the weights PR #313 configures; writes ONLY via `enterResultScores`
  * (`m06_enter_result_scores`) through the generic outbox (PR #449), with one idempotency key per
  * save and learner. Approved or published results are shown locked: changing them is an audited

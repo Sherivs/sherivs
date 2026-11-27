@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) Today's classes: the signed-in teacher's own timetabled periods for today, from
+ * M7 (ADR-149) Today's classes: the signed-in teacher's own timetabled periods for today, from
  * the existing timetable tables through `m7_my_periods` (own periods only, enforced in the
  * database), plus the classes they are assigned to.
  */

@@ -1,4 +1,4 @@
--- Disposable proof for 20261117003200_sherivs_m7_academic_core.sql (ADR-118).
+-- Disposable proof for 20261117003200_sherivs_m7_academic_core.sql (ADR-149).
 -- A small production-shaped fixture (the columns, policies and helpers the migration touches,
 -- copied from the production catalogue on 2026-11-17 and from the M05, SHERIVS-024 and M06
 -- migrations), then positive, negative and cross-organization cases, a second run, and the

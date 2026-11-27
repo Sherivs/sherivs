@@ -198,7 +198,7 @@ const ascExport: LiveSpec = {
   offline: false,
 };
 
-/* M7 academic core (ADR-118): teaching screens. Each is its own lazy chunk. */
+/* M7 academic core (ADR-149): teaching screens. Each is its own lazy chunk. */
 const TEACHING = `${APP_SHELL}/teaching`;
 
 const todayClasses: LiveSpec = {
@@ -456,7 +456,7 @@ export function plannedEntry(key: string): CardContract {
 }
 
 /**
- * Planned shell sections outside the catalogue. `assignments` (M7, ADR-118): no assignments
+ * Planned shell sections outside the catalogue. `assignments` (M7, ADR-149): no assignments
  * table or permission exists yet, so it is registered as planned and claims nothing.
  */
 export const PLANNED_SECTION_KEYS = ["assignments"] as const;

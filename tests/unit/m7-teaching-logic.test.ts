@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) pure screen logic: today's periods, the attendance sheet, the gradebook payload
+ * M7 (ADR-149) pure screen logic: today's periods, the attendance sheet, the gradebook payload
  * and lesson-note rules; plus the migration's static contract.
  */
 import { readFileSync } from "node:fs";

@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) Attendance. Today's register goes to the EXISTING M05 offline queue
+ * M7 (ADR-149) Attendance. Today's register goes to the EXISTING M05 offline queue
  * (`createClassAttendanceQueue` -> `syncClassAttendance` -> `offline_attendance_capture_sync_m05`):
  * marks are stored on the device first, then sent; the server de-duplicates by item id and
  * reports conflicts, which are shown per learner. A past day is changed only through

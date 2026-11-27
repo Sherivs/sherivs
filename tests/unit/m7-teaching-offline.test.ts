@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) offline acceptance at unit level (no browser E2E was run):
+ * M7 (ADR-149) offline acceptance at unit level (no browser E2E was run):
  * records are queued while offline, synced once when back online, and never duplicated.
  *  - CA scores: generic outbox (PR #449) + the M06 sender, against a fake server that behaves like
  *    `m06_enter_result_scores` (one grade row per learner/subject/term/year).

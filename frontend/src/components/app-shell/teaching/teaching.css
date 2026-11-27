@@ -1,4 +1,4 @@
-/* M7 teaching screens (ADR-118). Every control is at least 44 px tall and wide (touch target). */
+/* M7 teaching screens (ADR-149). Every control is at least 44 px tall and wide (touch target). */
 .teaching-screen {
   display: grid;
   gap: 1rem;

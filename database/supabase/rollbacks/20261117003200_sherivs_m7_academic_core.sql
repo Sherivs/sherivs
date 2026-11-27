@@ -1,4 +1,4 @@
--- Rollback for 20261117003200_sherivs_m7_academic_core.sql (ADR-118).
+-- Rollback for 20261117003200_sherivs_m7_academic_core.sql (ADR-149).
 -- Run it in ONE transaction (psql --single-transaction, or the apply tool's transaction) so a refusal leaves everything in place.
 -- Refuses when attendance corrections are stored: they are audit evidence and must be exported
 -- (and the founder must approve their removal) before this rollback runs.

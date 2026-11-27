@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) shared bits for the teaching screens: connectivity, the offline notice, cached
+ * M7 (ADR-149) shared bits for the teaching screens: connectivity, the offline notice, cached
  * reads through the tenant-scoped offline store, and the class picker. Kept small because every
  * teaching screen chunk imports it.
  */

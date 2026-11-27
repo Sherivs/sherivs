@@ -1,5 +1,5 @@
 -- NOT APPLIED. Needs the founder's written approval for this file; applied from merged master only.
--- M7 academic core (ADR-118, mission E-017).
+-- M7 academic core (ADR-149, mission E-017).
 --
 -- Screens for today's classes, attendance, the gradebook and lesson notes sit on existing tables
 -- and functions (timetables/timetable_slots, M05 class_attendance_marks and its offline sync, the

@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) today's classes: pure helpers. The clock is injected (time-authority discipline);
+ * M7 (ADR-149) today's classes: pure helpers. The clock is injected (time-authority discipline);
  * the weekday and date are read in the given IANA time zone (the device's by default), because a
  * teacher's "today" is local, not UTC.
  */

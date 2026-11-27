@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) gradebook / CA entry. Scores are written ONLY through PR #313's
+ * M7 (ADR-149) gradebook / CA entry. Scores are written ONLY through PR #313's
  * `m06_enter_result_scores` (server function `enterResultScores`), and always via the generic
  * outbox from PR #449: every save is queued with an idempotency key and drained at once when the
  * device is online, so the online and offline paths are the same code.

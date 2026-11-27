@@ -1,5 +1,5 @@
 /**
- * M7 academic core (ADR-118) server functions. Every read of a class goes through a database
+ * M7 academic core (ADR-149) server functions. Every read of a class goes through a database
  * function that enforces "a teacher sees only their own classes" (m7_* in
  * 20261117003200_sherivs_m7_academic_core.sql); attendance marks are read under the existing M05
  * policy. Writes use existing functions: M05 sync (attendance.functions.ts), M06 scores

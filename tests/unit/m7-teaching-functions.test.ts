@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) server-function handlers: each calls the right database function with arguments
+ * M7 (ADR-149) server-function handlers: each calls the right database function with arguments
  * derived from validated input only (never an organization id from the client), and surfaces
  * database refusals instead of swallowing them.
  */

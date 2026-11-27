@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) attendance sheet: pure helpers for the register screen. Marks go to the existing
+ * M7 (ADR-149) attendance sheet: pure helpers for the register screen. Marks go to the existing
  * M05 queue (`createClassAttendanceQueue`, server function `syncClassAttendance` ->
  * `offline_attendance_capture_sync_m05`); this module only shapes them.
  */

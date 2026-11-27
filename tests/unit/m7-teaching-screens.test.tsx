@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) teaching screens: static renders with the data hook fed fixtures (no browser DOM
+ * M7 (ADR-149) teaching screens: static renders with the data hook fed fixtures (no browser DOM
  * is installed, so interactions are covered by the logic and offline tests). Covers the screens
  * today-classes-screen, attendance-screen, gradebook-screen and lesson-notes-screen, their
  * registry entries, the visible offline state, 44 px targets and the "author cannot approve" UI.

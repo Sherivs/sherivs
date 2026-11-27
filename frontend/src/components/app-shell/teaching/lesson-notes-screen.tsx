@@ -1,5 +1,5 @@
 /**
- * M7 (ADR-118) Lesson notes: write a draft, submit it (`lesson_note_submit`), and, for a reviewer
+ * M7 (ADR-149) Lesson notes: write a draft, submit it (`lesson_note_submit`), and, for a reviewer
  * with `lesson_notes.approve`, approve or return it with a comment (`lesson_note_review`). The
  * author can never approve their own note: the database refuses it (reviewer <> submitter CHECK,
  * the review function, and the m7_lesson_plan_guard trigger); this screen also hides the buttons.
