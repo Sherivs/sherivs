@@ -509,6 +509,10 @@ jobs:
           ! grep -Fq 'A2ISO FAIL' /tmp/a2-isolation.out
           grep -Eq 'A2ISO ALL PASS: [0-9]+ checks' /tmp/a2-isolation.out
           psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/sup01-support-access.local.sql 2>&1 | tee /tmp/sup01-access.out
+          ! grep -Fq 'SUP01 FAIL' /tmp/sup01-access.out
+          grep -Eq 'SUP01 ALL PASS: [0-9]+ checks' /tmp/sup01-access.out
+          psql "postgresql://postgres@127.0.0.1:${PORT}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/a3-sensitive-step-up.local.sql 2>&1 | tee /tmp/a3-step-up.out
           ! grep -Fq 'A3 FAIL' /tmp/a3-step-up.out
           grep -Eq 'A3 ALL PASS: [0-9]+ checks' /tmp/a3-step-up.out

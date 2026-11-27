@@ -22,3 +22,14 @@ describe("step-up digest", () => {
     expect(() => stepUpDigest("agent_promotion", ["a\u001fb"])).toThrow();
   });
 });
+
+describe("support write digest (SUP-01)", () => {
+  it("matches wf_step_up_digest('support_write', ARRAY[grant]) and differs per grant", async () => {
+    const { supportWriteDigest } = await import("../../frontend/src/lib/workflow/step-up-digest");
+    const g1 = "44444444-4444-4444-8444-444444444444";
+    const g2 = "55555555-5555-4555-8555-555555555555";
+    expect(supportWriteDigest(g1)).toMatch(/^[0-9a-f]{64}$/);
+    expect(supportWriteDigest(g1)).toBe(stepUpDigest("support_write", [g1]));
+    expect(supportWriteDigest(g1)).not.toBe(supportWriteDigest(g2));
+  });
+});
