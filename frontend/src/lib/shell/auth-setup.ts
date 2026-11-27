@@ -9,7 +9,7 @@ export const GOOGLE_PROVIDER_STEPS = [
   "Go to Authentication → Sign in / Providers → Google, and turn the provider on.",
   "Turn on Authentication → Providers → Enable Manual Linking so a password login can connect Google.",
   "In Google Cloud Console create an OAuth 2.0 Web client.",
-  "Authorized JavaScript origin: https://app.sherivs.com (and http://localhost:5173 for local).",
+  "Authorized JavaScript origins: https://app.sherivs.com, https://www.sherivs.com, https://www.sherivs.ng, https://sherivs.ng (and http://localhost:5173 for local).",
   "Authorized redirect URI: https://<project-ref>.supabase.co/auth/v1/callback.",
   "Paste the Client ID and Client secret into the Supabase Google provider and save.",
   "Keep email sign-ups disabled. Invite-only still applies: a Google account with no membership is signed out.",

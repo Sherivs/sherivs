@@ -10,7 +10,8 @@
  *  - `whatsapp` sent only through an injected port. None is wired: a proactive WhatsApp message
  *               needs an approved template and a recorded opt-in, and the existing send path only
  *               replies inside an inbound conversation. Without a port the row is failed, never sent.
- *  - `push`, `in_app` have no sender here and are failed.
+ *  - `push`     sent through an injected push port (Web Push + Expo sender).
+ *  - `in_app`   has no sender here and is failed (the in-app row already exists).
  *  - SMS cannot be queued (the table's channel check excludes it) and is refused here as well.
  *
  * Rules held in code and tests:
@@ -52,6 +53,19 @@ export type SendOutcome = { readonly ok: true } | { readonly ok: false; readonly
 
 export interface WorkerPorts {
   readonly sendEmail: (m: EmailSend) => Promise<SendOutcome>;
+  readonly sendPush?: (m: {
+    readonly id: string;
+    readonly orgId: string;
+    readonly recipientId: string;
+    readonly category: "messages" | "announcements" | "grades" | "attendance" | "fees";
+    readonly route: string;
+    readonly title: string;
+    readonly body: string;
+    readonly redacted: boolean;
+    readonly safeguarding: boolean;
+    readonly severity: string | null;
+    readonly payload: Record<string, unknown>;
+  }) => Promise<SendOutcome>;
   /** Not wired in production until proactive WhatsApp (template and opt-in) exists. */
   readonly sendWhatsApp?: (m: {
     readonly id: string;
@@ -85,6 +99,27 @@ const isMissing = (e: Err): boolean =>
     /could not find the (function|table)|does not exist/i.test(e.message));
 
 const clip = (s: string, n: number): string => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
+
+function routeForPayload(payload: Record<string, unknown>): string {
+  const route = typeof payload.route === "string" ? payload.route : null;
+  const actionUrl = typeof payload.action_url === "string" ? payload.action_url : null;
+  return route ?? actionUrl ?? "/home/notifications";
+}
+
+function categoryForPayload(
+  payload: Record<string, unknown>,
+): "messages" | "announcements" | "grades" | "attendance" | "fees" {
+  const rawCategory = typeof payload.category === "string" ? payload.category : "";
+  if (rawCategory === "grades" || rawCategory === "attendance" || rawCategory === "fees")
+    return rawCategory;
+
+  const kind = typeof payload.kind === "string" ? payload.kind : "";
+  if (kind === "grade" || kind === "grades") return "grades";
+  if (kind === "attendance") return "attendance";
+  if (kind === "fee" || kind === "fees" || kind === "money") return "fees";
+  if (kind === "announcement") return "announcements";
+  return "messages";
+}
 
 export function toOutboxRow(raw: unknown): OutboxRow | null {
   if (typeof raw !== "object" || raw === null) return null;
@@ -244,8 +279,30 @@ export async function runNotificationWorker(input: {
           text: msg.text,
         });
         await finish(row.id, out.ok, out.ok ? "" : out.reason);
+      } else if (row.channel === "push") {
+        if (!input.ports.sendPush) {
+          await finish(row.id, false, "push_not_configured");
+          continue;
+        }
+        const msg = composeMessage(row);
+        const kind = typeof row.payload.kind === "string" ? row.payload.kind : "";
+        const severity = typeof row.payload.severity === "string" ? row.payload.severity : null;
+        const out = await input.ports.sendPush({
+          id: row.id,
+          orgId: row.org_id,
+          recipientId: row.recipient_id,
+          category: categoryForPayload(row.payload),
+          route: routeForPayload(row.payload),
+          title: msg.subject,
+          body: msg.text,
+          redacted: row.redacted,
+          safeguarding: kind === "safeguarding",
+          severity,
+          payload: row.payload,
+        });
+        await finish(row.id, out.ok, out.ok ? "" : out.reason);
       } else {
-        // push and in_app have no sender here; sms is refused outright.
+        // in_app has no sender here; sms is refused outright.
         await finish(
           row.id,
           false,

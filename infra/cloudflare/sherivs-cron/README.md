@@ -46,6 +46,7 @@ the Worker route does not enable any organization's workflows.
 | `wallet-topup-reconcile` | `ROUTE_WALLET_TOPUP_RECONCILE` | `"true"` | Every 10 minutes         |
 | `workflow-tick`          | `ROUTE_WORKFLOW_TICK`          | Off      | Every minute             |
 | `org-notifications`      | `ROUTE_ORG_NOTIFICATIONS`      | Off      | Every 5 minutes          |
+| `push-expo-receipts`     | `ROUTE_PUSH_EXPO_RECEIPTS`     | Off      | Every 5 minutes          |
 | `jarvis-tick`            | `ROUTE_JARVIS_TICK`            | Off      | Every 10 minutes         |
 | `integrations-sync`      | `ROUTE_INTEGRATIONS_SYNC`      | Off      | Every 30 minutes         |
 | `org-weekly-reports`     | `ROUTE_ORG_WEEKLY_REPORTS`     | Off      | Monday 05:00 (06:00 WAT) |

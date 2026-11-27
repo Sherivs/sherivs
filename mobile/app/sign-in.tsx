@@ -1,13 +1,29 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { signInWithPassword } from "@/api/auth.client";
 import { signInWithPasskey } from "@/api/passkeys.client";
 import { ApiError, errorHeadline } from "@/api/errors";
 import { useSession } from "@/providers/session-provider";
 import { useConnectivity } from "@/providers/connectivity-provider";
-import { Card, ErrorState, Field, PrimaryButton, SecondaryButton, Text as UIText } from "@/ui/components";
+import {
+  Card,
+  ErrorState,
+  Field,
+  PrimaryButton,
+  SecondaryButton,
+  Text as UIText,
+} from "@/ui/components";
 import { palette, spacing, typography } from "@/ui/theme";
+import splashIcon from "../assets/splash-icon.png";
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -41,21 +57,32 @@ export default function SignInScreen() {
       await signInWithPasskey(client, env);
       router.replace("/");
     } catch (cause) {
-      setError(cause instanceof ApiError ? cause : new ApiError("unknown", "passkey sign-in failed"));
+      setError(
+        cause instanceof ApiError ? cause : new ApiError("unknown", "passkey sign-in failed"),
+      );
     } finally {
       setBusy(null);
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.root}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      style={styles.root}
+    >
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <View style={styles.heading}>
-          <Text style={typography.title}>Sherivs</Text>
-          <Text style={typography.muted}>
-            Sign in with your Sherivs account. Authentication is handled by the shared Supabase identity
-            service — the same one the web application uses.
+          <Image
+            source={splashIcon}
+            style={styles.logo}
+            accessible
+            accessibilityRole="image"
+            accessibilityLabel="Scholar"
+          />
+          <Text style={typography.title} accessibilityRole="header">
+            Scholar
           </Text>
+          <Text style={typography.muted}>Scholar by Sherivs</Text>
         </View>
 
         <Card>
@@ -91,13 +118,11 @@ export default function SignInScreen() {
             />
           ) : null}
           {offline ? (
-            <UIText>You are offline — sign-in requires a connection to Sherivs.</UIText>
+            <UIText>You are offline — sign-in requires a connection to Scholar.</UIText>
           ) : null}
         </Card>
 
-        {error ? (
-          <ErrorState headline={errorHeadline(error.kind)} detail={error.message} />
-        ) : null}
+        {error ? <ErrorState headline={errorHeadline(error.kind)} detail={error.message} /> : null}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -107,4 +132,5 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: palette.background },
   content: { padding: spacing.xl, gap: spacing.lg },
   heading: { gap: spacing.sm, marginBottom: spacing.sm },
+  logo: { width: 160, height: 160 },
 });
