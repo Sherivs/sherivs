@@ -6,7 +6,7 @@
 | Date           | 2026-11-20                                                                                                                                                                                                                                    |
 | Creator        | Claude Code agent, mission WF-12 (provenance id W-012, issue #470); AI-generated                                                                                                                                                              |
 | Version target | V1 organizational workflows                                                                                                                                                                                                                   |
-| Depends on     | [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-116](ADR-116_WF06_ACTIONS_V1.md) (stacked on #455), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) (#467), [ADR-123](ADR-123_WF08_RUN_HISTORY_REDACTION_RETRY_CANCEL.md) (#469) |
+| Depends on     | [ADR-105](ADR-105_WF03_WORKFLOW_RUNTIME_CORE.md), [ADR-147](ADR-147_WF06_ACTIONS_V1.md) (stacked on #455), [ADR-122](ADR-122_WF07_APPROVAL_INBOX_AND_STEP_UP.md) (#467), [ADR-123](ADR-123_WF08_RUN_HISTORY_REDACTION_RETRY_CANCEL.md) (#469) |
 | Migration      | `database/supabase/migrations/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql` (`..000950` is WF-08; `..001000` is used by PRs #448, #461, #462 and #464; the founder confirms the number before apply)                          |
 | Rollback       | `database/supabase/rollbacks/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql`                                                                                                                                                    |
 
@@ -16,7 +16,7 @@
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Requirement                  | Issue #470 "WF-12: quotas, wallet caps and retention"; the WF-12 roadmap entry in the workflow hand-off; the retention deferral in ADR-123                     |
 | Run, event and approval data | WF-01 to WF-07: `wf_run`, `wf_step_run`, `wf_run_event` (append-only), `wf_event`, `wf_approval`, `wf_approval_decision`, `wf_approval_step_up`                |
-| Actions, drafts, outbox      | WF-06 `wf_action_draft`, `wf_action_sandbox_outbox`, the broker decision ledger `cg_tool_call_ledger`, and the delivery gate (ADR-116)                         |
+| Actions, drafts, outbox      | WF-06 `wf_action_draft`, `wf_action_sandbox_outbox`, the broker decision ledger `cg_tool_call_ledger`, and the delivery gate (ADR-147)                         |
 | Runtime claim and attempts   | WF-03 `wf_create_event_run`, `wf_claim_due_events` (attempt counting and the dead threshold)                                                                   |
 | Permissions and audit        | `wf_can`, `workflows.view`, `workflows.manage`, `wf_audit_append`, `wf_runtime_settings_audit` (ADR-104)                                                       |
 | Identity binding pattern     | WF-07 `wf_act_as` / `wf_act_restore` and the server-passes-the-verified-user rule                                                                              |

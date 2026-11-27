@@ -154,8 +154,8 @@ Cost: **$99 USD per year** (Apple Developer Program).
    - Two-factor auth must be enabled on the Apple ID first.
 2. **Bundle ID**: after approval, go to
    https://developer.apple.com/account/resources/identifiers → **+** →
-   App IDs → App → description `Sherivs Scholar` and explicit bundle id,
-   e.g. `com.vibeora.scholar` (decide this once; it cannot change later).
+   App IDs → App → description `Scholar` and explicit bundle id
+   `com.sherivs.scholar` (this identifier is fixed; it cannot change later).
    Enable capabilities you use (Push Notifications is the V1 one).
 3. **App Store Connect record**: https://appstoreconnect.apple.com →
    **Apps → +** → New App → name, primary language, bundle id (from step 2),
@@ -183,7 +183,7 @@ Cost: **$25 USD one-time** (registration fee).
 
 1. **Register**: https://play.google.com/console/signup → pay $25 → complete
    the identity verification (can take 48h the first time).
-2. **Create the app**: All apps → **Create app** → name `Sherivs Scholar`,
+2. **Create the app**: All apps → **Create app** → name `Scholar`,
    default language, App (not game), free/paid → create.
 3. **App signing**: Play uses Play App Signing automatically on first
    upload.
@@ -196,9 +196,9 @@ Cost: **$25 USD one-time** (registration fee).
      (Admin is simplest for a solo operator).
 5. Add to Cursor Cloud Agent Secrets:
    - `GOOGLE_SERVICE_ACCOUNT_JSON` ← full contents of the `.json` file
-6. Package/bundle id: use the same `com.vibeora.scholar` as Apple (or any
-   stable reverse-domain string) — set it in `mobile/app.json` under
-   `android.package` / `ios.bundleIdentifier` once you decide.
+6. Package name: `com.sherivs.scholar`, the same bundle id as Apple. It is
+   already set in `mobile/app.json` under `android.package` and
+   `ios.bundleIdentifier`.
 
 ---
 
