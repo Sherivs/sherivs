@@ -17,6 +17,7 @@ import {
   type TraceContext,
 } from "./lib/observability/trace-context";
 import { withSecurityHeaders } from "./lib/security/security-headers";
+import { apexRedirectLocation } from "./lib/http/apex-redirect";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -93,8 +94,10 @@ export async function serveFetch(
     trace.trace_id,
   );
   try {
-    const handler = await (deps.loadEntry ?? getServerEntry)();
-    const response = await handler.fetch(request, env, ctx);
+    const redirectLocation = apexRedirectLocation(request);
+    const response = redirectLocation
+      ? new Response(null, { status: 308, headers: { Location: redirectLocation } })
+      : await (await (deps.loadEntry ?? getServerEntry)()).fetch(request, env, ctx);
     const normalized = await normalizeCatastrophicSsrResponse(response, trace, log);
     logStructured(
       traceLogEntry(trace, {
