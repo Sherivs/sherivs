@@ -1,5 +1,5 @@
 /**
- * Sherivs — SMS provider selection (COMMS-03, ADR-112). Server only.
+ * Sherivs — SMS provider selection (COMMS-03, ADR-144). Server only.
  *
  * `SMS_PROVIDER` names the provider the fabric dispatcher uses. Selection is explicit and
  * fails closed: an unset, unknown or unconfigured provider yields a typed refusal and the

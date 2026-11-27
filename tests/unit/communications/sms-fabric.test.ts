@@ -12,7 +12,7 @@
  * 6. The delivery-report webhook rejects every bad token, resolves the organization from OUR
  *    row, and ignores unknown/replayed/mismatched reports.
  * 7. The database trigger that audits every outbound_messages change is still present.
- * 8. Money (ADR-112/ADR-072): a message the provider provably never accepted is closed AND refunded; an ambiguous
+ * 8. Money (ADR-144/ADR-072): a message the provider provably never accepted is closed AND refunded; an ambiguous
  *    outcome is HELD (claim kept, no refund, never resent, run halted); a delivery failure never refunds; a message of an
  *    organization that lost its plan or its live flag is never claimed, so the provider is never called.
  * 9. The dispatcher has no direct write path: it never issues an UPDATE on outbound_messages.

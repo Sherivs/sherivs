@@ -19,7 +19,7 @@
  *   change goes through the service_role-only compare-and-set functions of migration
  *   20261104052000 (`comms_sms_claim`, `comms_sms_settle`, `comms_sms_hold`,
  *   `comms_sms_report_delivery`). This module never issues a direct UPDATE.
- * - Money (ADR-112/ADR-072): only a message the provider PROVABLY never accepted is refunded,
+ * - Money (ADR-144/ADR-072): only a message the provider PROVABLY never accepted is refunded,
  *   atomically with its close. An ambiguous outcome is HELD (still claimed, never resent, never
  *   refunded) for operator reconciliation. A delivery failure never refunds.
  * - Audit: `outbound_messages` carries `trg_outbound_messages_comms_audit` (migration
