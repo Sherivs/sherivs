@@ -153,6 +153,24 @@ function isHttpLocalOrigin(origin: string): boolean {
   }
 }
 
+/**
+ * Platform Related Origin Requests (WebAuthn L3): keep RP ID sherivs.com and
+ * list additional registrable origins (sherivs.ng) in this catalog and in
+ * `/.well-known/webauthn` on the RP ID host.
+ */
+export const SHERIVS_PLATFORM_RELATED_ORIGINS = [
+  "https://www.sherivs.ng",
+  "https://sherivs.ng",
+  "https://sherivs.com",
+  "https://www.sherivs.com",
+  "https://app.sherivs.com",
+  "https://console.sherivs.com",
+] as const;
+
+export function relatedOriginsForRp(rpID: string): readonly string[] {
+  return rpID === "sherivs.com" ? SHERIVS_PLATFORM_RELATED_ORIGINS : [];
+}
+
 /** True when the browser origin may complete a ceremony for this RP. */
 export function originAllowedForRp(origin: string, config: WebAuthnConfig): boolean {
   if (!origin || origin.length > 300) return false;
@@ -164,11 +182,25 @@ export function originAllowedForRp(origin: string, config: WebAuthnConfig): bool
       return LOCAL_HOSTS.has(host) && (url.protocol === "http:" || url.protocol === "https:");
     }
     if (url.protocol !== "https:") return false;
-    if (!hostnameIsRpSuffix(host, config.rpID)) return false;
-    return catalog.has(origin) || hostnameIsRpSuffix(host, config.rpID);
+    if (catalog.has(origin) || catalog.has(url.origin)) return true;
+    return hostnameIsRpSuffix(host, config.rpID);
   } catch {
     return false;
   }
+}
+
+/** Public `/.well-known/webauthn` document for Related Origin Requests. */
+export function webauthnRelatedOriginsDocument(
+  env: Record<string, string | undefined> = process.env,
+): { origins: string[] } {
+  const parsed = parseWebAuthnConfig(env, { fallbackLocal: false });
+  const extra = parsed.ok
+    ? parsed.config.allowedOrigins
+    : splitOriginList(env.WEBAUTHN_ALLOWED_ORIGINS).map((item) => item.replace(/\/+$/, ""));
+  const origins = Array.from(
+    new Set([...SHERIVS_PLATFORM_RELATED_ORIGINS, ...extra.filter(validAbsoluteOrigin)]),
+  ).filter((item) => item.startsWith("https:"));
+  return { origins };
 }
 
 export function splitOriginList(raw: string | undefined): string[] {
@@ -199,6 +231,7 @@ function validAbsoluteOrigin(origin: string): boolean {
 /**
  * Parse server-side WebAuthn configuration.
  * Proposed production: RP ID sherivs.com (covers app/console/tenant hosts).
+ * Related origins on sherivs.ng are merged in and advertised at /.well-known/webauthn.
  * Development defaults to localhost when the vars are unset.
  */
 export function parseWebAuthnConfig(
@@ -254,7 +287,9 @@ export function parseWebAuthnConfig(
     return { ok: false, code: "invalid_rp_config", reason: "WEBAUTHN_RP_NAME is too long" };
   }
 
-  const allowedOrigins = Array.from(new Set([origin, ...allowed.filter(validAbsoluteOrigin)]));
+  const allowedOrigins = Array.from(
+    new Set([origin, ...allowed.filter(validAbsoluteOrigin), ...relatedOriginsForRp(rpID)]),
+  );
   return { ok: true, config: { rpName, rpID, origin, allowedOrigins, challengeTtlMs } };
 }
 
