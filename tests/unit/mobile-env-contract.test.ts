@@ -58,10 +58,15 @@ describe("mobile environment contract", () => {
     }
   });
 
+  it("accepts the preview channel used by the EAS preview profile", () => {
+    const env = parseMobileEnv({ ...VALID_ENV, EXPO_PUBLIC_APP_ENV: "preview" });
+    expect(env.appEnv).toBe("preview");
+  });
+
   it("rejects an unknown environment channel", () => {
-    expect(() =>
-      parseMobileEnv({ ...VALID_ENV, EXPO_PUBLIC_APP_ENV: "staging" }),
-    ).toThrow(MobileEnvError);
+    expect(() => parseMobileEnv({ ...VALID_ENV, EXPO_PUBLIC_APP_ENV: "staging" })).toThrow(
+      MobileEnvError,
+    );
   });
 
   it("rejects a service-role style key (secret shapes never accepted client-side)", () => {
