@@ -120,9 +120,15 @@ Recorded for accuracy; these numbers MUST NOT be reused silently. A future ADR m
 | --- | ------------------ | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
 | 006 | Event architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-006 Event architecture" as planned | **No ADR-006 file exists anywhere in the repository.** The planned decision record was never authored. |
 | 007 | Audit architecture | `architecture/phase-01-foundation.md` (≈ lines 2213–2214) lists "ADR-007 Audit architecture" as planned | **No ADR-007 file exists anywhere in the repository.** The planned decision record was never authored. |
+<<<<<<<<< Temporary merge branch 1
+<<<<<<<<< Temporary merge branch 1
+| 106 | [ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md](./ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md) | Every Workspace Card Is a Contract | PROPOSED | 2026-11-17 | One registry entry per card; live cards open real screens, planned cards say so, unknown keys are not found; routes move to the shell (NOT APPLIED) |
+||||||||| 2d1a0dc3
+=========
+| 121 | [ADR-121_M4_CUSTOM_ROLE_BUILDER_ACCESS_REVIEWS_AND_DELEGATION.md](./ADR-121_M4_CUSTOM_ROLE_BUILDER_ACCESS_REVIEWS_AND_DELEGATION.md) | Custom Role Builder, Access Reviews and Delegation Bounds | PROPOSED | 2026-11-18 | JWT-preserving definer functions drive the ADR-114 four-eyes machine; activation makes a role assignable with exactly three nav sections; delegations never outlive their source (NOT APPLIED) |
 | 145 | [ADR-145_M2A_ROLE_CATALOGUE_EXTENSION_AND_WORKSPACE_MODE.md](./ADR-145_M2A_ROLE_CATALOGUE_EXTENSION_AND_WORKSPACE_MODE.md) | Role Catalogue Extension and the workspace_mode Rule | PROPOSED | 2026-11-17 | 65 institution types, 108 templates, 160 permissions; oversight roles off until mandate verified; workspace_mode per role |
 | 146 | [ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md](./ADR-146_M2_ROLE_PACK_ENGINE_DATA_MODEL.md) | Roles Pack Engine Data Model and Database Functions | PROPOSED | 2026-11-17 | Institution packs in cg_role_pack; tenant installs and upgrades with a preview diff; overrides only narrow; custom roles need four-eyes |
-| 106 | [ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md](./ADR-106_M3_EVERY_CARD_IS_A_CONTRACT.md) | Every Workspace Card Is a Contract | PROPOSED | 2026-11-17 | One registry entry per card; live cards open real screens, planned cards say so, unknown keys are not found; routes move to the shell (NOT APPLIED) |
+>>>>>>>>> Temporary merge branch 2
 
 Note: `.claude/helpers/adr-compliance.sh` also maps ADR-006/ADR-007 to titles ("Unified memory service", "Event sourcing for state") that belong to a foreign toolset, not the CoreGrid corpus; its mapping is not authoritative for this index.
 

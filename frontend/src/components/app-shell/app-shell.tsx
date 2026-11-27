@@ -18,6 +18,7 @@ import { scholarWorkspaceLabelForRole } from "@/lib/runtime/nav-registry";
 import { ShellGlassIcon } from "./glass-icon";
 import { AppShellStateProvider, useAppShell } from "./shell-context";
 import { ConnectionStatus } from "./connection-status";
+import { ActingContextBanner } from "./acting-context-banner";
 import { rememberResource } from "@/lib/internal-console/recent";
 import "./app-shell.css";
 
@@ -214,6 +215,7 @@ function ShellChrome({ children }: { children: ReactNode }) {
             </button>
           </div>
         </header>
+        <ActingContextBanner refreshKey={`${activeOrganizationId}:${activeRole}`} />
         <main id="main-content" tabIndex={-1} className="app-shell-main">
           <div className="app-shell-sheet">{children}</div>
         </main>
