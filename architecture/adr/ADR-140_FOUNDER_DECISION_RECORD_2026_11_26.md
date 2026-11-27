@@ -1,5 +1,7 @@
 # ADR-140: Founder Decision Record, 26 November 2026 (A6)
 
+- Creator: Claude Code agent, mission founder decision record (provenance id W-100); AI-generated
+
 - Status: ACCEPTED by the founder (signed Decision Pack, 26 Nov 2026); this file is the repository's record of it
 - Date: 2026-11-26
 - Authority: the signed PDF held by the founder. The wording below is a summary; where it differs from the PDF, the PDF governs and this file is corrected.

@@ -1,5 +1,8 @@
 # ADR-141: The Sim Scenario Gate Fails Closed (A7, issue #465)
 
+- Creator: Claude Code agent, mission A7 (release-gate ratchet) (provenance id W-107); AI-generated
+- Origin: Mission: W-107; Authority: founder decision record 2026-11-26 (ADR-140) and the Sherivs Automation Vision blueprint
+
 - Status: PROPOSED
 - Date: 2026-11-26
 
