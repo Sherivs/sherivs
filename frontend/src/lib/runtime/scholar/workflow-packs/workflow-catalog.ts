@@ -102,3 +102,83 @@ export function validateCatalogEntry(e: CatalogEntry): string[] {
     p.push("the trigger event exists: mark it built or name another");
   return p;
 }
+
+/** Aggregates about fewer than this many people are suppressed in group-level views (ADR-143, small-number rule). */
+export const GROUP_AGGREGATE_MIN_COUNT = 5;
+
+/** Returns the count, or null when it is too small to show without identifying anyone. Zero is shown as zero. */
+export function suppressSmallCount(
+  n: number,
+  min: number = GROUP_AGGREGATE_MIN_COUNT,
+): number | null {
+  if (!Number.isInteger(n) || n < 0) return null;
+  return n === 0 || n >= min ? n : null;
+}
+
+export type StepChannel = "email" | "sms" | "whatsapp" | "in_app" | "push" | "task";
+export interface CatalogStepSummary {
+  id: string;
+  kind: "action" | "approval" | "task" | "wait" | "condition";
+  channel?: StepChannel;
+  autonomy: AutonomyMax;
+  /** Role that must approve before the step runs. Required on every customer-visible step. */
+  approverRole?: string;
+}
+export interface CatalogApproval {
+  step: string;
+  role: string;
+  /** Passkey step-up required for the decision (ADR-138). */
+  stepUp: boolean;
+}
+export type TranslationStatus = "en_only" | "draft_needs_native_review" | "reviewed";
+
+/** The full blueprint schema: everything a tenant admin, a reviewer and the engine need to know about a template. */
+export interface RichCatalogEntry extends CatalogEntry {
+  release: CatalogRelease;
+  params: Readonly<Record<string, string | number | boolean>>;
+  steps: readonly CatalogStepSummary[];
+  approvals: readonly CatalogApproval[];
+  evalCases: readonly { id: string; expect: string }[];
+  translationStatus: TranslationStatus;
+  /** For templates reused unchanged from another pack. */
+  sourceTemplateKey?: string;
+}
+
+/** External channels: a person outside the organisation can receive these. In-app and task steps stay inside it. */
+const VISIBLE: ReadonlySet<StepChannel> = new Set(["email", "sms", "whatsapp", "push"]);
+const LANGS = ["en", "ha", "yo", "ig", "pcm"] as const;
+
+export function validateRichEntry(e: RichCatalogEntry): string[] {
+  const p = validateCatalogEntry(e);
+  if (e.steps.length === 0) p.push("a template needs at least one step");
+  const ids = new Set<string>();
+  for (const s of e.steps) {
+    if (ids.has(s.id)) p.push(`duplicate step ${s.id}`);
+    ids.add(s.id);
+    if (AUTONOMY_RANK[s.autonomy] > AUTONOMY_RANK[e.autonomyMax])
+      p.push(`step ${s.id} exceeds the template autonomy cap`);
+    if (s.channel && VISIBLE.has(s.channel) && s.autonomy !== "draft" && s.autonomy !== "suggest")
+      p.push(`step ${s.id}: a customer-visible step stays a draft until a human approves`);
+    if (s.channel && VISIBLE.has(s.channel) && !s.approverRole)
+      p.push(`step ${s.id}: a customer-visible step names its approver role`);
+  }
+  for (const a of e.approvals) {
+    if (!ids.has(a.step)) p.push(`approval references unknown step ${a.step}`);
+    if (!a.role.trim()) p.push(`approval on ${a.step} needs a role`);
+  }
+  if (e.riskTier === "high" && !e.approvals.some((a) => a.stepUp))
+    p.push("a high-risk template needs at least one step-up approval");
+  const visible = e.steps.some((s) => s.channel && VISIBLE.has(s.channel));
+  if (e.evalCases.length < 3) p.push("at least three evaluation cases");
+  if (visible && !e.evalCases.some((c) => c.id === "no-send-without-approval"))
+    p.push("a messaging template needs the no-send-without-approval case");
+  if (e.aggregateOnly && !e.evalCases.some((c) => c.id === "no-individual-data"))
+    p.push("an aggregate-only template needs the no-individual-data case");
+  if (e.buildState === "built" && Object.keys(e.params).length === 0)
+    p.push("a built template declares its params");
+  const hasAll = LANGS.every((l) => (e.title as Record<string, string | undefined>)[l]?.trim());
+  if (e.translationStatus === "reviewed" && !hasAll) p.push("reviewed needs all five languages");
+  if (e.translationStatus === "en_only" && Object.keys(e.title).length > 1)
+    p.push("en_only but other languages present");
+  return p;
+}
