@@ -259,7 +259,7 @@ export function ConnectionStatus() {
         <Icon size={15} aria-hidden="true" />
         <span>{label}</span>
         <span className="app-shell-connection-pending">
-          {waiting === null ? "Pending count unavailable" : `${waiting} pending`}
+          {waiting === null ? "Sync queue status unavailable" : `${waiting} pending`}
           {needsReview > 0 ? ` · ${needsReview} need review` : ""}
         </span>
         <span className="app-shell-connection-last-sync" data-testid="workspace-last-sync">

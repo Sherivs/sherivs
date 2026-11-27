@@ -493,7 +493,7 @@ function AuthPage() {
           {hostKind !== "internal" ? (
             <Link
               to="/"
-              className="flex min-h-6 items-center text-xs text-muted-foreground hover:text-foreground"
+              className="flex min-h-11 items-center text-xs text-muted-foreground hover:text-foreground"
             >
               Back to site
             </Link>
