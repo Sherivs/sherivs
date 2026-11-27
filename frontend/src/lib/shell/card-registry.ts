@@ -422,6 +422,85 @@ const cashierDesk: LiveSpec = {
   offline: true,
 };
 
+const workflowApprovals: LiveSpec = {
+  screen: () => import("@/components/app-shell/approval-inbox-screen"),
+  screenModule: `${APP_SHELL}/approval-inbox-screen`,
+  serverFns: [
+    "fn:listApprovalInbox",
+    "fn:getApprovalDetail",
+    "fn:beginApprovalStepUp",
+    "fn:decideApproval",
+    "rpc:wf_inbox_list",
+    "rpc:wf_decide_approval",
+    "rpc:wf_record_step_up",
+  ],
+  tables: [],
+  permissions: { any: ["workflows.view", "workflows.approve"] },
+  auditEvents: ["workflow.approval.decided"],
+  offline: false,
+};
+
+const workflowRuns: LiveSpec = {
+  screen: () => import("@/components/app-shell/run-history-screen"),
+  screenModule: `${APP_SHELL}/run-history-screen`,
+  serverFns: [
+    "fn:listWorkflowRuns",
+    "fn:getWorkflowRun",
+    "fn:cancelWorkflowRun",
+    "fn:retryWorkflowStep",
+    "rpc:wf_run_history_list",
+    "rpc:wf_run_history_detail",
+    "rpc:wf_run_cancel",
+    "rpc:wf_run_retry",
+  ],
+  tables: [],
+  permissions: { any: ["workflows.view"] },
+  auditEvents: [],
+  offline: false,
+};
+
+const agentConsole: LiveSpec = {
+  screen: () => import("@/components/app-shell/agent-console-screen"),
+  screenModule: `${APP_SHELL}/agent-console-screen`,
+  serverFns: [
+    "fn:loadAgentConsole",
+    "fn:listConsoleMemory",
+    "fn:listConsoleSafety",
+    "fn:decideConsoleMemory",
+    "fn:retireConsoleMemory",
+    "fn:reviewConsoleSafety",
+    "fn:demoteConsoleAgent",
+    "rpc:wf_console_agents",
+    "rpc:wf_console_memory_list",
+    "rpc:wf_console_safety_list",
+    "rpc:wf_memory_decide",
+    "rpc:wf_memory_retire",
+    "rpc:wf_safety_review_check",
+    "rpc:wf_autonomy_demote",
+  ],
+  tables: [],
+  permissions: { any: ["workflows.view"] },
+  auditEvents: [],
+  offline: false,
+};
+
+const workflowLimits: LiveSpec = {
+  screen: () => import("@/components/app-shell/limits-screen"),
+  screenModule: `${APP_SHELL}/limits-screen`,
+  serverFns: [
+    "fn:getWorkflowLimits",
+    "fn:updateWorkflowLimits",
+    "fn:runWorkflowRetention",
+    "rpc:wf_limits_get",
+    "rpc:wf_limits_update",
+    "rpc:wf_retention_run_manual",
+  ],
+  tables: [],
+  permissions: { any: ["workflows.view"] },
+  auditEvents: [],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -434,6 +513,10 @@ const LIVE: Record<string, LiveSpec> = {
   school_setup: { ...institutionInterview, kind: "section" },
   communications: { ...communicationInbox, kind: "section" },
   privacy: { ...privacyRegister, kind: "section" },
+  approvals: { ...workflowApprovals, kind: "section" },
+  "workflow-runs": { ...workflowRuns, kind: "section" },
+  "agent-console": { ...agentConsole, kind: "section" },
+  "workflow-limits": { ...workflowLimits, kind: "section" },
   "privacy-register": { ...privacyRegister, kind: "section" },
   "r001.org_admin.ndpa": { ...privacyRegister, kind: "section" },
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },

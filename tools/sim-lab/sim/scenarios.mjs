@@ -11,7 +11,8 @@ const pool = new pg.Pool({
 });
 const results = [];
 const rec = (area, name, pass, detail, severity = "high") => {
-  results.push({ area, name, pass, detail, severity });
+  // A7: a scenario may pass a truthy value (an id, for instance); the results file always holds a boolean.
+  results.push({ area, name, pass: Boolean(pass), detail, severity });
   console.log(pass ? "PASS" : "FAIL", area, "::", name, "::", detail);
 };
 async function as(uid, fn, role = "authenticated") {
@@ -1105,10 +1106,18 @@ const inTx = async (uid, fn, role = "authenticated") => {
         stu.id,
       ])
     ).rows[0].n;
+    // A7: the retake row is written on the trusted system path (no end-user identity) so the author-cannot-publish
+    // rule is not tripped by the scenario's own setup; the carry-over arithmetic is what this scenario measures.
+    const claims = (await c.query("select current_setting('request.jwt.claims', true) v")).rows[0]
+      .v;
+    await c.query("RESET ROLE");
+    await c.query("select set_config('request.jwt.claims', '', true)");
     await c.query(
       "insert into grades (school_id, student_id, subject, ca_score, exam_score, term, academic_year, attempt, is_carryover, is_published) values ($1,$2,'MTH101',30,40,'First Semester','2026/2027',2,true,true)",
       [E.schoolId, stu.id],
     );
+    await c.query("select set_config('request.jwt.claims', $1, true)", [claims ?? ""]);
+    await c.query("SET LOCAL ROLE authenticated");
     const cleared = (
       await c.query("select count(*)::int n from public.member_outstanding_carryovers($1)", [
         stu.id,
@@ -1830,8 +1839,23 @@ const wave = async (uid, fn) => {
         await c.query("SET LOCAL ROLE authenticated");
       }
     };
+    // A7: a trusted system path with no end-user identity, for setup rows that must not be stamped with the acting
+    // user. Result rows are stamped with their author, and the result-publication separation-of-duties rule refuses
+    // a publisher who is also the author, so a scenario's own setup tripped it.
+    const asSystem = async (sql, p = []) => {
+      const claims = (await c.query("select current_setting('request.jwt.claims', true) v")).rows[0]
+        .v;
+      await c.query("RESET ROLE");
+      await c.query("select set_config('request.jwt.claims', '', true)");
+      try {
+        return await t(sql, p);
+      } finally {
+        await c.query("select set_config('request.jwt.claims', $1, true)", [claims ?? ""]);
+        await c.query("SET LOCAL ROLE authenticated");
+      }
+    };
     await act(uid);
-    await fn({ t, act, asOwner, c, out });
+    await fn({ t, act, asOwner, asSystem, c, out });
   } finally {
     await c.query("ROLLBACK").catch(() => {});
     c.release();
@@ -1841,7 +1865,7 @@ const wave = async (uid, fn) => {
 const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 {
   const SA = crypto.randomUUID();
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const fee = async (amt, ch) =>
       Number((await t("select public.paystack_fee($1,$2,$3) f", [A.schoolId, amt, ch])).row?.f);
     out.card150 = await fee(152000, "card");
@@ -1975,7 +1999,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
   ).rows.map((r) => r.id);
   const otherStud = (await sys("select id from students where school_id=$1 limit 1", [B.schoolId]))
     .rows[0].id;
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -2141,22 +2165,22 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     out.leak = (
       await t("select public.platform_fee_leakage($1,'2025/2026','first') l", [A.schoolId])
     ).row?.l;
-    await asOwner(
+    await asSystem(
       "insert into grades (school_id, student_id, subject, term, academic_year, ca_score, exam_score, is_published) values ($1,$2,'SIM-LEAK','first','2025/2026',20,50,false) on conflict do nothing",
       [A.schoolId, studs[2]],
     );
-    out.pubOff = await asOwner(
+    out.pubOff = await asSystem(
       "update grades set is_published = true where school_id=$1 and subject='SIM-LEAK'",
       [A.schoolId],
     );
-    await asOwner(
+    await asSystem(
       "update grades set is_published = false where school_id=$1 and subject='SIM-LEAK'",
       [A.schoolId],
     );
     await act(SA);
     await t("select public.flag_set('leakage_blocks_results', $1, true)", [A.schoolId]);
     await act(A.admin);
-    out.pubOn = await asOwner(
+    out.pubOn = await asSystem(
       "update grades set is_published = true where school_id=$1 and subject='SIM-LEAK'",
       [A.schoolId],
     );
@@ -2421,7 +2445,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     )
   ).rows;
   const SA = crypto.randomUUID();
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -2626,7 +2650,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     );
     await act(A.admin);
     // result checker
-    await asOwner(
+    await asSystem(
       "update grades set is_published = true where student_id = $1 and term = 'First Term'",
       [studs[0].id],
     );
@@ -2844,10 +2868,12 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     v.chk1?.ok &&
       (v.chk1.row?.r?.subjects ?? []).length > 0 &&
       v.chkWrongPin?.row?.r?.ok === false &&
-      !v.chkOther?.ok &&
-      v.chk2?.ok &&
-      /exhausted/.test(v.chk3?.err ?? ""),
-    `subjects ${(v.chk1?.row?.r?.subjects ?? []).length}; wrong ${v.chkWrongPin?.row?.r?.error ?? W_ERR(v.chkWrongPin)}; other ${W_ERR(v.chkOther)}; 3rd ${W_ERR(v.chk3)}`,
+      // A7: check_result answers a refusal as {ok:false,error} (uniform failures, M22) instead of raising,
+      // so the refusal is read from the result body, not from the call status.
+      v.chkOther?.row?.r?.ok === false &&
+      v.chk2?.row?.r?.ok === true &&
+      /exhausted/.test(v.chk3?.row?.r?.error ?? v.chk3?.err ?? ""),
+    `subjects ${(v.chk1?.row?.r?.subjects ?? []).length}; wrong ${v.chkWrongPin?.row?.r?.error ?? W_ERR(v.chkWrongPin)}; other ${v.chkOther?.row?.r?.error ?? W_ERR(v.chkOther)}; 3rd ${v.chk3?.row?.r?.error ?? W_ERR(v.chk3)}`,
     "critical",
   );
   rec(
@@ -2912,7 +2938,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 16. Scope sets, unified access check (shadow), onboarding interview (SHERIVS-021) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const id = async (sql, p) => (await t(sql, p)).row?.id;
     const c1 = (await t("select public.campus_upsert($1,'Sim North') id", [A.schoolId])).row?.id;
     const c2 = (await t("select public.campus_upsert($1,'Sim South') id", [A.schoolId])).row?.id;
@@ -2934,7 +2960,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       ).row?.id ?? A.teacher;
     // a year-head assignment for a staff user, with a scope set: campus North AND (class 0)
     const ra = await id(
-      "select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id",
+      "select public.role_assign($1,$2,'ng.vice_principal_academics','org',null) id",
       [A.schoolId, nonTeacher],
     );
     out.ra = ra;
@@ -2980,7 +3006,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     ).row?.r;
     // expiry
     await asOwner(
-      "update user_role_assignments set valid_until = now() - interval '1 minute' where id=$1",
+      "update user_role_assignments set started_at = now() - interval '2 days', valid_until = now() - interval '1 minute' where id=$1",
       [ra],
     );
     out.chkExpired = (
@@ -2988,7 +3014,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     ).row?.r;
     await asOwner("update user_role_assignments set valid_until = null where id=$1", [ra]);
     // assigner never wider than own scope: a proprietor assignment restricted to North
-    const prop = await id("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [
+    const prop = await id("select public.role_assign($1,$2,'ng.head_teacher','org',null) id", [
       A.schoolId,
       A.bursar,
     ]);
@@ -3373,7 +3399,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 17. Exams, CBT, attendance devices, offline sync (SHERIVS-022) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -3461,13 +3487,19 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       "insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.chief_invigilator','malpractice.decide',true) on conflict (org_id, role_code, permission_code) do update set enabled = true",
       [A.schoolId],
     );
-    await t("select public.role_assign($1,$2,'ng.chief_invigilator','org',null)", [
+    // A7: a department-scoped template accepts only an equal or narrower scope, so the chief is assigned to a class.
+    const chiefClass = (
+      await asOwner("select id from classes where school_id=$1 order by id limit 1", [A.schoolId])
+    ).row?.id;
+    await t("select public.role_assign($1,$2,'ng.chief_invigilator','class',$3)", [
       A.schoolId,
       chief,
+      chiefClass,
     ]);
-    await t("select public.role_assign($1,$2,'ng.chief_invigilator','org',null)", [
+    await t("select public.role_assign($1,$2,'ng.chief_invigilator','class',$3)", [
       A.schoolId,
       staff[0],
+      chiefClass,
     ]);
     out.adminDecide = await t("select public.malpractice_decide($1,'upheld')", [out.rep?.row?.id]);
     await act(staff[0]);
@@ -3778,7 +3810,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 18. Course registration, SIWES, early warning (SHERIVS-023) ----------
 {
-  const v = await wave(E.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(E.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const anon = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE anon");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"anon\"}', true)");
@@ -3874,7 +3906,13 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
         [E.schoolId, E.teacher],
       )
     ).row?.id;
-    await t("select public.role_assign($1,$2,'ng.academic_adviser','org',null)", [E.schoolId, adv]);
+    const advClass = (await asOwner("select class_id from students where id=$1", [s1.id])).row
+      ?.class_id;
+    await t("select public.role_assign($1,$2,'ng.academic_adviser','class',$3)", [
+      E.schoolId,
+      adv,
+      advClass,
+    ]);
     await asOwner(
       "insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.academic_adviser','course_reg.approve',true) on conflict (org_id, role_code, permission_code) do update set enabled=true",
       [E.schoolId],
@@ -3936,7 +3974,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     out.rl = rl;
     // early warning (school A, secondary)
   });
-  const w = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const w = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const kid = (
       await asOwner(
         "select id, parent_id from students where school_id=$1 and parent_id is not null order by admission_number limit 1",
@@ -4084,7 +4122,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 19. Lesson notes, HR appraisal/loans/PAYE, inventory, assets, visitors (SHERIVS-024) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const staff = (
       await asOwner(
         "select id from users where school_id=$1 and role='teacher' and id<>$2 order by id limit 3",
@@ -4172,9 +4210,12 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     await act(A.admin);
     out.adminLoan = await t("select public.loan_decide($1,true)", [loan]);
     const appr = staff[2];
-    await t("select public.role_assign($1,$2,'ng.acting_provost','org',null)", [A.schoolId, appr]);
+    await t("select public.role_assign($1,$2,'ng.finance_manager_school','org',null)", [
+      A.schoolId,
+      appr,
+    ]);
     await asOwner(
-      "insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.acting_provost','payroll.approve',true) on conflict (org_id, role_code, permission_code) do update set enabled=true",
+      "insert into org_role_permission_settings (org_id, role_code, permission_code, enabled) values ($1,'ng.finance_manager_school','payroll.approve',true) on conflict (org_id, role_code, permission_code) do update set enabled=true",
       [A.schoolId],
     );
     await act(appr);
@@ -4406,7 +4447,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 20. USSD/IVR stubs, alumni + donations, government dashboards, i18n (SHERIVS-025) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -4638,7 +4679,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 21. Wallet top-up initiation + settlement, Igbo label (SHERIVS-026) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -4741,7 +4782,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 22. Government portal: own login type, aggregates only, small groups suppressed, views logged (SHERIVS-027) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const SA = crypto.randomUUID(),
       OFF = crypto.randomUUID();
     await asOwner("insert into auth.users (id) values ($1),($2) on conflict do nothing", [SA, OFF]);
@@ -4859,7 +4900,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 23. Gov access console (platform.gov.manage) + wallet top-up reconciliation (SHERIVS-028) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -5045,7 +5086,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 24. School custom domains (.sch.ng / .edu.ng) + host-scoped login (SHERIVS-029) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const svc = async (sql, p = []) => {
       await c.query("SET LOCAL ROLE service_role");
       await c.query("select set_config('request.jwt.claims', '{\"role\":\"service_role\"}', true)");
@@ -5212,7 +5253,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A1. Scope sets complete: audit, no widening on remove, subject dim, caller area (SHERIVS-A01) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const cN = (await t("select public.campus_upsert($1,'A1 North') id", [A.schoolId])).row?.id;
     const cS = (await t("select public.campus_upsert($1,'A1 South') id", [A.schoolId])).row?.id;
     const [cls, other] = (
@@ -5259,7 +5300,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       );
     }
     const ra = (
-      await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [
+      await t("select public.role_assign($1,$2,'ng.vice_principal_academics','org',null) id", [
         A.schoolId,
         staff,
       ])
@@ -5278,7 +5319,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     ).row?.n;
     // restricted assigner (proprietor limited to North)
     const prop = (
-      await t("select public.role_assign($1,$2,'ng.proprietor','org',null) id", [
+      await t("select public.role_assign($1,$2,'ng.head_teacher','org',null) id", [
         A.schoolId,
         A.bursar,
       ])
@@ -5388,7 +5429,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A2. Structure: shifts, levels, gender sections, class placement, academic periods (SHERIVS-A02) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const camp = (await t("select public.campus_upsert($1,'A2 Main') id", [A.schoolId])).row?.id;
     const bCamp = (
       await asOwner(
@@ -5464,7 +5505,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
       )
     ).row?.id;
     const ra = (
-      await t("select public.role_assign($1,$2,'ng.year_head_year_tutor','org',null) id", [
+      await t("select public.role_assign($1,$2,'ng.vice_principal_academics','org',null) id", [
         A.schoolId,
         staff,
       ])
@@ -5596,7 +5637,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A3. Tertiary results: published-only GPA/CGPA, degree class, academic standing (SHERIVS-A03) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const [s1, s2] = (
       await asOwner(
         "select id, user_id from students where school_id=$1 and user_id is not null order by admission_number desc limit 2",
@@ -5613,7 +5654,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
     );
     const SCORE = { 5: 75, 3: 55, 0: 20 };
     const g = (sid, yr, term, subj, u, p, pub = true, attempt = 1) =>
-      asOwner(
+      asSystem(
         "insert into grades (school_id, student_id, class_id, subject, term, academic_year, credit_units, ca_score, exam_score, is_published, attempt) values ($1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10)",
         [A.schoolId, sid, cls, subj, term, yr, u, SCORE[p], pub, attempt],
       );
@@ -5711,7 +5752,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A4. Exam-body registration windows: WAEC / NECO / BECE / NCEE / UTME (SHERIVS-A04) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const st = async (lvl) =>
       (
         await asOwner(
@@ -5899,7 +5940,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A5. Fee relief (discounts, scholarships, waivers) with maker-checker, sibling rule, levies, statements (SHERIVS-A05) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const Y = "2031/2032",
       T = "first";
     const fam = (
@@ -6121,7 +6162,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 
 // ---------- A5b. Checkout charges the amount after relief (SHERIVS-A05b) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const Y = "2032/2033",
       T = "first";
     const sid = (
@@ -6264,7 +6305,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A6. Class moves, transfers with consent, guardian rights, custody orders, safe pickup (SHERIVS-A06) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const sid = (
       await asOwner(
         "select id from students where school_id=$1 and is_active and parent_id is not null order by admission_number offset 3 limit 1",
@@ -6505,7 +6546,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- A7. Offline attendance v2: per-item idempotency, clock skew, conflict queue (SHERIVS-A07) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const cls = (
       await asOwner(
         "select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) limit 1",
@@ -6689,7 +6730,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 
 // ---------- A7b. Teacher screen offline flow end to end (SHERIVS-A07b) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, out }) => {
     const cls = (
       await asOwner(
         "select c.id, c.teacher_id from classes c where c.school_id=$1 and c.teacher_id is not null and exists (select 1 from students s where s.class_id=c.id and s.is_active) order by c.id desc limit 1",
@@ -6780,7 +6821,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 
 // ---------- 25. Institution head console: head role + step-up MFA (SHERIVS-B01) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const claims = (u, aal) =>
       c.query("select set_config('request.jwt.claims', $1, true)", [
         JSON.stringify({ sub: u, role: "authenticated", aal }),
@@ -6894,7 +6935,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 26. Gov console realm (<label>.gov.sherivs.com) + invite-only officers with MFA and expiry (SHERIVS-B02) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const as = (u, aal = "aal1") =>
       c.query("select set_config('request.jwt.claims', $1, true)", [
         JSON.stringify({ sub: u, role: "authenticated", aal }),
@@ -7120,7 +7161,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 27. Gov console modules: inspections + circulars (SHERIVS-B03) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const as = (u, aal = "aal2") =>
       c.query("select set_config('request.jwt.claims', $1, true)", [
         JSON.stringify({ sub: u, role: "authenticated", aal }),
@@ -7365,7 +7406,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 29. Teacher deployment (staffing + two-person postings) and CSV exports (SHERIVS-B05) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const as = (u, aal = "aal2") =>
       c.query("select set_config('request.jwt.claims', $1, true)", [
         JSON.stringify({ sub: u, role: "authenticated", aal }),
@@ -7681,7 +7722,7 @@ const W_ERR = (x) => (x?.ok ? "ALLOWED" : (x?.err ?? "n/a"));
 }
 // ---------- 28. Minors' consent, break-glass review, time-limited delegation, shadow v2 (SHERIVS-B04) ----------
 {
-  const v = await wave(A.admin, async ({ t, act, asOwner, c, out }) => {
+  const v = await wave(A.admin, async ({ t, act, asOwner, asSystem, c, out }) => {
     const as = (u, aal = "aal1") =>
       c.query("select set_config('request.jwt.claims', $1, true)", [
         JSON.stringify({ sub: u, role: "authenticated", aal }),
