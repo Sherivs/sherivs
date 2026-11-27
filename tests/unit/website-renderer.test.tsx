@@ -100,6 +100,11 @@ describe("tenant resolution (host decides, never the query on tenant hosts)", ()
       target: { p_slug: "fu-arewa" },
       preview: "fu-arewa",
     });
+    expect(siteTarget("www.sherivs.ng", "fu-arewa")).toEqual({
+      target: { p_slug: "fu-arewa" },
+      preview: "fu-arewa",
+    });
+    expect(siteTarget("sherivs.ng", null)).toEqual({ target: null, preview: null });
     expect(siteTarget("sherivs.com", "x';drop")).toEqual({ target: null, preview: null });
     expect(siteTarget("sherivs.com", null)).toEqual({ target: null, preview: null });
   });
@@ -128,8 +133,8 @@ describe("prototype removed", () => {
     const idx = readFileSync(join(ROOT, "frontend/src/routes/index.tsx"), "utf8");
     expect(idx).toContain("<SiteView");
     expect(idx).not.toContain("PublicSchoolSite");
-    expect(
-      existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/settings.tsx")),
-    ).toBe(false);
+    expect(existsSync(join(ROOT, "frontend/src/routes/_authenticated/admin/settings.tsx"))).toBe(
+      false,
+    );
   });
 });
