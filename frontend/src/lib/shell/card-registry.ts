@@ -501,6 +501,19 @@ const workflowLimits: LiveSpec = {
   offline: false,
 };
 
+const websiteReview: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/website-review-screen").then((m) => ({
+      default: m.WebsiteReviewScreen,
+    })),
+  screenModule: `${APP_SHELL}/website-review-screen`,
+  serverFns: ["rpc:website_get", "rpc:website_facts", "rpc:website_save_draft"],
+  tables: [],
+  permissions: { any: ["website.manage"] },
+  auditEvents: [],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -517,6 +530,7 @@ const LIVE: Record<string, LiveSpec> = {
   "workflow-runs": { ...workflowRuns, kind: "section" },
   "agent-console": { ...agentConsole, kind: "section" },
   "workflow-limits": { ...workflowLimits, kind: "section" },
+  "website-review": { ...websiteReview, kind: "section" },
   "privacy-register": { ...privacyRegister, kind: "section" },
   "r001.org_admin.ndpa": { ...privacyRegister, kind: "section" },
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },

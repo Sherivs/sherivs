@@ -33,6 +33,20 @@ const KIND_BY_TYPE: Readonly<Record<string, { kind: string; label: string }>> = 
   secondary: { kind: "secondary", label: "Secondary school" },
 };
 
+const STREAMS = ["science", "arts", "commercial", "technical"] as const;
+const EXAMS = ["waec", "neco", "nabteb"] as const;
+
+/** A multi-choice answer reduced to the allowed options, sorted; null when nothing allowed remains. */
+function allowed(value: RealityValue, options: readonly string[]): string[] | null {
+  if (!Array.isArray(value)) return null;
+  const picked = [...new Set(value.filter((v): v is string => typeof v === "string" && options.includes(v)))].sort();
+  return picked.length > 0 ? picked : null;
+}
+function setProfile(facts: MutableFacts, key: "streams" | "examinations", picked: string[]): string {
+  facts.onboarding.academic_profile = { ...obj(facts.onboarding.academic_profile), [key]: picked };
+  return picked.join(", ");
+}
+
 const FIELD_MAP: Readonly<Record<string, FieldRule>> = {
   institution_type: {
     apply(facts, value) {
@@ -41,6 +55,18 @@ const FIELD_MAP: Readonly<Record<string, FieldRule>> = {
       if (!hit) return null;
       facts.onboarding.organisation = { ...obj(facts.onboarding.organisation), org_type: hit.kind };
       return hit.label;
+    },
+  },
+  streams_offered: {
+    apply(facts, value) {
+      const picked = allowed(value, STREAMS);
+      return picked ? setProfile(facts, "streams", picked) : null;
+    },
+  },
+  examinations: {
+    apply(facts, value) {
+      const picked = allowed(value, EXAMS);
+      return picked ? setProfile(facts, "examinations", picked) : null;
     },
   },
   levels_offered: {

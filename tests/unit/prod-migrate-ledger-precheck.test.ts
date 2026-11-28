@@ -209,9 +209,10 @@ describe("prod migrate ledger pre-check", () => {
     expect(identities.every(Boolean)).toBe(true);
     const earlier = identities.filter((identity) => identity.version < "20261124000000");
     const pending = identities
-      .filter((identity) => identity.version >= "20261124000000")
+      .filter((identity) => identity.version >= "20261124000000" && identity.version < "20261125000000")
       .map((identity) => identity.filename)
       .sort();
+    // Only the 24 Nov push migrations are the pending set under test; later missions add their own files.
     expect(pending).toEqual([PUSH01, PUSH01B]);
 
     const ledgerRows = earlier.map((identity, index) => {

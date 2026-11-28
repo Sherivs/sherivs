@@ -31,6 +31,11 @@ export interface Block {
   type: string;
   variant?: string;
   hidden?: boolean;
+  /**
+   * Generated standard text (rules, policies) that the school has not read yet. A site that still has a
+   * `pending` block cannot be published (database-enforced). Absent = written or accepted by the school.
+   */
+  review?: "pending" | "accepted";
   props: Record<string, unknown>;
 }
 export interface Section {

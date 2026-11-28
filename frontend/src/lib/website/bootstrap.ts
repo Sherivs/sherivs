@@ -11,7 +11,8 @@ export async function ensureWebsite(org: string): Promise<BootstrapResult> {
   const state = await rpc<{ exists: boolean }>("website_get", { p_school: org });
   if (state.exists) return "exists";
   const facts = await rpc<Facts>("website_facts", { p_school: org });
-  const doc = generateSite(facts);
+  // Standard texts are boilerplate the school has not read, so an automatic publish never includes them.
+  const doc = generateSite(facts, { standardTexts: "omit" });
   if (validateDocument(doc).length) return "invalid";
   await rpc<number>("website_save_draft", { p_school: org, p_document: doc, p_expected_rev: 0 });
   await rpc<number>("website_publish", { p_school: org, p_note: "Generated from onboarding" });

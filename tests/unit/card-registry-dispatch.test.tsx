@@ -73,6 +73,9 @@ vi.mock("@/components/app-shell/teaching/lesson-notes-screen", () => ({
 vi.mock("@/components/app-shell/privacy-register-screen", () => ({
   PrivacyRegisterScreen: marker("PrivacyRegisterScreen"),
 }));
+vi.mock("@/components/app-shell/website-review-screen", () => ({
+  WebsiteReviewScreen: marker("WebsiteReviewScreen"),
+}));
 vi.mock("@/components/app-shell/cashier-desk-screen", () => ({
   CashierDeskScreen: marker("CashierDeskScreen"),
 }));
@@ -138,6 +141,7 @@ const LIVE_SCREENS: Record<string, string> = {
   "workflow-runs": "RunHistoryScreen",
   "agent-console": "AgentConsoleScreen",
   "workflow-limits": "LimitsScreen",
+  "website-review": "WebsiteReviewScreen",
 };
 
 beforeEach(() => {

@@ -184,6 +184,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/m12-retention-tombstones.local.sql 2>&1 | tee /tmp/m12-retention.out
           grep -q 'M12 ALL PASS' /tmp/m12-retention.out
+      - name: WEB-REVIEW website review gate (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/web-review-gate.local.sql 2>&1 | tee /tmp/webr.out
+          grep -q 'WEBR ALL PASS: 11 checks' /tmp/webr.out
       - name: M11 data-subject requests (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \

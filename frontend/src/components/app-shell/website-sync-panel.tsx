@@ -178,6 +178,27 @@ export function WebsiteSyncPanelView(props: WebsiteSyncPanelViewProps) {
             </div>
           ) : null}
 
+          {state.preview.alignment?.items.some((i) => i.status === "contradicted") ? (
+            <div>
+              <h3>Your answers and your school profile disagree</h3>
+              <ul className="interview-blockers" data-testid="website-sync-contradictions">
+                {state.preview.alignment.items
+                  .filter((i) => i.status === "contradicted")
+                  .map((i) => (
+                    <li key={i.questionId}>
+                      <strong>{fieldLabel(i.websiteField)}:</strong> {i.detail}
+                    </li>
+                  ))}
+              </ul>
+              <p className="interview-hint">Fix whichever is wrong before publishing.</p>
+            </div>
+          ) : null}
+
+          <p className="interview-hint" data-testid="website-sync-standard-texts">
+            Standard texts such as school rules and policies are not published from here. You can add
+            them in the website builder, read each one, and accept or remove it.
+          </p>
+
           {state.preview.withheldCount > 0 ? (
             <p className="interview-hint" data-testid="website-sync-private">
               {state.preview.withheldCount === 1

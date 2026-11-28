@@ -286,7 +286,18 @@ export function summaryLine(f: Facts, kind: OrgKind, locales: Locale[]): Localiz
   return joinL(locales, parts);
 }
 
-export function generateSite(f: Facts): SiteDocument {
+export interface GenerateOptions {
+  /**
+   * What to do with the generator's standard texts (school rules, policies, privacy and safeguarding notices).
+   * They are boilerplate, not the school's answers. `pending` emits them marked for review, so the school must
+   * accept or remove each one before publishing; `omit` leaves them out. Automatic publishing paths use `omit`.
+   */
+  standardTexts?: "pending" | "omit";
+}
+
+export function generateSite(f: Facts, options: GenerateOptions = {}): SiteDocument {
+  const standard = options.standardTexts ?? "pending";
+  const pendingReview = { review: "pending" as const };
   const kind = orgKind(f);
   const locales = siteLocales(f);
   const d = f.data;
@@ -379,6 +390,32 @@ export function generateSite(f: Facts): SiteDocument {
     .map(obj)
     .filter((b) => str(b.name))
     .map((b) => ({ name: str(b.name), detail: own(str(b.detail)) }));
+  // Streams and external examinations come from approved interview answers (reality-sync) and nothing else.
+  const profile = obj(ob.academic_profile);
+  const STREAM_LABEL: Record<string, string> = { science: "Science", arts: "Arts", commercial: "Commercial", technical: "Technical" };
+  const EXAM_LABEL: Record<string, string> = { waec: "WAEC", neco: "NECO", nabteb: "NABTEB" };
+  const labelled = (v: unknown, map: Record<string, string>) =>
+    arr(v)
+      .map(String)
+      .filter((x) => Object.prototype.hasOwnProperty.call(map, x))
+      .map((x) => map[x]!);
+  const streamLabels = labelled(profile.streams, STREAM_LABEL);
+  const examLabels = labelled(profile.examinations, EXAM_LABEL);
+  const academicProfile: Omit<Block, "id"> | null =
+    streamLabels.length || examLabels.length
+      ? {
+          type: "rich_text",
+          props: {
+            heading: own("Senior secondary"),
+            body: own(
+              [
+                ...(streamLabels.length ? [`Streams offered: ${streamLabels.join(", ")}.`] : []),
+                ...(examLabels.length ? [`External examinations sat: ${examLabels.join(", ")}.`] : []),
+              ].join("\n\n"),
+            ),
+          },
+        }
+      : null;
   const facilityNames = arr(ob.facilities).map(String).filter(Boolean);
   const facilitiesFromAnswers: Omit<Block, "id"> | null =
     !d.facilities?.length && facilityNames.length
@@ -443,10 +480,11 @@ export function generateSite(f: Facts): SiteDocument {
       { type: "map", props: {} },
       { type: "faqs", props: {} },
     ]);
-    page(
+    if (standard !== "omit")
+      page(
       "policies",
       "policies",
-      [{ type: "policies", variant: "accordion", props: { items: policies } }],
+      [{ type: "policies", variant: "accordion", props: { items: policies }, ...pendingReview }],
       {
         nav: false,
       },
@@ -473,6 +511,7 @@ export function generateSite(f: Facts): SiteDocument {
     ]);
     page(academicsKey, academicsKey, [
       { type: "sections_offered", variant: "list", props: {} },
+      ...(academicProfile ? [academicProfile] : []),
       { type: "departments", variant: "grouped", props: { groups: faculties } },
       {
         type: "programmes",
@@ -505,15 +544,16 @@ export function generateSite(f: Facts): SiteDocument {
       { type: "downloads", variant: "list", props: { items: downloads } },
       { type: "faqs", variant: "columns", props: {} },
     ]);
-    page(
-      "policies",
-      "policies",
-      [
-        { type: "rules", variant: "grouped", props: { groups: rules } },
-        { type: "policies", variant: "accordion", props: { items: policies } },
-      ],
-      { nav: false },
-    );
+    if (standard !== "omit")
+      page(
+        "policies",
+        "policies",
+        [
+          { type: "rules", variant: "grouped", props: { groups: rules }, ...pendingReview },
+          { type: "policies", variant: "accordion", props: { items: policies }, ...pendingReview },
+        ],
+        { nav: false },
+      );
     page("careers", "careers", [{ type: "careers", variant: "list", props: { items: careers } }], {
       nav: false,
     });

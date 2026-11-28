@@ -18,6 +18,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asKernelAdmin } from "@/lib/kernel-admin-client";
 import { generateSite, type Facts } from "@/lib/website/generator";
+import { buildAlignmentReport, type AlignmentReport } from "@/lib/website/alignment";
 import { validateDocument } from "@/lib/website/validate";
 import {
   planRealitySync,
@@ -41,6 +42,10 @@ export type WebsiteSyncPreview =
       readonly withheldCount: number;
       readonly pages: readonly string[];
       readonly planHash: string;
+      /** Which approved answers the generated site used, could not place, or contradicts (ADR-164). */
+      readonly alignment: AlignmentReport;
+      /** Standard texts (rules, policies) are not published from here; the school adds and reviews them later. */
+      readonly standardTexts: "not_included";
     };
 
 export type WebsiteSyncPublish =
@@ -55,6 +60,7 @@ interface Derived {
   readonly plan: RealitySyncPlan;
   readonly pages: readonly string[];
   readonly document: ReturnType<typeof generateSite>;
+  readonly alignment: AlignmentReport;
 }
 type DeriveResult =
   | { readonly ok: true; readonly derived: Derived }
@@ -87,13 +93,15 @@ async function derive(db: Db, schoolId: string): Promise<DeriveResult> {
   }
 
   const plan = planRealitySync(snapshot, factsRes.data as Facts);
-  const document = generateSite(plan.facts);
+  // Standard texts are boilerplate the school has not read, so an automatic publish never includes them.
+  const document = generateSite(plan.facts, { standardTexts: "omit" });
   if (validateDocument(document).length > 0) return { ok: false, status: "invalid" };
   const pages = document.pages
     .filter((p) => p.nav)
     .map((p) => p.title[document.locales[0]] ?? p.title.en ?? p.slug)
     .slice(0, 20);
-  return { ok: true, derived: { plan, pages, document } };
+  const alignment = buildAlignmentReport(snapshot, plan, document);
+  return { ok: true, derived: { plan, pages, document, alignment } };
 }
 
 export const previewWebsiteFromReality = createServerFn({ method: "POST" })
@@ -103,7 +111,7 @@ export const previewWebsiteFromReality = createServerFn({ method: "POST" })
     const schoolId = await scope(context);
     const r = await derive(asKernelAdmin(context.supabase), schoolId);
     if (!r.ok) return { status: r.status };
-    const { plan, pages } = r.derived;
+    const { plan, pages, alignment } = r.derived;
     return {
       status: "ready",
       applied: plan.applied,
@@ -111,6 +119,8 @@ export const previewWebsiteFromReality = createServerFn({ method: "POST" })
       withheldCount: plan.withheldCount,
       pages,
       planHash: plan.planHash,
+      alignment,
+      standardTexts: "not_included",
     };
   });
 
