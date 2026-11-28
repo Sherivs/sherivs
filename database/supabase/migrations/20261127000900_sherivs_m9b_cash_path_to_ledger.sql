@@ -24,7 +24,7 @@ BEGIN
   IF v_method IS NULL THEN
     RAISE EXCEPTION 'payment method % cannot be posted to the fee ledger', p_method USING ERRCODE = '22023';
   END IF;
-  -- A levy is a legacy fee row with no M07 invoice: its cash is recorded as before and is not applied to the tuition invoice.
+  -- A levy is a legacy fee row with no M07 invoice: its cash is recorded as before and is not applied to the student's fee invoice.
   IF p_fee IS NOT NULL THEN SELECT f.fee_type LIKE 'levy:%' INTO v_levy FROM public.fees f WHERE f.id = p_fee; END IF;
   IF NOT v_levy THEN
     SELECT array_agg(i.id ORDER BY i.id) INTO v_invoices
