@@ -48,6 +48,10 @@ export const WF05_EVENT_PAYLOAD_KEYS: Readonly<Record<string, readonly string[]>
   "attendance.marked_absent": ["attendance_id", "status"],
   "admissions.stage_changed": ["application_id", "from_stage", "to_stage"],
   "results.published": ["grades_id"],
+  // WF-15b3 (ADR-154, GRP-01): group events. Counts never travel in an event; the director opens the aggregate view.
+  "group.kpi_below_threshold": ["campus_org", "metric", "threshold"],
+  "schedule.month_end": ["campuses", "month"],
+  "schedule.weekly": ["campuses", "week"],
 });
 
 /** Abstract approver label; the tenant maps it to holders of `workflows.approve` (decision 4). */
@@ -527,7 +531,17 @@ const RANK: Record<WorkflowAutonomyLevel, number> = {
   act_and_report: 3,
 };
 
-export function validatePackTemplate(t: PackTemplate): PackValidation {
+/** The part of a message-registry entry the validator reads; the fee registry and the group registry both fit it. */
+export interface PackRegistryEntry {
+  channel: string;
+  body: string;
+  whatsapp?: { status: string };
+}
+
+export function validatePackTemplate(
+  t: PackTemplate,
+  registry: Readonly<Record<string, PackRegistryEntry>> = FEE_MESSAGE_REGISTRY,
+): PackValidation {
   const errors: string[] = [];
   if (!/^[a-z][a-z0-9_-]{1,62}$/.test(t.templateKey)) errors.push("bad templateKey");
   if (!Number.isInteger(t.version) || t.version < 1) errors.push("bad version");
@@ -552,7 +566,7 @@ export function validatePackTemplate(t: PackTemplate): PackValidation {
       errors.push(`${s.stepId}: action kind ${a.kind} not allowed in v1`);
     if (!workflowActionDefinitionIsValid(a)) errors.push(`${s.stepId}: invalid action definition`);
     if (a.templateRef) {
-      const entry: RegistryMessage | undefined = FEE_MESSAGE_REGISTRY[a.templateRef];
+      const entry: PackRegistryEntry | undefined = registry[a.templateRef];
       if (!entry) errors.push(`${s.stepId}: ${a.templateRef} is not in the message registry`);
       else {
         if (entry.channel !== a.kind)
