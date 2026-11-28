@@ -326,6 +326,8 @@ jobs:
           done
           psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000950_sherivs_wf08_run_history.sql
           psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261117000960_sherivs_wf12_quotas_wallet_caps_retention.sql
+          # The budget deferral replaces wf_create_event_run after WF-12; re-applying WF-12 restored the older body.
+          psql "$MG/wfpriv" -v ON_ERROR_STOP=1 -q -f database/supabase/migrations/20261127000600_sherivs_ain01_budget_deferral.sql
           psql "$SU/wfpriv" -v ON_ERROR_STOP=1 -f tests/integration/wf08-run-history.local.sql 2>&1 | tee /tmp/wf08-priv.out
           ! grep -Fq 'WF08 FAIL' /tmp/wf08-priv.out
           grep -Eq 'WF08 ALL PASS: [0-9]+ checks' /tmp/wf08-priv.out
