@@ -11,6 +11,7 @@ import {
 import type { WebsiteSyncApi } from "@/components/app-shell/website-sync-panel";
 import type { InterviewOutcome } from "@/lib/runtime/scholar/reality-interview.functions";
 import { generateSite, type Facts } from "@/lib/website/generator";
+import { buildAlignmentReport } from "@/lib/website/alignment";
 import { planRealitySync } from "@/lib/website/reality-sync";
 import {
   TYPE_QUESTION_ID,
@@ -114,9 +115,10 @@ function localWebsiteApi(current: () => InterviewState, siteExists: boolean): We
     const snapshot = approvedSnapshot(current());
     if (snapshot.length === 0) return null;
     const plan = planRealitySync(snapshot, DEMO_BASE);
-    const doc = generateSite(plan.facts);
+    const doc = generateSite(plan.facts, { standardTexts: "omit" });
     return {
       plan,
+      alignment: buildAlignmentReport(approvedSnapshot(current()), plan, doc),
       pages: doc.pages.filter((p) => p.nav).map((p) => p.title[doc.locales[0]] ?? p.slug),
     };
   };
@@ -132,6 +134,8 @@ function localWebsiteApi(current: () => InterviewState, siteExists: boolean): We
         withheldCount: d.plan.withheldCount,
         pages: d.pages,
         planHash: d.plan.planHash,
+        alignment: d.alignment,
+        standardTexts: "not_included",
       };
     },
     publish: async (planHash) => {
