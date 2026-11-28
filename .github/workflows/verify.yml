@@ -189,6 +189,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/psa01-platform-share-accrual.local.sql 2>&1 | tee /tmp/psa01.out
           grep -q 'PSA01 ALL PASS: 46 checks' /tmp/psa01.out
+      - name: PSA-01c cash path wallet bound (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/psa01c-cash-wallet-bound.local.sql 2>&1 | tee /tmp/psa01c.out
+          grep -q 'WBND ALL PASS: 12 checks' /tmp/psa01c.out
       - name: M11 data-subject requests (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
