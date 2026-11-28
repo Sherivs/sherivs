@@ -123,3 +123,14 @@ Review order for these: #539, #547, #548, #549, #550, #551.
 New decisions for Tumi: (j) #550 never blocks cash and parks the share instead; confirm. (k) #551: students have no campus, so the bursar picks campus and scope per levy; invoice principal falls back to `student:<id>` without a parent id; the guardian model is not wired. (l) #548 does not yet use the levy link, so online levy payments still park as `levy_not_in_ledger`.
 
 Not built yet: school-facing statement of what a school owes, cash-picker invoice argument and screen, inert webhook wiring, scan function for cron. The combined 243-migration proof in section 11 does not include #550 and #551; run it again with them before approving the stack.
+
+## 13. Website reality alignment (#552)
+
+Answer to the founder question: the builder followed only two interview answers and put generic rules, policies, privacy and safeguarding texts live without review. #552 fixes this: generated texts are pending until the school accepts or removes them, the database refuses to publish while any are pending, streams and examinations reach the site, and the preview reports where the site and the interview agree or disagree. Draft, not applied; WEBR 11 checks pass locally.
+
+Needs a decision (Tumi or founder):
+- (m) Registry disclosure: flipping boarding, faith, languages, leadership, facilities and registration questions to public-safe is a disclosure choice for the registry owner and needs a registry version bump.
+- (n) New sites now go live without rules and policies until the school adds and accepts them. Confirm this is the wanted default.
+- (o) The `policies` block can mix school-given and boilerplate text; the whole block is marked pending.
+- (p) The admin builder host route is not mounted in the current tree, so the `website-review` screen is the only review path.
+- (q) #552 is not in the combined 243-migration proof. Next ADR 165, next W-031.
