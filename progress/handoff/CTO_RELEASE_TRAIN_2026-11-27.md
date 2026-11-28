@@ -62,3 +62,18 @@ Five more drafts exist. Each was proven on its own chain, not yet together with 
 | Found while building: the m009-a1 harness used a role that no longer exists (fixed in #542); the guarded harnesses (b1, b5, engine, comms, fin, ent) also run through tools/run-guarded-harnesses.sh (in #542).                         |
 | New decisions: relief already revoked-and-posted (#540); hosted approved approval steps (#541); hosted approved overrides (#542); which counts a group may see, so `org_metric` can hold rows (#543); who may propose overrides (#544). |
 | Combined proof, 28 Nov: all 19 branches merged (registry conflicts only, baselines merged), chain built 239/239 on local PG16. 45 plain harnesses, 12/12 guarded, WF-08 (131), WF-12 (219), WF-12 privileges (53), AIN-01..05 privilege steps, WhatsApp fix (11), SV1 R3 and R20, rollback round-trip of the 13 new migrations, and 21 unit tests pass. One defect found and fixed: the CI privileges step re-applied WF-12 after the AIN-01 budget deferral and restored the older function, so WF-12 failed with ain01:budget_daily_actions. Fixed in #534 (commit 2bb11175). Nothing applied to a hosted DB. |
+
+## 9. Small items built after the combined proof (28 Nov)
+
+Each proven alone on the 239-migration chain, not yet merged into the combined chain. One migration per push still applies.
+
+| PR   | What                                                                 | Evidence                                              |
+| ---- | -------------------------------------------------------------------- | ----------------------------------------------------- |
+| #545 | M1c: unit-tree cycle guard (cycles of any length, depth over 32)     | M1C ALL PASS: 13 checks; rollback round-trip          |
+| #546 | M9B: read-only open invoices for a student, for the cash picker      | M9D ALL PASS: 15 checks; rollback round-trip          |
+
+- Migration order: 20261128000500 (#545), 20261128000600 (#546), after 20261128000400 (#544).
+- #545 does not check loops already in production data; run a read-only ancestry check before applying.
+- #546: the cash function still cannot take the picked invoice. That needs a signature change on top of #539 (decision needed).
+- M4 live shell: no frontend change is needed. The shell already reads `workspace_manifest`; custom role widgets arrive through the migration in #537. What is unproven is a browser check against a hosted database.
+- AIN agent evidence per organisation: NOT built. Evidence is stored per agent, not per organisation (`wf_autonomy_evidence` has no `org_id`), and promotion applies it per organisation. Changing that rewrites the ratified AIN-02 evidence rule (decision 3 of AIN-02, "one piece of evidence promotes once, per agent, within 30 days"). Decision needed: keep per agent, or make evidence organisation-scoped.
