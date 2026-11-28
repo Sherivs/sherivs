@@ -1,8 +1,9 @@
-# CTO release train — 13 open drafts, proven together (2026-11-27)
+# CTO release train — 14 drafts proven together (2026-11-27/28); 5 more added 28 Nov (section 8)
 
 Status: NOTHING here is applied to any hosted database. Every claim below was produced on a disposable local PG16 chain DB built from the merged tree. Evidence line = the command and its result.
 
 ## 1. What was proven (one merged tree, one chain DB) - updated 2026-11-28
+
 - Trial-merged all 14 draft branches in order onto origin/master (1cf981ef). Only registry files conflicted (verify.yml, adr/INDEX.md, the neutrality baseline). Registry conflicts keep both sides; baseline conflicts are resolved by `tools/merge-neutrality-baseline.py <merge-base> <branch>` (adds only that branch's new entries and counter deltas, keeps formatting). Merged tree: verify.yml parses, baseline JSON parses, neutrality guard reports 0 new violations.
 - 235/235 migrations apply in order (...000100 CS-01 to ...000900 cash path).
 - ALL 46 harnesses registered in verify.yml pass on the merged tree. Guarded ones were run on the database names their own guards require: sim_chain (comms-03, ent-01, fin-01, whatsapp-fix), engine_chain with coregrid.test_disposable_database=on (engine01-03), coregrid_twin_test (sv1-twin-personal). New harnesses: cs01, sup01 48, grp01 44, m2b 14, m9b 20, m4 7, wf07 103, wf12 quotas 219, cash path 20.
@@ -10,32 +11,54 @@ Status: NOTHING here is applied to any hosted database. Every claim below was pr
 - Unit: ain06a (8), ain07 (5), model-router (8) pass on the merged tree.
 
 ## 2. Defects found only by combining (and fixed)
+
 1. GRP-01 `wf_group_event_scan` is executable by service_role but was not on the WF-12 allowlist → wf12-default-privileges failed. Fixed on claude/grp01 (6018ef1d).
 2. GRP-01 registers 3 event sources (schedule.weekly, schedule.month_end, group.kpi_below_threshold); WF-05 asserted exactly 7 sources. Fixed in the same commit.
 3. PR #523 (CS-01) was conflicting with master in NEUTRALITY_GUARD_BASELINE.json. Rebased onto current master; its 2 baseline entries (5 hits) re-added textually. Force-pushed to claude/class-scope-approvals (only my own branch).
-Individually these PRs were green; together they were not. That is the argument for always running the combined chain before any merge.
+   Individually these PRs were green; together they were not. That is the argument for always running the combined chain before any merge.
 
 ## 3. Gate: neutrality guard (resolved with founder approval, 2026-11-28)
+
 The ratchet is shrink-only, so each mission's unavoidable hits were baselined on its own branch, tagged with its mission id and a removal condition, after the 3 comment-only hits were reworded: M9B 1 hit, WF-07 3 (school_id on the legacy notifications table), M4 9 (role-name literals carried from the function it replaces), cash path 21 (legacy table vocabulary it still writes). Merged tree: 0 new violations.
 
 ## 4. Merge order (when you approve)
-1. #525 docs.  2. #523 CS-01 (rebased) + baseline.  3. #526 A3 then #527 A4.  4. #528 SUP-01.  5. #529 GRP-01 (fixed).  6. #532 M2b resolver.  7. #533 M9B refund.  8. #539 M9B cash path.  9. #534 AIN-01 deferral.  10. #535 WF-07.  11. #537 M4.  12. #530 AIN-06/07, #531 router, #536 design note, #538 this memo (no DB).
-Rule: merge one, let CI go green on master, then the next. Never merge two migrations in one push. After each merge the next PR's baseline/INDEX/verify.yml may conflict: update that branch with master and run tools/merge-neutrality-baseline.py rather than editing the JSON by hand.
+
+1. #525 docs. 2. #523 CS-01 (rebased) + baseline. 3. #526 A3 then #527 A4. 4. #528 SUP-01. 5. #529 GRP-01 (fixed). 6. #532 M2b resolver. 7. #533 M9B refund. 8. #539 M9B cash path. 9. #534 AIN-01 deferral. 10. #535 WF-07. 11. #537 M4. 12. #530 AIN-06/07, #531 router, #536 design note, #538 this memo (no DB).
+   Rule: merge one, let CI go green on master, then the next. Never merge two migrations in one push. After each merge the next PR's baseline/INDEX/verify.yml may conflict: update that branch with master and run tools/merge-neutrality-baseline.py rather than editing the JSON by hand.
 
 ## 5. Hosted-DB apply plan (not executed — needs your yes per step)
+
 Before step 1: point-in-time backup + restore proof on a throwaway project; record the migration ledger order. Apply 000100…000800 in timestamp order, one at a time, running the matching harness against a restored copy first. Rollback files exist for all eight and are proven.
 Cron needed (Tumi): wf_approval_notify_scan (WF-07), wf_group_event_scan (GRP-01). Both are service_role only.
 
 ## 6. Risk register
-| Risk | Why | Mitigation |
-|---|---|---|
-| Who-can-do-what changes (#523, #528, #532, #537) | They alter permission resolution | Preview deploy + full scenario run before launch; Vercel Hobby commit-author setting currently blocks previews |
-| #533 cash path | Legacy record_cash_payment bypasses the M07 ledger | Founder decision: redirect it (recommended yes) |
-| M2b override kinds | Only some kinds applied; no TS cache | Marked in the mission note; do not announce as complete |
-| No browser verification of A3/A4 | No working preview | Fix Vercel setting, then browser-agent run |
-| Messaging | Held until Tumi resets | Nothing in this train sends messages |
+
+| Risk                                             | Why                                                | Mitigation                                                                                                     |
+| ------------------------------------------------ | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Who-can-do-what changes (#523, #528, #532, #537) | They alter permission resolution                   | Preview deploy + full scenario run before launch; Vercel Hobby commit-author setting currently blocks previews |
+| #533 cash path                                   | Legacy record_cash_payment bypasses the M07 ledger | Founder decision: redirect it (recommended yes)                                                                |
+| M2b override kinds                               | Only some kinds applied; no TS cache               | Marked in the mission note; do not announce as complete                                                        |
+| No browser verification of A3/A4                 | No working preview                                 | Fix Vercel setting, then browser-agent run                                                                     |
+| Messaging                                        | Held until Tumi resets                             | Nothing in this train sends messages                                                                           |
 
 ## 7. What still needs a person
+
 Tumi: review each migration; backup and restore proof; cron entries; confirm ng.cashier is assigned at campus scope wherever cash is taken (the ledger checks campus authority separately); per-provider data-class clearance; which BulkSMS company.
 Founder: Vercel Hobby commit-author setting; decisions on #508-#511 and #495; Track B/C blueprint (or leave to Tumi on Monday).
 Decided 2026-11-28: baseline extended; cash path redirected into the ledger (#539).
+
+## 8. Added on 28 Nov after that proof (NOT covered by section 1)
+
+Five more drafts exist. Each was proven on its own chain, not yet together with the 14 above. Do not read section 1 as covering them. (#539, the cash path, is already inside the 14.)
+
+| PR                                                                                                                                                                                                                                      | What                                                               | Base   | Own evidence                                              | Needs                                                                                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ------ | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| #540                                                                                                                                                                                                                                    | M9B relief reversal (ADR-157)                                      | master | harness in its branch                                     | Founder decision on existing data with revoked-and-posted relief                                                   |
+| #541                                                                                                                                                                                                                                    | WF-07b approval resume (ADR-158)                                   | master | WF07R 18 checks, 3 unit tests                             | #535 in place; decision on hosted approved approval steps                                                          |
+| #542                                                                                                                                                                                                                                    | M2b override kinds (ADR-159)                                       | #532   | M2K 46 checks; all 12 guarded harnesses pass on its chain | #532 first; Tumi review; decision on hosted approved overrides of the six kinds and on level/section scope ranking |
+| #543                                                                                                                                                                                                                                    | WF-15b3 group workflows (ADR-160)                                  | master | 9 new unit tests, 54 WF-15 tests                          | #529 applied before the templates can be installed                                                                 |
+| #544                                                                                                                                                                                                                                    | M2c override screens, client functions, permission cache (ADR-161) | #542   | M2C 19 checks, 27 unit tests; rollback proven             | #542 first; Tumi review (changes who can change access)                                                            |
+| Merge order additions: #542 right after #532, then #544; #540 after #539; #541 after #535; #543 after #529. Still one migration per push.                                                                                               |
+| Found while building: the m009-a1 harness used a role that no longer exists (fixed in #542); the guarded harnesses (b1, b5, engine, comms, fin, ent) also run through tools/run-guarded-harnesses.sh (in #542).                         |
+| New decisions: relief already revoked-and-posted (#540); hosted approved approval steps (#541); hosted approved overrides (#542); which counts a group may see, so `org_metric` can hold rows (#543); who may propose overrides (#544). |
+| Still open: the combined chain with all 19 branches has not been rebuilt. That is the next proof to run before any merge.                                                                                                               |
