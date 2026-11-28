@@ -185,7 +185,9 @@ END $t$;
 -- R11: privilege matrix. Every SECURITY DEFINER function that touches the wallet tables or the posting primitive must be
 -- closed to anon, and the set open to authenticated is an explicit allowlist (each has an in-function permission check).
 DO $t$
-DECLARE v_anon text; v_auth text; v_allow text[] := ARRAY['record_cash_payment', 'wallet_adjust', 'open_term_pools', 'wallet_set_safety_overdraft_limit'];
+DECLARE v_anon text; v_auth text; v_allow text[] := ARRAY['record_cash_payment', 'wallet_adjust', 'open_term_pools', 'wallet_set_safety_overdraft_limit',
+    -- PSA-01 operator functions: each refuses unless platform_share_is_operator() (proved in psa01-platform-share-accrual.local.sql)
+    'platform_share_settle_overdue', 'platform_share_collections'];
 BEGIN
   SELECT string_agg(p.proname, ',' ORDER BY p.proname) INTO v_anon FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace AND p.prosecdef
@@ -196,7 +198,7 @@ BEGIN
      AND (p.prosrc ~* '(school_wallets|wallet_ledger|_wallet_post|usage_events|term_usage_pools|meter_usage)')
      AND has_function_privilege('authenticated', p.oid, 'EXECUTE') AND NOT (p.proname = ANY (v_allow));
   PERFORM fin01.expect('R11a no wallet-touching SECURITY DEFINER function is executable by anon', v_anon IS NULL, coalesce(v_anon, 'none'));
-  PERFORM fin01.expect('R11b authenticated may execute only the allowlisted wallet functions (record_cash_payment, wallet_adjust, open_term_pools, wallet_set_safety_overdraft_limit)',
+  PERFORM fin01.expect('R11b authenticated may execute only the allowlisted wallet functions (record_cash_payment, wallet_adjust, open_term_pools, wallet_set_safety_overdraft_limit, platform_share_settle_overdue, platform_share_collections)',
     v_auth IS NULL, coalesce(v_auth, 'only the allowlist'));
   PERFORM fin01.expect('R11c _wallet_post is executable by no API role',
     NOT has_function_privilege('anon', 'public._wallet_post(uuid,text,numeric,text,text,numeric,uuid,jsonb,boolean)', 'EXECUTE')
