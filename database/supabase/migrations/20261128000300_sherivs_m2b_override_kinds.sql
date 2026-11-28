@@ -3,7 +3,8 @@
 --   disable / enable   a template is off in an organization from the latest approved, in-force disable until a later approved enable;
 --                      on a tie the disable wins. A disabled template's roles yield no permission rows.
 --   scope_narrow       an assignment held at a broader scope than the override's scope yields no rows (fail closed) until the
---                      holder is assigned again at the narrower scope. The assignment's own scope is never rewritten.
+--                      holder is assigned again at the narrower scope. The assignment's own scope is never rewritten. An assignment
+--                      with scope sets keeps only the sets that name a campus or class narrow enough; with none, it yields no rows.
 --   add_responsibility the pack responsibility's permissions are granted to roles of the template; protected permissions never.
 --   approval_limit     workspace_effective_approval_limit(): the template ceiling, lowered by the lowest in-force approved
 --                      override; school_expenses_sod_guard uses it.
@@ -35,6 +36,13 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = '' AS $$
     (SELECT max(effective_from) FROM ov WHERE override_kind = 'disable')
       >= coalesce((SELECT max(effective_from) FROM ov WHERE override_kind = 'enable'), '-infinity'::timestamptz),
     false)
+$$;
+
+CREATE FUNCTION public.workspace_scope_dim_rank(p_dim text)
+RETURNS integer LANGUAGE sql IMMUTABLE SET search_path = '' AS $$
+  -- Only the dimensions that sit on the scope hierarchy can satisfy a narrowing; the others
+  -- (shift, section, gender, level, subject, house, hostel) say nothing about how narrow the holder is.
+  SELECT CASE p_dim WHEN 'campus' THEN 1 WHEN 'class' THEN 4 END
 $$;
 
 CREATE FUNCTION public.workspace_template_min_scope_rank(p_org uuid, p_template text, p_at timestamptz)
@@ -73,6 +81,7 @@ BEGIN
     (SELECT r.name FROM public.role_catalog r WHERE r.code = p_role_code));
 END $$;
 
+REVOKE ALL ON FUNCTION public.workspace_scope_dim_rank(text) FROM PUBLIC, anon, authenticated, service_role;
 REVOKE ALL ON FUNCTION public.workspace_template_disabled(uuid, text, timestamptz),
   public.workspace_template_min_scope_rank(uuid, text, timestamptz),
   public.workspace_effective_approval_limit(uuid, uuid, timestamptz) FROM PUBLIC, anon, authenticated, service_role;
@@ -95,8 +104,14 @@ AS $function$
            p_org, a.evidence, p_at, a.assigned_by, a.user_id
          ))
        AND NOT public.workspace_template_disabled(p_org, role.template_code, p_at)
-       AND coalesce(public.role_pack_scope_rank(e.scope_type), 0)
-           >= public.workspace_template_min_scope_rank(p_org, role.template_code, p_at)
+       AND (coalesce(public.role_pack_scope_rank(e.scope_type), 0)
+              >= public.workspace_template_min_scope_rank(p_org, role.template_code, p_at)
+            OR EXISTS (
+              SELECT 1 FROM public.role_assignment_scope_sets ss
+                JOIN public.role_assignment_scopes sx ON sx.set_id = ss.id
+               WHERE ss.assignment_id = e.assignment_id
+                 AND public.workspace_scope_dim_rank(sx.dim)
+                     >= public.workspace_template_min_scope_rank(p_org, role.template_code, p_at)))
   ), grants AS (
     SELECT tp.permission_code, tp.kind, a.role_code, a.assignment_id, a.scope_type, a.scope_ref
       FROM assigned a
@@ -162,6 +177,12 @@ AS $function$
              FROM public.role_assignment_scope_sets s
              JOIN public.role_assignment_scopes x ON x.set_id = s.id
             WHERE s.assignment_id = g.assignment_id
+              AND (coalesce(public.role_pack_scope_rank(g.scope_type), 0) >= public.workspace_template_min_scope_rank(
+                     p_org, (SELECT rc.template_code FROM public.role_catalog rc WHERE rc.code = g.role_code), p_at)
+                   OR EXISTS (
+                     SELECT 1 FROM public.role_assignment_scopes y
+                      WHERE y.set_id = s.id AND public.workspace_scope_dim_rank(y.dim) >= public.workspace_template_min_scope_rank(
+                        p_org, (SELECT rc.template_code FROM public.role_catalog rc WHERE rc.code = g.role_code), p_at)))
          ), '[]'::jsonb)
          ELSE jsonb_build_array(jsonb_build_object(
            'type', CASE WHEN g.scope_type = 'org' THEN 'institution' ELSE g.scope_type END,

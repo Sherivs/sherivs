@@ -23,7 +23,7 @@ BEGIN
   INSERT INTO m2k.passed (label) VALUES (p_label);
 END $$;
 CREATE TABLE m2k.ids (name text PRIMARY KEY, id uuid NOT NULL DEFAULT gen_random_uuid());
-INSERT INTO m2k.ids (name) VALUES ('org'), ('org2'), ('u'), ('lim'), ('narrow'), ('creator'), ('approver');
+INSERT INTO m2k.ids (name) VALUES ('org'), ('org2'), ('u'), ('lim'), ('sh'), ('cl'), ('mx'), ('narrow'), ('creator'), ('approver');
 CREATE FUNCTION m2k.id(p text) RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT id FROM m2k.ids WHERE name = p $$;
 CREATE FUNCTION m2k.rows(p_org uuid, p_user text, p_at timestamptz DEFAULT now()) RETURNS bigint LANGUAGE sql STABLE AS $$
   SELECT count(*) FROM public.workspace_effective_permission_rows_at(p_org, m2k.id(p_user), p_at)
@@ -39,12 +39,15 @@ CREATE FUNCTION m2k.ov(p_org uuid, p_kind text, p_payload jsonb, p_approved bool
 $$;
 
 SET LOCAL session_replication_role = replica;
-INSERT INTO auth.users (id) SELECT id FROM m2k.ids WHERE name IN ('u', 'lim', 'narrow', 'creator', 'approver');
+INSERT INTO auth.users (id) SELECT id FROM m2k.ids WHERE name IN ('u', 'lim', 'sh', 'cl', 'mx', 'narrow', 'creator', 'approver');
 INSERT INTO public.schools (id, name, slug) VALUES (m2k.id('org'), 'M2K Org', 'm2k-org'), (m2k.id('org2'), 'M2K Org 2', 'm2k-org2');
 INSERT INTO public.users (id, school_id, full_name, email, role, is_active) VALUES
   (m2k.id('u'), m2k.id('org'), 'U', 'u@m2k.invalid', 'teacher', true),
   (m2k.id('narrow'), m2k.id('org'), 'N', 'n@m2k.invalid', 'teacher', true),
   (m2k.id('lim'), m2k.id('org'), 'L', 'l@m2k.invalid', 'teacher', true),
+  (m2k.id('sh'), m2k.id('org'), 'S', 's@m2k.invalid', 'teacher', true),
+  (m2k.id('cl'), m2k.id('org'), 'K', 'k@m2k.invalid', 'teacher', true),
+  (m2k.id('mx'), m2k.id('org'), 'M', 'm@m2k.invalid', 'teacher', true),
   (m2k.id('creator'), m2k.id('org'), 'C', 'c@m2k.invalid', 'admin', true),
   (m2k.id('approver'), m2k.id('org'), 'A', 'a@m2k.invalid', 'admin', true);
 INSERT INTO public.organization_memberships (user_id, school_id, role) VALUES
@@ -113,6 +116,32 @@ SELECT m2k.ov(m2k.id('org'), 'scope_narrow', '{"scope":"self"}', true);
 SELECT m2k.ok('a narrowing to self also removes the department assignment', m2k.rows(m2k.id('org'), 'narrow') = 0);
 UPDATE public.tenant_role_overrides SET effective_to = now() - interval '1 minute' WHERE override_kind = 'scope_narrow';
 
+-- assignments that carry scope sets: one with a non-hierarchy dimension only, one with a class, one with both
+INSERT INTO public.organization_memberships (user_id, school_id, role)
+  SELECT m2k.id(n), m2k.id('org'), 'teacher' FROM unnest(ARRAY['sh', 'cl', 'mx']) n;
+INSERT INTO public.user_role_assignments (org_id, user_id, role_code, started_at)
+  SELECT m2k.id('org'), m2k.id(n), 'ng.account_clerk', now() - interval '1 day' FROM unnest(ARRAY['sh', 'cl', 'mx']) n;
+CREATE TABLE m2k.sets AS
+  SELECT gen_random_uuid() AS set_id, n AS who, a.id AS assignment_id, d.dim, d.ref
+    FROM (VALUES ('sh', 'shift', 'morning'), ('cl', 'class', 'c-1'), ('mx', 'class', 'c-2'), ('mx', 'shift', 'morning')) d(n, dim, ref)
+    JOIN public.user_role_assignments a ON a.user_id = m2k.id(d.n) AND a.org_id = m2k.id('org');
+INSERT INTO public.role_assignment_scope_sets (id, assignment_id, org_id)
+  SELECT DISTINCT ON (who, dim) set_id, assignment_id, m2k.id('org') FROM m2k.sets;
+INSERT INTO public.role_assignment_scopes (set_id, org_id, dim, ref) SELECT set_id, m2k.id('org'), dim, ref FROM m2k.sets;
+CREATE FUNCTION m2k.scopes(p_user text) RETURNS jsonb LANGUAGE sql STABLE AS $$
+  SELECT coalesce(jsonb_agg(DISTINCT v), '[]'::jsonb)
+    FROM public.workspace_effective_permission_rows_at(m2k.id('org'), m2k.id(p_user), now()) r, jsonb_array_elements(r.scope_values) v
+$$;
+SELECT m2k.ok('fixture: set-bearing assignments resolve with their set entries before any narrowing',
+  m2k.rows(m2k.id('org'), 'sh') > 0 AND m2k.scopes('mx') @> '[{"type":"class","ref":"c-2"},{"type":"shift","ref":"morning"}]'::jsonb);
+SELECT m2k.ov(m2k.id('org'), 'scope_narrow', '{"scope":"department"}', true);
+SELECT m2k.ok('a set with only a non-hierarchy dimension does not satisfy a narrowing', m2k.rows(m2k.id('org'), 'sh') = 0);
+SELECT m2k.ok('a set naming a class satisfies a narrowing to department', m2k.rows(m2k.id('org'), 'cl') > 0);
+SELECT m2k.ok('a holder with two sets keeps only the set that satisfies', m2k.scopes('mx') = '[{"type":"class","ref":"c-2"}]'::jsonb);
+UPDATE public.tenant_role_overrides SET effective_to = now() - interval '1 minute' WHERE override_kind = 'scope_narrow';
+SELECT m2k.ok('ending the narrowing restores the whole set list', m2k.rows(m2k.id('org'), 'sh') > 0
+  AND m2k.scopes('mx') @> '[{"type":"shift","ref":"morning"}]'::jsonb);
+
 -- add_responsibility
 SELECT m2k.ov(m2k.id('org'), 'add_responsibility', '{"responsibility":"zz.resp"}', false);
 SELECT m2k.ok('an unapproved responsibility adds nothing', NOT m2k.has(m2k.id('org'), 'u', 'zz.resp_perm'));
@@ -161,6 +190,8 @@ SELECT set_config('request.jwt.claim.role', '', true), set_config('request.jwt.c
 SELECT m2k.ok('a caller outside the organization gets nothing', public.workspace_role_display_name(m2k.id('org'), 'ng.account_clerk') IS NULL);
 
 -- privileges
+SELECT m2k.ok('the scope-dimension helper is callable by no client role',
+  (SELECT NOT has_function_privilege('authenticated', 'public.workspace_scope_dim_rank(text)', 'EXECUTE') AND NOT has_function_privilege('anon', 'public.workspace_scope_dim_rank(text)', 'EXECUTE')));
 SELECT m2k.ok('the helper functions are not callable by client roles',
   (SELECT bool_and(NOT has_function_privilege('authenticated', p.oid, 'EXECUTE') AND NOT has_function_privilege('anon', p.oid, 'EXECUTE')
                    AND NOT has_function_privilege('service_role', p.oid, 'EXECUTE'))

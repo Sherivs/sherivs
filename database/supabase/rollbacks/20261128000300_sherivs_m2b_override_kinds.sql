@@ -114,4 +114,5 @@ END $$;
 DROP FUNCTION IF EXISTS public.workspace_role_display_name(uuid, text, timestamptz);
 DROP FUNCTION IF EXISTS public.workspace_effective_approval_limit(uuid, uuid, timestamptz);
 DROP FUNCTION IF EXISTS public.workspace_template_min_scope_rank(uuid, text, timestamptz);
+DROP FUNCTION IF EXISTS public.workspace_scope_dim_rank(text);
 DROP FUNCTION IF EXISTS public.workspace_template_disabled(uuid, text, timestamptz);
