@@ -107,3 +107,19 @@ Local disposable PG16 only; nothing applied to a hosted database. All branches m
 Two defects found by the combined run and fixed:
 1. #539: a comment in the migration tripped the neutrality guard (reworded).
 2. #547: FIN-01 R11b rejected `platform_share_settle_overdue` and `platform_share_collections` as wallet-touching functions open to `authenticated`. Both refuse non-operators in-function (proved by the PSA-01 harness), so the FIN-01 allowlist now names them. Reviewer: confirm that is the intended contract.
+
+## 12. Builds after the combined proof (28 Nov, evening)
+
+All draft, local proof only, nothing applied. Each is stacked, so it contains its parents until they merge.
+
+| PR | What | Stacked on | Evidence |
+|---|---|---|---|
+| #549 PSA-01b | Read-only Sherivs operator screen over the PSA-01 reports (no migration) | #547 | view core 12 tests, dispatch 8, coverage 9; tsc only the pre-existing error; guards pass |
+| #550 PSA-01c (W-028) | Bounds the school wallet on the cash path: cash is always recorded, the share is taken only within `debt_limit`, otherwise parked pending | #547 + #539 | WBND 12; M9C 22, PSA01 46, FIN-01 pass=37 still pass; rollback clean |
+| #551 LEVY-M07 (W-029) | Bursar issues M07 invoices for a levy; levy cash posts to the levy invoice | #550 | LEVY 18; same regressions pass; rollback clean |
+
+Review order for these: #539, #547, #548, #549, #550, #551.
+
+New decisions for Tumi: (j) #550 never blocks cash and parks the share instead; confirm. (k) #551: students have no campus, so the bursar picks campus and scope per levy; invoice principal falls back to `student:<id>` without a parent id; the guardian model is not wired. (l) #548 does not yet use the levy link, so online levy payments still park as `levy_not_in_ledger`.
+
+Not built yet: school-facing statement of what a school owes, cash-picker invoice argument and screen, inert webhook wiring, scan function for cron. The combined 243-migration proof in section 11 does not include #550 and #551; run it again with them before approving the stack.
