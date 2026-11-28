@@ -19,7 +19,7 @@ describe("Group Pack", () => {
   it("reuses only templates that exist in the Private School Pack", () => {
     expect(validateGroupPack(["ps_fee_ladder"]).length).toBe(GROUP_REUSED_TEMPLATE_KEYS.length - 1);
   });
-  it("declares the six group workflows as not yet buildable and reports them to the group director", () => {
+  it("declares the six group workflows, three built on the GRP-01 events and three still blocked, all reporting to the group director", () => {
     expect(GROUP_PACK_ENTRIES.map((e) => e.key).sort()).toEqual(
       [
         "group.finance_close",
@@ -31,7 +31,11 @@ describe("Group Pack", () => {
       ].sort(),
     );
     for (const e of GROUP_PACK_ENTRIES) {
-      expect(e.buildState).toBe("needs_event_source");
+      expect(e.buildState).toBe(
+        ["group.weekly_rollup", "group.kpi_breach_alert", "group.finance_close"].includes(e.key)
+          ? "built"
+          : "needs_event_source",
+      );
       expect(e.reportsTo).toBe(GROUP_DIRECTOR_ROLE);
       expect(e.autonomyMax).toBe("draft");
     }
@@ -76,11 +80,15 @@ describe("catalogue entry validation", () => {
     ).toContain("never rise above draft");
   });
   it("keeps build state honest against the real event sources", () => {
-    expect(validateCatalogEntry({ ...ok, buildState: "built" })).toContain(
-      "a built template must trigger on an existing WF-05 event source",
-    );
     expect(
-      validateCatalogEntry({ ...ok, trigger: { event: "fees.invoice_issued" } }).join(),
+      validateCatalogEntry({ ...ok, trigger: { event: "no.such_event" }, buildState: "built" }),
+    ).toContain("a built template must trigger on an existing WF-05 event source");
+    expect(
+      validateCatalogEntry({
+        ...ok,
+        trigger: { event: "fees.invoice_issued" },
+        buildState: "needs_event_source",
+      }).join(),
     ).toContain("the trigger event exists");
     expect(
       validateCatalogEntry({

@@ -20,10 +20,15 @@ describe("Group Pack v1 (14 templates)", () => {
     expect(validateGroupPackV1()).toEqual([]);
     expect(GROUP_PACK_V1).toHaveLength(14);
   });
-  it("splits eight built campus templates and six group templates that still need an event source", () => {
-    expect(built).toHaveLength(8);
+  it("splits eight built campus templates, three built group templates and three still blocked on a campus feature", () => {
+    expect(built).toHaveLength(11);
     expect(group).toHaveLength(6);
-    for (const e of group) expect(e.buildState).toBe("needs_event_source");
+    const blocked = group.filter((e) => e.buildState === "needs_event_source").map((e) => e.key);
+    expect(blocked.sort()).toEqual([
+      "group.fee_policy_rollout",
+      "group.staff_transfer",
+      "group.student_transfer",
+    ]);
   });
   it("keeps every customer-visible step a draft with a named approver", () => {
     for (const e of GROUP_PACK_V1)

@@ -9,6 +9,7 @@
  * Titles in ha, yo, ig and pcm are drafts for native-speaker review; nothing here is sent anywhere.
  */
 import { PRIVATE_SCHOOL_PACK_V1 } from "./private-school-pack";
+import { GROUP_WORKFLOW_PACK_V1 } from "./group-workflow-pack";
 import {
   validateRichEntry,
   type CatalogStepSummary,
@@ -281,7 +282,9 @@ const GROUP: RichCatalogEntry[] = [
     {
       agent: "Brief",
       trigger: { event: "schedule.weekly" },
-      steps: [agg("collect"), dir("digest")],
+      buildState: "built",
+      sourceTemplateKey: "group_weekly_rollup",
+      steps: [dir("digest")],
       dataClasses: ["aggregate_attendance", "aggregate_collections", "aggregate_incidents"],
       params: { window_days: 7, min_count: 5 },
     },
@@ -298,7 +301,9 @@ const GROUP: RichCatalogEntry[] = [
     {
       agent: "Compass",
       trigger: { event: "group.kpi_below_threshold" },
-      steps: [agg("evaluate"), dir("alert")],
+      buildState: "built",
+      sourceTemplateKey: "group_kpi_breach_alert",
+      steps: [dir("alert")],
       dataClasses: ["aggregate_attendance", "aggregate_collections"],
       params: { attendance_floor_pct: 85, collections_floor_pct: 70, min_count: 5 },
     },
@@ -316,8 +321,9 @@ const GROUP: RichCatalogEntry[] = [
       agent: "Ledger",
       riskTier: "high",
       trigger: { event: "schedule.month_end" },
+      buildState: "built",
+      sourceTemplateKey: "group_finance_close",
       steps: [
-        agg("consolidate"),
         {
           id: "close_pack",
           kind: "approval",
@@ -325,6 +331,7 @@ const GROUP: RichCatalogEntry[] = [
           autonomy: "draft",
           approverRole: GROUP_DIRECTOR,
         },
+        dir("close_note"),
       ],
       approvals: [{ step: "close_pack", role: GROUP_DIRECTOR, stepUp: true }],
       dataClasses: ["aggregate_collections", "aggregate_arrears", "aggregate_payroll"],
@@ -489,13 +496,15 @@ export function validateGroupPackV1(): string[] {
   if (GROUP_PACK_V1.length !== 14)
     p.push(`the V1 Group Pack holds 14 templates, found ${GROUP_PACK_V1.length}`);
   const keys = new Set<string>();
-  const privateKeys = PRIVATE_SCHOOL_PACK_V1.templates.map((t) => t.templateKey);
+  const sourceKeys = [...PRIVATE_SCHOOL_PACK_V1.templates, ...GROUP_WORKFLOW_PACK_V1.templates].map(
+    (t) => t.templateKey,
+  );
   for (const e of GROUP_PACK_V1) {
     if (keys.has(e.key)) p.push(`duplicate ${e.key}`);
     keys.add(e.key);
     for (const m of validateRichEntry(e)) p.push(`${e.key}: ${m}`);
-    if (e.sourceTemplateKey && !privateKeys.includes(e.sourceTemplateKey))
-      p.push(`${e.key}: source ${e.sourceTemplateKey} is not in the Private School Pack`);
+    if (e.sourceTemplateKey && !sourceKeys.includes(e.sourceTemplateKey))
+      p.push(`${e.key}: source ${e.sourceTemplateKey} is not in the Private School or Group pack`);
     if (e.aggregateOnly && e.dataClasses.some((d) => !d.startsWith("aggregate_")))
       p.push(`${e.key}: aggregate-only entries declare only aggregate data classes`);
   }
