@@ -501,6 +501,21 @@ const workflowLimits: LiveSpec = {
   offline: false,
 };
 
+const platformShare: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/platform-share-screen").then((m) => ({
+      default: m.PlatformShareScreen,
+    })),
+  screenModule: `${APP_SHELL}/platform-share-screen`,
+  serverFns: ["rpc:platform_share_collections", "rpc:platform_share_student_list"],
+  tables: [],
+  // Platform operators only. The database functions refuse everyone else, so no school
+  // permission is claimed here; the screen shows the refusal.
+  permissions: {},
+  auditEvents: [],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -517,6 +532,7 @@ const LIVE: Record<string, LiveSpec> = {
   "workflow-runs": { ...workflowRuns, kind: "section" },
   "agent-console": { ...agentConsole, kind: "section" },
   "workflow-limits": { ...workflowLimits, kind: "section" },
+  "platform-share": { ...platformShare, kind: "section" },
   "privacy-register": { ...privacyRegister, kind: "section" },
   "r001.org_admin.ndpa": { ...privacyRegister, kind: "section" },
   students: { ...mobility, kind: "section", permissions: { any: ["students.view"] } },
