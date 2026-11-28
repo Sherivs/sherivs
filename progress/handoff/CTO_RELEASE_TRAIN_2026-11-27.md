@@ -77,3 +77,17 @@ Each proven alone on the 239-migration chain, not yet merged into the combined c
 - #546: the cash function still cannot take the picked invoice. That needs a signature change on top of #539 (decision needed).
 - M4 live shell: no frontend change is needed. The shell already reads `workspace_manifest`; custom role widgets arrive through the migration in #537. What is unproven is a browser check against a hosted database.
 - AIN agent evidence per organisation: NOT built. Evidence is stored per agent, not per organisation (`wf_autonomy_evidence` has no `org_id`), and promotion applies it per organisation. Changing that rewrites the ratified AIN-02 evidence rule (decision 3 of AIN-02, "one piece of evidence promotes once, per agent, within 30 days"). Decision needed: keep per agent, or make evidence organisation-scoped.
+
+## 10. Money builds after section 9 (28 Nov)
+
+Both proven alone on the 239-migration chain; not yet in the combined chain. Re-run the combined proof with #545 to #548 merged in.
+
+| PR   | What                                                                                   | Evidence                                   |
+| ---- | -------------------------------------------------------------------------------------- | ------------------------------------------ |
+| #547 | PSA-01: accrue Sherivs's per-student term share, settle by split, cash wallet or agreed auto-debit; operator reports (ADR-162, migration 20261128000700) | PSA01 ALL PASS: 46 checks; rollback round-trip |
+| #548 | M9B: post settled online payments into the M07 ledger via an online clearing account, parking queue, configured system actor (ADR-163, migration 20261128000800) | M9E ALL PASS: 22 checks; rollback round-trip |
+
+- #539 (cash path) was changed after review of the levy relation: a levy cash payment is no longer applied to the tuition invoice (M9C now 22 checks).
+- Merge order: #547 and #548 after #546. One migration per push.
+- Decisions: cash path negative wallet bound; default grace days and debt limit; who may waive; cron cadence (PSA-01). Which user is the online-posting system actor; whether levies become M07 schedules and invoices; who clears the parked queue (#548).
+- #548 is not wired to the webhook: call `cg_fee_post_online_payment` after `settlePaystackCharge` succeeds, best effort, only after apply and actor setup.
