@@ -105,7 +105,7 @@ DECLARE v_id uuid;
 BEGIN
   v_id := public.workspace_role_assignment_create(
     '59000000-0000-4000-8000-0000000000a1','a9000000-0000-4000-8000-000000000002',
-    'ng.principal','institution',NULL,now() - interval '1 minute',NULL,false,NULL,'{}','{}'
+    'ng.head_teacher','institution',NULL,now() - interval '1 minute',NULL,false,NULL,'{}','{}'
   );
   INSERT INTO m009.assignment_ids VALUES ('user-a-head', v_id);
   v_id := public.workspace_role_assignment_create(
@@ -201,7 +201,7 @@ BEGIN
   v_assignment := (SELECT id FROM m009.assignment_ids WHERE label = 'user-a-head');
   v_responsibility := (SELECT id FROM public.workspace_responsibility_catalog WHERE code='m009_timed_support');
   PERFORM public.workspace_role_responsibility_add(
-    '59000000-0000-4000-8000-0000000000a1','ng.principal',v_responsibility
+    '59000000-0000-4000-8000-0000000000a1','ng.head_teacher',v_responsibility
   );
   v_grant := public.workspace_responsibility_grant(
     v_assignment,v_responsibility,now() - interval '1 second',now() + interval '2 seconds'
