@@ -52,6 +52,9 @@ vi.mock("@/components/app-shell/asc-export-screen", () => ({
 vi.mock("@/components/app-shell/custom-role-builder-screen", () => ({
   CustomRoleBuilderScreen: marker("CustomRoleBuilderScreen"),
 }));
+vi.mock("@/components/app-shell/role-overrides-screen", () => ({
+  RoleOverridesScreen: marker("RoleOverridesScreen"),
+}));
 vi.mock("@/components/app-shell/access-review-screen", () => ({
   AccessReviewScreen: marker("AccessReviewScreen"),
 }));
@@ -115,6 +118,7 @@ const LIVE_SCREENS: Record<string, string> = {
   "nav.students": "StudentMobilityScreen",
   "nav.reports": "AscExportScreen",
   "role-builder": "CustomRoleBuilderScreen",
+  "role-overrides": "RoleOverridesScreen",
   "access-reviews": "AccessReviewScreen",
   delegations: "DelegationScreen",
   // M7 (ADR-149) teaching screens.

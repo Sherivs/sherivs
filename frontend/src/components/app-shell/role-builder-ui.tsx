@@ -55,6 +55,8 @@ const STATUS: Record<string, { label: string; Icon: typeof CheckCircle2 }> = {
   open: { label: "Open", Icon: Clock3 },
   completed: { label: "Completed", Icon: CheckCircle2 },
   pending: { label: "Pending", Icon: Clock3 },
+  scheduled: { label: "Scheduled", Icon: Clock3 },
+  ended: { label: "Ended", Icon: Archive },
   retained: { label: "Kept", Icon: CheckCircle2 },
   revoked: { label: "Revoked", Icon: Archive },
   already_ended: { label: "Already ended", Icon: Archive },

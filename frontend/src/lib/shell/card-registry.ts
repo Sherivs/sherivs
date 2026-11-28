@@ -501,6 +501,27 @@ const workflowLimits: LiveSpec = {
   offline: false,
 };
 
+const roleOverrides: LiveSpec = {
+  screen: () =>
+    import("@/components/app-shell/role-overrides-screen").then((m) => ({
+      default: m.RoleOverridesScreen,
+    })),
+  screenModule: `${APP_SHELL}/role-overrides-screen`,
+  serverFns: [
+    "fn:listRoleOverrides",
+    "fn:proposeRoleOverride",
+    "fn:approveRoleOverride",
+    "fn:endRoleOverride",
+    "rpc:role_override_create",
+    "rpc:role_override_approve",
+    "rpc:role_override_end",
+  ],
+  tables: ["tenant_role_overrides"],
+  permissions: { any: ["roles.configure", "roles.custom_create"] },
+  auditEvents: ["scholar.tenant_role_overrides.insert", "scholar.tenant_role_overrides.update"],
+  offline: false,
+};
+
 /** Keys with a real screen. Shell sections outside the catalogue are `kind: "section"`. */
 const LIVE: Record<string, LiveSpec> = {
   roles: { ...roleManagement, kind: "section" },
@@ -508,6 +529,7 @@ const LIVE: Record<string, LiveSpec> = {
   "role-packets": { ...rolePackets, kind: "section" },
   "workspace-policies": { ...workspacePolicies, kind: "section" },
   "role-builder": { ...roleBuilder, kind: "section" },
+  "role-overrides": { ...roleOverrides, kind: "section" },
   "access-reviews": { ...accessReviews, kind: "section" },
   delegations: { ...delegations, kind: "section" },
   school_setup: { ...institutionInterview, kind: "section" },
