@@ -91,3 +91,19 @@ Both proven alone on the 239-migration chain; not yet in the combined chain. Re-
 - Merge order: #547 and #548 after #546. One migration per push.
 - Decisions: cash path negative wallet bound; default grace days and debt limit; who may waive; cron cadence (PSA-01). Which user is the online-posting system actor; whether levies become M07 schedules and invoices; who clears the parked queue (#548).
 - #548 is not wired to the webhook: call `cg_fee_post_online_payment` after `settlePaystackCharge` succeeds, best effort, only after apply and actor setup.
+
+## 11. Combined proof with #545-#548 and the #539 fix (28 Nov)
+
+Local disposable PG16 only; nothing applied to a hosted database. All branches merged in merge order into one tree (243 migrations).
+
+| Check | Result |
+|---|---|
+| Plain harnesses | 49 pass (45 before + M1C, M9D, PSA01, M9E). The same 6 errors as in the earlier 19-branch proof remain (m13, sherivs-001/-002/-003/-006/-033); they are scratch-environment issues, not caused by this work. |
+| Guarded harnesses | 12 of 12 pass |
+| WF-08 / WF-12 / default privileges | 131 / 219 / 53 pass |
+| Rollback round-trip (0800 > 0500, then re-apply 0500 > 0800) | 0 errors |
+| Neutrality + provenance guards | PASS |
+
+Two defects found by the combined run and fixed:
+1. #539: a comment in the migration tripped the neutrality guard (reworded).
+2. #547: FIN-01 R11b rejected `platform_share_settle_overdue` and `platform_share_collections` as wallet-touching functions open to `authenticated`. Both refuse non-operators in-function (proved by the PSA-01 harness), so the FIN-01 allowlist now names them. Reviewer: confirm that is the intended contract.
