@@ -184,6 +184,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/m12-retention-tombstones.local.sql 2>&1 | tee /tmp/m12-retention.out
           grep -q 'M12 ALL PASS' /tmp/m12-retention.out
+      - name: M9B open invoices for the cash picker (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/m9b-open-invoices.local.sql 2>&1 | tee /tmp/m9d.out
+          grep -q 'M9D ALL PASS: 15 checks' /tmp/m9d.out
       - name: M11 data-subject requests (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
