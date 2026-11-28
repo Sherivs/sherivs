@@ -16,7 +16,7 @@ CREATE SCHEMA m9c;
 CREATE TABLE m9c.passed (n serial PRIMARY KEY, label text NOT NULL);
 CREATE TABLE m9c.ids (name text PRIMARY KEY, id uuid NOT NULL DEFAULT gen_random_uuid());
 INSERT INTO m9c.ids (name) VALUES ('org'), ('org2'), ('campus'), ('admin'), ('cashier'), ('bursar'), ('nobody'),
-  ('s1'), ('s2'), ('s3'), ('s4'), ('s5'), ('s6'), ('sx'), ('fee1');
+  ('s1'), ('s2'), ('s3'), ('s4'), ('s5'), ('s6'), ('sx'), ('fee1'), ('levy1');
 CREATE FUNCTION m9c.id(p text) RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT id FROM m9c.ids WHERE name = p $$;
 CREATE FUNCTION m9c.ok(p_label text, p_ok boolean) RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
@@ -160,6 +160,21 @@ SELECT m9c.back();
 SELECT m9c.ok('the grants are unchanged: authenticated yes, anon no',
   has_function_privilege('authenticated', 'public.record_cash_payment(uuid,uuid,text,text,numeric,text,text,text,uuid)', 'EXECUTE')
   AND NOT has_function_privilege('anon', 'public.record_cash_payment(uuid,uuid,text,text,numeric,text,text,text,uuid)', 'EXECUTE'));
+
+-- levy cash is recorded as before and is not applied to the tuition invoice
+SET LOCAL session_replication_role = replica;
+INSERT INTO public.fees (id, school_id, student_id, fee_type, amount, status, term, academic_year)
+  VALUES (m9c.id('levy1'), m9c.id('org'), m9c.id('s4'), 'levy:PTA', 20, 'unpaid', 'Term 1', '2026/27');
+SET LOCAL session_replication_role = origin;
+SELECT m9c.act('cashier');
+CREATE TEMP TABLE rl AS SELECT public.record_cash_payment(m9c.id('org'), m9c.id('s4'), '2026/27', 'Term 1', 20.00, 'cash', NULL, 'RCPT-LEVY', m9c.id('levy1')) AS j;
+GRANT SELECT ON rl TO PUBLIC;
+SELECT m9c.back();
+SELECT m9c.ok('a levy payment reports that nothing was posted to the ledger and the legacy rows are updated',
+  (SELECT (j->>'ledger_posted')::boolean = false AND j->>'ledger_payment' IS NULL AND j->>'offline_payment' IS NOT NULL FROM rl)
+  AND (SELECT paid_amount = 20 AND status = 'paid' FROM public.fees WHERE id = m9c.id('levy1')));
+SELECT m9c.ok('the student tuition invoice is untouched by the levy payment',
+  (SELECT count(*) = 0 FROM public.cg_fee_payment p JOIN public.cg_fee_invoice i ON i.id = p.invoice_id WHERE i.subject_ref = m9c.id('s4')::text AND p.external_reference = 'RCPT-LEVY'));
 
 DO $done$
 DECLARE n int; BEGIN SELECT count(*) INTO n FROM m9c.passed; RAISE NOTICE 'M9C ALL PASS: % checks', n; END $done$;

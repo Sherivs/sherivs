@@ -11,7 +11,7 @@ CREATE OR REPLACE FUNCTION public.record_cash_payment(p_school uuid, p_student u
   p_method text DEFAULT 'cash', p_receipt_url text DEFAULT NULL, p_receipt_no text DEFAULT NULL, p_fee uuid DEFAULT NULL)
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE v_id uuid; v_share numeric; v_new boolean := false; v_bal numeric;
-  v_method text; v_invoices uuid[]; v_ledger jsonb;
+  v_method text; v_invoices uuid[]; v_ledger jsonb; v_levy boolean := false;
 BEGIN
   IF NOT public.scholar_can(p_school, 'payments.record_cash') THEN RAISE EXCEPTION 'not allowed' USING ERRCODE = '42501'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.students WHERE id = p_student AND school_id = p_school) THEN RAISE EXCEPTION 'student not in this school'; END IF;
@@ -24,23 +24,29 @@ BEGIN
   IF v_method IS NULL THEN
     RAISE EXCEPTION 'payment method % cannot be posted to the fee ledger', p_method USING ERRCODE = '22023';
   END IF;
-  SELECT array_agg(i.id ORDER BY i.id) INTO v_invoices
-    FROM public.cg_fee_invoice i
-    JOIN public.cg_fee_schedule s ON s.id = i.schedule_id
-   WHERE i.school_id = p_school AND i.subject_ref = p_student::text
-     AND s.academic_year = p_year AND s.term = p_term
-     AND coalesce((SELECT sum(l.debit_kobo - l.credit_kobo)
-                     FROM public.cg_fee_ledger_posting p JOIN public.cg_fee_ledger_line l ON l.posting_id = p.id
-                    WHERE p.invoice_id = i.id AND l.account_code = 'accounts_receivable'), 0) > 0;
-  IF v_invoices IS NULL THEN
-    RAISE EXCEPTION 'no open fee invoice for this student, year and term' USING ERRCODE = 'P0002';
-  END IF;
-  IF array_length(v_invoices, 1) > 1 THEN
-    RAISE EXCEPTION 'more than one open fee invoice for this student, year and term' USING ERRCODE = '22023';
+  -- A levy is a legacy fee row with no M07 invoice: its cash is recorded as before and is not applied to the tuition invoice.
+  IF p_fee IS NOT NULL THEN SELECT f.fee_type LIKE 'levy:%' INTO v_levy FROM public.fees f WHERE f.id = p_fee; END IF;
+  IF NOT v_levy THEN
+    SELECT array_agg(i.id ORDER BY i.id) INTO v_invoices
+      FROM public.cg_fee_invoice i
+      JOIN public.cg_fee_schedule s ON s.id = i.schedule_id
+     WHERE i.school_id = p_school AND i.subject_ref = p_student::text
+       AND s.academic_year = p_year AND s.term = p_term
+       AND coalesce((SELECT sum(l.debit_kobo - l.credit_kobo)
+                       FROM public.cg_fee_ledger_posting p JOIN public.cg_fee_ledger_line l ON l.posting_id = p.id
+                      WHERE p.invoice_id = i.id AND l.account_code = 'accounts_receivable'), 0) > 0;
+    IF v_invoices IS NULL THEN
+      RAISE EXCEPTION 'no open fee invoice for this student, year and term' USING ERRCODE = 'P0002';
+    END IF;
+    IF array_length(v_invoices, 1) > 1 THEN
+      RAISE EXCEPTION 'more than one open fee invoice for this student, year and term' USING ERRCODE = '22023';
+    END IF;
   END IF;
   INSERT INTO public.offline_payments (school_id, student_id, fee_id, academic_year, term, amount, method, receipt_url, receipt_no, recorded_by)
   VALUES (p_school, p_student, p_fee, p_year, p_term, p_amount, p_method, p_receipt_url, p_receipt_no, auth.uid()) RETURNING id INTO v_id;
-  v_ledger := public.cg_fee_record_payment(v_invoices[1], round(p_amount * 100)::bigint, v_method, 'legacy-cash:' || v_id::text, nullif(btrim(p_receipt_no), ''));
+  IF NOT v_levy THEN
+    v_ledger := public.cg_fee_record_payment(v_invoices[1], round(p_amount * 100)::bigint, v_method, 'legacy-cash:' || v_id::text, nullif(btrim(p_receipt_no), ''));
+  END IF;
   IF p_fee IS NOT NULL THEN
     UPDATE public.fees SET paid_amount = coalesce(paid_amount, 0) + p_amount,
            status = CASE WHEN coalesce(paid_amount, 0) + p_amount >= amount THEN 'paid' ELSE 'partial' END,
@@ -57,7 +63,7 @@ BEGIN
     v_new := true;
   END IF;
   RETURN jsonb_build_object('offline_payment', v_id, 'share_debited', v_new, 'share', CASE WHEN v_new THEN v_share ELSE 0 END, 'balance', v_bal,
-                            'ledger_payment', v_ledger->'payment_id', 'receipt_number', v_ledger->'receipt_number');
+                            'ledger_payment', v_ledger->'payment_id', 'receipt_number', v_ledger->'receipt_number', 'ledger_posted', NOT v_levy);
 END $$;
 
 COMMIT;
