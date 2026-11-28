@@ -194,6 +194,11 @@ jobs:
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
             -f tests/integration/psa01c-cash-wallet-bound.local.sql 2>&1 | tee /tmp/psa01c.out
           grep -q 'WBND ALL PASS: 12 checks' /tmp/psa01c.out
+      - name: LEVY-M07 levy invoices in the fee ledger (real Postgres, rolled back)
+        run: |
+          psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
+            -f tests/integration/levy-m07-bridge.local.sql 2>&1 | tee /tmp/levy.out
+          grep -q 'LEVY ALL PASS: 18 checks' /tmp/levy.out
       - name: M11 data-subject requests (real Postgres, rolled back)
         run: |
           psql "postgresql://postgres@127.0.0.1:${SIM_PG_PORT:-54329}/postgres" -v ON_ERROR_STOP=1 \
