@@ -41,7 +41,7 @@ $$;
 CREATE FUNCTION public.workspace_scope_dim_rank(p_dim text)
 RETURNS integer LANGUAGE sql IMMUTABLE SET search_path = '' AS $$
   -- Only the dimensions that sit on the scope hierarchy can satisfy a narrowing; the others
-  -- (shift, section, gender, level, subject, house, hostel) say nothing about how narrow the holder is.
+  -- (every other scope-set dimension) say nothing about how narrow the holder is.
   SELECT CASE p_dim WHEN 'campus' THEN 1 WHEN 'class' THEN 4 END
 $$;
 
